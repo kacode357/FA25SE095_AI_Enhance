@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --background: #0a0f0a; /* slightly lighter with a hint of green */
+  --foreground: #eef2f1; /* a bit brighter */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Brand palette: brighter emerald/green */
+  --color-brand: #22c55e; /* green-500 */
+  --color-brand-600: #16a34a; /* green-600 */
+  --color-brand-700: #15803d; /* green-700 */
+  --color-muted: #101412; /* near black with green tint */
+  --color-card: #0f1412; /* lighter card */
+  --color-border: #2a3330; /* lighter borders */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0f0a;
+  --foreground: #f6f7f7;
 }
 
 body {
@@ -24,3 +24,69 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Base resets and form elements */
+* { box-sizing: border-box; }
+a { color: var(--color-brand); text-decoration: none; }
+a:hover { color: var(--color-brand-600); }
+input, button { font-family: inherit; }
+
+/* Auth background styling (grid + vignette) */
+.auth-bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 30%, transparent), transparent),
+    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 28%, transparent), transparent),
+    linear-gradient(180deg, #0b100d, #0e1411);
+}
+.auth-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  -webkit-mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
+  mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
+}
+
+/* Card */
+.card {
+  background: color-mix(in oklab, var(--color-card) 85%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+}
+
+.input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: #0f1412;
+  color: #f0fdf4;
+  padding: 10px 12px;
+  border-radius: 10px;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--color-brand-600);
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 600;
+}
+.btn-primary {
+  background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700));
+  color: #051b12;
+}
+.btn-primary:hover { filter: brightness(1.02) saturate(1.05); }
+.btn-ghost {
+  background: transparent;
+  color: #dcfce7;
+}
+.btn-ghost:hover { background: rgba(220, 252, 231, 0.06); }
