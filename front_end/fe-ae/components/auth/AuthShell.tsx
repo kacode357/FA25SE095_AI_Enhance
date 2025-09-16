@@ -1,10 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import LogoLoader from "@/components/common/logo-loader";
+import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
+import { useAuthLoading } from "./AuthLoadingProvider";
 
 type Props = {
   title: string;
@@ -17,6 +19,7 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
   const pathname = usePathname();
   const isLogin = pathname?.startsWith("/login");
   const isRegister = pathname?.startsWith("/register");
+  const { loading } = useAuthLoading();
   return (
     <div className="min-h-dvh relative isolate text-white">
       <div className="auth-bg" />
@@ -29,12 +32,23 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
             <span className="font-semibold tracking-tight">AI Enhance</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link href="/login" className={`btn ${isLogin ? "btn-primary h-8" : "btn-ghost"}`}>
+            <Link
+              href="/login"
+              className={`btn h-8 border-b-2 ${
+                isLogin ? "border-emerald-400" : "border-transparent btn-ghost"
+              }`}
+            >
               Login
             </Link>
-            <Link href="/register" className={`btn ${isRegister ? "btn-primary h-8" : "btn-ghost"}`}>
+            <Link
+              href="/register"
+              className={`btn h-8 border-b-2 ${
+                isRegister ? "border-emerald-400" : "border-transparent btn-ghost"
+              }`}
+            >
               Register
             </Link>
+
           </div>
         </header>
 
@@ -91,6 +105,27 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
           © 2025 AI Enhance. All rights reserved.
         </footer>
       </div>
+
+      {/* Full-screen auth loading overlay */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            key="auth-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            role="alert"
+            aria-live="assertive"
+            aria-busy="true"
+          >
+            <div className="flex flex-col items-center gap-3">
+              <LogoLoader size={40} />
+              <div className="text-sm text-white/80">Đang xử lý…</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

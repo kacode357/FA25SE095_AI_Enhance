@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0f0a; /* slightly lighter with a hint of green */
-  --foreground: #eef2f1; /* a bit brighter */
+  /* Light theme base */
+  --background: #ffffff;
+  --foreground: #0f172a; /* slate-900 */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   /* Brand palette: brighter emerald/green */
   --color-brand: #22c55e; /* green-500 */
   --color-brand-600: #16a34a; /* green-600 */
   --color-brand-700: #15803d; /* green-700 */
-  --color-muted: #101412; /* near black with green tint */
-  --color-card: #0f1412; /* lighter card */
-  --color-border: #2a3330; /* lighter borders */
+  --color-muted: #64748b; /* slate-500 */
+  --color-card: #ffffff;
+  --color-border: #e2e8f0; /* slate-200 */
 }
 
 .dark {
@@ -19,11 +20,9 @@
   --foreground: #f6f7f7;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+body { background: var(--background); color: var(--foreground); }
+/* Force dark foreground within auth scope root container */
+.auth-scope { color: #f8fafc; }
 
 /* Base resets and form elements */
 * { box-sizing: border-box; }
@@ -32,14 +31,15 @@ a:hover { color: var(--color-brand-600); }
 input, button { font-family: inherit; }
 
 /* Auth background styling (grid + vignette) */
-.auth-bg {
+.auth-scope .auth-bg {
   position: fixed;
   inset: 0;
-  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 30%, transparent), transparent),
-    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 28%, transparent), transparent),
-    linear-gradient(180deg, #0b100d, #0e1411);
+  background-color: #0a0f0a; /* fallback */
+  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent),
+    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 20%, transparent), transparent),
+    linear-gradient(180deg, #0a0f0a, #020617);
 }
-.auth-grid {
+.auth-scope .auth-grid {
   position: absolute;
   inset: 0;
   background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
@@ -50,22 +50,9 @@ input, button { font-family: inherit; }
 }
 
 /* Card */
-.card {
-  background: color-mix(in oklab, var(--color-card) 85%, transparent);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-}
+.card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 6px 24px rgba(2,6,23,0.06); }
 
-.input {
-  width: 100%;
-  border: 1px solid var(--color-border);
-  background: #0f1412;
-  color: #f0fdf4;
-  padding: 10px 12px;
-  border-radius: 10px;
-  outline: none;
-}
+.input { width: 100%; border: 1px solid var(--color-border); background: #ffffff; color: #0f172a; padding: 10px 12px; border-radius: 10px; outline: none; }
 .input:focus {
   border-color: var(--color-brand-600);
   box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
@@ -80,13 +67,30 @@ input, button { font-family: inherit; }
   padding: 10px 14px;
   font-weight: 600;
 }
-.btn-primary {
-  background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700));
-  color: #051b12;
-}
+.btn-primary { background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700)); color: #ffffff; }
 .btn-primary:hover { filter: brightness(1.02) saturate(1.05); }
-.btn-ghost {
-  background: transparent;
-  color: #dcfce7;
+.btn-ghost { background: transparent; color: #065f46; }
+.btn-ghost:hover { background: rgba(16,185,129,0.08); }
+
+/* Auth-scope color overrides: keep dark/green look */
+.auth-scope {
+  color-scheme: dark;
+  color: #e5f6ed;
 }
-.btn-ghost:hover { background: rgba(220, 252, 231, 0.06); }
+.auth-scope .card {
+  --color-card: rgba(2, 6, 23, 0.65); /* slate-950 ~ */
+  --color-border: rgba(255, 255, 255, 0.12);
+  background: var(--color-card);
+  border-color: var(--color-border);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.auth-scope .input {
+  background: rgba(255,255,255,0.06);
+  color: #f8fafc;
+  border-color: rgba(255,255,255,0.16);
+}
+.auth-scope .input::placeholder { color: rgba(248, 250, 252, 0.6); }
+.auth-scope .btn-ghost { color: #bbf7d0; }
+.auth-scope a { color: #34d399; }
+.auth-scope a:hover { color: #10b981; }

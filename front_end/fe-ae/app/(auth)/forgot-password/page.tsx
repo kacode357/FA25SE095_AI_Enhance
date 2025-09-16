@@ -1,8 +1,10 @@
 "use client";
 
+import { useAuthLoading } from "@/components/auth/AuthLoadingProvider";
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { ForgotPasswordRequest } from "@/types";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
@@ -10,11 +12,16 @@ import { useState } from "react";
 export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const { withLoading } = useAuthLoading();
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
+    const form = new FormData(e.currentTarget);
+    const payload: ForgotPasswordRequest = { email: String(form.get("email") ?? "").trim() };
+    await withLoading(async () => {
+      await new Promise((r) => setTimeout(r, 900));
+    });
     setLoading(false);
     setSent(true);
   };
