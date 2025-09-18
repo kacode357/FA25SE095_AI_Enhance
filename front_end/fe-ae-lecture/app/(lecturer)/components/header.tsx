@@ -119,7 +119,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white dark:border-gray-900"></div>
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">Lecturer Tran</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Lecturer User</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Lecturer</p>
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
