@@ -39,10 +39,10 @@ const mainNav = [
     count: 24,
   },
   {
-    href: "/manager/assignments",
+    href: "/manager/assignment",
     label: "Assignments",
     icon: FileText,
-    description: "Manage assignments",
+    description: "Manage assignment",
     count: 15,
   },
   {

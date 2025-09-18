@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronDown, CircleArrowOutUpRight, Menu, MessageSquareMore, Search } from "lucide-react";
+import { Bell, ChevronDown, CircleArrowOutUpRight, Menu, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -55,7 +55,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
             <Search className="absolute left-3 w-4 h-4 text-black" />
             <input
               type="text"
-              placeholder="Tìm kiếm..."
+              placeholder="Search..."
               className="pl-10 pr-4 py-2 w-80 bg-gray-50 text-black dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
@@ -97,14 +97,14 @@ export default function ManagerHeader({ onMenuClick }: Props) {
           </div>
 
           {/* Messages */}
-          <Link
+          {/* <Link
             href="/manager/messenger"
             aria-label="Tin nhắn"
             title="Tin nhắn"
             className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <MessageSquareMore className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </Link>
+          </Link> */}
 
           {/* Profile Dropdown */}
           <div className="relative cursor-pointer">
@@ -135,11 +135,11 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 <div className="py-1">
                   <button className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-                    Hồ sơ cá nhân
+                    Personal profile
                   </button>
                   <button className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-                    Cài đặt
+                    Settings
                   </button>
                   <hr className="my-1 border-gray-200 dark:border-gray-700" />
                   <button
@@ -147,7 +147,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                     onClick={() => alert("Đăng xuất")}
                   >
                     <CircleArrowOutUpRight className="w-4 h-4" />
-                    Đăng xuất
+                    Logout
                   </button>
                 </div>
               </div>

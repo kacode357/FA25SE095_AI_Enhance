@@ -34,17 +34,15 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className={`btn h-8 border-b-2 ${
-                isLogin ? "border-emerald-400" : "border-transparent btn-ghost"
-              }`}
+              className={`btn h-8 border-b-2 ${isLogin ? "border-emerald-400" : "border-transparent btn-ghost"
+                }`}
             >
               Login
             </Link>
             <Link
               href="/register"
-              className={`btn h-8 border-b-2 ${
-                isRegister ? "border-emerald-400" : "border-transparent btn-ghost"
-              }`}
+              className={`btn h-8 border-b-2 ${isRegister ? "border-emerald-400" : "border-transparent btn-ghost"
+                }`}
             >
               Register
             </Link>
