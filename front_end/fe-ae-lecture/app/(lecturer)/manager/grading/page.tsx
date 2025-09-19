@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { FileText, RefreshCw, Save } from "lucide-react";
 import { useState } from "react";
@@ -28,40 +29,51 @@ export default function GradingPage() {
           </div>
         </div>
       </header>
-      {items.length === 0 ? (
-        <EmptyState title='No data' description='No students in this class yet.' icon={<FileText className='size-10'/>} />
-      ) : (
-        <div className='overflow-auto border border-slate-200 rounded-lg'>
-          <table className='w-full text-sm'>
-            <thead className='bg-slate-50 text-slate-600'>
-              <tr>
-                <th className='text-left font-medium px-4 py-2'>Student ID</th>
-                <th className='text-left font-medium px-4 py-2 w-[25%]'>Name</th>
-                <th className='text-left font-medium px-4 py-2'>Group</th>
-                <th className='text-left font-medium px-4 py-2'>Score</th>
-                <th className='text-left font-medium px-4 py-2'>Status</th>
-                <th className='text-center font-medium px-4 py-2'>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(i => (
-                <tr key={i.id} className='border-t border-slate-100 hover:bg-emerald-50/40'>
-                  <td className='px-4 py-2 font-mono text-xs text-slate-600'>{i.studentId}</td>
-                  <td className='px-4 py-2 font-medium text-slate-800'>{i.name}</td>
-                  <td className='px-4 py-2 text-slate-600 text-xs'>{i.group || '-'}</td>
-                  <td className='px-4 py-2'>
-                    <Input defaultValue={i.score ?? ''} className='h-8 w-20 text-center text-xs' placeholder='—' />
-                  </td>
-                  <td className='px-4 py-2'>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${i.status==='submitted' ? 'bg-emerald-100 text-emerald-700' : i.status==='late' ? 'bg-red-100 text-red-600' : 'bg-slate-200 text-slate-700'}`}>{i.status}</span>
-                  </td>
-                  <td className='px-4 py-2 text-center text-[11px] text-slate-400 italic'>—</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Card className='bg-white border border-slate-200 flex-1 flex flex-col'>
+        <CardHeader className='flex flex-col gap-3 -mb-5 border-b border-slate-200'>
+          <CardTitle className='text-base text-slate-800'>
+            Grading Management <span className='text-slate-500'>({items.length})</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className='px-0 flex-1 overflow-hidden'>
+          {items.length === 0 ? (
+            <div className='p-6'>
+              <EmptyState title='No data' description='No students in this class yet.' icon={<FileText className='size-10'/>} />
+            </div>
+          ) : (
+            <div className='h-full overflow-auto'>
+              <table className='w-full text-sm'>
+                <thead className='sticky top-0 z-10 bg-slate-50 text-slate-600'>
+                  <tr>
+                    <th className='text-left font-medium px-4 py-2'>Student ID</th>
+                    <th className='text-left font-medium px-4 py-2 w-[25%]'>Name</th>
+                    <th className='text-left font-medium px-4 py-2'>Group</th>
+                    <th className='text-left font-medium px-4 py-2'>Score</th>
+                    <th className='text-left font-medium px-4 py-2'>Status</th>
+                    <th className='text-center font-medium px-4 py-2'>Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map(i => (
+                    <tr key={i.id} className='border-t border-slate-100 hover:bg-emerald-50/40'>
+                      <td className='px-4 py-2 font-mono text-xs text-slate-600'>{i.studentId}</td>
+                      <td className='px-4 py-2 font-medium text-slate-800'>{i.name}</td>
+                      <td className='px-4 py-2 text-slate-600 text-xs'>{i.group || '-'}</td>
+                      <td className='px-4 py-2'>
+                        <Input defaultValue={i.score ?? ''} className='h-8 w-20 text-center text-xs' placeholder='—' />
+                      </td>
+                      <td className='px-4 py-2'>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${i.status==='submitted' ? 'bg-emerald-100 text-emerald-700' : i.status==='late' ? 'bg-red-100 text-red-600' : 'bg-slate-200 text-slate-700'}`}>{i.status}</span>
+                      </td>
+                      <td className='px-4 py-2 text-center text-[11px] text-slate-400 italic'>—</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

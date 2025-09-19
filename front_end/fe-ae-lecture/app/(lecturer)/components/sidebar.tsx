@@ -9,9 +9,8 @@ import {
   FolderOpenDot,
   GraduationCap,
   Layers3,
-  MessageCircle,
   Settings,
-  Users2,
+  Users2
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -45,13 +44,13 @@ const mainNav = [
     description: "Manage assignment",
     count: 15,
   },
-  {
-    href: "/manager/messenger",
-    label: "Messages",
-    icon: MessageCircle,
-    description: "Chat with students",
-    hasNotification: true,
-  },
+  // {
+  //   href: "/manager/messenger",
+  //   label: "Messages",
+  //   icon: MessageCircle,
+  //   description: "Chat with students",
+  //   hasNotification: true,
+  // },
 ];
 
 const secondaryNav = [
@@ -110,7 +109,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
             </p>
           )}
 
-          {mainNav.map(({ href, label, icon: Icon, description, count, hasNotification }) => {
+          {mainNav.map(({ href, label, icon: Icon, description, count }) => {
             const active = pathname?.startsWith(href);
             return (
               <Link
@@ -131,9 +130,9 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                       active ? "text-white" : "text-gray-500 group-hover:text-blue-600"
                     )}
                   />
-                  {hasNotification && (
+                  {/* {hasNotification && (
                     <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                  )}
+                  )} */}
                 </div>
 
                 {!collapsed && (

@@ -39,7 +39,7 @@ export default function FilterRow({ filterCode, setFilterCode, query, setQuery, 
           aria-label="Filter by semester"
           value={filterSemester}
           onChange={(e) => setFilterSemester(e.target.value)}
-          className="h-8 text-xs border border-slate-300 rounded-md px-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
+          className="h-8 text-xs cursor-pointer border border-slate-300 rounded-md px-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
         >
           <option value="all">All</option>
           {semesters.map(s => (
@@ -55,7 +55,7 @@ export default function FilterRow({ filterCode, setFilterCode, query, setQuery, 
           aria-label="Filter by status"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="h-8 text-xs border border-slate-300 rounded-md px-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
+          className="h-8 text-xs cursor-pointer border border-slate-300 rounded-md px-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
         >
           <option value="all">All</option>
           <option value="active">Active</option>
@@ -65,14 +65,14 @@ export default function FilterRow({ filterCode, setFilterCode, query, setQuery, 
       <TableHead className="p-2 text-center hidden xl:table-cell">
         <input
           type="date"
-          className="h-8 text-xs border border-slate-300 rounded-md px-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
+          className="h-8 text-xs cursor-text border border-slate-300 rounded-md px-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
           aria-label="Filter created from"
         />
       </TableHead>
       <TableHead className="p-2 text-center hidden xl:table-cell">
         <input
           type="date"
-          className="h-8 text-xs border border-slate-300 rounded-md px-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
+          className="h-8 text-xs cursor-text border border-slate-300 rounded-md px-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
           aria-label="Filter updated from"
         />
       </TableHead>

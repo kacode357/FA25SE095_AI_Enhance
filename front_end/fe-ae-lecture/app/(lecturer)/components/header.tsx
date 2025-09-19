@@ -12,7 +12,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
   const [notificationOpen, setNotificationOpen] = useState(false);
 
   return (
-    <header className="h-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+    <header className="h-20 bg-white dark:bg-white backdrop-blur-sm border-b border-gray-200 dark:border-gray-200 sticky top-0 z-40">
       <div className="flex items-center justify-between h-full px-4 sm:px-2">
         {/* Brand Section */}
         <div className="flex items-center gap-3 sm:gap-14">
@@ -41,7 +41,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-md group-hover:blur-lg transition-all"></div>
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">
+              <span className="font-bold text-gray-900 dark:text-gray-900 text-lg tracking-tight">
                 AI Enhance
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
@@ -62,7 +62,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-5">
           {/* Notifications */}
           <div className="relative cursor-pointer">
             <button
@@ -119,7 +119,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white dark:border-gray-900"></div>
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">Lecturer User</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-900">Lecturer User</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Lecturer</p>
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />

@@ -53,7 +53,7 @@ export default function ClassPage() {
             return true;
         });
         if (sortStudents) {
-            res = [...res].sort((a,b) => sortStudents === 'asc' ? a.students - b.students : b.students - a.students);
+            res = [...res].sort((a, b) => sortStudents === 'asc' ? a.students - b.students : b.students - a.students);
         }
         return res;
     }, [items, query, filterCode, filterStatus, filterSemester, sortStudents]);
@@ -86,7 +86,7 @@ export default function ClassPage() {
             </header>
 
             <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
-                <CardHeader className="flex flex-col gap-3 -mb-5 border-b border-slate-200">
+                <CardHeader className="flex flex-col">
                     <CardTitle className="text-base text-slate-800">
                         Class List Management <span className="text-slate-500">({filtered.length})</span>
                     </CardTitle>
@@ -95,8 +95,8 @@ export default function ClassPage() {
                 <CardContent className="px-0 flex-1 overflow-hidden">
                     <div className="h-full overflow-auto">
                         <Table className="table-auto w-full">
-                            <TableHeader className="sticky top-0 z-10 bg-white">
-                                <TableRow className="text-slate-600 border-b border-slate-200">
+                            <TableHeader className="sticky top-0 z-10 bg-slate-50">
+                                <TableRow className="text-slate-600 border-b border-t border-slate-200">
                                     <TableHead className="w-20 text-center relative py-5 font-bold">
                                         Class Code
                                         <div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
@@ -169,24 +169,23 @@ export default function ClassPage() {
                                                 <Badge className="bg-slate-100 text-slate-700 border border-slate-200">Archived</Badge>
                                             )}
                                         </TableCell>
-                                        <TableCell className="cursor-pointer text-slate-700 text-center hidden xl:table-cell whitespace-nowrap text-xs">
+                                        <TableCell className="cursor-pointer text-slate-700 text-right pr-8 hidden xl:table-cell whitespace-nowrap text-xs">
                                             {formatVNDateTime(c.createdAt)}
                                         </TableCell>
-                                        <TableCell className="cursor-pointer text-slate-700 text-center hidden xl:table-cell whitespace-nowrap text-xs">
+                                        <TableCell className="cursor-pointer text-slate-700 text-right pr-8 hidden xl:table-cell whitespace-nowrap text-xs">
                                             {formatVNDateTime(c.updatedAt)}
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <Dialog open={openEditId === c.id} onOpenChange={(o) => setOpenEditId(o ? c.id : null)}>
                                                 <div className="inline-flex gap-2 justify-center">
                                                     <DialogTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 px-2 text-emerald-700 hover:bg-emerald-50 flex items-center gap-1">
+                                                        <Button variant="ghost" className="h-8 px-2 cursor-pointer !bg-emerald-50 text-emerald-700 hover:bg-emerald-50 flex items-center gap-1">
                                                             <Pencil className="size-4" />
-                                                            Edit
                                                         </Button>
                                                     </DialogTrigger>
                                                     <Button
                                                         variant="ghost"
-                                                        className="h-8 px-2 text-red-600 hover:bg-red-50 flex items-center gap-1"
+                                                        className="h-8 px-2 text-red-600 hover:bg-red-50 cursor-pointer !bg-red-50 flex items-center gap-1"
                                                         onClick={() => {
                                                             if (confirm("Delete this class?")) {
                                                                 setItems((prev) => prev.filter((i) => i.id !== c.id));
@@ -194,7 +193,6 @@ export default function ClassPage() {
                                                         }}
                                                     >
                                                         <Trash2 className="size-4" />
-                                                        Delete
                                                     </Button>
                                                 </div>
                                                 <CreateEditDialog
