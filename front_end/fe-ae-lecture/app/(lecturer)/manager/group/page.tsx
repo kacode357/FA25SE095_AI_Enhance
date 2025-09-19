@@ -2,22 +2,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { GroupItem } from "@/types/group.types";
 import { Pencil, Plus, Trash2, UserPlus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import EmptyState from "../components/EmptyState";
 import TableSkeleton from "../components/TableSkeleton";
 import FilterRow from "./components/FilterRow";
-
-interface GroupItem {
-	id: string;
-	name: string;
-	members: number;
-	max: number;
-	leader?: string;
-	status: "active" | "locked";
-	createdAt: string;
-	updatedAt: string;
-}
 
 export default function GroupPage() {
 	const [loading] = useState(false);

@@ -2,11 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { GradeItem } from "@/types/grading.types";
 import { FileText, RefreshCw, Save } from "lucide-react";
 import { useState } from "react";
 import EmptyState from "../components/EmptyState";
-
-interface GradeItem { id: string; studentId: string; name: string; group?: string; score?: number; status: 'pending' | 'submitted' | 'late'; }
 
 export default function GradingPage() {
   const [items] = useState<GradeItem[]>([

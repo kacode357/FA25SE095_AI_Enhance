@@ -1,11 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SummaryRow } from "@/types/export.types";
 import { Download, FileSpreadsheet, FileText, FileType2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import EmptyState from "../components/EmptyState";
-
-interface SummaryRow { label: string; value: string | number; }
 
 export default function ExportReportPage(){
   const [format, setFormat] = useState<'csv'|'xlsx'|'pdf'>('xlsx');

@@ -2,22 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ChatMessage, Conversation } from "@/types/messager.type";
 import { Bot, Loader2, Pencil, Plus, RotateCcw, Send, Trash2, User2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  createdAt: string;
-}
-
-interface Conversation {
-  id: string;
-  title: string;
-  messages: ChatMessage[];
-  updatedAt: string;
-}
 
 export default function MessengerPage() {
   const [conversations, setConversations] = useState<Conversation[]>([

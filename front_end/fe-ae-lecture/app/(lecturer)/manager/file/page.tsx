@@ -2,14 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FileItem } from "@/types/file.types";
 import { DownloadCloud, Eye, FileText, HardDriveDownload } from "lucide-react";
 import { useMemo, useState } from "react";
 import EmptyState from "../components/EmptyState";
 import TableSkeleton from "../components/TableSkeleton";
 import UploadArea from "../components/UploadArea";
 import FilterRow from "./components/FilterRow";
-
-type FileItem = { id: string; name: string; sizeKB: number; type: string; uploadedAt: string; owner: string };
 
 export default function FilePage() {
 	const [loading] = useState(false);

@@ -1,11 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeadlineItem } from "@/types/deadline.types";
 import { CalendarClock, Clock, Plus, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import EmptyState from "../components/EmptyState";
-
-interface DeadlineItem { id: string; assignment: string; code: string; original: string; current: string; extensions: number; status: 'ongoing' | 'closed'; }
 
 export default function DeadlinePage() {
   const [items] = useState<DeadlineItem[]>([

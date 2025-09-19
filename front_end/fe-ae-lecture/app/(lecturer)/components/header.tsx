@@ -56,7 +56,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
             <input
               type="text"
               placeholder="Search..."
-              className="pl-10 pr-4 py-2 w-80 bg-gray-50 text-black dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="pl-10 pr-4 py-2 w-80 bg-gray-50 text-black border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
@@ -67,14 +67,15 @@ export default function ManagerHeader({ onMenuClick }: Props) {
           <div className="relative cursor-pointer">
             <button
               onClick={() => setNotificationOpen(!notificationOpen)}
-              className="relative p-2 cursor-pointer rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="relative p-2 cursor-pointer rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
               aria-label="Thông báo"
             >
-              <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
                 <span className="text-[10px] text-white font-bold">3</span>
               </span>
             </button>
+
 
             {/* Notification Dropdown */}
             {notificationOpen && (
