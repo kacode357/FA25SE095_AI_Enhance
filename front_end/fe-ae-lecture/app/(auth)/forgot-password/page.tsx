@@ -1,29 +1,27 @@
+// app/(auth)/forgot-password/page.tsx
 "use client";
 
-import { useAuthLoading } from "@/components/auth/AuthLoadingProvider";
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ForgotPasswordRequest } from "@/types";
-import { motion } from "framer-motion";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { useState } from "react";
+import { useForgotPassword } from "@/hooks/useForgotPassword";
 
 export default function ForgotPasswordPage() {
-  const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const { withLoading } = useAuthLoading();
+  const { forgotPassword, loading } = useForgotPassword();
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
     const form = new FormData(e.currentTarget);
-    const payload: ForgotPasswordRequest = { email: String(form.get("email") ?? "").trim() };
-    await withLoading(async () => {
-      await new Promise((r) => setTimeout(r, 900));
-    });
-    setLoading(false);
-    setSent(true);
+    const email = String(form.get("email") ?? "").trim();
+
+    const res = await forgotPassword({ email });
+    if (res?.success) {
+      setSent(true);
+    }
   };
 
   return (
@@ -33,12 +31,23 @@ export default function ForgotPasswordPage() {
       footer={<Link href="/login" className="underline">Back to sign in</Link>}
     >
       {sent ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-white/80">
-          We’ve sent a reset link to your email if an account exists. Please check your inbox.
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-sm text-white/80"
+        >
+          We’ve sent a reset link to your email if an account exists. Please
+          check your inbox.
         </motion.div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
-          <Input type="email" name="email" label="Email" placeholder="you@example.com" required />
+          <Input
+            type="email"
+            name="email"
+            label="Email"
+            placeholder="you@example.com"
+            required
+          />
           <Button type="submit" className="w-full" loading={loading}>
             Send reset link
           </Button>

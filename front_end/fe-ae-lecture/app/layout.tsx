@@ -2,6 +2,7 @@ import RouteLoader from "@/components/common/route-loader";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import { Toaster } from "sonner"; // 👈 import Toaster
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,7 +22,6 @@ export const metadata: Metadata = {
     icon: "/ai-enhance-logo.svg",
     shortcut: "/ai-enhance-logo.svg",
   },
-
 };
 
 export default function RootLayout({
@@ -35,10 +35,14 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-  <Suspense fallback={null}>
-    <RouteLoader />
-  </Suspense>
+        <Suspense fallback={null}>
+          <RouteLoader />
+        </Suspense>
+
         {children}
+
+    
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
