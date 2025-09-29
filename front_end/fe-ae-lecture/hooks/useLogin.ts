@@ -54,9 +54,6 @@ export function useLogin() {
         toast.error("Chỉ giảng viên (Lecturer) mới được phép đăng nhập!");
         return null;
       }
-
-      // 3) Thành công
-      toast.success("Đăng nhập thành công!");
       router.push("/manager/class");
       return res;
     } catch {

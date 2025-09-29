@@ -37,10 +37,3 @@ export interface ResetPasswordPayload {
   token: string;
   newPassword: string;
 }
-
-export interface LogoutPayload {
-  userId: string;
-  accessToken: string;
-  logoutAllDevices: boolean;
-}
-

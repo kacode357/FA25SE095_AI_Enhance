@@ -50,3 +50,8 @@ export interface ResetPasswordResponse {
   success: boolean;
   message: string;
 }
+
+export interface LogoutResponse {
+  success: boolean;
+  message: string;
+}

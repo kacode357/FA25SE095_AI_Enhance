@@ -23,3 +23,9 @@ export interface UserProfile {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface UpdateProfileResponse {
+  success: boolean;
+  message: string;
+  updatedProfile: UserProfile;
+}

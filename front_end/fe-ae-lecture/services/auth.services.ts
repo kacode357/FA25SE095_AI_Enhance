@@ -7,6 +7,7 @@ import {
   RefreshTokenPayload,
   ForgotPasswordPayload,
   ResetPasswordPayload,
+  LogoutPayload,
 } from "@/types/auth/auth.payload";
 import { 
   LoginResponse, 
@@ -14,7 +15,8 @@ import {
   ConfirmEmailResponse, 
   RefreshTokenResponse,
   ForgotPasswordResponse,
-  ResetPasswordResponse, 
+  ResetPasswordResponse,
+  LogoutResponse,
 } from "@/types/auth/auth.response";
 
 export const AuthService = {
@@ -45,6 +47,11 @@ export const AuthService = {
 
   resetPassword: async (data: ResetPasswordPayload): Promise<ResetPasswordResponse> => {
     const response = await defaultAxiosInstance.post<ResetPasswordResponse>("/Auth/reset-password", data);
+    return response.data;
+  },
+
+  logout: async (data: LogoutPayload): Promise<LogoutResponse> => {
+    const response = await defaultAxiosInstance.post<LogoutResponse>("/Auth/logout", data);
     return response.data;
   },
 };
