@@ -1,48 +1,61 @@
 @import "tailwindcss";
 
 :root {
+  /* Light theme base */
   --background: #ffffff;
-  --foreground: #171717;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --primary: #111827;
-  --primary-foreground: #ffffff;
-  --ring: #111827;
-}
-
-/* Inline theme variables (no Tailwind @theme) */
-:root {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --foreground: #0f172a; /* slate-900 */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-muted-foreground: var(--muted);
-  --color-border: var(--border);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
+  /* Brand palette: brighter emerald/green */
+  --color-brand: #22c55e; /* green-500 */
+  --color-brand-600: #16a34a; /* green-600 */
+  --color-brand-700: #15803d; /* green-700 */
+  --color-muted: #64748b; /* slate-500 */
+  --color-card: #ffffff;
+  --color-border: #e2e8f0; /* slate-200 */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0f0a;
+  --foreground: #f6f7f7;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+body { background: var(--background); color: var(--foreground); }
+/* Force dark foreground within auth scope root container */
+.auth-scope { color: #f8fafc; }
+
+/* Base resets and form elements */
+* { box-sizing: border-box; }
+a { color: var(--color-brand); text-decoration: none; }
+a:hover { color: var(--color-brand-600); }
+input, button { font-family: inherit; }
+
+/* Auth background styling (grid + vignette) */
+.auth-scope .auth-bg {
+  position: fixed;
+  inset: 0;
+  background-color: #0a0f0a; /* fallback */
+  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent),
+    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 20%, transparent), transparent),
+    linear-gradient(180deg, #0a0f0a, #020617);
+}
+.auth-scope .auth-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  -webkit-mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
+  mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
 }
 
-/* Components (lightweight) */
-.container-px {
-  padding-left: clamp(16px, 4vw, 24px);
-  padding-right: clamp(16px, 4vw, 24px);
+/* Card */
+.card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 6px 24px rgba(2,6,23,0.06); }
+
+.input { width: 100%; border: 1px solid var(--color-border); background: #ffffff; color: #0f172a; padding: 10px 12px; border-radius: 10px; outline: none; }
+.input:focus {
+  border-color: var(--color-brand-600);
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
 }
 
 .btn {
@@ -50,86 +63,34 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 14px;
   font-weight: 600;
-  transition: transform 120ms ease, background 120ms ease, color 120ms ease, opacity 120ms ease;
 }
-.btn:hover { transform: translateY(-1px); }
-.btn:active { transform: translateY(0); }
-.btn:disabled { opacity: .6; cursor: not-allowed; }
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
-  border-color: transparent;
-}
-.btn-ghost {
-  background: transparent;
-  color: var(--color-foreground);
-}
-.btn-outline {
-  background: transparent;
-  color: var(--color-foreground);
-  border-color: var(--color-border);
-}
+.btn-primary { background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700)); color: #ffffff; }
+.btn-primary:hover { filter: brightness(1.02) saturate(1.05); }
+.btn-ghost { background: transparent; color: #065f46; }
+.btn-ghost:hover { background: rgba(16,185,129,0.08); }
 
-.input {
-  width: 100%;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: white;
-  padding: 0 12px;
+/* Auth-scope color overrides: keep dark/green look */
+.auth-scope {
+  color-scheme: dark;
+  color: #e5f6ed;
 }
-
-.textarea {
-  width: 100%;
-  min-height: 96px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: white;
-  padding: 10px 12px;
-}
-
-.card {
+.auth-scope .card {
+  --color-card: rgba(2, 6, 23, 0.65); /* slate-950 ~ */
+  --color-border: rgba(255, 255, 255, 0.12);
   background: var(--color-card);
-  color: var(--color-card-foreground);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  border-color: var(--color-border);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  border: 1px solid var(--color-border);
+.auth-scope .input {
+  background: rgba(255,255,255,0.06);
+  color: #f8fafc;
+  border-color: rgba(255,255,255,0.16);
 }
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.table th, .table td {
-  padding: 12px;
-  border-bottom: 1px solid var(--color-border);
-  text-align: left;
-}
-
-.sidebar {
-  width: 260px;
-}
-
-.truncate-2 {
-  /* Multi-line truncation */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+.auth-scope .input::placeholder { color: rgba(248, 250, 252, 0.6); }
+.auth-scope .btn-ghost { color: #bbf7d0; }
+.auth-scope a { color: #34d399; }
+.auth-scope a:hover { color: #10b981; }
