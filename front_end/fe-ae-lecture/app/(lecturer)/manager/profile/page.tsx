@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UpdateProfilePayload } from "@/types/user/user.payload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useUpdateProfile } from "@/hooks/useUpdateProfile";
+import { useUpdateProfile } from "@/hooks/user/useUpdateProfile";
 
 export default function ProfilePage() {
   const { user } = useAuth();

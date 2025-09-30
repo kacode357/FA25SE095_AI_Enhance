@@ -10,7 +10,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useLogout } from "@/hooks/useLogout";
+import { useLogout } from "@/hooks/auth/useLogout";
 import { useAuth } from "@/contexts/AuthContext";
 import Cookies from "js-cookie";
 

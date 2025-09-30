@@ -1,3 +1,4 @@
+// app/(lecturer)/components/sidebar.tsx
 "use client";
 
 import Button from "@/components/ui/button";
@@ -5,52 +6,20 @@ import { clsx } from "clsx";
 import {
   BarChart3,
   ChevronRight,
-  FileText,
-  FolderOpenDot,
   GraduationCap,
   Layers3,
   Settings,
-  Users2
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
   {
-    href: "/manager/class",
-    label: "Classes",
+    href: "/manager/course",
+    label: "Courses",
     icon: Layers3,
-    description: "Manage all classes",
-    count: 12,
+    description: "Manage your courses",
   },
-  {
-    href: "/manager/group",
-    label: "Groups",
-    icon: Users2,
-    description: "Manage student groups",
-    count: 8,
-  },
-  {
-    href: "/manager/file",
-    label: "Files",
-    icon: FolderOpenDot,
-    description: "Manage learning materials",
-    count: 24,
-  },
-  {
-    href: "/manager/assignment",
-    label: "Assignments",
-    icon: FileText,
-    description: "Manage assignment",
-    count: 15,
-  },
-  // {
-  //   href: "/manager/messenger",
-  //   label: "Messages",
-  //   icon: MessageCircle,
-  //   description: "Chat with students",
-  //   hasNotification: true,
-  // },
 ];
 
 const secondaryNav = [
@@ -109,7 +78,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
             </p>
           )}
 
-          {mainNav.map(({ href, label, icon: Icon, description, count }) => {
+          {mainNav.map(({ href, label, icon: Icon, description }) => {
             const active = pathname?.startsWith(href);
             return (
               <Link
@@ -123,18 +92,12 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                 )}
                 title={collapsed ? label : undefined}
               >
-                <div className="relative">
-                  <Icon
-                    className={clsx(
-                      "w-5 h-5 transition-transform group-hover:scale-110",
-                      active ? "text-white" : "text-gray-500 group-hover:text-blue-600"
-                    )}
-                  />
-                  {/* {hasNotification && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                  )} */}
-                </div>
-
+                <Icon
+                  className={clsx(
+                    "w-5 h-5 transition-transform group-hover:scale-110",
+                    active ? "text-white" : "text-gray-500 group-hover:text-blue-600"
+                  )}
+                />
                 {!collapsed && (
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
@@ -146,18 +109,6 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                       >
                         {label}
                       </span>
-                      {count && (
-                        <span
-                          className={clsx(
-                            "text-xs px-2 py-0.5 rounded-full font-medium",
-                            active
-                              ? "bg-white/20 text-white"
-                              : "bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600"
-                          )}
-                        >
-                          {count}
-                        </span>
-                      )}
                     </div>
                     <p
                       className={clsx(
@@ -209,19 +160,6 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
           })}
         </div>
       </nav>
-
-      {/* Footer */}
-      {!collapsed && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg">
-            <h3 className="text-sm font-semibold text-gray-900">Upgrade to Pro</h3>
-            <p className="text-xs text-gray-600 mt-1">Unlock all features</p>
-            <button className="mt-2 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-medium rounded-md hover:shadow-lg transition-all">
-              Upgrade Now
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

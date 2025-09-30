@@ -8,8 +8,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
 import { useState } from "react";
-import { useLogin } from "@/hooks/useLogin";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useLogin } from "@/hooks/auth/useLogin";
+import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
 
 export default function LoginPage() {
   const { login, loading } = useLogin();

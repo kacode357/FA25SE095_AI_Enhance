@@ -1,7 +1,7 @@
 // app/(auth)/register/page.tsx
 "use client";
 
-import { useRegisterLecturer } from "@/hooks/useRegister"; // ✅ đổi sang hook Lecturer
+import { useRegisterLecturer } from "@/hooks/auth/useRegister"; // ✅ đổi sang hook Lecturer
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

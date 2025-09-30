@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { useForgotPassword } from "@/hooks/useForgotPassword";
+import { useForgotPassword } from "@/hooks/auth/useForgotPassword";
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);

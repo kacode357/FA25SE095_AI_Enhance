@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import AuthShell from "@/components/auth/AuthShell";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useConfirmEmail } from "@/hooks/useConfirmEmail";
+import { useConfirmEmail } from "@/hooks/auth/useConfirmEmail";
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();

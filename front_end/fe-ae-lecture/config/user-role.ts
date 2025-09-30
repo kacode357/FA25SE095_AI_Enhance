@@ -1,6 +1,3 @@
-// config/user-role.ts
-
-/** Enum chuẩn FE dùng xuyên suốt */
 export enum UserRole {
   Student = 0,
   Lecturer = 1,
@@ -9,11 +6,6 @@ export enum UserRole {
   PaidUser = 4,
 }
 
-/**
- * CHỈ SỬA Ở ĐÂY KHI BE ĐỔI TÊN ROLE
- * - Key: đúng theo BE trả (không phân biệt hoa/thường, có thể khai báo nhiều alias)
- * - Value: enum chuẩn dùng trong FE
- */
 export const ROLE_MAP: Record<string, UserRole> = {
   student: UserRole.Student,
   students: UserRole.Student,   // alias nếu BE từng trả số nhiều
