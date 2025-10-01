@@ -1,16 +1,15 @@
-// hooks/useAdminUsers.ts
+// hooks/useStaffUsers.ts (renamed from useAdminUsers)
 "use client";
 
-import { useState, useCallback } from "react";
-import { AdminService } from "@/services/admin.services";
-import { GetUsersParams } from "@/types/admin/admin.payload";
-import {
-  AdminGetUsersResponse,
-  AdminUserDetailResponse,
-  ReactivateUserResponse,
-} from "@/types/admin/admin.response";
+import { useCallback, useState } from "react";
+// TODO: Replace AdminService with StaffService when backend ready
 
-export function useAdminUsers() {
+import { AdminService } from '../../fe-ae-admin/services/admin.services';
+import { AdminGetUsersResponse, AdminUserDetailResponse } from '../../fe-ae-admin/types/admin/admin.response';
+import { GetUsersParams } from "../types/staff/user.payload";
+import { ReactivateUserResponse } from "../types/staff/user.response";
+
+export function useStaffUsers() {
   const [loadingList, setLoadingList] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingReactivate, setLoadingReactivate] = useState(false);
@@ -26,7 +25,7 @@ export function useAdminUsers() {
     try {
       setLoadingList(true);
       setError(null);
-      const res = await AdminService.getUsers(params);
+  const res = await AdminService.getUsers(params); // placeholder
       setListData(res);
       return res;
     } catch (err: any) {
@@ -44,7 +43,7 @@ export function useAdminUsers() {
     try {
       setLoadingDetail(true);
       setError(null);
-      const res = await AdminService.getUserById(userId);
+  const res = await AdminService.getUserById(userId); // placeholder
       setDetailData(res);
       return res;
     } catch (err: any) {
@@ -64,7 +63,7 @@ export function useAdminUsers() {
     try {
       setLoadingReactivate(true);
       setError(null);
-      const res = await AdminService.reactivateUser(userId);
+  const res = await AdminService.reactivateUser(userId); // placeholder
       // ✅ refresh list ngay sau khi thành công
       await fetchUsers({ page: listData?.page ?? 1, pageSize: listData?.pageSize ?? 10 });
       return res;

@@ -1,14 +1,14 @@
 // app/(auth)/login/page.tsx
 "use client";
 
-import { AuthCard, AuthShellAdmin, OAuthDivider } from "@/components/admin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { useLogin } from "@/hooks/useLogin";
 import { Chrome } from "lucide-react";
-import Link from "next/link";
+import { Link } from 'next/link';
 import { useState } from "react";
+import { AuthCard, AuthShellStaff, OAuthDivider } from "../../../components/staff";
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { useAuthRedirect } from '../../../hooks/useAuthRedirect';
+import { useLogin } from '../../../hooks/useLogin';
 
 export default function LoginPage() {
   const { login, loading } = useLogin();
@@ -39,16 +39,16 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthShellAdmin hideFooter>
+    <AuthShellStaff hideFooter>
       <AuthCard
-        title="Admin Sign In"
-        subtitle={<span className="text-slate-600">Use your provisioned administrator credentials.</span>}
+        title="Staff Sign In"
+        subtitle={<span className="text-slate-600">Đăng nhập không gian hỗ trợ & vận hành.</span>}
         footer={<div className="space-y-2">
-          <span className="block text-slate-500">By continuing you agree to our <a className="text-slate-700 font-medium hover:underline" href="#">Terms</a> & <a className="text-slate-700 font-medium hover:underline" href="#">Privacy</a>.</span>
-          <span className="block text-slate-400">© 2025 IDCLMS. All rights reserved.</span>
+          <span className="block text-slate-500">Bằng việc tiếp tục bạn đồng ý với <a className="text-slate-700 font-medium hover:underline" href="#">Điều khoản</a> & <a className="text-slate-700 font-medium hover:underline" href="#">Chính sách</a>.</span>
+          <span className="block text-slate-400">© 2025 Staff Console.</span>
         </div>}
       >
-        <form onSubmit={onSubmit} className="space-y-6" aria-label="Admin login form">
+        <form onSubmit={onSubmit} className="space-y-6" aria-label="Staff login form">
           <fieldset className="space-y-4" disabled={loading || googleLoading}>
             <Input
               type="email"
@@ -83,7 +83,7 @@ export default function LoginPage() {
               />
               Remember me
             </label>
-            <Link href="/forgot-password" className="text-emerald-600 hover:underline">Forgot password?</Link>
+            <Link href="/forgot-password" className="text-sky-600 hover:underline">Quên mật khẩu?</Link>
           </div>
           <Button type="submit" className="w-full h-11 text-[15px] font-semibold tracking-tight" loading={loading}>Sign in</Button>
           <OAuthDivider />
@@ -95,8 +95,8 @@ export default function LoginPage() {
             loading={googleLoading}
             aria-label="Sign in with Google"
           >
-            <Chrome size={18} className="text-emerald-500" />
-            <span className="ml-1 text-emerald-500">Sign in with Google</span>
+            <Chrome size={18} className="text-sky-500" />
+            <span className="ml-1 text-sky-500">Sign in with Google</span>
           </Button>
           <div className="pt-4 flex flex-col gap-2">
             <div className="flex items-center justify-between text-[11px] uppercase tracking-wide font-medium text-slate-500">
@@ -104,10 +104,10 @@ export default function LoginPage() {
               <span>CONTROL</span>
               <span>OBSERVABILITY</span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-emerald-200 via-emerald-400 to-emerald-600" />
+            <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-sky-200 via-sky-400 to-indigo-500" />
           </div>
         </form>
       </AuthCard>
-    </AuthShellAdmin>
+    </AuthShellStaff>
   );
 }
