@@ -18,6 +18,7 @@ export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   tokenExpires: string;
+  expiresIn: number;
   crawlQuotaUsed: number;
   crawlQuotaLimit: number;
   quotaResetDate: string;

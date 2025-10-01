@@ -2,7 +2,7 @@ import { AuthLoadingProvider } from "@/components/auth/AuthLoadingProvider";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Auth • AI Enhance",
+  title: "Auth • AI-Driven DataSync",
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
