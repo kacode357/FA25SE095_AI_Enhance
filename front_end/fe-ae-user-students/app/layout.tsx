@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AI Enhance - User",
-  description: "User portal (fake data)",
+  description: "User portal",
 };
 
 export default function RootLayout({
