@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  /* Light theme base */
-  --background: #ffffff;
+  /* Light theme base (lightened + slight subtle tint) */
+  /* Previous --background: #ffffff; */
+  --background: #f9fbff; /* very light blue-neutral for more brightness */
   --foreground: #0f172a; /* slate-900 */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -20,7 +21,11 @@
   --foreground: #f6f7f7;
 }
 
-body { background: var(--background); color: var(--foreground); }
+body { 
+  /* Add a soft gradient overlay to enhance brightness perception */
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(240,250,255,0.9)) var(--background);
+  color: var(--foreground); 
+}
 /* Force dark foreground within auth scope root container */
 .auth-scope { color: #f8fafc; }
 
