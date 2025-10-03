@@ -1,4 +1,3 @@
-// hooks/course/useGetCourseById.ts
 "use client";
 
 import { useState } from "react";
@@ -10,7 +9,9 @@ export function useGetCourseById() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCourseById = async (id: string): Promise<GetCourseByIdResponse | null> => {
+  const fetchCourseById = async (
+    id: string
+  ): Promise<GetCourseByIdResponse | null> => {
     setLoading(true);
     setError(null);
     try {

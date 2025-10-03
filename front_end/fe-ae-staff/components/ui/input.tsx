@@ -8,11 +8,10 @@ type BaseProps = HTMLMotionProps<"input"> & {
   label?: string;
   hint?: string;
   error?: string;
-  variant?: "default" | "light"; // light = light surface (white bg, dark text)
 };
 
 export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
-  ({ label, hint, error, className = "", id, name, type, variant = "default", ...props }, ref) => {
+  ({ label, hint, error, className = "", id, name, type, ...props }, ref) => {
     const reactId = useId();
     const inputId = id ?? name ?? reactId;
     const isPassword = type === "password";
@@ -24,7 +23,7 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className={`block text-sm mb-1.5 transition-colors ${variant === "light" ? "text-slate-700" : "text-white/80"}`}
+            className="block text-sm text-white/80 mb-1.5"
           >
             {label}
           </label>
@@ -37,7 +36,7 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
             name={name} // 👈 BẮT BUỘC để FormData hoạt động
             ref={ref}
             type={effectiveType}
-            className={`input ${variant === "light" ? "input-light" : ""} ${isPassword ? "pr-12" : ""} ${className} placeholder-emerald-600`}
+            className={`input ${isPassword ? "pr-12" : ""} ${className}`}
             {...props}
           />
 
@@ -47,11 +46,7 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
               aria-label={visible ? "Hide password" : "Show password"}
               title={visible ? "Hide password" : "Show password"}
               onClick={() => setVisible((v) => !v)}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors
-                ${variant === 'light'
-                  ? 'text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'}
-              `}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/5"
               tabIndex={0}
             >
               {visible ? (

@@ -1,4 +1,3 @@
-// hooks/course/useUpdateCourse.ts
 "use client";
 
 import { useState } from "react";
@@ -10,11 +9,13 @@ import { toast } from "sonner";
 export function useUpdateCourse() {
   const [loading, setLoading] = useState(false);
 
-  const updateCourse = async (payload: UpdateCoursePayload): Promise<UpdateCourseResponse | null> => {
+  const updateCourse = async (
+    payload: UpdateCoursePayload
+  ): Promise<UpdateCourseResponse | null> => {
     setLoading(true);
     try {
       const res = await CourseService.updateCourse(payload);
-      toast.success(res.message);
+      toast.success(res.message || "Cập nhật khoá học thành công");
       return res;
     } catch (err: any) {
       toast.error(err?.message || "Failed to update course");

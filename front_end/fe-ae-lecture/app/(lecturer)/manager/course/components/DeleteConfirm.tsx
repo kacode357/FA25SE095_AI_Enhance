@@ -29,7 +29,6 @@ export default function DeleteConfirm({ open, onOpenChange, onConfirm, loading }
             Cancel
           </Button>
           <Button
-           
             onClick={onConfirm}
             disabled={loading}
           >

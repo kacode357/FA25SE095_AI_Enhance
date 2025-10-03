@@ -1,4 +1,3 @@
-// hooks/course/useDeleteCourse.ts
 "use client";
 
 import { useState } from "react";
@@ -13,7 +12,7 @@ export function useDeleteCourse() {
     setLoading(true);
     try {
       const res = await CourseService.deleteCourse(id);
-      toast.success(res.message);
+      toast.success(res.message || "Xóa khoá học thành công");
       return res;
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete course");

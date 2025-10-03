@@ -1,16 +1,16 @@
 // services/course.services.ts
 import { courseAxiosInstance } from "@/config/axios.config";
-import { 
-  CreateCoursePayload, 
-  GetMyCoursesQuery, 
-  UpdateCoursePayload 
+import {
+  CreateCoursePayload,
+  GetMyCoursesQuery,
+  UpdateCoursePayload,
 } from "@/types/courses/course.payload";
-import { 
-  CreateCourseResponse, 
-  GetMyCoursesResponse, 
-  UpdateCourseResponse, 
-  GetCourseByIdResponse, 
-  DeleteCourseResponse 
+import {
+  CreateCourseResponse,
+  GetMyCoursesResponse,
+  UpdateCourseResponse,
+  GetCourseByIdResponse,
+  DeleteCourseResponse,
 } from "@/types/courses/course.response";
 
 export const CourseService = {

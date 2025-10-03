@@ -15,7 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
-    {
+  {
     href: "/manager/dashboard",
     label: "Dashboard",
     icon: Users2,
@@ -28,6 +28,13 @@ const mainNav = [
     icon: Users2,
     description: "Manage All Users",
     count: 12,
+  },
+  {
+    href: "/manager/pending-approval",
+    label: "Pending Approval",
+    icon: FileText,
+    description: "Manage Pending Approvals",
+    count: 8,
   },
   {
     href: "/manager/roles",
@@ -50,34 +57,28 @@ const mainNav = [
     description: "Manage Data",
     count: 1,
   },
-    {
-    href: "/manager/assignment",
-    label: "Plans & Quota",
-    icon: FileText,
-    description: "Manage Plans & Quota",
-    count: 8,
-  },
-      {
+  {
     href: "/manager/payments",
     label: "Payment",
     icon: FileText,
     description: "Manage Payment",
     count: 0,
-  },
-      {
-    href: "/manager/assignment",
-    label: "AI Report Templates",
-    icon: FileText,
-    description: "Manage AI Report Templates",
-    count: 10,
-  },
-      {
-    href: "/manager/assignment",
-    label: "System Monitoring",
-    icon: FileText,
-    description: "System Monitoring",
-    count: 4,
-  },
+  }
+  // ,
+  // {
+  //   href: "/manager/assignment",
+  //   label: "AI Report Templates",
+  //   icon: FileText,
+  //   description: "Manage AI Report Templates",
+  //   count: 10,
+  // },
+  // {
+  //   href: "/manager/assignment",
+  //   label: "System Monitoring",
+  //   icon: FileText,
+  //   description: "System Monitoring",
+  //   count: 4,
+  // },
 ];
 
 

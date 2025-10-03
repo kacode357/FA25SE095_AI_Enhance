@@ -14,7 +14,7 @@ export function useMyCourses() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchMyCourses = useCallback(async (params: GetMyCoursesQuery) => {
-    if (loading) return; // tránh gọi khi đang load
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -24,7 +24,7 @@ export function useMyCourses() {
       setCurrentPage(res.currentPage);
       setPageSize(res.pageSize);
     } catch (err: any) {
-      setError(err?.message || "Failed to fetch my courses");
+      setError(err?.message || "Failed to fetch courses");
     } finally {
       setLoading(false);
     }

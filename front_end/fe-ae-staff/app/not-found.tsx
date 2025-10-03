@@ -11,7 +11,7 @@ export default function NotFound() {
             <div className="flex items-center justify-center relative w-64 h-64">
                 <Image
                     src="/ai-enhance-logo.svg"
-                    alt="AI-Driven DataSync"
+                    alt="AI Enhance"
                     fill
                     className="opacity-90 object-contain"
                     priority

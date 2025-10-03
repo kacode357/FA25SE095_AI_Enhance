@@ -1,4 +1,3 @@
-// hooks/useCreateCourse.ts
 "use client";
 
 import { useState } from "react";
@@ -18,8 +17,8 @@ export function useCreateCourse() {
       const res = await CourseService.createCourse(payload);
       toast.success(res.message || "Tạo khoá học thành công");
       return res;
-    } catch {
-      // interceptor chung sẽ xử lý lỗi + toast
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create course");
       return null;
     } finally {
       setLoading(false);

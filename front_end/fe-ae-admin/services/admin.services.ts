@@ -1,5 +1,5 @@
 // services/admin.services.ts
-import { defaultAxiosInstance } from "@/config/axios.config";
+import { userAxiosInstance } from "@/config/axios.config";
 import {
   PendingApprovalParams,
   SuspendUserPayload,
@@ -19,7 +19,7 @@ export const AdminService = {
   getPendingApprovalUsers: async (
     params?: PendingApprovalParams
   ): Promise<PendingApprovalResponse> => {
-    const response = await defaultAxiosInstance.get<PendingApprovalResponse>(
+    const response = await userAxiosInstance.get<PendingApprovalResponse>(
       "/Admin/users/pending-approval",
       { params }
     );
@@ -27,7 +27,7 @@ export const AdminService = {
   },
 
   approveUser: async (userId: string): Promise<ApproveUserResponse> => {
-    const response = await defaultAxiosInstance.post<ApproveUserResponse>(
+    const response = await userAxiosInstance.post<ApproveUserResponse>(
       `/Admin/users/${userId}/approve`
     );
     return response.data;
@@ -37,7 +37,7 @@ export const AdminService = {
     userId: string,
     data: SuspendUserPayload
   ): Promise<SuspendUserResponse> => {
-    const response = await defaultAxiosInstance.post<SuspendUserResponse>(
+    const response = await userAxiosInstance.post<SuspendUserResponse>(
       `/Admin/users/${userId}/suspend`,
       data
     );
@@ -45,7 +45,7 @@ export const AdminService = {
   },
 
   reactivateUser: async (userId: string): Promise<ReactivateUserResponse> => {
-    const response = await defaultAxiosInstance.post<ReactivateUserResponse>(
+    const response = await userAxiosInstance.post<ReactivateUserResponse>(
       `/Admin/users/${userId}/reactivate`
     );
     return response.data;
@@ -53,7 +53,7 @@ export const AdminService = {
 
   /** ==== User Management ==== */
   getUsers: async (params?: GetUsersParams): Promise<AdminGetUsersResponse> => {
-    const response = await defaultAxiosInstance.get<AdminGetUsersResponse>(
+    const response = await userAxiosInstance.get<AdminGetUsersResponse>(
       "/Admin/users",
       { params }
     );
@@ -61,7 +61,7 @@ export const AdminService = {
   },
 
   getUserById: async (userId: string): Promise<AdminUserDetailResponse> => {
-    const response = await defaultAxiosInstance.get<AdminUserDetailResponse>(
+    const response = await userAxiosInstance.get<AdminUserDetailResponse>(
       `/Admin/users/${userId}`
     );
     return response.data;

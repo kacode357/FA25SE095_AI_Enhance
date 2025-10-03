@@ -10,36 +10,43 @@ import { motion } from "framer-motion";
 
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 import { useDeleteCourse } from "@/hooks/course/useDeleteCourse";
+
 import CreateDialog from "./components/CreateDialog";
 import EditDialog from "./components/EditDialog";
-import FilterRow from "./components/FilterRow";
 import DeleteConfirm from "./components/DeleteConfirm";
+import FilterRow from "./components/FilterRow";
 
 import { CourseItem } from "@/types/courses/course.response";
 
-export default function CoursePage() {
-  const { listData, totalCount, loading, fetchMyCourses } = useMyCourses();
+export default function CoursesPage() {
+  const { listData, totalCount, currentPage, pageSize, loading, fetchMyCourses } = useMyCourses();
   const { deleteCourse, loading: deleting } = useDeleteCourse();
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openEditId, setOpenEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const [filterCode, setFilterCode] = useState("");
+  // filters
   const [filterName, setFilterName] = useState("");
-  const [createdAt, setCreatedAt] = useState("");
+  const [filterCode, setFilterCode] = useState("");
+  const [filterLecturer, setFilterLecturer] = useState("");
+  const [createdAfter, setCreatedAfter] = useState("");
+  const [createdBefore, setCreatedBefore] = useState("");
+
   const [courses, setCourses] = useState<CourseItem[]>([]);
 
-  const fetchAll = async () => {
+  const fetchAll = async (page = 1) => {
     await fetchMyCourses({
       asLecturer: true,
-      page: 1,
+      page,
       pageSize: 10,
       sortBy: "CreatedAt",
       sortDirection: "desc",
-      courseCode: filterCode || undefined,
       name: filterName || undefined,
-      createdAfter: createdAt || undefined,
+      courseCode: filterCode || undefined,
+      lecturerName: filterLecturer || undefined,
+      createdAfter: createdAfter || undefined,
+      createdBefore: createdBefore || undefined,
     });
   };
 
@@ -57,7 +64,7 @@ export default function CoursePage() {
     if (!deleteId) return;
     const res = await deleteCourse(deleteId);
     if (res?.success) {
-      await fetchAll();
+      await fetchAll(currentPage);
     }
     setDeleteId(null);
   };
@@ -102,8 +109,8 @@ export default function CoursePage() {
             <Table className="table-auto w-full">
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
+                  <TableHead className="w-40 text-center font-bold">Name</TableHead>
                   <TableHead className="w-32 text-center font-bold">Code</TableHead>
-                  <TableHead className="w-64 text-center font-bold">Name</TableHead>
                   <TableHead className="w-40 text-center font-bold">Lecturer</TableHead>
                   <TableHead className="w-28 text-center font-bold">Enrollments</TableHead>
                   <TableHead className="w-40 text-center font-bold">Created At</TableHead>
@@ -111,12 +118,15 @@ export default function CoursePage() {
                 </TableRow>
 
                 <FilterRow
-                  filterCode={filterCode} setFilterCode={setFilterCode}
                   filterName={filterName} setFilterName={setFilterName}
-                  createdAt={createdAt} setCreatedAt={setCreatedAt}
+                  filterCode={filterCode} setFilterCode={setFilterCode}
+                  filterLecturer={filterLecturer} setFilterLecturer={setFilterLecturer}
+                  createdAfter={createdAfter} setCreatedAfter={setCreatedAfter}
+                  createdBefore={createdBefore} setCreatedBefore={setCreatedBefore}
                   fetchAll={fetchAll}
                   clearAll={() => {
-                    setFilterCode(""); setFilterName(""); setCreatedAt("");
+                    setFilterName(""); setFilterCode(""); setFilterLecturer("");
+                    setCreatedAfter(""); setCreatedBefore("");
                     fetchAll();
                   }}
                   resultCount={filtered.length}
@@ -132,8 +142,8 @@ export default function CoursePage() {
                     transition={{ duration: 0.2 }}
                     className="border-b border-slate-100 hover:bg-emerald-50/50"
                   >
-                    <TableCell className="text-center">{c.courseCode}</TableCell>
                     <TableCell className="px-5">{c.name}</TableCell>
+                    <TableCell className="text-center">{c.courseCode}</TableCell>
                     <TableCell className="text-center">{c.lecturerName}</TableCell>
                     <TableCell className="text-center">{c.enrollmentCount}</TableCell>
                     <TableCell className="text-center text-xs whitespace-nowrap">
@@ -156,7 +166,7 @@ export default function CoursePage() {
                               courseId={c.id}
                               title="Edit Course"
                               onSubmit={async () => {
-                                await fetchAll();
+                                await fetchAll(currentPage);
                                 setOpenEditId(null);
                               }}
                               onCancel={() => setOpenEditId(null)}

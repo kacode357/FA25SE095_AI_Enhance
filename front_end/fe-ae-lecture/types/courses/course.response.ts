@@ -3,7 +3,11 @@
 export interface CourseItem {
   id: string;
   courseCode: string;
+  courseCodeTitle: string;
   name: string;
+  description: string;
+  term: string;
+  year: number;
   lecturerId: string;
   lecturerName: string;
   createdAt: string;
@@ -13,6 +17,7 @@ export interface CourseItem {
   accessCodeCreatedAt: string | null;
   accessCodeExpiresAt: string | null;
   isAccessCodeExpired: boolean;
+  department: string;
 }
 
 export interface CreateCourseResponse {

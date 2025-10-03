@@ -2,8 +2,10 @@
 
 /** Payload tạo course */
 export interface CreateCoursePayload {
-  courseCode: string;
-  name: string;
+  courseCodeId: string;
+  description: string;
+  term: string;
+  year: number;
   requiresAccessCode: boolean;
   accessCodeType?: number;
   customAccessCode?: string;
@@ -13,8 +15,10 @@ export interface CreateCoursePayload {
 /** Payload update course */
 export interface UpdateCoursePayload {
   courseId: string;
-  courseCode: string;
-  courseName: string;
+  courseCodeId: string;
+  description: string;
+  term: string;
+  year: number;
 }
 
 /** Query params lấy courses của current user */

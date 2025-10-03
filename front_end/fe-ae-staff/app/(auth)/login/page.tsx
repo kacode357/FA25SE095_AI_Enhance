@@ -1,14 +1,15 @@
 // app/(auth)/login/page.tsx
 "use client";
 
+import AuthShell from "@/components/auth/AuthShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
-import { Link } from 'next/link';
 import { useState } from "react";
-import { AuthCard, AuthShellStaff, OAuthDivider } from "../../../components/staff";
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { useAuthRedirect } from '../../../hooks/useAuthRedirect';
-import { useLogin } from '../../../hooks/useLogin';
+import { useLogin } from "@/hooks/auth/useLogin";
+import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
 
 export default function LoginPage() {
   const { login, loading } = useLogin();
@@ -39,75 +40,88 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthShellStaff hideFooter>
-      <AuthCard
-        title="Staff Sign In"
-        subtitle={<span className="text-slate-600">Đăng nhập không gian hỗ trợ & vận hành.</span>}
-        footer={<div className="space-y-2">
-          <span className="block text-slate-500">Bằng việc tiếp tục bạn đồng ý với <a className="text-slate-700 font-medium hover:underline" href="#">Điều khoản</a> & <a className="text-slate-700 font-medium hover:underline" href="#">Chính sách</a>.</span>
-          <span className="block text-slate-400">© 2025 Staff Console.</span>
-        </div>}
-      >
-        <form onSubmit={onSubmit} className="space-y-6" aria-label="Staff login form">
-          <fieldset className="space-y-4" disabled={loading || googleLoading}>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@domain.com"
-              label="Email"
-              required
-              autoComplete="username"
-              variant="light"
-              className="placeholder-emerald-600"
+    <AuthShell
+      title="Welcome back!"
+      subtitle={
+        <span>
+          New here?{" "}
+          <Link className="underline" href="/register">
+            Create an account
+          </Link>
+        </span>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-4">
+        <Input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="youremail@example.com"
+          required
+        />
+        <Input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+        />
+
+        <div className="flex items-center mb-6 justify-between text-sm text-white/70">
+          <label className="inline-flex items-center gap-2 select-none">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border border-white/20 bg-black"
             />
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              label="Password"
-              required
-              autoComplete="current-password"
-              variant="light"
-              className="placeholder-emerald-600"
-            />
-          </fieldset>
-          <div className="flex items-center justify-between text-xs sm:text-sm">
-            <label className="inline-flex items-center gap-2 select-none text-slate-600">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              Remember me
-            </label>
-            <Link href="/forgot-password" className="text-sky-600 hover:underline">Quên mật khẩu?</Link>
-          </div>
-          <Button type="submit" className="w-full h-11 text-[15px] font-semibold tracking-tight" loading={loading}>Sign in</Button>
-          <OAuthDivider />
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full h-10 border border-slate-200 hover:bg-slate-50"
-            onClick={handleGoogleLogin}
-            loading={googleLoading}
-            aria-label="Sign in with Google"
-          >
-            <Chrome size={18} className="text-sky-500" />
-            <span className="ml-1 text-sky-500">Sign in with Google</span>
-          </Button>
-          <div className="pt-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between text-[11px] uppercase tracking-wide font-medium text-slate-500">
-              <span>SECURITY</span>
-              <span>CONTROL</span>
-              <span>OBSERVABILITY</span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-sky-200 via-sky-400 to-indigo-500" />
-          </div>
-        </form>
-      </AuthCard>
-    </AuthShellStaff>
+            Remember me
+          </label>
+          <Link href="/forgot-password" className="underline">
+            Forgot password?
+          </Link>
+        </div>
+
+        <Button type="submit" className="w-full" loading={loading}>
+          Sign in
+        </Button>
+
+        <div className="relative my-4">
+          <div className="border-t border-white/10" />
+          <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[--color-card] px-2 text-[11px] tracking-wide text-white/60">
+            hoặc
+          </span>
+        </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full border border-white/15 hover:border-white/25"
+          onClick={handleGoogleLogin}
+          loading={googleLoading}
+          aria-label="Đăng nhập với Google"
+        >
+          <Chrome size={18} />
+          Đăng nhập với Google
+        </Button>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="text-center text-xs text-white/50"
+        >
+          By continuing, you agree to our{" "}
+          <a href="#" className="text-green-600">
+            Terms
+          </a>{" "}
+          and{" "}
+          <a href="#" className="text-green-600">
+            Privacy Policy
+          </a>
+          .
+        </motion.div>
+      </form>
+    </AuthShell>
   );
 }

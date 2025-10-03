@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { AccessCodeType } from "@/config/access-code-type";
 import { useCreateCourse } from "@/hooks/course/useCreateCourse";
+import { useCourseCodes } from "@/hooks/course-code/useCourseCodes";
+import { AccessCodeType, accessCodeTypeToString } from "@/config/access-code-type";
 
 export default function CreateDialog({
   title,
@@ -19,38 +24,55 @@ export default function CreateDialog({
   onCancel: () => void;
 }) {
   const { createCourse, loading } = useCreateCourse();
+  const { listData: courseCodes, fetchCourseCodes } = useCourseCodes();
+
   const [form, setForm] = useState({
-    courseCode: "",
-    name: "",
+    courseCodeId: "",
+    description: "",
+    term: "",
+    year: new Date().getFullYear(),
     requiresAccessCode: false,
-    accessCodeType: AccessCodeType.Numeric,
+    accessCodeType: undefined as AccessCodeType | undefined,
     customAccessCode: "",
-    accessCodeExpiresAt: "",
   });
+
+  useEffect(() => {
+    fetchCourseCodes({ page: 1, pageSize: 50, isActive: true });
+  }, []);
 
   const handleChange = (key: string, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = async () => {
-    const res = await createCourse({
-      courseCode: form.courseCode,
-      name: form.name,
-      requiresAccessCode: form.requiresAccessCode,
-      accessCodeType: form.requiresAccessCode ? form.accessCodeType : undefined,
-      customAccessCode: form.requiresAccessCode ? form.customAccessCode || undefined : undefined,
-      accessCodeExpiresAt: form.requiresAccessCode ? form.accessCodeExpiresAt || undefined : undefined,
-    });
+    if (!form.courseCodeId) return;
 
-    if (res?.course) {
+    const payload: any = {
+      courseCodeId: form.courseCodeId,
+      description: form.description,
+      term: form.term,
+      year: form.year,
+      requiresAccessCode: form.requiresAccessCode,
+    };
+
+    if (form.requiresAccessCode) {
+      payload.accessCodeType = form.accessCodeType;
+      if (form.accessCodeType === AccessCodeType.Custom) {
+        payload.customAccessCode = form.customAccessCode;
+      }
+    }
+
+    const res = await createCourse(payload);
+    if (res?.success) {
       onSubmit();
       setForm({
-        courseCode: "",
-        name: "",
+        courseCodeId: "",
+        description: "",
+        term: "",
+        year: new Date().getFullYear(),
         requiresAccessCode: false,
-        accessCodeType: AccessCodeType.Numeric,
+        accessCodeType: undefined,
         customAccessCode: "",
-        accessCodeExpiresAt: "",
       });
     }
   };
@@ -60,67 +82,107 @@ export default function CreateDialog({
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
       </DialogHeader>
+
       <div className="space-y-4 py-2">
+        {/* Course Code */}
         <div>
           <Label>Course Code</Label>
-          <Input value={form.courseCode} onChange={(e) => handleChange("courseCode", e.target.value)} />
+          <select
+            value={form.courseCodeId}
+            onChange={(e) => handleChange("courseCodeId", e.target.value)}
+            className="w-full border border-slate-300 rounded-md p-2 text-sm"
+          >
+            <option value="">-- Select Course Code --</option>
+            {courseCodes.map((cc) => (
+              <option key={cc.id} value={cc.id}>
+                {cc.code} - {cc.title}
+              </option>
+            ))}
+          </select>
         </div>
+
         <div>
-          <Label>Course Name</Label>
-          <Input value={form.name} onChange={(e) => handleChange("name", e.target.value)} />
+          <Label>Description</Label>
+          <Input
+            value={form.description}
+            onChange={(e) => handleChange("description", e.target.value)}
+          />
         </div>
+
+        <div>
+          <Label>Term</Label>
+          <Input
+            value={form.term}
+            onChange={(e) => handleChange("term", e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label>Year</Label>
+          <Input
+            type="number"
+            value={form.year}
+            onChange={(e) => handleChange("year", parseInt(e.target.value))}
+          />
+        </div>
+
+        {/* Requires Access Code */}
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
             id="requiresAccessCode"
             checked={form.requiresAccessCode}
-            onChange={(e) => handleChange("requiresAccessCode", e.target.checked)}
+            onChange={(e) =>
+              handleChange("requiresAccessCode", e.target.checked)
+            }
           />
           <Label htmlFor="requiresAccessCode">Requires Access Code</Label>
         </div>
+
         {form.requiresAccessCode && (
           <>
             <div>
               <Label>Access Code Type</Label>
-              <Select
-                value={String(form.accessCodeType)}
-                onValueChange={(v) => handleChange("accessCodeType", Number(v))}
+              <select
+                value={form.accessCodeType ?? ""}
+                onChange={(e) =>
+                  handleChange("accessCodeType", parseInt(e.target.value))
+                }
+                className="w-full border border-slate-300 rounded-md p-2 text-sm"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={String(AccessCodeType.Numeric)}>Numeric</SelectItem>
-                  <SelectItem value={String(AccessCodeType.AlphaNumeric)}>Alphanumeric</SelectItem>
-                  <SelectItem value={String(AccessCodeType.Words)}>Words</SelectItem>
-                  <SelectItem value={String(AccessCodeType.Custom)}>Custom</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="">-- Select Type --</option>
+                <option value={AccessCodeType.Numeric}>Numeric</option>
+                <option value={AccessCodeType.AlphaNumeric}>AlphaNumeric</option>
+                <option value={AccessCodeType.Words}>Words</option>
+                <option value={AccessCodeType.Custom}>Custom</option>
+              </select>
             </div>
-            <div>
-              <Label>Custom Access Code</Label>
-              <Input
-                value={form.customAccessCode}
-                onChange={(e) => handleChange("customAccessCode", e.target.value)}
-                placeholder="Optional unless type = Custom"
-              />
-            </div>
-            <div>
-              <Label>Access Code Expiration</Label>
-              <Input
-                type="datetime-local"
-                value={form.accessCodeExpiresAt}
-                onChange={(e) => handleChange("accessCodeExpiresAt", e.target.value)}
-              />
-            </div>
+
+            {form.accessCodeType === AccessCodeType.Custom && (
+              <div>
+                <Label>Custom Access Code</Label>
+                <Input
+                  value={form.customAccessCode}
+                  onChange={(e) =>
+                    handleChange("customAccessCode", e.target.value)
+                  }
+                />
+              </div>
+            )}
           </>
         )}
       </div>
+
       <DialogFooter>
-        <Button onClick={handleSubmit} disabled={loading}>
+        <Button
+          onClick={handleSubmit}
+          disabled={loading || !form.courseCodeId}
+        >
           {loading ? "Creating..." : "Create"}
         </Button>
-        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
