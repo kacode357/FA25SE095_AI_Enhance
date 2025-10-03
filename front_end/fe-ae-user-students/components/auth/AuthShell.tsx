@@ -20,91 +20,127 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
   const isLogin = pathname?.startsWith("/login");
   const isRegister = pathname?.startsWith("/register");
   const { loading } = useAuthLoading();
+  
   return (
-    <div className="min-h-dvh relative isolate text-white">
-      <div className="auth-bg" />
-      <div className="auth-grid" />
-
-      <div className="relative z-10 mx-auto max-w-[1200px] px-5 sm:px-8 py-6 lg:py-8 min-h-dvh flex flex-col">
-        <header className="flex items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-2" aria-label="AI Enhance Home">
-            <Image src="/ai-enhance-logo.svg" alt="AI Enhance" width={24} height={24} priority />
-            <span className="font-semibold tracking-tight">AI Enhance</span>
+    <div className="min-h-screen flex">
+      {/* Left Side - Branding & Info */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-teal-900 via-green-600 to-green-700">
+        {/* Grid Pattern */}
+        <div className="absolute inset-0 opacity-20 auth-grid-pattern" />
+        
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full text-white">
+          {/* Logo */}
+          <Link href="/" className="inline-flex items-center gap-3" aria-label="AI-Driven DataSync Home">
+            <Image src="/ai-enhance-logo.svg" alt="AI-Driven DataSync" width={32} height={32} priority />
+            <span className="text-xl font-bold text-teal-50 tracking-tight">AI-Driven DataSync</span>
           </Link>
-          <div className="flex items-center gap-2">
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col justify-center max-w-lg">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-6">
+                <span className="text-white/90 block">Intelligent Data</span>
+                <span className="text-green-200 block">Collection System</span>
+              </h1>
+              <p className="text-lg text-white/70 leading-relaxed mb-8">
+                Empower your digital marketing education with AI-driven insights and seamless data management.
+              </p>
+              
+              {/* Feature highlights */}
+              <div className="space-y-4">
+                {[
+                  { icon: "📊", text: "Smart Analytics Dashboard" },
+                  { icon: "🎯", text: "Personalized Learning Paths" },
+                  { icon: "🤖", text: "AI-Powered Insights" }
+                ].map((feature, i) => (
+                  <motion.div
+                    key={feature.text}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
+                    className="flex items-center gap-3 text-white/80"
+                  >
+                    <span className="text-2xl">{feature.icon}</span>
+                    <span className="font-medium">{feature.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-sm text-white/50">
+            © 2025 AI-Driven DataSync. All rights reserved.
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex flex-col bg-gradient-to-b from-slate-50 to-slate-100">        
+        {/* Mobile Header */}
+        <div className="lg:hidden p-6 border-b border-green-100 bg-white">
+          <Link href="/" className="inline-flex items-center gap-3" aria-label="AI-Driven DataSync Home">
+            <Image src="/ai-enhance-logo.svg" alt="AI-Driven DataSync" width={28} height={28} priority />
+            <span className="text-lg font-bold tracking-tight text-slate-800">AI-Driven DataSync</span>
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-center p-6 border-b border-green-100 bg-white">
+          <div className="flex items-center bg-green-50 rounded-full p-1">
             <Link
               href="/login"
-              className={`btn h-8 border-b-2 ${isLogin ? "border-emerald-400" : "border-transparent btn-ghost"
-                }`}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                isLogin 
+                  ? "bg-white text-green-700 shadow-sm" 
+                  : "text-green-600 hover:text-green-700"
+              }`}
             >
-              Login
+              Sign In
             </Link>
             <Link
               href="/register"
-              className={`btn h-8 border-b-2 ${isRegister ? "border-emerald-400" : "border-transparent btn-ghost"
-                }`}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                isRegister 
+                  ? "bg-white text-green-700 shadow-sm" 
+                  : "text-green-600 hover:text-green-700"
+              }`}
             >
-              Register
+              Sign Up
             </Link>
-
           </div>
-        </header>
+        </div>
 
-        <main className="mx-auto grid w-full max-w-[1100px] grid-cols-12 gap-6 sm:gap-8 md:gap-24 flex-1 items-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="hidden lg:flex flex-col justify-center col-span-6"
-          >
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-              <span className="text-white/90">Real-time Data</span>{" "}
-              <span className="text-[--color-brand]">Automation</span>
-            </h1>
-            <p className="mt-4 text-white/70 max-w-prose">
-              Streamline online data gathering and reporting for business students. Secure, fast, and elegant—powered by AI.
-            </p>
-
-            <div className="mt-8 md:mt-10 grid grid-cols-3 gap-3 sm:gap-4 max-w-lg">
-              {["Secure", "Fast", "Reliable"].map((k, i) => (
-                <motion.div
-                  key={k}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 + i * 0.05 }}
-                  className="card p-4"
-                >
-                  <div className="text-sm text-white/75">{k}</div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}
-            className="flex items-center col-span-12 lg:col-span-6"
-          >
-            <div className="card w-full max-w-[520px] mx-auto p-6 sm:p-8">
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold tracking-tight text-white/95">{title}</h2>
+        {/* Form Content */}
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-white">
+          <div className="w-full max-w-md">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+            >
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-slate-800 mb-2">{title}</h2>
                 {subtitle && (
-                  <div className="mt-1 text-sm text-white/70">{subtitle}</div>
+                  <div className="text-slate-600">{subtitle}</div>
                 )}
               </div>
+              
               {children}
-              {footer && <div className="mt-6 text-center text-sm text-white/70">{footer}</div>}
-            </div>
-          </motion.div>
-        </main>
-
-        <footer className="mt-10 sm:mt-12 text-center text-xs text-white/50">
-          © 2025 AI Enhance. All rights reserved.
-        </footer>
+              
+              {footer && (
+                <div className="mt-8 text-center text-sm text-slate-600">{footer}</div>
+              )}
+            </motion.div>
+          </div>
+        </div>
       </div>
 
-      {/* Full-screen auth loading overlay */}
+      {/* Loading Overlay */}
       <AnimatePresence>
         {loading && (
           <motion.div
@@ -119,7 +155,7 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
           >
             <div className="flex flex-col items-center gap-3">
               <LogoLoader size={40} />
-              <div className="text-sm text-white/80">Đang xử lý…</div>
+              <div className="text-sm text-white/80">Processing...</div>
             </div>
           </motion.div>
         )}

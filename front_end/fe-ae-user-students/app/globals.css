@@ -26,6 +26,7 @@ body {
   background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(240,250,255,0.9)) var(--background);
   color: var(--foreground); 
 }
+
 /* Force dark foreground within auth scope root container */
 .auth-scope { color: #f8fafc; }
 
@@ -35,23 +36,41 @@ a { color: var(--color-brand); text-decoration: none; }
 a:hover { color: var(--color-brand-600); }
 input, button { font-family: inherit; }
 
-/* Auth background styling (grid + vignette) */
-.auth-scope .auth-bg {
-  position: fixed;
-  inset: 0;
-  background-color: #0a0f0a; /* fallback */
-  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent),
-    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 20%, transparent), transparent),
-    linear-gradient(180deg, #0a0f0a, #020617);
+/* ========================================
+   MODERN AUTH UI STYLES - OVERRIDE ALL
+   ======================================== */
+
+/* Grid pattern for left side */
+.auth-grid-pattern {
+  background-image: linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), 
+                    linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(70% 70% at 30% 50%, black, transparent);
+  mask-image: radial-gradient(70% 70% at 30% 50%, black, transparent);
 }
-.auth-scope .auth-grid {
+
+/* Auth background styling - New Split Design */
+.auth-scope .auth-bg-left {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size: 32px 32px;
-  -webkit-mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
-  mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
+  background: linear-gradient(135deg, #0f766e 0%, #059669 50%, #047857 100%);
+  opacity: 0.95;
+}
+
+.auth-scope .auth-bg-right {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.auth-scope .auth-grid-left {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(70% 70% at 30% 50%, black, transparent);
+  mask-image: radial-gradient(70% 70% at 30% 50%, black, transparent);
 }
 
 /* Card */
@@ -71,31 +90,129 @@ input, button { font-family: inherit; }
   border-radius: 12px;
   padding: 10px 14px;
   font-weight: 600;
+  transition: all 0.2s ease;
 }
-.btn-primary { background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700)); color: #ffffff; }
-.btn-primary:hover { filter: brightness(1.02) saturate(1.05); }
-.btn-ghost { background: transparent; color: #065f46; }
-.btn-ghost:hover { background: rgba(16,185,129,0.08); }
 
-/* Auth-scope color overrides: keep dark/green look */
+/* Default button styles (non-auth) */
+.btn-primary { 
+  background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700)); 
+  color: #ffffff; 
+  border: none;
+}
+.btn-primary:hover { 
+  filter: brightness(1.02) saturate(1.05); 
+}
+.btn-ghost { 
+  background: transparent; 
+  color: #065f46; 
+  border: 1px solid transparent;
+}
+.btn-ghost:hover { 
+  background: rgba(16,185,129,0.08); 
+}
+
+/* Auth-scope color overrides: New Split Screen Design */
 .auth-scope {
-  color-scheme: dark;
-  color: #e5f6ed;
+  color-scheme: light !important;
 }
-.auth-scope .card {
-  --color-card: rgba(2, 6, 23, 0.65); /* slate-950 ~ */
-  --color-border: rgba(255, 255, 255, 0.12);
-  background: var(--color-card);
-  border-color: var(--color-border);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
+
+/* Form styling for new design */
 .auth-scope .input {
-  background: rgba(255,255,255,0.06);
-  color: #f8fafc;
-  border-color: rgba(255,255,255,0.16);
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  font-size: 16px !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
 }
-.auth-scope .input::placeholder { color: rgba(248, 250, 252, 0.6); }
-.auth-scope .btn-ghost { color: #bbf7d0; }
-.auth-scope a { color: #34d399; }
-.auth-scope a:hover { color: #10b981; }
+
+.auth-scope .input:focus {
+  border-color: #059669 !important;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1) !important;
+  outline: none !important;
+}
+
+.auth-scope .input::placeholder { 
+  color: #9ca3af !important; 
+}
+
+/* Input with icons */
+.auth-scope .pl-11 {
+  padding-left: 44px !important;
+}
+
+.auth-scope .pr-11 {
+  padding-right: 44px !important;
+}
+
+/* Button styling - Auth scope overrides */
+.auth-scope .btn-primary { 
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 14px 20px !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3) !important;
+}
+
+.auth-scope .btn-primary:hover { 
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4) !important;
+  filter: none !important;
+}
+
+.auth-scope .btn-ghost { 
+  background: #ffffff !important;
+  color: #374151 !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+  padding: 14px 20px !important;
+  font-size: 16px !important;
+}
+
+.auth-scope .btn-ghost:hover { 
+  background: #f9fafb !important;
+  border-color: #d1d5db !important;
+}
+
+/* Links */
+.auth-scope a { 
+  color: #059669;
+  transition: color 0.2s ease;
+}
+
+.auth-scope a:hover { 
+  color: #047857; 
+}
+
+/* Navigation tabs */
+.auth-scope .bg-green-50 {
+  background-color: #f0fdf4;
+}
+
+.auth-scope .text-green-600 {
+  color: #059669;
+}
+
+.auth-scope .text-green-700 {
+  color: #047857;
+}
+
+/* Remove old card styling */
+.auth-scope .card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.auth-scope a:hover { 
+  color: #047857; 
+}
