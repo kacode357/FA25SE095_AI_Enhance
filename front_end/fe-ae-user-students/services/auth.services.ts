@@ -1,22 +1,22 @@
 // services/auth.services.ts
 import { userAxiosInstance } from "@/config/axios.config";
-import { 
-  LoginPayload, 
-  RegisterPayload, 
-  ConfirmEmailPayload, 
-  RefreshTokenPayload,
+import {
+  ConfirmEmailPayload,
   ForgotPasswordPayload,
-  ResetPasswordPayload,
+  LoginPayload,
   LogoutPayload,
+  RefreshTokenPayload,
+  RegisterPayload,
+  ResetPasswordPayload,
 } from "@/types/auth/auth.payload";
-import { 
-  LoginResponse, 
-  RegisterResponse, 
-  ConfirmEmailResponse, 
-  RefreshTokenResponse,
+import {
+  ConfirmEmailResponse,
   ForgotPasswordResponse,
-  ResetPasswordResponse,
+  LoginResponse,
   LogoutResponse,
+  RefreshTokenResponse,
+  RegisterResponse,
+  ResetPasswordResponse,
 } from "@/types/auth/auth.response";
 
 export const AuthService = {
