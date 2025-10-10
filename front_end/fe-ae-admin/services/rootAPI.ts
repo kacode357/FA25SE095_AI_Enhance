@@ -1,3 +1,3 @@
-const BASE_API_URL = "http://localhost:8000/api";
+const BASE_API_URL = "https://user.fishmakeweb.id.vn/api";
 
 export default BASE_API_URL;

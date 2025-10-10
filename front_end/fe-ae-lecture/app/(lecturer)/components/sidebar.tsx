@@ -7,25 +7,26 @@ import {
   BarChart3,
   ChevronRight,
   GraduationCap,
-  Layers3,
-  Settings,
+  Layers3
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
-  {
-    href: "/manager/course",
-    label: "Courses",
-    icon: Layers3,
-    description: "Manage your courses",
-  },
+  { href: "/manager/class", label: "Classes", icon: Layers3, description: "Create and manage classes, schedules, groups" },
+  { href: "/manager/courses", label: "Courses", icon: Layers3, description: "Create and manage courses" },
+  { href: "/manager/assignment", label: "Assignments", icon: Layers3, description: "Create assignments, set deadlines and submission limits" },
+  { href: "/manager/group", label: "Groups", icon: Layers3, description: "Approve topics, manage members, lock/unlock groups" },
+  { href: "/manager/progress", label: "Progress", icon: BarChart3, description: "Monitor group activity, logs and edit history" },
+  { href: "/manager/review", label: "Data Review", icon: Layers3, description: "Review and approve/reject data before analysis" },
+  { href: "/manager/grading", label: "Grading", icon: GraduationCap, description: "Feedback and scoring" },
+  { href: "/manager/export", label: "Export", icon: Layers3, description: "Download gradebooks and feedback" },
+  { href: "/manager/communication", label: "Communication", icon: Layers3, description: "Announcements and messaging" },
+  { href: "/manager/submissions", label: "Submissions", icon: Layers3, description: "Manage resubmissions and extensions" },
+  { href: "/manager/quota", label: "Quota", icon: Layers3, description: "View and request class quota" },
 ];
 
-const secondaryNav = [
-  { href: "/manager/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/manager/settings", label: "Settings", icon: Settings },
-];
+const secondaryNav: any[] = [];
 
 type SidebarProps = {
   collapsed: boolean;

@@ -1,14 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileItem } from "@/types/file.types";
-import { DownloadCloud, Eye, FileText, HardDriveDownload } from "lucide-react";
+import { DownloadCloud, FileText } from "lucide-react";
 import { useMemo, useState } from "react";
 import EmptyState from "../components/EmptyState";
-import TableSkeleton from "../components/TableSkeleton";
+import FilterToolbar from "../components/FilterToolbar";
 import UploadArea from "../components/UploadArea";
-import FilterRow from "./components/FilterRow";
+import FileCard from "./components/FileCard";
 
 export default function FilePage() {
 	const [loading] = useState(false);
@@ -81,78 +80,42 @@ export default function FilePage() {
 									/>
 								</div>
 							) : (
-								<div className="h-full overflow-auto">
-									<Table className="table-auto w-full">
-										<TableHeader className="sticky top-0 z-10 bg-slate-50">
-											<TableRow className="text-slate-600 border-b border-t border-slate-200">
-												<TableHead className="w-[30%] text-center relative py-5 font-bold">
-													File Name
-													<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-												</TableHead>
-												<TableHead className="text-center relative py-5 font-bold">
-													Type
-													<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-												</TableHead>
-												<TableHead className="text-center relative py-5 font-bold">
-													Size
-													<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-												</TableHead>
-												<TableHead className="text-center relative py-5 font-bold">
-													Owner
-													<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-												</TableHead>
-												<TableHead className="text-center relative py-5 font-bold hidden xl:table-cell">
-													Uploaded
-													<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-												</TableHead>
-												<TableHead className="text-center py-5 font-bold">Actions</TableHead>
-											</TableRow>
-											<FilterRow
-												qName={qName} setQName={setQName}
-												typeFilter={typeFilter} setTypeFilter={setTypeFilter}
-												ownerFilter={ownerFilter} setOwnerFilter={setOwnerFilter}
-												uploadedFrom={uploadedFrom} setUploadedFrom={setUploadedFrom}
-												uploadedTo={uploadedTo} setUploadedTo={setUploadedTo}
-												resultCount={filtered.length}
-												clearAll={() => { setQName(""); setTypeFilter("all"); setOwnerFilter("all"); setUploadedFrom(""); setUploadedTo(""); }}
-											/>
-										</TableHeader>
-										<TableBody>
-											{loading && <TableSkeleton rows={5} columns={6} />}
-											{!loading &&
-												filtered.map(f => (
-													<TableRow key={f.id} className="border-t border-slate-100 hover:bg-emerald-50/40">
-														<TableCell className="px-4 py-2 cursor-pointer font-medium text-slate-800">{f.name}</TableCell>
-														<TableCell className="px-4 py-2 cursor-pointer text-center text-slate-600 uppercase text-[11px]">
-															{f.type}
-														</TableCell>
-														<TableCell className="px-4 py-2 cursor-pointer text-center text-slate-600">{f.sizeKB} KB</TableCell>
-														<TableCell className="px-4 py-2 cursor-pointer text-center text-slate-600">{f.owner}</TableCell>
-														<TableCell className="px-4 py-2 cursor-pointer text-center text-slate-500 text-xs whitespace-nowrap hidden xl:table-cell">
-															{new Date(f.uploadedAt).toLocaleString("vi-VN", {
-																day: "2-digit",
-																month: "2-digit",
-																year: "numeric",
-																hour: "2-digit",
-																minute: "2-digit",
-																second: "2-digit",
-															})}
-														</TableCell>
-														<TableCell className="px-4 py-2 cursor-pointer text-center">
-															<div className="inline-flex gap-2">
-																<Button variant="ghost" className="h-8 px-2 cursor-pointer !bg-blue-50 text-emerald-700">
-																	<Eye className="size-4" />
-																</Button>
-																<Button variant="ghost" className="h-8 px-2 cursor-pointer !bg-emerald-50 text-emerald-700">
-																	<HardDriveDownload className="size-4" />
-																</Button>
-															</div>
-														</TableCell>
-													</TableRow>
-												))}
-										</TableBody>
-									</Table>
-								</div>
+								<>
+									<FilterToolbar
+										rightSlot={
+											<div className="flex items-center gap-2 text-[11px] text-slate-600">
+												<span>{filtered.length} result{filtered.length !== 1 && 's'}</span>
+												<button
+													type="button"
+													className="h-7 px-2 rounded bg-slate-100 hover:bg-slate-200"
+													onClick={() => { setQName(""); setTypeFilter("all"); setOwnerFilter("all"); setUploadedFrom(""); setUploadedTo(""); }}
+												>
+													Clear
+												</button>
+											</div>
+										}
+									>
+										<input aria-label="Search file name" placeholder="Search file name" value={qName} onChange={(e)=>setQName(e.target.value)} className="h-8 w-full sm:w-64 text-xs rounded-md border border-slate-300 px-2" />
+										<select aria-label="Filter type" value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value)} className="h-8 w-full sm:w-36 text-xs rounded-md border border-slate-300 px-2 bg-white">
+											<option value="all">All types</option>
+											<option value="pdf">PDF</option>
+											<option value="xlsx">XLSX</option>
+											<option value="docx">DOCX</option>
+										</select>
+										<select aria-label="Filter owner" value={ownerFilter} onChange={(e)=>setOwnerFilter(e.target.value)} className="h-8 w-full sm:w-36 text-xs rounded-md border border-slate-300 px-2 bg-white">
+											<option value="all">All owners</option>
+											<option value="Lecturer">Lecturer</option>
+											<option value="Student">Student</option>
+										</select>
+										<input aria-label="Uploaded from" type="date" value={uploadedFrom} onChange={(e)=>setUploadedFrom(e.target.value)} className="h-8 w-full sm:w-40 text-xs rounded-md border border-slate-300 px-2" />
+										<input aria-label="Uploaded to" type="date" value={uploadedTo} onChange={(e)=>setUploadedTo(e.target.value)} className="h-8 w-full sm:w-40 text-xs rounded-md border border-slate-300 px-2" />
+									</FilterToolbar>
+									<div className="p-3 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+										{filtered.map(f => (
+											<FileCard key={f.id} item={f} />
+										))}
+									</div>
+								</>
 							)}
 						</CardContent>
 					</Card>

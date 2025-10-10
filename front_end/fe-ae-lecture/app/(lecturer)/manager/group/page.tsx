@@ -1,13 +1,12 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GroupItem } from "@/types/group.types";
-import { Pencil, Plus, Trash2, UserPlus, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import EmptyState from "../components/EmptyState";
-import TableSkeleton from "../components/TableSkeleton";
-import FilterRow from "./components/FilterRow";
+import FilterToolbar from "../components/FilterToolbar";
+import GroupCard from "./components/GroupCard";
 
 export default function GroupPage() {
 	const [loading] = useState(false);
@@ -79,66 +78,39 @@ export default function GroupPage() {
 							<EmptyState title="No groups yet" description="Click Create Group to add the first one." icon={<Users className='size-10' />} />
 						</div>
 					) : (
-						<div className="h-full overflow-auto">
-							<Table className="table-auto w-full">
-								<TableHeader className="sticky top-0 z-10 bg-slate-50">
-									<TableRow className="text-slate-600 border-b border-t border-slate-200">
-										<TableHead className="w-[20%] text-center relative py-5 font-bold">Group Name
-											<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-										</TableHead>
-										<TableHead className="w-[15%] text-center relative py-5 font-bold">Leader
-											<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-										</TableHead>
-										<TableHead className="w-[10%] text-center relative py-5 font-bold">Members
-											<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-										</TableHead>
-										<TableHead className="w-[10%] text-center relative py-5 font-bold">Status
-											<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-										</TableHead>
-										<TableHead className="w-[15%] text-center relative py-5 font-bold hidden xl:table-cell">Created At
-											<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-										</TableHead>
-										<TableHead className="w-[15%] text-center relative py-5 font-bold hidden xl:table-cell">Updated At
-											<div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-										</TableHead>
-										<TableHead className="w-[5%] text-center py-5 font-bold">Actions</TableHead>
-									</TableRow>
-									<FilterRow
-										qName={qName} setQName={setQName}
-										qLeader={qLeader} setQLeader={setQLeader}
-										minMembers={minMembers} setMinMembers={setMinMembers}
-										maxMembers={maxMembers} setMaxMembers={setMaxMembers}
-										filterStatus={filterStatus} setFilterStatus={setFilterStatus}
-										createdFrom={createdFrom} setCreatedFrom={setCreatedFrom}
-										updatedFrom={updatedFrom} setUpdatedFrom={setUpdatedFrom}
-										resultCount={filtered.length}
-										clearAll={() => { setQName(""); setQLeader(""); setFilterStatus("all"); setMinMembers(""); setMaxMembers(""); setCreatedFrom(""); setUpdatedFrom(""); }}
-									/>
-								</TableHeader>
-								<TableBody>
-									{loading && <TableSkeleton rows={5} columns={7} />}
-									{!loading && filtered.map(g => (
-										<TableRow key={g.id} className="border-b cursor-pointer border-slate-100 hover:bg-emerald-50/40">
-											<TableCell className="px-4 py-2 font-medium text-slate-800">{g.name}</TableCell>
-											<TableCell className="px-4 py-2 text-slate-600 text-xs">{g.leader}</TableCell>
-											<TableCell className="px-4 text-center py-2 text-slate-600 text-xs">{g.members}/{g.max}</TableCell>
-											<TableCell className="px-4 py-2 text-center">
-												<span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${g.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700'}`}>{g.status}</span>
-											</TableCell>
-											<TableCell className="pr-13 py-2 text-right text-xs text-slate-500 hidden xl:table-cell">{formatDateTime(g.createdAt)}</TableCell>
-											<TableCell className="pr-13 py-2 text-right text-xs text-slate-500 hidden xl:table-cell">{formatDateTime(g.updatedAt)}</TableCell>
-											<TableCell className="px-4 py-2 text-center">
-												<div className="inline-flex gap-2">
-													<Button variant='ghost' className='h-8 px-2 !bg-emerald-50 cursor-pointer text-emerald-700'><UserPlus className='size-4' /></Button>
-													<Button variant='ghost' className='h-8 px-2 !bg-blue-50 cursor-pointer text-emerald-700'><Pencil className='size-4' /></Button>
-													<Button variant='ghost' className='h-8 px-2 !bg-red-50 cursor-pointer text-red-600'><Trash2 className='size-4' /></Button>
-												</div>
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</div>
+						<>
+							<FilterToolbar
+								rightSlot={
+									<div className="flex items-center gap-2 text-[11px] text-slate-600">
+										<span>{filtered.length} result{filtered.length !== 1 && 's'}</span>
+										<button
+											type="button"
+											className="h-7 px-2 rounded bg-slate-100 hover:bg-slate-200"
+											onClick={() => { setQName(""); setQLeader(""); setFilterStatus("all"); setMinMembers(""); setMaxMembers(""); setCreatedFrom(""); setUpdatedFrom(""); }}
+										>
+											Clear
+										</button>
+									</div>
+								}
+							>
+								<input aria-label="Group name" placeholder="Group name" value={qName} onChange={(e)=>setQName(e.target.value)} className="h-8 w-full sm:w-64 text-xs rounded-md border border-slate-300 px-2" />
+								<input aria-label="Leader" placeholder="Leader" value={qLeader} onChange={(e)=>setQLeader(e.target.value)} className="h-8 w-full sm:w-40 text-xs rounded-md border border-slate-300 px-2" />
+								<input aria-label="Min members" type="number" placeholder="Min members" value={minMembers} onChange={(e)=>setMinMembers(e.target.value)} className="h-8 w-full sm:w-36 text-xs rounded-md border border-slate-300 px-2" />
+								<input aria-label="Max members" type="number" placeholder="Max members" value={maxMembers} onChange={(e)=>setMaxMembers(e.target.value)} className="h-8 w-full sm:w-36 text-xs rounded-md border border-slate-300 px-2" />
+								<select aria-label="Filter status" value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} className="h-8 w-full sm:w-36 text-xs rounded-md border border-slate-300 px-2 bg-white">
+									<option value="all">All</option>
+									<option value="active">Active</option>
+									<option value="locked">Locked</option>
+								</select>
+								<input aria-label="Filter created from" type="date" value={createdFrom} onChange={(e)=>setCreatedFrom(e.target.value)} className="h-8 w-full sm:w-40 text-xs rounded-md border border-slate-300 px-2" />
+								<input aria-label="Filter updated from" type="date" value={updatedFrom} onChange={(e)=>setUpdatedFrom(e.target.value)} className="h-8 w-full sm:w-40 text-xs rounded-md border border-slate-300 px-2" />
+							</FilterToolbar>
+							<div className="p-3 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+								{filtered.map(g => (
+									<GroupCard key={g.id} item={g} />
+								))}
+							</div>
+						</>
 					)}
 				</CardContent>
 			</Card>

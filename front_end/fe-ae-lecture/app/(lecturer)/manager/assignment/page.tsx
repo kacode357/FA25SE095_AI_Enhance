@@ -1,12 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarClock, Clock, FileText, Pencil, Plus, Trash2 } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
+import Breadcrumbs from "../components/Breadcrumbs";
 import EmptyState from "../components/EmptyState";
-import TableSkeleton from "../components/TableSkeleton";
-import FilterRow from "./components/FilterRow";
+import FilterToolbar from "../components/FilterToolbar";
+import AssignmentCard from "./components/AssignmentCard";
+import NewAssignmentDialog from "./components/NewAssignmentDialog";
 
 interface AssignmentItem {
   id: string;
@@ -22,7 +23,7 @@ interface AssignmentItem {
 
 export default function AssignmentPage() {
   const [loading] = useState(false);
-  const [items] = useState<AssignmentItem[]>([
+  const [items, setItems] = useState<AssignmentItem[]>([
     { id: '1', title: 'Market Research Brief', code: 'ASG01', due: new Date(Date.now() + 86400000 * 3).toISOString(), status: 'open', submissions: 12, total: 40, createdAt: "2025-09-10T08:30:00", updatedAt: "2025-09-18T09:15:00" },
     { id: '2', title: 'Financial Ratio Analysis', code: 'ASG02', due: new Date(Date.now() + 86400000 * 7).toISOString(), status: 'draft', submissions: 0, total: 40, createdAt: "2025-09-11T10:00:00", updatedAt: "2025-09-16T14:45:00" },
     { id: '3', title: 'Case Study: Retail Pricing', code: 'ASG03', due: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'closed', submissions: 37, total: 40, createdAt: "2025-09-05T13:20:00", updatedAt: "2025-09-12T11:10:00" },
@@ -50,30 +51,23 @@ export default function AssignmentPage() {
     });
   }, [items, qTitle, qCode, filterStatus, overdueOnly, createdFrom, updatedFrom]);
 
-  const formatDateTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  };
-
   return (
     <div className="min-h-full flex flex-col p-2 bg-white text-slate-900">
       <header className="sticky top-0 z-20 flex flex-col gap-3 mb-4 bg-white/90 supports-[backdrop-filter]:backdrop-blur p-2 rounded-md border border-slate-200">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p className="text-slate-600 text-sm relative pl-3 before:content-['•'] before:absolute before:left-0 before:text-slate-500">
             Create, schedule, close and track assignment submissions.
           </p>
-          <Button className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
-            <Plus className="size-4" />
-            New Assignment
-          </Button>
+          <div className="flex items-center gap-2">
+            <NewAssignmentDialog onCreate={(a) => { /* local-only add */ setItems(prev => [a as AssignmentItem, ...prev]); }} />
+            <Button className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
+              <Plus className="size-4" />
+              New Assignment
+            </Button>
+          </div>
         </div>
       </header>
+      <Breadcrumbs items={[{ label: 'Manager', href: '/manager' }, { label: 'Assignments', href: '/manager/assignment' }]} />
 
       <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
         <CardHeader className="flex flex-col gap-3">
@@ -88,83 +82,57 @@ export default function AssignmentPage() {
               <EmptyState title="No assignments yet" description="Click the create button to add a new assignment." icon={<FileText className='size-10' />} />
             </div>
           ) : (
-            <div className="h-full overflow-auto">
-              <Table className="table-auto w-full">
-                <TableHeader className="sticky top-0 z-10 bg-slate-50">
-                  <TableRow className="text-slate-600 border-b border-t border-slate-200">
-                    <TableHead className="w-[20%] text-center relative py-5 font-bold">Title
-                      <div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-                    </TableHead>
-                    <TableHead className="text-center relative py-5 font-bold">Code
-                      <div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-                    </TableHead>
-                    <TableHead className="text-center relative py-5 font-bold">Due
-                      <div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-                    </TableHead>
-                    <TableHead className="text-center relative py-5 font-bold">Status
-                      <div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-                    </TableHead>
-                    <TableHead className="text-center relative py-5 font-bold">Progress
-                      <div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-                    </TableHead>
-                    <TableHead className="text-center relative py-5 font-bold hidden xl:table-cell">Created At
-                      <div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-                    </TableHead>
-                    <TableHead className="text-center relative py-5 font-bold hidden xl:table-cell">Updated At
-                      <div className="absolute top-1/2 -translate-y-1/2 right-0 h-6 w-[1px] bg-slate-200"></div>
-                    </TableHead>
-                    <TableHead className="text-center py-5 font-bold">Actions</TableHead>
-                  </TableRow>
-                  <FilterRow
-                    qTitle={qTitle} setQTitle={setQTitle}
-                    qCode={qCode} setQCode={setQCode}
-                    overdueOnly={overdueOnly} setOverdueOnly={setOverdueOnly}
-                    filterStatus={filterStatus} setFilterStatus={setFilterStatus}
-                    createdFrom={createdFrom} setCreatedFrom={setCreatedFrom}
-                    updatedFrom={updatedFrom} setUpdatedFrom={setUpdatedFrom}
-                    resultCount={filtered.length}
-                    clearAll={() => { setQTitle(""); setQCode(""); setFilterStatus("all"); setOverdueOnly(false); setCreatedFrom(""); setUpdatedFrom(""); }}
-                  />
-                </TableHeader>
-                <TableBody>
-                  {loading && <TableSkeleton rows={5} columns={8} />}
-                  {!loading && filtered.map(a => {
-                    const due = new Date(a.due);
-                    const overdue = due.getTime() < Date.now();
-                    return (
-                      <TableRow key={a.id} className="border-t cursor-pointer border-slate-100 hover:bg-emerald-50/40">
-                        <TableCell className="px-4 py-2 font-medium text-slate-800">{a.title}</TableCell>
-                        <TableCell className="px-4 py-2 text-center text-slate-600 font-mono text-xs">{a.code}</TableCell>
-                        <TableCell className="pl-15 py-2 text-slate-600 flex items-center gap-1">
-                          <CalendarClock className="size-4 text-emerald-600" />
-                          <span className="whitespace-nowrap">
-                            {due.toLocaleDateString("vi-VN")}{" "}
-                            {due.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                          </span>
-                          {overdue && <span className='text-[10px] px-1 rounded bg-red-100 text-red-600'>Overdue</span>}
-                        </TableCell>
-                        <TableCell className="px-4 py-2 text-center">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${a.status === 'open' ? 'bg-emerald-100 text-emerald-700' :
-                              a.status === 'closed' ? 'bg-slate-200 text-slate-700' :
-                                'bg-amber-100 text-amber-700'
-                            }`}>{a.status}</span>
-                        </TableCell>
-                        <TableCell className="px-4 py-2 text-right text-slate-600 text-xs">{a.submissions}/{a.total} ({Math.round(a.submissions / a.total * 100)}%)</TableCell>
-                        <TableCell className="pr-7 py-2 text-xs text-slate-500 text-right hidden xl:table-cell">{formatDateTime(a.createdAt)}</TableCell>
-                        <TableCell className="pr-7 py-2 text-xs text-slate-500 text-right hidden xl:table-cell">{formatDateTime(a.updatedAt)}</TableCell>
-                        <TableCell className="px-4 py-2 text-center">
-                          <div className="inline-flex gap-2">
-                            <Button variant='ghost' className='h-8 px-2 cursor-pointer !bg-emerald-50 text-emerald-700'><Clock className='size-4' /></Button>
-                            <Button variant='ghost' className='h-8 px-2 cursor-pointer !bg-blue-50 text-emerald-700'><Pencil className='size-4' /></Button>
-                            <Button variant='ghost' className='h-8 px-2 cursor-pointer !bg-red-50 text-red-600'><Trash2 className='size-4' /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <>
+              <FilterToolbar
+                rightSlot={
+                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                    <span>{filtered.length} result{filtered.length !== 1 && 's'}</span>
+                    <button
+                      type="button"
+                      className="h-7 px-2 rounded bg-slate-100 hover:bg-slate-200"
+                      onClick={() => { setQTitle(""); setQCode(""); setFilterStatus("all"); setOverdueOnly(false); setCreatedFrom(""); setUpdatedFrom(""); }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                }
+              >
+                <input
+                  placeholder="Search title"
+                  value={qTitle}
+                  onChange={(e) => setQTitle(e.target.value)}
+                  className="h-8 w-full sm:w-64 text-xs rounded-md border border-slate-300 px-2"
+                />
+                <input
+                  placeholder="Code"
+                  value={qCode}
+                  onChange={(e) => setQCode(e.target.value)}
+                  className="h-8 w-full sm:w-32 text-xs rounded-md border border-slate-300 px-2"
+                />
+                <label className="inline-flex items-center gap-2 text-[11px] text-slate-600">
+                  <input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)} className="size-3.5" />
+                  Overdue only
+                </label>
+                <select
+                  aria-label="Filter status"
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="h-8 w-full sm:w-36 text-xs rounded-md border border-slate-300 px-2 bg-white"
+                >
+                  <option value="all">All</option>
+                  <option value="open">Open</option>
+                  <option value="draft">Draft</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <input aria-label="Filter created from date" type="date" value={createdFrom} onChange={(e) => setCreatedFrom(e.target.value)} className="h-8 w-full sm:w-40 text-xs rounded-md border border-slate-300 px-2" />
+                <input aria-label="Filter updated from date" type="date" value={updatedFrom} onChange={(e) => setUpdatedFrom(e.target.value)} className="h-8 w-full sm:w-40 text-xs rounded-md border border-slate-300 px-2" />
+              </FilterToolbar>
+              <div className="p-3 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filtered.map(a => (
+                  <AssignmentCard key={a.id} item={a} />
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
