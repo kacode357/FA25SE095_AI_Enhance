@@ -11,28 +11,27 @@ import {
   LeaveCourseResponse,
   EnrollmentStatusResponse,
 } from "@/types/enrollments/enrollments.response";
-import { toast } from "sonner";
 
+/**
+ * Hook quản lý enrollments (student join/leave/check)
+ * ✅ Không toast (vì interceptor đã xử lý)
+ * ✅ Quản lý loading + status
+ */
 export function useEnrollments() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<EnrollmentStatusResponse | null>(null);
 
-  /** Join a course */
+  /** Enroll vào khoá học */
   const joinCourse = useCallback(
-    async (courseId: string, payload?: JoinCoursePayload): Promise<JoinCourseResponse | null> => {
+    async (
+      courseId: string,
+      payload?: JoinCoursePayload
+    ): Promise<JoinCourseResponse | null> => {
       setLoading(true);
       try {
         const res = await EnrollmentsService.joinCourse(courseId, payload);
-
-        if (res.success) {
-          toast.success(res.message || "Tham gia khoá học thành công");
-        } else {
-          toast.error(res.message || "Không thể tham gia khoá học");
-        }
-
         return res;
-      } catch (err: any) {
-        toast.error(err?.message || "Lỗi khi tham gia khoá học");
+      } catch {
         return null;
       } finally {
         setLoading(false);
@@ -41,22 +40,17 @@ export function useEnrollments() {
     []
   );
 
-  /** Leave a course */
+  /** Rời khoá học */
   const leaveCourse = useCallback(
-    async (courseId: string, payload?: LeaveCoursePayload): Promise<LeaveCourseResponse | null> => {
+    async (
+      courseId: string,
+      payload?: LeaveCoursePayload
+    ): Promise<LeaveCourseResponse | null> => {
       setLoading(true);
       try {
         const res = await EnrollmentsService.leaveCourse(courseId, payload);
-
-        if (res.success) {
-          toast.success(res.message || "Rời khoá học thành công");
-        } else {
-          toast.error(res.message || "Không thể rời khoá học");
-        }
-
         return res;
-      } catch (err: any) {
-        toast.error(err?.message || "Lỗi khi rời khoá học");
+      } catch {
         return null;
       } finally {
         setLoading(false);
@@ -65,20 +59,22 @@ export function useEnrollments() {
     []
   );
 
-  /** Check enrollment status */
-  const checkStatus = useCallback(async (courseId: string): Promise<EnrollmentStatusResponse | null> => {
-    setLoading(true);
-    try {
-      const res = await EnrollmentsService.getEnrollmentStatus(courseId);
-      setStatus(res);
-      return res;
-    } catch (err: any) {
-      toast.error(err?.message || "Không thể lấy trạng thái enrollment");
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  /** Kiểm tra trạng thái enrollment */
+  const checkStatus = useCallback(
+    async (courseId: string): Promise<EnrollmentStatusResponse | null> => {
+      setLoading(true);
+      try {
+        const res = await EnrollmentsService.getEnrollmentStatus(courseId);
+        setStatus(res);
+        return res;
+      } catch {
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     loading,

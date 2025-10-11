@@ -55,3 +55,11 @@ export interface DeleteCourseResponse {
   success: boolean;
   message: string;
 }
+
+export interface UpdateAccessCodeResponse {
+  success: boolean;
+  message: string;
+  accessCode: string | null;
+  accessCodeCreatedAt: string | null;
+  accessCodeExpiresAt: string | null;
+}

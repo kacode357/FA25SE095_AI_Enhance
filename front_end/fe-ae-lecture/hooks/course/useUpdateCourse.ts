@@ -9,9 +9,8 @@ import { toast } from "sonner";
 export function useUpdateCourse() {
   const [loading, setLoading] = useState(false);
 
-  const updateCourse = async (
-    payload: UpdateCoursePayload
-  ): Promise<UpdateCourseResponse | null> => {
+  const updateCourse = async (payload: UpdateCoursePayload): Promise<UpdateCourseResponse | null> => {
+    if (loading) return null;
     setLoading(true);
     try {
       const res = await CourseService.updateCourse(payload);

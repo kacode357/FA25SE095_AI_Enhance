@@ -30,3 +30,8 @@ export interface GetCourseCodesQuery {
   sortBy?: "Code" | "Title" | "Department" | "CreatedAt" | "ActiveCoursesCount";
   sortDirection?: "asc" | "desc";
 }
+
+export interface GetCourseCodeOptionsQuery {
+  activeOnly?: boolean;
+  department?: string;
+}

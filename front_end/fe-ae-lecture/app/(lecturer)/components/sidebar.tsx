@@ -14,7 +14,7 @@ import { usePathname } from "next/navigation";
 
 const mainNav = [
   { href: "/manager/class", label: "Classes", icon: Layers3, description: "Create and manage classes, schedules, groups" },
-  { href: "/manager/courses", label: "Courses", icon: Layers3, description: "Create and manage courses" },
+  { href: "/manager/course", label: "Courses", icon: Layers3, description: "Create and manage courses" },
   { href: "/manager/assignment", label: "Assignments", icon: Layers3, description: "Create assignments, set deadlines and submission limits" },
   { href: "/manager/group", label: "Groups", icon: Layers3, description: "Approve topics, manage members, lock/unlock groups" },
   { href: "/manager/progress", label: "Progress", icon: BarChart3, description: "Monitor group activity, logs and edit history" },
