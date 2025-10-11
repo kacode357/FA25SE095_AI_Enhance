@@ -5,6 +5,9 @@ import { CourseService } from "@/services/course.services";
 import { GetMyCoursesQuery } from "@/types/courses/course.payload";
 import { CourseItem, GetMyCoursesResponse } from "@/types/courses/course.response";
 
+// 🧠 Cache theo key (stringified params)
+const cache = new Map<string, GetMyCoursesResponse>();
+
 export function useMyCourses() {
   const [listData, setListData] = useState<CourseItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -13,30 +16,37 @@ export function useMyCourses() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMyCourses = useCallback(async (params: GetMyCoursesQuery) => {
-    if (loading) return;
+  const fetchMyCourses = useCallback(async (params: GetMyCoursesQuery, force = false) => {
+    const key = JSON.stringify(params);
+    if (!force && cache.has(key)) {
+      const cached = cache.get(key)!;
+      setListData(cached.courses);
+      setTotalCount(cached.totalCount);
+      setCurrentPage(cached.currentPage);
+      setPageSize(cached.pageSize);
+      return cached;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const res: GetMyCoursesResponse = await CourseService.getMyCourses(params);
+      cache.set(key, res);
       setListData(res.courses || []);
       setTotalCount(res.totalCount);
       setCurrentPage(res.currentPage);
       setPageSize(res.pageSize);
+      return res;
     } catch (err: any) {
       setError(err?.message || "Failed to fetch courses");
+      return null;
     } finally {
       setLoading(false);
     }
-  }, [loading]);
+  }, []);
 
-  return {
-    listData,
-    totalCount,
-    currentPage,
-    pageSize,
-    loading,
-    error,
-    fetchMyCourses,
-  };
+  const refetch = (params: GetMyCoursesQuery) => fetchMyCourses(params, true);
+
+  return { listData, totalCount, currentPage, pageSize, loading, error, fetchMyCourses, refetch };
 }
+

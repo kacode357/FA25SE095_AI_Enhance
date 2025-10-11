@@ -9,10 +9,11 @@ export function useDeleteCourse() {
   const [loading, setLoading] = useState(false);
 
   const deleteCourse = async (id: string): Promise<DeleteCourseResponse | null> => {
+    if (loading) return null;
     setLoading(true);
     try {
       const res = await CourseService.deleteCourse(id);
-      toast.success(res.message || "Xóa khoá học thành công");
+      toast.success(res.message || "Xoá khoá học thành công");
       return res;
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete course");

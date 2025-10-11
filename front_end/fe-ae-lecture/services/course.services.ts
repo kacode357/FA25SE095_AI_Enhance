@@ -4,6 +4,7 @@ import {
   CreateCoursePayload,
   GetMyCoursesQuery,
   UpdateCoursePayload,
+  UpdateAccessCodeRequest,
 } from "@/types/courses/course.payload";
 import {
   CreateCourseResponse,
@@ -11,6 +12,7 @@ import {
   UpdateCourseResponse,
   GetCourseByIdResponse,
   DeleteCourseResponse,
+  UpdateAccessCodeResponse,
 } from "@/types/courses/course.response";
 
 export const CourseService = {
@@ -41,6 +43,14 @@ export const CourseService = {
   /** Xóa course (Lecturer only - own courses) */
   deleteCourse: async (id: string): Promise<DeleteCourseResponse> => {
     const res = await courseAxiosInstance.delete<DeleteCourseResponse>(`/Courses/${id}`);
+    return res.data;
+  },
+
+  updateAccessCode: async (
+    id: string,
+    body: UpdateAccessCodeRequest
+  ): Promise<UpdateAccessCodeResponse> => {
+    const res = await courseAxiosInstance.post<UpdateAccessCodeResponse>(`/Courses/${id}/access-code`, body);
     return res.data;
   },
 };

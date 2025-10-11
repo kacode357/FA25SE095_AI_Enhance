@@ -4,6 +4,7 @@ import {
   CreateCourseCodePayload,
   UpdateCourseCodePayload,
   GetCourseCodesQuery,
+  GetCourseCodeOptionsQuery,
 } from "@/types/course-codes/course-codes.payload";
 import {
   CreateCourseCodeResponse,
@@ -11,6 +12,7 @@ import {
   GetCourseCodeByIdResponse,
   UpdateCourseCodeResponse,
   DeleteCourseCodeResponse,
+  GetCourseCodeOptionsResponse,
 } from "@/types/course-codes/course-codes.response";
 
 export const CourseCodeService = {
@@ -23,6 +25,14 @@ export const CourseCodeService = {
   // GET /api/CourseCodes
   getAll: async (params?: GetCourseCodesQuery): Promise<GetCourseCodesResponse> => {
     const response = await courseAxiosInstance.get<GetCourseCodesResponse>("/CourseCodes", {
+      params,
+    });
+    return response.data;
+  },
+
+  //  GET /api/CourseCodes/options
+  getOptions: async (params?: GetCourseCodeOptionsQuery): Promise<GetCourseCodeOptionsResponse> => {
+    const response = await courseAxiosInstance.get<GetCourseCodeOptionsResponse>("/CourseCodes/options", {
       params,
     });
     return response.data;

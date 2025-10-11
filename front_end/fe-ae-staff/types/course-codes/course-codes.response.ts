@@ -48,3 +48,13 @@ export interface DeleteCourseCodeResponse {
   success: boolean;
   message: string;
 }
+
+export interface CourseCodeOption {
+  id: string;
+  code: string;
+  title: string;
+  department: string;
+  isActive: boolean;
+  displayName: string;
+}
+export type GetCourseCodeOptionsResponse = CourseCodeOption[];

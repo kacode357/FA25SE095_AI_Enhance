@@ -6,6 +6,13 @@ import { useEnrollments } from "@/hooks/enrollments/useEnrollments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Filters = { name: string; courseCode: string; lecturerName: string };
 
@@ -20,13 +27,17 @@ export default function StudentCoursesPage() {
   });
   const [debouncedFilters, setDebouncedFilters] = useState<Filters>(filters);
 
-  // debounce input
+  const [openAccessDialog, setOpenAccessDialog] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [accessCode, setAccessCode] = useState("");
+
+  // debounce filter input
   useEffect(() => {
     const t = setTimeout(() => setDebouncedFilters(filters), 500);
     return () => clearTimeout(t);
   }, [filters]);
 
-  // fetch list
+  // fetch course list
   useEffect(() => {
     fetchAvailableCourses({
       page: 1,
@@ -46,17 +57,17 @@ export default function StudentCoursesPage() {
     setDebouncedFilters(d);
   };
 
-  const handleJoin = async (courseId: string, accessCode?: string) => {
+  const handleEnroll = async (courseId: string, accessCode?: string) => {
     const res = await joinCourse(courseId, accessCode ? { accessCode } : {});
     if (res?.success) {
-      fetchAvailableCourses({ page: 1, pageSize: 12 }); // refresh list
+      await fetchAvailableCourses({ page: 1, pageSize: 12 });
     }
   };
 
-  const handleLeave = async (courseId: string) => {
+  const handleUnenroll = async (courseId: string) => {
     const res = await leaveCourse(courseId);
     if (res?.success) {
-      fetchAvailableCourses({ page: 1, pageSize: 12 });
+      await fetchAvailableCourses({ page: 1, pageSize: 12 });
     }
   };
 
@@ -64,7 +75,9 @@ export default function StudentCoursesPage() {
     <div className="min-h-full flex flex-col p-4 gap-4 bg-white text-slate-900">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Available Courses</h1>
-        <p className="text-slate-500 text-sm">Browse and join available courses</p>
+        <p className="text-slate-500 text-sm">
+          Browse and enroll in available courses
+        </p>
       </header>
 
       {/* Filters */}
@@ -78,13 +91,17 @@ export default function StudentCoursesPage() {
         <Input
           placeholder="Course code"
           value={filters.courseCode}
-          onChange={(e) => setFilters({ ...filters, courseCode: e.target.value })}
+          onChange={(e) =>
+            setFilters({ ...filters, courseCode: e.target.value })
+          }
           className="w-40"
         />
         <Input
           placeholder="Lecturer name"
           value={filters.lecturerName}
-          onChange={(e) => setFilters({ ...filters, lecturerName: e.target.value })}
+          onChange={(e) =>
+            setFilters({ ...filters, lecturerName: e.target.value })
+          }
           className="w-48"
         />
         <Button onClick={handleApply} className="bg-emerald-600 text-white">
@@ -95,18 +112,23 @@ export default function StudentCoursesPage() {
         </Button>
       </div>
 
-      {/* List */}
+      {/* Course List */}
       {loading ? (
         <div className="py-10 text-center text-slate-500">Loading...</div>
       ) : listData.length === 0 ? (
-        <div className="py-10 text-center text-slate-500">No courses available.</div>
+        <div className="py-10 text-center text-slate-500">
+          No courses available.
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {listData.map((course) => {
             const isEnrolled = course.enrollmentStatus?.isEnrolled === true;
 
             return (
-              <Card key={course.id} className="flex flex-col border border-slate-200">
+              <Card
+                key={course.id}
+                className="flex flex-col border border-slate-200"
+              >
                 <CardHeader>
                   <CardTitle className="text-base font-semibold text-slate-800">
                     {course.name}
@@ -124,22 +146,31 @@ export default function StudentCoursesPage() {
                   </p>
                   <p>Enrolled: {course.enrollmentCount}</p>
 
-                  {/* Join / Leave */}
+                  {/* Enroll / Unenroll */}
                   {isEnrolled ? (
                     <Button
                       variant="ghost"
                       className="text-red-600 hover:bg-red-50"
                       disabled={enrolling}
-                      onClick={() => handleLeave(course.id)}
+                      onClick={() => handleUnenroll(course.id)}
                     >
-                      {enrolling ? "Leaving..." : "Leave"}
+                      {enrolling ? "Leaving..." : "Unenroll"}
                     </Button>
                   ) : (
-                    <JoinSection
-                      requiresAccessCode={course.requiresAccessCode}
-                      enrolling={enrolling}
-                      onJoin={(code) => handleJoin(course.id, code)}
-                    />
+                    <Button
+                      className="bg-emerald-600 text-white"
+                      disabled={enrolling}
+                      onClick={() => {
+                        if (course.requiresAccessCode) {
+                          setSelectedCourseId(course.id);
+                          setOpenAccessDialog(true);
+                        } else {
+                          handleEnroll(course.id);
+                        }
+                      }}
+                    >
+                      {enrolling ? "Enrolling..." : "Enroll"}
+                    </Button>
                   )}
                 </CardContent>
               </Card>
@@ -147,48 +178,48 @@ export default function StudentCoursesPage() {
           })}
         </div>
       )}
-    </div>
-  );
-}
 
-/** Component nhỏ để xử lý join với access code */
-function JoinSection({
-  requiresAccessCode,
-  enrolling,
-  onJoin,
-}: {
-  requiresAccessCode: boolean;
-  enrolling: boolean;
-  onJoin: (accessCode?: string) => void;
-}) {
-  const [accessCode, setAccessCode] = useState("");
+      {/* Access Code Dialog */}
+      <Dialog open={openAccessDialog} onOpenChange={setOpenAccessDialog}>
+        <DialogContent className="bg-white border border-slate-200 text-slate-900">
+          <DialogHeader>
+            <DialogTitle>Enter Access Code</DialogTitle>
+          </DialogHeader>
 
-  if (!requiresAccessCode) {
-    return (
-      <Button
-        className="bg-emerald-600 text-white"
-        disabled={enrolling}
-        onClick={() => onJoin()}
-      >
-        {enrolling ? "Joining..." : "Join"}
-      </Button>
-    );
-  }
+          <div className="py-2 space-y-3">
+            <Input
+              placeholder="Access code..."
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+            />
+          </div>
 
-  return (
-    <div className="flex flex-col gap-2">
-      <Input
-        placeholder="Enter access code"
-        value={accessCode}
-        onChange={(e) => setAccessCode(e.target.value)}
-      />
-      <Button
-        className="bg-emerald-600 text-white"
-        disabled={enrolling || !accessCode}
-        onClick={() => onJoin(accessCode)}
-      >
-        {enrolling ? "Joining..." : "Join with Code"}
-      </Button>
+          <DialogFooter>
+            <Button
+              className="bg-emerald-600 text-white"
+              disabled={enrolling || !accessCode}
+              onClick={async () => {
+                if (!selectedCourseId) return;
+                await handleEnroll(selectedCourseId, accessCode);
+                setAccessCode("");
+                setSelectedCourseId(null);
+                setOpenAccessDialog(false);
+              }}
+            >
+              {enrolling ? "Enrolling..." : "Enroll Course"}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setAccessCode("");
+                setOpenAccessDialog(false);
+              }}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

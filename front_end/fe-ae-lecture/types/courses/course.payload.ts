@@ -36,3 +36,11 @@ export interface GetMyCoursesQuery {
   sortBy?: "Name" | "CourseCode" | "CreatedAt" | "EnrollmentCount";
   sortDirection?: "asc" | "desc";
 }
+
+export interface UpdateAccessCodeRequest {
+  requiresAccessCode: boolean;
+  accessCodeType?: number;
+  customAccessCode?: string;
+  expiresAt?: string;
+  regenerateCode?: boolean;
+}
