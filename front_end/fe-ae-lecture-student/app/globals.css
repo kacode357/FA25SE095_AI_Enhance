@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+:root {
+  /* Light theme base */
+  --background: #ffffff;
+  --foreground: #0f172a; /* slate-900 */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  /* Brand palette: brighter emerald/green */
+  --color-brand: #22c55e; /* green-500 */
+  --color-brand-600: #16a34a; /* green-600 */
+  --color-brand-700: #15803d; /* green-700 */
+  --color-muted: #64748b; /* slate-500 */
+  --color-card: #ffffff;
+  --color-border: #e2e8f0; /* slate-200 */
+}
+
+.dark {
+  --background: #0a0f0a;
+  --foreground: #f6f7f7;
+}
+
+body { background: var(--background); color: var(--foreground); }
+/* Force dark foreground within auth scope root container */
+.auth-scope { color: #f8fafc; }
+
+/* Base resets and form elements */
+* { box-sizing: border-box; }
+a { color: var(--color-brand); text-decoration: none; }
+a:hover { color: var(--color-brand-600); }
+input, button { font-family: inherit; }
+
+/* Auth background styling (grid + vignette) */
+.auth-scope .auth-bg {
+  position: fixed;
+  inset: 0;
+  background-color: #0a0f0a; /* fallback */
+  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent),
+    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 20%, transparent), transparent),
+    linear-gradient(180deg, #0a0f0a, #020617);
+}
+.auth-scope .auth-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  -webkit-mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
+  mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
+}
+
+/* Card */
+.card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 6px 24px rgba(2,6,23,0.06); }
+
+.input { width: 100%; border: 1px solid var(--color-border); background: #ffffff; color: #0f172a; padding: 10px 12px; border-radius: 10px; outline: none; }
+.input:focus {
+  border-color: var(--color-brand-600);
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 600;
+}
+.btn-primary { background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700)); color: #ffffff; }
+.btn-primary:hover { filter: brightness(1.02) saturate(1.05); }
+.btn-ghost { background: transparent; color: #065f46; }
+.btn-ghost:hover { background: rgba(16,185,129,0.08); }
+
+/* Auth-scope color overrides: lighter/brighter tone */
+.auth-scope {
+  color-scheme: light;
+  /* keep text readable on light backgrounds within auth */
+  color: var(--foreground);
+}
+.auth-scope .auth-bg {
+  /* soften the background to a subtle pale vignette instead of dark */
+  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 8%, transparent), transparent),
+    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 6%, transparent), transparent),
+    linear-gradient(180deg, #fbfdfc, #f6fbf7);
+}
+.auth-scope .card {
+  --color-card: #ffffff;
+  --color-border: rgba(15, 23, 42, 0.06); /* subtle slate border */
+  background: var(--color-card);
+  border-color: var(--color-border);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+}
+.auth-scope .input {
+  background: #ffffff;
+  color: var(--foreground);
+  border-color: var(--color-border);
+}
+.auth-scope .input::placeholder { color: rgba(99, 102, 241, 0.35); }
+.auth-scope .btn-ghost { color: var(--color-brand-600); }
+.auth-scope a { color: var(--color-brand); }
+.auth-scope a:hover { color: var(--color-brand-600); }
