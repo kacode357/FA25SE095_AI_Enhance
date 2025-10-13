@@ -160,10 +160,6 @@ export default function CoursesPage() {
               setCreatedAfter={setCreatedAfter}
               createdBefore={createdBefore}
               setCreatedBefore={setCreatedBefore}
-              minEnroll={minEnroll}
-              setMinEnroll={setMinEnroll}
-              maxEnroll={maxEnroll}
-              setMaxEnroll={setMaxEnroll}
               onApply={() => fetchAll(1, true)}
               onClear={() => {
                 setFilterName("");

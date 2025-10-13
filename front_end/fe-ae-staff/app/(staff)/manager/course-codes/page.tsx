@@ -26,14 +26,16 @@ export default function CourseCodesPage() {
   const [openEditId, setOpenEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // filters
+  // Filters
   const [filterCode, setFilterCode] = useState("");
   const [filterTitle, setFilterTitle] = useState("");
   const [filterDept, setFilterDept] = useState("");
   const [createdAt, setCreatedAt] = useState("");
+  const [filterActive, setFilterActive] = useState(""); // ✅ thêm filter Active
 
   const [courseCodes, setCourseCodes] = useState<CourseCode[]>([]);
 
+  // Fetch all with filters
   const fetchAll = async (page = 1) => {
     await fetchCourseCodes({
       page,
@@ -44,6 +46,7 @@ export default function CourseCodesPage() {
       title: filterTitle || undefined,
       department: filterDept || undefined,
       createdAfter: createdAt || undefined,
+      isActive: filterActive === "" ? undefined : filterActive === "true", // ✅ thêm filter active
     });
   };
 
@@ -106,11 +109,14 @@ export default function CourseCodesPage() {
             <Table className="table-auto w-full">
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
-                  <TableHead className="w-32 text-center font-bold">Code</TableHead>
-                  <TableHead className="w-64 text-center font-bold">Title</TableHead>
-                  <TableHead className="w-48 text-center font-bold">Department</TableHead>
-                  <TableHead className="w-28 text-center font-bold">Active Courses</TableHead>
-                  <TableHead className="w-40 text-center font-bold">Created At</TableHead>
+                  {/* CODE: Căn trái */}
+                  <TableHead className="w-28 text-left font-bold pl-5">Code</TableHead>
+                  {/* TITLE: Căn trái */}
+                  <TableHead className="w-56 text-left font-bold">Title</TableHead>
+                  {/* DEPARTMENT: Căn trái */}
+                  <TableHead className="w-44 text-left font-bold">Department</TableHead>
+                  <TableHead className="w-28 text-center font-bold">Active</TableHead>
+                  <TableHead className="w-36 text-center font-bold">Created At</TableHead>
                   <TableHead className="w-32 text-center font-bold">Actions</TableHead>
                 </TableRow>
 
@@ -119,12 +125,16 @@ export default function CourseCodesPage() {
                   filterTitle={filterTitle} setFilterTitle={setFilterTitle}
                   filterDept={filterDept} setFilterDept={setFilterDept}
                   createdAt={createdAt} setCreatedAt={setCreatedAt}
+                  filterActive={filterActive} setFilterActive={setFilterActive} // ✅ truyền filter Active
                   fetchAll={fetchAll}
                   clearAll={() => {
-                    setFilterCode(""); setFilterTitle(""); setFilterDept(""); setCreatedAt("");
+                    setFilterCode("");
+                    setFilterTitle("");
+                    setFilterDept("");
+                    setCreatedAt("");
+                    setFilterActive(""); // ✅ reset luôn
                     fetchAll();
                   }}
-                  resultCount={filtered.length}
                 />
               </TableHeader>
 
@@ -137,10 +147,19 @@ export default function CourseCodesPage() {
                     transition={{ duration: 0.2 }}
                     className="border-b border-slate-100 hover:bg-emerald-50/50"
                   >
-                    <TableCell className="text-center">{c.code}</TableCell>
-                    <TableCell className="px-5">{c.title}</TableCell>
-                    <TableCell className="text-center">{c.department}</TableCell>
-                    <TableCell className="text-center">{c.activeCoursesCount}</TableCell>
+                    {/* CODE: Căn trái, thêm padding */}
+                    <TableCell className="text-left pl-5">{c.code}</TableCell>
+                    {/* TITLE: Căn trái */}
+                    <TableCell className="text-left">{c.title}</TableCell>
+                    {/* DEPARTMENT: Căn trái */}
+                    <TableCell className="text-left">{c.department}</TableCell>
+                    <TableCell className="text-center">
+                      {c.isActive ? (
+                        <span className="text-emerald-600 font-semibold">Active</span>
+                      ) : (
+                        <span className="text-slate-500">Inactive</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center text-xs whitespace-nowrap">
                       {new Date(c.createdAt).toLocaleDateString("en-GB")}
                     </TableCell>

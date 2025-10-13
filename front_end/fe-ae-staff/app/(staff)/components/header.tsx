@@ -5,8 +5,7 @@ import {
   ChevronDown,
   CircleArrowOutUpRight,
   Menu,
-  Search,
-} from "lucide-react";
+} from "lucide-react"; // Bỏ 'Search'
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -64,21 +63,15 @@ export default function ManagerHeader({ onMenuClick }: Props) {
               <span className="font-bold text-gray-900 text-lg tracking-tight">
                 AI Enhance
               </span>
+              {/* Đã sửa: Lecturer Manager -> Staff Manager */}
               <span className="text-xs text-gray-500 font-medium">
-                Lecturer Manager
+                Staff Manager 
               </span>
             </div>
           </Link>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex items-center relative">
-            <Search className="absolute left-3 w-4 h-4 text-black" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="pl-10 pr-4 py-2 w-80 bg-gray-50 text-black border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-          </div>
+          {/* Thanh Search đã bị loại bỏ ở đây */}
+
         </div>
 
         {/* Actions */}
@@ -127,9 +120,10 @@ export default function ManagerHeader({ onMenuClick }: Props) {
             >
               <div className="relative">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                  {/* Đã sửa: 'LT' (Lecturer Tran) -> 'ST' (Staff User) */}
                   {user
                     ? user.firstName[0] + user.lastName[0]
-                    : "LT"}
+                    : "ST"} 
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
               </div>
@@ -137,10 +131,10 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 <p className="text-sm font-semibold text-gray-900">
                   {user
                     ? `${user.firstName} ${user.lastName}`
-                    : "Lecturer User"}
+                    : "Staff User"} {/* Đã sửa: Lecturer User -> Staff User */}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {user ? user.role : "Lecturer"}
+                  {user ? user.role : "Staff"} {/* Đã sửa: Lecturer -> Staff */}
                 </p>
               </div>
               <ChevronDown
@@ -156,34 +150,34 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                   <p className="font-semibold cursor-text text-gray-900">
                     {user
                       ? `${user.firstName} ${user.lastName}`
-                      : "Lecturer Tran"}
+                      : "Staff Tran"} {/* Đã sửa: Lecturer Tran -> Staff Tran */}
                   </p>
                   <p className="text-sm cursor-text text-gray-500">
-                    {user ? user.email : "lecturer.tran@university.edu"}
+                    {user ? user.email : "staff.tran@university.edu"} {/* Đã sửa: lecturer.tran -> staff.tran */}
                   </p>
                 </div>
                 <div className="py-1">
-  <Link
-    href="/manager/profile"
-    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-  >
-    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-    Personal profile
-  </Link>
-  <button className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-    Settings
-  </button>
-  <hr className="my-1 border-gray-200" />
-  <button
-    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-    onClick={handleLogout}
-    disabled={loading}
-  >
-    <CircleArrowOutUpRight className="w-4 h-4" />
-    {loading ? "Logging out..." : "Logout"}
-  </button>
-</div>
+                  <Link
+                    href="/manager/profile"
+                    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
+                    Personal profile
+                  </Link>
+                  <button className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
+                    Settings
+                  </button>
+                  <hr className="my-1 border-gray-200" />
+                  <button
+                    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    onClick={handleLogout}
+                    disabled={loading}
+                  >
+                    <CircleArrowOutUpRight className="w-4 h-4" />
+                    {loading ? "Logging out..." : "Logout"}
+                  </button>
+                </div>
               </div>
             )}
           </div>

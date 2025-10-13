@@ -1,4 +1,3 @@
-// app/(lecturer)/components/sidebar.tsx
 "use client";
 
 import Button from "@/components/ui/button";
@@ -9,16 +8,23 @@ import {
   GraduationCap,
   Layers3,
   Settings,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
-   {
+  {
     href: "/manager/course-codes",
-    label: "CourseCodes",
+    label: "Course Codes",
     icon: Layers3,
     description: "Manage your course codes",
+  },
+  {
+    href: "/manager/course-requests",
+    label: "Course Requests",
+    icon: FileText,
+    description: "View and process course requests",
   },
 ];
 

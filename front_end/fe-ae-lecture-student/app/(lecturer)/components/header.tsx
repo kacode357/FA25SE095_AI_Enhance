@@ -7,7 +7,7 @@ import {
   Bell,
   ChevronDown,
   CircleArrowOutUpRight,
-  Search,
+  // Đã bỏ import Search
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -61,14 +61,24 @@ export default function ManagerHeader({ onMenuClick }: Props) {
           </div>
         </Link>
 
+        {/* Đã bỏ khối div chứa Search input ở đây */}
         <div className="hidden md:flex items-center relative">
+          {/* Thay thế khối Search bằng một khoảng trống để căn chỉnh nếu cần,
+              hoặc đơn giản là để trống nếu mục đích là loại bỏ hoàn toàn.
+              Để giữ 'justify-between' hoạt động, tôi để một div trống ở đây
+              cho màn hình md trở lên, nhưng bạn có thể loại bỏ nó nếu không cần.
+              Nếu loại bỏ, phần thông báo và profile sẽ căn phải sát logo. 
+              Tôi quyết định loại bỏ nó để phần còn lại (notifications/profile) 
+              tự căn phải theo mặc định của 'justify-between' */}
+        </div>
+        {/* <div className="hidden md:flex items-center relative">
           <Search className="absolute left-3 w-4 h-4 text-black" />
           <input
             type="text"
             placeholder="Search..."
             className="pl-10 pr-4 py-2 w-80 bg-gray-50 text-black border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           />
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-5">
           <div className="relative cursor-pointer">
@@ -176,7 +186,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 href={item.href}
                 className={`relative flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap
     ${active ? "!text-emerald-800" : "text-gray-700 hover:text-emerald-800"}
-  `}
+ `}
               >
                 <Icon
                   className={`w-4 h-4 ${active ? "text-emerald-800" : "text-gray-500 group-hover:text-emerald-700"
