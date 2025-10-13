@@ -7,4 +7,6 @@
 export interface ImportEnrollmentsPayload {
   /** The Excel file (.xlsx or .xls) containing enrollment data */
   file: File;
+  /** Optional: apply this import to specific courses; when omitted, backend may infer from file */
+  courseIds?: string[];
 }

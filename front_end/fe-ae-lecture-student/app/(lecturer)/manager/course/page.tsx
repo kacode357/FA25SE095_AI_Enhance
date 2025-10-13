@@ -6,7 +6,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
 import { motion } from "framer-motion";
-import { Plus, Upload } from "lucide-react";
+import { FileUp, Plus, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import CourseRequests from "./components/CourseRequests";
 
@@ -26,7 +26,8 @@ export default function CoursesPage() {
   const { deleteCourse, loading: deleting } = useDeleteCourse();
 
   const [openCreate, setOpenCreate] = useState(false);
-  const [openImport, setOpenImport] = useState(false);
+  const [openImportStudents, setOpenImportStudents] = useState(false);
+  const [openImportEnrollments, setOpenImportEnrollments] = useState(false);
   const [editCourse, setEditCourse] = useState<CourseItem | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -79,7 +80,7 @@ export default function CoursesPage() {
 
   return (
     <div className="min-h-full flex flex-col p-2 bg-white text-slate-900">
-  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col gap-3">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col gap-3">
         {/* Header */}
         <header className="sticky top-0 z-20 flex flex-col gap-3 bg-white/90 p-2 rounded-md border border-slate-200">
           <TabsList>
@@ -87,49 +88,67 @@ export default function CoursesPage() {
             <TabsTrigger value="requests">Course Requests</TabsTrigger>
           </TabsList>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <p className="text-slate-600 text-sm relative pl-3 before:content-['•'] before:absolute before:left-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <p className="text-slate-600 text-sm relative pl-3 before:content-['•'] before:absolute before:left-0">
               Manage your courses and requests.
-          </p>
+            </p>
 
-          <div className="flex items-center gap-2">
-            {/* Import Enrollments */}
-            <Dialog open={openImport} onOpenChange={setOpenImport}>
-              <DialogTrigger asChild>
-                <Button className="h-9 bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
-                  <Upload className="size-4" />
-                  Import Enrollments
-                </Button>
-              </DialogTrigger>
-              <ImportDialog
-                title="Import Enrollments"
-                onSubmit={async () => {
-                  await fetchAll(currentPage, true);
-                  setOpenImport(false);
-                }}
-                onCancel={() => setOpenImport(false)}
-              />
-            </Dialog>
+            <div className="flex text-xs items-center gap-2">
+              {/* Import Student in many Courses */}
+              <Dialog open={openImportStudents} onOpenChange={setOpenImportStudents}>
+                <DialogTrigger asChild>
+                  <Button className="h-9 bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
+                    <FileUp className="size-4" />
+                    Import Students
+                  </Button>
+                </DialogTrigger>
+                <ImportDialog
+                  title="Import Students"
+                  courses={filtered}
+                  onSubmit={async () => {
+                    await fetchAll(currentPage, true);
+                    setOpenImportStudents(false);
+                  }}
+                  onCancel={() => setOpenImportStudents(false)}
+                />
+              </Dialog>
+              <Dialog open={openImportEnrollments} onOpenChange={setOpenImportEnrollments}>
+                <DialogTrigger asChild>
+                  <Button className="h-9 bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
+                    <Upload className="size-4" />
+                    Import Enrollments
+                  </Button>
+                </DialogTrigger>
+                <ImportDialog
+                  title="Import Enrollments"
+                  courses={filtered}
+                  onSubmit={async () => {
+                    await fetchAll(currentPage, true);
+                    setOpenImportEnrollments(false);
+                  }}
+                  onCancel={() => setOpenImportEnrollments(false)}
+                />
+              </Dialog>
 
-            {/* Create Course */}
-            <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-              <DialogTrigger asChild>
-                <Button className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
-                  <Plus className="size-4" />
-                  Create Course
-                </Button>
-              </DialogTrigger>
-              <CreateDialog
-                title="Create New Course"
-                onSubmit={async () => {
-                  await fetchAll(1, true);
-                  setOpenCreate(false);
-                }}
-                onCancel={() => setOpenCreate(false)}
-              />
-            </Dialog>
+              {/* Create Course */}
+              <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+                <DialogTrigger asChild>
+                  <Button className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
+                    <Plus className="size-4" />
+                    Create Course
+                  </Button>
+                </DialogTrigger>
+                <CreateDialog
+                  title="Create New Course"
+                  onSubmit={async () => {
+                    await fetchAll(1, true);
+                    setOpenCreate(false);
+                  }}
+                  onCancel={() => setOpenCreate(false)}
+                />
+              </Dialog>
+            </div>
           </div>
-        </div>
           {/* Filters (only for Courses tab) */}
           <TabsContent value="courses">
             <FilterBar
