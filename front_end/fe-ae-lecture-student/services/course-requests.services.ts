@@ -37,8 +37,7 @@ export const CourseRequestService = {
   getAll: async (
     params: GetMyCourseRequestsQuery
   ): Promise<GetMyCourseRequestsResponse> => {
-    const res = await courseAxiosInstance.get<GetMyCourseRequestsResponse>(
-      "/CourseRequests/my-requests",
+    const res = await courseAxiosInstance.get<GetMyCourseRequestsResponse>("/CourseRequests/my-requests",
       { params }
     );
     return res.data;

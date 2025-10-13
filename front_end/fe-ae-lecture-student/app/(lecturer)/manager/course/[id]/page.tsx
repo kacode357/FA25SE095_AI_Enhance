@@ -9,6 +9,7 @@ import { ArrowLeft, FileSpreadsheet, FolderPlus, PlusCircle } from "lucide-react
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import AssignmentsPanel from "./components/AssignmentsPanel";
 import CreateAssignmentSheet from "./components/CreateAssignmentSheet";
 import CreateGroupSheet from "./components/CreateGroupSheet";
 import GroupsPanel from "./components/GroupsPanel";
@@ -22,6 +23,7 @@ export default function CourseDetailPage() {
   const [openAssign, setOpenAssign] = useState(false);
   const [activeTab, setActiveTab] = useState<"students" | "groups" | "assignments">("students");
   const [groupsRefresh, setGroupsRefresh] = useState(0);
+  const [assignmentsRefresh, setAssignmentsRefresh] = useState(0);
 
   useEffect(() => {
     if (id) fetchCourseById(id);
@@ -122,7 +124,7 @@ export default function CourseDetailPage() {
         </TabsList>
 
         <TabsContent value="students" className="space-y-2">
-          <Card>
+          <Card className="border-emerald-500">
             <CardHeader>
               <CardTitle className="text-base">Student List</CardTitle>
             </CardHeader>
@@ -140,16 +142,7 @@ export default function CourseDetailPage() {
         </TabsContent>
 
         <TabsContent value="assignments" className="space-y-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Assignments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-slate-500">
-                No assignments yet. Click <b>Create Assignment</b> to add one.
-              </div>
-            </CardContent>
-          </Card>
+          <AssignmentsPanel courseId={id} refreshSignal={assignmentsRefresh} />
         </TabsContent>
       </Tabs>
 
@@ -161,7 +154,12 @@ export default function CourseDetailPage() {
         courseId={id}
         onCreated={() => setGroupsRefresh((v) => v + 1)}
       />
-      <CreateAssignmentSheet open={openAssign} onOpenChange={setOpenAssign} />
+      <CreateAssignmentSheet
+        open={openAssign}
+        onOpenChange={setOpenAssign}
+        courseId={id}
+        onCreated={() => setAssignmentsRefresh((v) => v + 1)}
+      />
     </div>
   );
 }

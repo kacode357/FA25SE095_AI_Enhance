@@ -60,7 +60,7 @@ export function useLogin() {
         router.push("/student/dashboard");
       } else {
         // Mặc định (ví dụ Lecturer)
-        router.push("/manager/class");
+        router.push("/manager/course");
       }
       return res;
     } catch {
