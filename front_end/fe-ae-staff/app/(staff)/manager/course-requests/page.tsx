@@ -16,7 +16,7 @@ export default function CourseRequestsPage() {
   const [page, setPage] = useState(1);
   const router = useRouter();
 
-  // ✅ Filter states
+  // ✅ Filters
   const [lecturerName, setLecturerName] = useState("");
   const [courseCode, setCourseCode] = useState("");
   const [status, setStatus] = useState<1 | 2 | 3 | 4 | undefined>(undefined);
@@ -51,30 +51,16 @@ export default function CourseRequestsPage() {
 
   return (
     <div className="min-h-full flex flex-col p-2 bg-white text-slate-900">
-      {/* Filter */}
-      <FilterRow
-        lecturerName={lecturerName}
-        setLecturerName={setLecturerName}
-        courseCode={courseCode}
-        setCourseCode={setCourseCode}
-        status={status}
-        setStatus={setStatus}
-        department={department}
-        setDepartment={setDepartment}
-        year={year}
-        setYear={setYear}
-        onApply={() => fetchAll(1)}
-        onClear={() => {
-          setLecturerName("");
-          setCourseCode("");
-          setStatus(undefined);
-          setDepartment("");
-          setYear("");
-          fetchAll(1);
-        }}
-      />
+      {/* ✅ Header */}
+      <header className="sticky top-0 z-20 flex flex-col gap-3 mb-4 bg-white/90 p-2 rounded-md border border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="text-slate-600 text-sm relative pl-3 before:content-['•'] before:absolute before:left-0">
+            Review and process all course requests from lecturers.
+          </p>
+        </div>
+      </header>
 
-      <Card className="bg-white border border-slate-200 flex-1 flex flex-col mt-2">
+      <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="text-base text-slate-800">
             Course Requests{" "}
@@ -87,6 +73,7 @@ export default function CourseRequestsPage() {
         <CardContent className="px-0 flex-1 overflow-hidden">
           <div className="h-full overflow-auto">
             <Table className="table-auto w-full">
+              {/* ✅ Table Header */}
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
                   <TableHead className="w-44 text-left font-bold pl-5">Lecturer</TableHead>
@@ -100,6 +87,33 @@ export default function CourseRequestsPage() {
               </TableHeader>
 
               <TableBody>
+                {/* ✅ FilterRow dưới header */}
+                <TableRow className="!border-0">
+                  <TableCell colSpan={7} className="p-0 bg-slate-50 !border-0">
+                    <FilterRow
+                      lecturerName={lecturerName}
+                      setLecturerName={setLecturerName}
+                      courseCode={courseCode}
+                      setCourseCode={setCourseCode}
+                      status={status}
+                      setStatus={setStatus}
+                      department={department}
+                      setDepartment={setDepartment}
+                      year={year}
+                      setYear={setYear}
+                      onApply={() => fetchAll(1)}
+                      onClear={() => {
+                        setLecturerName("");
+                        setCourseCode("");
+                        setStatus(undefined);
+                        setDepartment("");
+                        setYear("");
+                        fetchAll(1);
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+
                 {!loading &&
                   requests.map((r) => (
                     <motion.tr
@@ -107,7 +121,7 @@ export default function CourseRequestsPage() {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      onClick={() => router.push(`/manager/course-requests/${r.id}`)} // ✅ click row để xem chi tiết
+                      onClick={() => router.push(`/manager/course-requests/${r.id}`)}
                       className="border-b border-slate-100 hover:bg-blue-50/50 cursor-pointer"
                     >
                       <TableCell className="text-left pl-5">{r.lecturerName}</TableCell>
@@ -156,7 +170,7 @@ export default function CourseRequestsPage() {
             </Table>
           </div>
 
-          {/* Pagination */}
+          {/* ✅ Pagination */}
           <div className="flex justify-center items-center gap-3 py-3 border-t border-slate-200">
             <Button
               className="h-8 px-3 text-xs"

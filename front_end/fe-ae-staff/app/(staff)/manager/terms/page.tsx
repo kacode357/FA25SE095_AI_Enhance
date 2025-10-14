@@ -5,41 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Power } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { useMyCourses } from "@/hooks/course/useMyCourses";
-import { useDeleteCourse } from "@/hooks/course/useDeleteCourse";
+import { useTerms } from "@/hooks/term/useTerms";
+import { useUpdateTerm } from "@/hooks/term/useUpdateTerm";
+import { Term } from "@/types/terms/terms.response";
+
 import CreateDialog from "./components/CreateDialog";
 import EditDialog from "./components/EditDialog";
 import FilterRow from "./components/FilterRow";
-import DeleteConfirm from "./components/DeleteConfirm";
 
-import { CourseItem } from "@/types/courses/course.response";
-
-export default function CoursePage() {
-  const { listData, totalCount, loading, fetchMyCourses } = useMyCourses();
-  const { deleteCourse, loading: deleting } = useDeleteCourse();
+export default function TermsPage() {
+  const { listData, loading, fetchTerms } = useTerms();
+  const { updateTerm, loading: updating } = useUpdateTerm();
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openEditId, setOpenEditId] = useState<string | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const [filterCode, setFilterCode] = useState("");
-  const [filterName, setFilterName] = useState("");
-  const [createdAt, setCreatedAt] = useState("");
-  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [filterActive, setFilterActive] = useState("");
+  const [terms, setTerms] = useState<Term[]>([]);
 
   const fetchAll = async () => {
-    await fetchMyCourses({
-      asLecturer: true,
-      page: 1,
-      pageSize: 10,
-      sortBy: "CreatedAt",
-      sortDirection: "desc",
-      courseCode: filterCode || undefined,
-      name: filterName || undefined,
-      createdAfter: createdAt || undefined,
+    await fetchTerms({
+      activeOnly: filterActive === "" ? undefined : filterActive === "true",
     });
   };
 
@@ -48,18 +36,19 @@ export default function CoursePage() {
   }, []);
 
   useEffect(() => {
-    setCourses(listData);
+    setTerms(listData);
   }, [listData]);
 
-  const filtered = useMemo(() => courses, [courses]);
+  const filtered = useMemo(() => terms, [terms]);
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const res = await deleteCourse(deleteId);
-    if (res?.success) {
-      await fetchAll();
-    }
-    setDeleteId(null);
+  // Toggle Active
+  const handleToggleActive = async (term: Term) => {
+    await updateTerm(term.id, {
+      name: term.name,
+      description: term.description,
+      isActive: !term.isActive,
+    });
+    await fetchAll();
   };
 
   return (
@@ -68,17 +57,17 @@ export default function CoursePage() {
       <header className="sticky top-0 z-20 flex flex-col gap-3 mb-4 bg-white/90 p-2 rounded-md border border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p className="text-slate-600 text-sm relative pl-3 before:content-['•'] before:absolute before:left-0">
-            Create, manage, and track your courses.
+            Manage academic terms and their active state.
           </p>
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogTrigger asChild>
               <Button className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
                 <Plus className="size-4" />
-                Create Course
+                Create Term
               </Button>
             </DialogTrigger>
             <CreateDialog
-              title="Create New Course"
+              title="Create New Term"
               onSubmit={async () => {
                 await fetchAll();
                 setOpenCreate(false);
@@ -93,7 +82,7 @@ export default function CoursePage() {
       <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="text-base text-slate-800">
-            Course List <span className="text-slate-500">({totalCount})</span>
+            Term List <span className="text-slate-500">({terms.length})</span>
           </CardTitle>
         </CardHeader>
 
@@ -102,47 +91,49 @@ export default function CoursePage() {
             <Table className="table-auto w-full">
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
-                  <TableHead className="w-32 text-center font-bold">Code</TableHead>
-                  <TableHead className="w-64 text-center font-bold">Name</TableHead>
-                  <TableHead className="w-40 text-center font-bold">Lecturer</TableHead>
-                  <TableHead className="w-28 text-center font-bold">Enrollments</TableHead>
-                  <TableHead className="w-40 text-center font-bold">Created At</TableHead>
-                  <TableHead className="w-32 text-center font-bold">Actions</TableHead>
+                  <TableHead className="w-56 text-left font-bold pl-5">Name</TableHead>
+                  <TableHead className="text-left font-bold">Description</TableHead>
+                  <TableHead className="w-28 text-center font-bold">Active</TableHead>
+                  <TableHead className="w-36 text-center font-bold">Created At</TableHead>
+                  <TableHead className="w-36 text-center font-bold">Actions</TableHead>
                 </TableRow>
 
                 <FilterRow
-                  filterCode={filterCode} setFilterCode={setFilterCode}
-                  filterName={filterName} setFilterName={setFilterName}
-                  createdAt={createdAt} setCreatedAt={setCreatedAt}
+                  filterActive={filterActive}
+                  setFilterActive={setFilterActive}
                   fetchAll={fetchAll}
                   clearAll={() => {
-                    setFilterCode(""); setFilterName(""); setCreatedAt("");
+                    setFilterActive("");
                     fetchAll();
                   }}
-                  resultCount={filtered.length}
                 />
               </TableHeader>
 
               <TableBody>
-                {filtered.map((c) => (
+                {filtered.map((t) => (
                   <motion.tr
-                    key={c.id}
+                    key={t.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
                     className="border-b border-slate-100 hover:bg-emerald-50/50"
                   >
-                    <TableCell className="text-center">{c.courseCode}</TableCell>
-                    <TableCell className="px-5">{c.name}</TableCell>
-                    <TableCell className="text-center">{c.lecturerName}</TableCell>
-                    <TableCell className="text-center">{c.enrollmentCount}</TableCell>
+                    <TableCell className="text-left pl-5">{t.name}</TableCell>
+                    <TableCell className="text-left">{t.description}</TableCell>
+                    <TableCell className="text-center">
+                      {t.isActive ? (
+                        <span className="text-emerald-600 font-semibold">Active</span>
+                      ) : (
+                        <span className="text-slate-500">Inactive</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center text-xs whitespace-nowrap">
-                      {new Date(c.createdAt).toLocaleDateString("en-GB")}
+                      {new Date(t.createdAt).toLocaleDateString("en-GB")}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         {/* Edit */}
-                        <Dialog open={openEditId === c.id} onOpenChange={(o) => setOpenEditId(o ? c.id : null)}>
+                        <Dialog open={openEditId === t.id} onOpenChange={(o) => setOpenEditId(o ? t.id : null)}>
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
@@ -151,10 +142,10 @@ export default function CoursePage() {
                               <Pencil className="size-4" />
                             </Button>
                           </DialogTrigger>
-                          {openEditId === c.id && (
+                          {openEditId === t.id && (
                             <EditDialog
-                              courseId={c.id}
-                              title="Edit Course"
+                              termId={t.id}
+                              title="Edit Term"
                               onSubmit={async () => {
                                 await fetchAll();
                                 setOpenEditId(null);
@@ -164,13 +155,15 @@ export default function CoursePage() {
                           )}
                         </Dialog>
 
-                        {/* Delete */}
+                        {/* Toggle Active */}
                         <Button
                           variant="ghost"
-                          className="h-8 px-2 text-red-600 hover:bg-red-50"
-                          onClick={() => setDeleteId(c.id)}
+                          className={`h-8 px-2 ${t.isActive ? "text-slate-500 hover:bg-slate-100" : "text-emerald-600 hover:bg-emerald-50"}`}
+                          onClick={() => handleToggleActive(t)}
+                          disabled={updating}
+                          title={t.isActive ? "Deactivate Term" : "Activate Term"}
                         >
-                          <Trash2 className="size-4" />
+                          <Power className="size-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -179,14 +172,14 @@ export default function CoursePage() {
 
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-10 text-center text-slate-500">
-                      No courses found.
+                    <td colSpan={5} className="py-10 text-center text-slate-500">
+                      No terms found.
                     </td>
                   </tr>
                 )}
                 {loading && (
                   <tr>
-                    <td colSpan={6} className="py-10 text-center text-slate-500">
+                    <td colSpan={5} className="py-10 text-center text-slate-500">
                       Loading...
                     </td>
                   </tr>
@@ -196,14 +189,6 @@ export default function CoursePage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Delete Confirm Dialog */}
-      <DeleteConfirm
-        open={!!deleteId}
-        onOpenChange={(o) => !o && setDeleteId(null)}
-        loading={deleting}
-        onConfirm={handleDelete}
-      />
     </div>
   );
 }

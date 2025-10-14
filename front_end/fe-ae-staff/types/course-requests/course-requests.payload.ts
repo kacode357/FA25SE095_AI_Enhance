@@ -14,3 +14,8 @@ export interface GetCourseRequestsQuery {
   page?: number;
   pageSize?: number;
 }
+
+export interface ProcessCourseRequestPayload {
+  status: 2 | 3; // 2 = Approved, 3 = Rejected
+  processingComments?: string;
+}

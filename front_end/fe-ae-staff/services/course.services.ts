@@ -1,46 +1,60 @@
 // services/course.services.ts
 import { courseAxiosInstance } from "@/config/axios.config";
-import { 
-  CreateCoursePayload, 
-  GetMyCoursesQuery, 
-  UpdateCoursePayload 
-} from "@/types/courses/course.payload";
-import { 
-  CreateCourseResponse, 
-  GetMyCoursesResponse, 
-  UpdateCourseResponse, 
-  GetCourseByIdResponse, 
-  DeleteCourseResponse 
-} from "@/types/courses/course.response";
+import {
+  GetAllCoursesQuery,
+  ApproveCoursePayload,
+  RejectCoursePayload,
+  GetCourseEnrollmentsQuery,
+} from "@/types/course/course.payload";
+import {
+  GetAllCoursesResponse,
+  ApproveCourseResponse,
+  RejectCourseResponse,
+  GetCourseByIdResponse,
+  GetCourseEnrollmentsResponse, // ✅ thêm
+} from "@/types/course/course.response";
 
 export const CourseService = {
-  /** Tạo course (Lecturer only) */
-  createCourse: async (data: CreateCoursePayload): Promise<CreateCourseResponse> => {
-    const res = await courseAxiosInstance.post<CreateCourseResponse>("/Courses", data);
+  /** ✅ GET /api/Courses/all (Staff only) */
+  getAll: async (params?: GetAllCoursesQuery): Promise<GetAllCoursesResponse> => {
+    const res = await courseAxiosInstance.get<GetAllCoursesResponse>("/Courses/all", {
+      params,
+    });
     return res.data;
   },
 
-  /** Lấy danh sách course của current user (Lecturer/Student) */
-  getMyCourses: async (params: GetMyCoursesQuery): Promise<GetMyCoursesResponse> => {
-    const res = await courseAxiosInstance.get<GetMyCoursesResponse>("/Courses/my-courses", { params });
-    return res.data;
-  },
-
-  /** Update course (Lecturer only - own courses) */
-  updateCourse: async (data: UpdateCoursePayload): Promise<UpdateCourseResponse> => {
-    const res = await courseAxiosInstance.put<UpdateCourseResponse>("/Courses", data);
-    return res.data;
-  },
-
-  /** Lấy chi tiết course theo id */
-  getCourseById: async (id: string): Promise<GetCourseByIdResponse> => {
+  /** ✅ GET /api/Courses/{id} (Staff only) */
+  getById: async (id: string): Promise<GetCourseByIdResponse> => {
     const res = await courseAxiosInstance.get<GetCourseByIdResponse>(`/Courses/${id}`);
     return res.data;
   },
 
-  /** Xóa course (Lecturer only - own courses) */
-  deleteCourse: async (id: string): Promise<DeleteCourseResponse> => {
-    const res = await courseAxiosInstance.delete<DeleteCourseResponse>(`/Courses/${id}`);
+  /** ✅ PUT /api/Courses/{id}/approve */
+  approve: async (id: string, payload: ApproveCoursePayload): Promise<ApproveCourseResponse> => {
+    const res = await courseAxiosInstance.put<ApproveCourseResponse>(
+      `/Courses/${id}/approve`,
+      payload
+    );
+    return res.data;
+  },
+
+  /** ✅ PUT /api/Courses/{id}/reject */
+  reject: async (id: string, payload: RejectCoursePayload): Promise<RejectCourseResponse> => {
+    const res = await courseAxiosInstance.put<RejectCourseResponse>(
+      `/Courses/${id}/reject`,
+      payload
+    );
+    return res.data;
+  },
+   /** ✅ GET /api/Courses/{id}/enrollments (Lecturer/Staff only) */
+  getEnrollments: async (
+    id: string,
+    params?: GetCourseEnrollmentsQuery
+  ): Promise<GetCourseEnrollmentsResponse> => {
+    const res = await courseAxiosInstance.get<GetCourseEnrollmentsResponse>(
+      `/Courses/${id}/enrollments`,
+      { params }
+    );
     return res.data;
   },
 };
