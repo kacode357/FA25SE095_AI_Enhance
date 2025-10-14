@@ -27,7 +27,11 @@ export interface GetGroupsByCourseIdResponse {
   message: string;
   groups: GroupDetail[];
 }
-
+export interface UpdateGroupsResponse {
+  success: boolean;
+  message: string;
+  group: GroupDetail[];
+}
 export interface GroupDetail {
   id: string;
   courseId: string;
@@ -43,4 +47,8 @@ export interface GroupDetail {
   leaderId: string;
   createdAt: string; // ISO datetime
   createdBy: string;
+}
+export interface DeleteGroupResponse {
+  success: true;
+  message: string;
 }

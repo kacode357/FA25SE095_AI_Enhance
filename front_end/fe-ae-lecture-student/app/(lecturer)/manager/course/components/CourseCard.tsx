@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CourseItem } from "@/types/courses/course.response";
+import { CourseItem, CourseStatus } from "@/types/courses/course.response";
 import {
   ClipboardCopy,
   Eye,
@@ -50,6 +50,23 @@ export default function CourseCard({
   const accessActive = hasCodeFeature && !course.isAccessCodeExpired;
   const code = course.accessCode ?? "";
   const masked = useMemo(() => (code ? "•".repeat(code.length) : "—"), [code]);
+  // ===== Status badge mapping (right side like Course Requests) =====
+  const statusInfo = useMemo(() => {
+    const s = course.status;
+    if (s === undefined || s === null) return { label: undefined, className: "" };
+    switch (s) {
+      case CourseStatus.PendingApproval:
+        return { label: "Pending Approval", className: "bg-amber-50 text-amber-700 border-amber-200" };
+      case CourseStatus.Active:
+        return { label: "Active", className: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+      case CourseStatus.Inactive:
+        return { label: "Inactive", className: "bg-slate-100 text-slate-600 border-slate-200" };
+      case CourseStatus.Rejected:
+        return { label: "Rejected", className: "bg-rose-50 text-rose-700 border-rose-200" };
+      default:
+        return { label: String(s), className: "bg-slate-50 text-slate-600 border-slate-200" };
+    }
+  }, [course.status]);
 
   const revealDisabled = !hasCodeFeature || !code;
   const copyDisabled = !hasCodeFeature || !code;
@@ -109,10 +126,17 @@ export default function CourseCard({
       onKeyDown={onKeyEnter}
     >
       <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-3">
         <CardTitle className="text-sm text-slate-800">
           <span className="font-semibold">{course.courseCode}</span>
           <span className="text-slate-500"> — {course.courseCodeTitle}</span>
         </CardTitle>
+        {statusInfo.label && (
+          <Badge variant="outline" className={`text-[11px] ${statusInfo.className}`}>
+            {statusInfo.label}
+          </Badge>
+        )}
+        </div>
 
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {(course.term || course.year) && (
@@ -253,7 +277,7 @@ export default function CourseCard({
               </Button>
               <Button
                 variant="ghost"
-                className="h-8 px-2 text-red-600 hover:bg-red-50"
+                className="h-8 px-2 !text-red-600 hover:bg-red-50"
                 onClick={onDeleteClick}
                 aria-label="Delete"
                 title="Delete"

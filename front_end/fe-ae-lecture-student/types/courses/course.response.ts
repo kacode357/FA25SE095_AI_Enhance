@@ -1,4 +1,9 @@
-// types/courses/course.response.ts
+export enum CourseStatus {
+  PendingApproval = 1,
+  Active = 2,
+  Inactive = 3,
+  Rejected = 4,
+}
 
 export interface CourseItem {
   id: string;
@@ -18,6 +23,8 @@ export interface CourseItem {
   accessCodeExpiresAt: string | null;
   isAccessCodeExpired: boolean;
   department: string;
+  /** Course status per backend enum */
+  status?: CourseStatus;
 }
 
 export interface CreateCourseResponse {

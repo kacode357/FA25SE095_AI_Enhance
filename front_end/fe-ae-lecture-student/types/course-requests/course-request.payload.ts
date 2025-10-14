@@ -1,7 +1,7 @@
 export interface CourseRequestPayload {
   courseCodeId: string;
   description: string;
-  term: string;
+  termId: string;
   year: number;
   requestReason?: string;
   studentEnrollmentFile?: File | null;

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUpdateAccessCode } from "@/hooks/course/useUpdateAccessCode";
 import { AccessCodeType } from "@/config/access-code-type";
+import { useUpdateAccessCode } from "@/hooks/course/useUpdateAccessCode";
+import { useEffect, useMemo, useState } from "react";
 
 type Props = {
   courseId: string;
@@ -101,6 +101,7 @@ export default function AccessCodeDialog({
         {/* Bật/tắt access code */}
         <div className="flex items-center gap-2">
           <input
+            placeholder="Checkbox"
             id="requiresAccessCode"
             type="checkbox"
             checked={requiresAccessCode}
@@ -114,6 +115,7 @@ export default function AccessCodeDialog({
           <div>
             <Label>Access Code Type</Label>
             <select
+              title="Access Code Type"
               value={accessCodeType}
               onChange={(e) =>
                 setAccessCodeType(e.target.value === "" ? "" : Number(e.target.value))
@@ -147,6 +149,7 @@ export default function AccessCodeDialog({
           <div>
             <Label>Expires At</Label>
             <input
+              placeholder="Label"
               type="datetime-local"
               value={expiresAt}
               onChange={(e) => setExpiresAt(e.target.value)}
@@ -158,6 +161,8 @@ export default function AccessCodeDialog({
           {/* Regenerate */}
           <div className="flex items-center gap-2">
             <input
+              placeholder="Checkbox"
+
               id="regenerateCode"
               type="checkbox"
               checked={regenerateCode}

@@ -9,6 +9,7 @@ import { AccessCodeType } from "@/config/access-code-type";
 import { useCourseCodeOptions } from "@/hooks/course-code/useCourseCodeOptions";
 import { useCreateCourseRequest } from "@/hooks/course-request/useCreateCourseRequest";
 import { useCreateCourse } from "@/hooks/course/useCreateCourse";
+import { useTerms } from "@/hooks/term/useTerms";
 import { useEffect, useMemo, useState } from "react";
 
 export default function CreateDialog({
@@ -23,13 +24,14 @@ export default function CreateDialog({
   const { createCourse, loading } = useCreateCourse();
   const { createCourseRequest, loading: requestLoading } = useCreateCourseRequest();
   const { options: courseCodeOptions, loading: loadingCodes, fetchCourseCodeOptions } = useCourseCodeOptions();
+  const { data: termOptions, loading: loadingTerms, fetchTerms } = useTerms();
   const [activeTab, setActiveTab] = useState<"course" | "request">("course");
 
   // ⚙️ State form
   const [form, setForm] = useState({
     courseCodeId: "",
     description: "",
-    term: "",
+    termId: "",
     year: new Date().getFullYear(),
     requiresAccessCode: false,
     accessCodeType: undefined as AccessCodeType | undefined,
@@ -40,22 +42,21 @@ export default function CreateDialog({
   const [requestForm, setRequestForm] = useState({
     courseCodeId: "",
     description: "",
-    term: "",
+    termId: "",
     year: new Date().getFullYear(),
     requestReason: "",
     studentEnrollmentFile: null as File | null,
   });
 
-  // 🚀 Chỉ fetch options 1 lần
   useEffect(() => {
     fetchCourseCodeOptions({ activeOnly: true });
-  }, [fetchCourseCodeOptions]);
+    fetchTerms();
+  }, []);
 
   // 🔧 Helper đổi state
   const set = (k: string, v: any) => setForm((p) => ({ ...p, [k]: v }));
   const setReq = (k: string, v: any) => setRequestForm((p) => ({ ...p, [k]: v }));
 
-  // 🔎 Placeholder & helper theo type (gợi ý nhập code)
   const codeHint = useMemo(() => {
     switch (form.accessCodeType) {
       case AccessCodeType.Numeric:
@@ -71,16 +72,13 @@ export default function CreateDialog({
     }
   }, [form.accessCodeType]);
 
-  // 💾 Submit
   const handleSubmit = async () => {
     if (!form.courseCodeId) return;
 
-    // 📨 Payload tạo course
-    // Lưu ý: BE chấp nhận customAccessCode. Theo yêu cầu: dù type nào cũng cho phép gửi customAccessCode nếu user tự nhập.
     const payload: any = {
       courseCodeId: form.courseCodeId,
       description: form.description,
-      term: form.term,
+      termId: form.termId,
       year: form.year,
       requiresAccessCode: form.requiresAccessCode,
     };
@@ -96,13 +94,12 @@ export default function CreateDialog({
     if (res?.success) onSubmit();
   };
 
-  // 💾 Submit for Course Request (tab 2)
   const handleSubmitRequest = async () => {
     if (!requestForm.courseCodeId) return;
     const payload: any = {
       courseCodeId: requestForm.courseCodeId,
       description: requestForm.description,
-      term: requestForm.term,
+      termId: requestForm.termId,
       year: requestForm.year,
     };
     if (requestForm.requestReason?.trim()) payload.requestReason = requestForm.requestReason.trim();
@@ -113,20 +110,26 @@ export default function CreateDialog({
   };
 
   return (
-    <DialogContent className="bg-white border-slate-200 text-slate-900">
+    <DialogContent
+      className="bg-white border-slate-200 text-slate-900 w-[calc(100vw-2rem)] sm:w-auto sm:max-w-2xl lg:max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6"
+    >
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
       </DialogHeader>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-2">
-        <TabsList>
-          <TabsTrigger value="course">Create Course</TabsTrigger>
-          <TabsTrigger value="request">Create Course Request</TabsTrigger>
+        <TabsList className="flex flex-wrap gap-2">
+          <TabsTrigger value="course" className="text-sm sm:text-base">
+            Create Course
+          </TabsTrigger>
+          <TabsTrigger value="request" className="text-sm sm:text-base">
+            Create Course Request
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="course">
-          <div className="space-y-4 py-2">
-            <div>
+          <div className="py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
               <Label htmlFor="courseCode">Course Code</Label>
               <select
                 id="courseCode"
@@ -144,7 +147,7 @@ export default function CreateDialog({
               </select>
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <Label htmlFor="description">Description</Label>
               <Input
                 id="description"
@@ -155,11 +158,20 @@ export default function CreateDialog({
 
             <div>
               <Label htmlFor="term">Term</Label>
-              <Input
+              <select
                 id="term"
-                value={form.term}
-                onChange={(e) => set("term", e.target.value)}
-              />
+                value={form.termId}
+                onChange={(e) => set("termId", e.target.value)}
+                className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white"
+                title="Select term"
+              >
+                <option value="">{loadingTerms ? "Loading..." : "-- Select Term --"}</option>
+                {termOptions.map((term) => (
+                  <option key={term.id} value={term.id}>
+                    {term.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -172,7 +184,7 @@ export default function CreateDialog({
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:col-span-2">
               <input
                 placeholder="Checkbox"
                 id="requiresCode"
@@ -190,9 +202,15 @@ export default function CreateDialog({
                   <select
                     id="accessCodeType"
                     value={form.accessCodeType ?? ""}
-                    onChange={(e) =>
-                      set("accessCodeType", e.target.value ? parseInt(e.target.value) : undefined)
-                    }
+                    onChange={(e) => {
+                      const v = e.target.value ? parseInt(e.target.value) : undefined;
+                      setForm((prev) => ({
+                        ...prev,
+                        accessCodeType: v,
+                        // Clear any custom code when switching away from Custom
+                        accessCodeValue: v === AccessCodeType.Custom ? prev.accessCodeValue : "",
+                      }));
+                    }}
                     className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white"
                     title="Select access code type"
                   >
@@ -204,34 +222,35 @@ export default function CreateDialog({
                   </select>
                 </div>
 
-                <div>
-                  <Label htmlFor="accessCode">Access Code (optional)</Label>
-                  <Input
-                    id="accessCode"
-                    placeholder={codeHint.placeholder}
-                    value={form.accessCodeValue}
-                    onChange={(e) => set("accessCodeValue", e.target.value)}
-                    disabled={!form.accessCodeType}
-                  />
-                  {codeHint.helper && (
-                    <p className="text-xs text-slate-500 mt-1">{codeHint.helper}</p>
-                  )}
-                </div>
+                {form.accessCodeType === AccessCodeType.Custom && (
+                  <div>
+                    <Label htmlFor="accessCode">Access Code (optional)</Label>
+                    <Input
+                      id="accessCode"
+                      placeholder={codeHint.placeholder}
+                      value={form.accessCodeValue}
+                      onChange={(e) => set("accessCodeValue", e.target.value)}
+                    />
+                    {codeHint.helper && (
+                      <p className="text-xs text-slate-500 mt-1">{codeHint.helper}</p>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="request">
-          <div className="space-y-4 py-2">
-            <div>
+          <div className="py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
               <Label htmlFor="requestCourseCode">Course Code</Label>
               <select
                 id="requestCourseCode"
                 required
                 value={requestForm.courseCodeId}
                 onChange={(e) => setReq("courseCodeId", e.target.value)}
-                className={`w-full border rounded-md p-2 text-sm bg-white ${!requestForm.courseCodeId ? "border-red-500" : "border-slate-300"
+                className={`w-full border rounded-md p-2 text-sm bg-white ${!requestForm.courseCodeId ? "border-slate-300" : "border-slate-300"
                   }`}
                 title="Select course code"
               >
@@ -246,7 +265,7 @@ export default function CreateDialog({
               </select>
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <Label htmlFor="requestDescription">Description</Label>
               <Input
                 id="requestDescription"
@@ -259,13 +278,22 @@ export default function CreateDialog({
 
             <div>
               <Label htmlFor="requestTerm">Term</Label>
-              <Input
+              <select
                 id="requestTerm"
                 required
-                value={requestForm.term}
-                onChange={(e) => setReq("term", e.target.value)}
-                className={!requestForm.term ? "border-red-500" : ""}
-              />
+                value={requestForm.termId}
+                onChange={(e) => setReq("termId", e.target.value)}
+                className={`w-full border rounded-md p-2 text-sm bg-white ${!requestForm.termId ? "border-slate-300" : "border-slate-300"
+                  }`}
+                title="Select term"
+              >
+                <option value="">{loadingTerms ? "Loading..." : "-- Select Term --"}</option>
+                {termOptions.map((term) => (
+                  <option key={term.id} value={term.id}>
+                    {term.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -278,7 +306,7 @@ export default function CreateDialog({
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <Label htmlFor="requestReason">Request Reason (optional)</Label>
               <Input
                 id="requestReason"
@@ -288,7 +316,7 @@ export default function CreateDialog({
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <Label htmlFor="studentEnrollmentFile">Student Enrollment File (optional)</Label>
               <Input
                 id="studentEnrollmentFile"
@@ -301,17 +329,21 @@ export default function CreateDialog({
         </TabsContent>
       </Tabs>
 
-      <DialogFooter>
+      <DialogFooter className="flex flex-col sm:flex-row gap-2">
         {activeTab === "course" ? (
-          <Button onClick={handleSubmit} disabled={loading || !form.courseCodeId}>
+          <Button onClick={handleSubmit} disabled={loading || !form.courseCodeId} className="w-full sm:w-auto">
             {loading ? "Creating..." : "Create"}
           </Button>
         ) : (
-          <Button onClick={handleSubmitRequest} disabled={requestLoading || !requestForm.courseCodeId}>
+          <Button
+            onClick={handleSubmitRequest}
+            disabled={requestLoading || !requestForm.courseCodeId}
+            className="w-full sm:w-auto"
+          >
             {requestLoading ? "Submitting..." : "Send Request"}
           </Button>
         )}
-        <Button variant="ghost" onClick={onCancel}>
+        <Button variant="ghost" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
         </Button>
       </DialogFooter>

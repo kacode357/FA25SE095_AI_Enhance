@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import { ArrowLeft, FileSpreadsheet, FolderPlus, PlusCircle } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, FolderPlus, HardDriveDownload, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -81,10 +81,20 @@ export default function CourseDetailPage() {
 
         <div className="flex items-center gap-2">
           {activeTab === "students" && (
-            <Button className="h-8" onClick={() => setOpenImport(true)}>
-              <FileSpreadsheet className="size-4 mr-2" />
-              Import Excel
-            </Button>
+            <div className="flex gap-5">
+              <button
+                onClick={() => setOpenImport(true)}
+                className="flex cursor-pointer items-center gap-1 text-sm text-emerald-600 hover:text-emerald-800 underline"
+              >
+                <HardDriveDownload className="size-4 mr-1" />
+                Download Template
+              </button>
+
+              <Button className="h-8 cursor-pointer" onClick={() => setOpenImport(true)}>
+                <FileSpreadsheet className="size-4" />
+                Import Excel
+              </Button>
+            </div>
           )}
           {activeTab === "groups" && (
             <Button className="h-8" onClick={() => setOpenGroup(true)}>
@@ -116,7 +126,7 @@ export default function CourseDetailPage() {
       </Card>
 
       {/* Tabs: Students / Groups / Assignments (UI only) */}
-  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
         <TabsList>
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="groups">Groups</TabsTrigger>

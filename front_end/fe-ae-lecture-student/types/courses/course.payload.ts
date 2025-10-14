@@ -1,23 +1,20 @@
 // types/courses/course.payload.ts
 
-/** Payload tạo course */
 export interface CreateCoursePayload {
   courseCodeId: string;
   description: string;
-  term: string;
+  termId: string;
   year: number;
   requiresAccessCode: boolean;
   accessCodeType?: number;
   customAccessCode?: string;
   accessCodeExpiresAt?: string; // ISO datetime
 }
-
-/** Payload update course */
 export interface UpdateCoursePayload {
   courseId: string;
   courseCodeId: string;
   description: string;
-  term: string;
+  termId: string;
   year: number;
 }
 

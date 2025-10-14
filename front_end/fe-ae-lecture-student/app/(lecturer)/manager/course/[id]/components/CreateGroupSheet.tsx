@@ -5,20 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { GroupService } from "@/services/group.services";
-import { CreateGroupPayload } from "@/types/group/group.payload";
+import { CreateGroupPayload, UpdateGroupPayload } from "@/types/group/group.payload";
 import { GroupDetail } from "@/types/group/group.response";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function CreateGroupSheet({
   open,
   onOpenChange,
   courseId,
+  mode = "create",
+  initialData,
   onCreated,
+  onUpdated,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  courseId: string;
+  courseId?: string; // optional in edit mode; fallback to initialData.courseId
+  mode?: "create" | "edit";
+  initialData?: Partial<GroupDetail>;
   onCreated?: (group: GroupDetail) => void;
+  onUpdated?: (group: GroupDetail) => void;
 }) {
   // Match CreateGroupPayload shape
   const [name, setName] = useState("");
@@ -28,34 +34,85 @@ export default function CreateGroupSheet({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = !!courseId && !!name && typeof maxMembers === "number" && maxMembers > 0;
+  // Prefill when switching to edit mode/opening with initial data
+  useEffect(() => {
+    if (open && mode === "edit" && initialData) {
+      setName(initialData.name || "");
+      setDescription(initialData.description || "");
+      setMaxMembers(
+        typeof initialData.maxMembers === "number" ? initialData.maxMembers : ""
+      );
+      setIsLocked(!!initialData.isLocked);
+      setError(null);
+    }
+  }, [open, mode, initialData]);
 
-  const handleCreate = async () => {
+  // Reset form when closing in create mode
+  useEffect(() => {
+    if (!open && mode === "create") {
+      setName("");
+      setDescription("");
+      setMaxMembers("");
+      setIsLocked(false);
+      setError(null);
+      setSubmitting(false);
+    }
+  }, [open, mode]);
+
+  const effectiveCourseId = useMemo(
+    () => courseId || initialData?.courseId || "",
+    [courseId, initialData?.courseId]
+  );
+
+  const canSubmit = !!effectiveCourseId && !!name && typeof maxMembers === "number" && maxMembers > 0;
+
+  const handleSubmit = async () => {
     if (!canSubmit || submitting) return;
     setSubmitting(true);
     setError(null);
     try {
       const payload: CreateGroupPayload = {
-        courseId,
+        courseId: effectiveCourseId,
         name: name.trim(),
         description: description.trim(),
         maxMembers: Number(maxMembers),
         isLocked,
       };
-      const res = await GroupService.create(payload);
-      if (res?.success) {
-        onCreated?.(res.group);
-        // reset form and close
-        setName("");
-        setDescription("");
-        setMaxMembers("");
-        setIsLocked(false);
-        onOpenChange(false);
+
+      if (mode === "edit" && initialData?.id) {
+        // Include id/groupId in body to avoid mismatch errors
+        const updatePayload: UpdateGroupPayload = {
+          groupId: initialData.id,
+          courseId: payload.courseId,
+          name: payload.name,
+          description: payload.description,
+          maxMembers: payload.maxMembers,
+          isLocked: payload.isLocked,
+        };
+        const res = await GroupService.updateGroup(initialData.id, updatePayload);
+        if (res?.success) {
+          // Prefer group on response if available; otherwise pass through current values
+          onUpdated?.((res as any).group || (initialData as GroupDetail));
+          onOpenChange(false);
+        } else {
+          setError((res as any)?.message || "Failed to update group");
+        }
       } else {
-        setError(res?.message || "Failed to create group");
+        const res = await GroupService.create(payload);
+        if (res?.success) {
+          onCreated?.(res.group);
+          // reset form and close
+          setName("");
+          setDescription("");
+          setMaxMembers("");
+          setIsLocked(false);
+          onOpenChange(false);
+        } else {
+          setError(res?.message || "Failed to create group");
+        }
       }
     } catch (e: any) {
-      setError(e?.message || "Failed to create group");
+      setError(e?.message || (mode === "edit" ? "Failed to update group" : "Failed to create group"));
     } finally {
       setSubmitting(false);
     }
@@ -65,7 +122,7 @@ export default function CreateGroupSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="bg-white border-l border-slate-200 w-full sm:max-w-xl md:max-w-2xl">
         <SheetHeader>
-          <SheetTitle>Create Group</SheetTitle>
+          <SheetTitle>{mode === "edit" ? "Edit Group" : "Create Group"}</SheetTitle>
         </SheetHeader>
 
         <div className="pb-4 px-4 space-y-3">
@@ -108,8 +165,8 @@ export default function CreateGroupSheet({
         </div>
 
         <SheetFooter className="flex flex-row gap-5 justify-start">
-          <Button onClick={handleCreate} disabled={!canSubmit || submitting}>
-            {submitting ? "Creating..." : "Create"}
+          <Button onClick={handleSubmit} disabled={!canSubmit || submitting}>
+            {submitting ? (mode === "edit" ? "Saving..." : "Creating...") : mode === "edit" ? "Save changes" : "Create"}
           </Button>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
         </SheetFooter>

@@ -9,7 +9,7 @@ export const CourseRequestService = {
 
     formData.append("courseCodeId", data.courseCodeId);
     formData.append("description", data.description);
-    formData.append("term", data.term);
+    formData.append("termId", data.termId);
     formData.append("year", data.year.toString());
 
     if (data.requestReason) {
