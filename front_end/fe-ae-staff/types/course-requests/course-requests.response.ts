@@ -1,5 +1,3 @@
-// types/course-requests/course-requests.response.ts
-
 export interface CourseRequest {
   id: string;
   courseCodeId: string;
@@ -11,7 +9,7 @@ export interface CourseRequest {
   lecturerId: string;
   lecturerName: string;
   status: number;
-  requestReason: string;
+  requestReason: string | null;
   processedBy: string | null;
   processedByName: string | null;
   processedAt: string | null;
@@ -33,5 +31,40 @@ export interface GetCourseRequestsResponse {
   hasNextPage: boolean;
 }
 
-// ✅ Thêm cho API GET /CourseRequests/{id}
-export interface GetCourseRequestByIdResponse extends CourseRequest {}
+export interface GetCourseRequestByIdResponse {
+  success: boolean;
+  message: string;
+  courseRequest: CourseRequest;
+}
+
+export interface ProcessCourseRequestResponse {
+  success: boolean;
+  message: string;
+  courseRequest: CourseRequest;
+  createdCourse?: {
+    id: string;
+    courseCode: string;
+    courseCodeTitle: string;
+    name: string;
+    description: string;
+    term: string;
+    year: number;
+    lecturerId: string;
+    lecturerName: string;
+    createdAt: string;
+    enrollmentCount: number;
+    status: number;
+    approvedBy: string;
+    approvedByName: string;
+    approvedAt: string;
+    approvalComments: string;
+    rejectionReason: string;
+    canEnroll: boolean;
+    requiresAccessCode: boolean;
+    accessCode: string;
+    accessCodeCreatedAt: string;
+    accessCodeExpiresAt: string;
+    isAccessCodeExpired: boolean;
+    department: string;
+  };
+}

@@ -15,6 +15,12 @@ import { usePathname } from "next/navigation";
 
 const mainNav = [
   {
+    href: "/manager/terms",
+    label: "Terms",
+    icon: GraduationCap,
+    description: "Manage academic terms",
+  },
+  {
     href: "/manager/course-codes",
     label: "Course Codes",
     icon: Layers3,
@@ -26,7 +32,21 @@ const mainNav = [
     icon: FileText,
     description: "View and process course requests",
   },
+  {
+    href: "/manager/courses",
+    label: "Courses",
+    icon: GraduationCap, // hoặc đổi thành BookOpen nếu muốn
+    description: "Manage active courses and enrollments",
+  },
+  {
+    href: "/manager/course-approvals",
+    label: "Course Approvals",
+    icon: FileText,
+    description: "Review and approve pending courses",
+  },
 ];
+
+
 
 const secondaryNav = [
   { href: "/manager/analytics", label: "Analytics", icon: BarChart3 },

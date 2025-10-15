@@ -33,48 +33,38 @@ export default function FilterRow({
   onClear,
 }: Props) {
   return (
-    <div className="flex flex-wrap items-center gap-2 p-2 bg-slate-50 border-b border-slate-200 rounded-md">
-      {/* Lecturer */}
+    <div className="flex items-center gap-2 p-2 bg-slate-50">
       <Input
         placeholder="Lecturer Name"
         value={lecturerName}
         onChange={(e) => setLecturerName(e.target.value)}
-        className="h-8 text-xs w-40"
+        className="h-8 text-xs w-40 min-w-[150px]"
       />
-
-      {/* Course Code */}
       <Input
         placeholder="Course Code"
         value={courseCode}
         onChange={(e) => setCourseCode(e.target.value)}
-        className="h-8 text-xs w-32"
+        className="h-8 text-xs w-32 min-w-[120px]"
       />
-
-      {/* Department */}
       <Input
         placeholder="Department"
         value={department}
         onChange={(e) => setDepartment(e.target.value)}
-        className="h-8 text-xs w-32"
+        className="h-8 text-xs w-32 min-w-[120px]"
       />
-
-      {/* Year */}
       <Input
         type="number"
         placeholder="Year"
         value={year}
         onChange={(e) => setYear(e.target.value)}
-        className="h-8 text-xs w-24"
+        className="h-8 text-xs w-24 min-w-[90px]"
       />
-
-      {/* Status */}
       <select
         value={status ?? ""}
-        onChange={(e) => {
-          const val = e.target.value;
-          setStatus(val === "" ? undefined : (Number(val) as 1 | 2 | 3 | 4));
-        }}
-        className="h-8 text-xs border border-slate-300 rounded-md px-2 bg-white w-32"
+        onChange={(e) =>
+          setStatus(e.target.value === "" ? undefined : (Number(e.target.value) as 1 | 2 | 3 | 4))
+        }
+        className="h-8 text-xs border border-slate-300 rounded-md px-2 bg-white w-32 min-w-[120px]"
       >
         <option value="">All Status</option>
         <option value="1">Pending</option>
@@ -83,8 +73,7 @@ export default function FilterRow({
         <option value="4">Cancelled</option>
       </select>
 
-      {/* Buttons */}
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-2 ml-auto pr-1">
         <Button className="h-8 px-3 text-xs" onClick={onApply}>
           Apply
         </Button>
