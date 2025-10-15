@@ -132,10 +132,10 @@ export default function CreateDialog({
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-2">
           <TabsList className="flex flex-wrap gap-2">
-            <TabsTrigger value="course" className="text-sm sm:text-base">
+            <TabsTrigger value="course" className="text-sm cursor-pointer sm:text-base">
               Create Course
             </TabsTrigger>
-            <TabsTrigger value="request" className="text-sm sm:text-base">
+            <TabsTrigger value="request" className="text-sm cursor-pointer sm:text-base">
               Create Course Request
             </TabsTrigger>
           </TabsList>
@@ -143,12 +143,12 @@ export default function CreateDialog({
           <TabsContent value="course">
             <div className="py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <Label htmlFor="courseCode">Course Code</Label>
+                <Label className="cursor-text" htmlFor="courseCode">Course Code</Label>
                 <select
                   id="courseCode"
                   value={form.courseCodeId}
                   onChange={(e) => set("courseCodeId", e.target.value)}
-                  className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white"
+                  className="w-full border border-slate-300 rounded-md p-2 cursor-pointer text-sm bg-white"
                   title="Select course code"
                 >
                   <option value="">{loadingCodes ? "Loading..." : "-- Select Course Code --"}</option>
@@ -161,7 +161,7 @@ export default function CreateDialog({
               </div>
 
               <div className="sm:col-span-2">
-                <Label htmlFor="description">Description</Label>
+                <Label className="cursor-text" htmlFor="description">Description</Label>
                 <Input
                   id="description"
                   value={form.description}
@@ -170,12 +170,12 @@ export default function CreateDialog({
               </div>
 
               <div>
-                <Label htmlFor="term">Term</Label>
+                <Label className="cursor-text" htmlFor="term">Term</Label>
                 <select
                   id="term"
                   value={form.termId}
                   onChange={(e) => set("termId", e.target.value)}
-                  className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white"
+                  className="w-full border cursor-pointer border-slate-300 rounded-md p-2 text-sm bg-white"
                   title="Select term"
                 >
                   <option value="">{loadingTerms ? "Loading..." : "-- Select Term --"}</option>
@@ -188,7 +188,7 @@ export default function CreateDialog({
               </div>
 
               <div>
-                <Label htmlFor="year">Year</Label>
+                <Label className="cursor-text" htmlFor="year">Year</Label>
                 <Input
                   id="year"
                   type="number"
@@ -204,14 +204,15 @@ export default function CreateDialog({
                   type="checkbox"
                   checked={form.requiresAccessCode}
                   onChange={(e) => set("requiresAccessCode", e.target.checked)}
+                  className="cursor-pointer"
                 />
-                <Label htmlFor="requiresCode">Requires Access Code</Label>
+                <Label className="cursor-pointer" htmlFor="requiresCode">Requires Access Code</Label>
               </div>
 
               {form.requiresAccessCode && (
                 <>
                   <div>
-                    <Label htmlFor="accessCodeType">Access Code Type</Label>
+                    <Label className="cursor-text" htmlFor="accessCodeType">Access Code Type</Label>
                     <select
                       id="accessCodeType"
                       value={form.accessCodeType ?? ""}
@@ -224,7 +225,7 @@ export default function CreateDialog({
                           accessCodeValue: v === AccessCodeType.Custom ? prev.accessCodeValue : "",
                         }));
                       }}
-                      className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white"
+                      className="w-full border border-slate-300 cursor-pointer rounded-md p-2 text-sm bg-white"
                       title="Select access code type"
                     >
                       <option value="">-- Select Type --</option>
@@ -237,7 +238,7 @@ export default function CreateDialog({
 
                   {form.accessCodeType === AccessCodeType.Custom && (
                     <div>
-                      <Label htmlFor="accessCode">Access Code (optional)</Label>
+                      <Label className="cursor-text" htmlFor="accessCode">Access Code (optional)</Label>
                       <Input
                         id="accessCode"
                         placeholder={codeHint.placeholder}
@@ -257,13 +258,13 @@ export default function CreateDialog({
           <TabsContent value="request">
             <div className="py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <Label htmlFor="requestCourseCode">Course Code</Label>
+                <Label className="cursor-text" htmlFor="requestCourseCode">Course Code</Label>
                 <select
                   id="requestCourseCode"
                   required
                   value={requestForm.courseCodeId}
                   onChange={(e) => setReq("courseCodeId", e.target.value)}
-                  className={`w-full border rounded-md p-2 text-sm bg-white ${!requestForm.courseCodeId ? "border-slate-300" : "border-slate-300"
+                  className={`w-full border rounded-md p-2 cursor-pointer text-sm bg-white ${!requestForm.courseCodeId ? "border-slate-300" : "border-slate-300"
                     }`}
                   title="Select course code"
                 >
@@ -279,7 +280,7 @@ export default function CreateDialog({
               </div>
 
               <div className="sm:col-span-2">
-                <Label htmlFor="requestDescription">Description</Label>
+                <Label className="cursor-text" htmlFor="requestDescription">Description</Label>
                 <Input
                   id="requestDescription"
                   required
@@ -290,13 +291,13 @@ export default function CreateDialog({
               </div>
 
               <div>
-                <Label htmlFor="requestTerm">Term</Label>
+                <Label className="cursor-text" htmlFor="requestTerm">Term</Label>
                 <select
                   id="requestTerm"
                   required
                   value={requestForm.termId}
                   onChange={(e) => setReq("termId", e.target.value)}
-                  className={`w-full border rounded-md p-2 text-sm bg-white ${!requestForm.termId ? "border-slate-300" : "border-slate-300"
+                  className={`w-full border cursor-pointer rounded-md p-2 text-sm bg-white ${!requestForm.termId ? "border-slate-300" : "border-slate-300"
                     }`}
                   title="Select term"
                 >
@@ -310,7 +311,7 @@ export default function CreateDialog({
               </div>
 
               <div>
-                <Label htmlFor="requestYear">Year</Label>
+                <Label className="cursor-text" htmlFor="requestYear">Year</Label>
                 <Input
                   id="requestYear"
                   type="number"
@@ -320,7 +321,7 @@ export default function CreateDialog({
               </div>
 
               <div className="sm:col-span-2">
-                <Label htmlFor="requestReason">Request Reason (optional)</Label>
+                <Label className="cursor-text" htmlFor="requestReason">Request Reason (optional)</Label>
                 <Input
                   id="requestReason"
                   value={requestForm.requestReason}
@@ -330,11 +331,12 @@ export default function CreateDialog({
               </div>
 
               <div className="sm:col-span-2">
-                <Label htmlFor="studentEnrollmentFile">Student Enrollment File (optional)</Label>
+                <Label className="cursor-text" htmlFor="studentEnrollmentFile">Student Enrollment File (optional)</Label>
                 <Input
                   id="studentEnrollmentFile"
                   type="file"
                   onChange={(e) => setReq("studentEnrollmentFile", e.target.files?.[0] ?? null)}
+                  className="cursor-pointer"
                 />
                 <p className="text-xs text-slate-500 mt-1">Accepted formats: CSV/Excel/PDF as allowed by server</p>
               </div>
@@ -344,19 +346,19 @@ export default function CreateDialog({
 
         <DialogFooter className="flex flex-col sm:flex-row gap-2">
           {activeTab === "course" ? (
-            <Button onClick={handleSubmit} disabled={loading || !form.courseCodeId} className="w-full sm:w-auto">
+            <Button onClick={handleSubmit} disabled={loading || !form.courseCodeId} className="w-full cursor-pointer sm:w-auto">
               {loading ? "Creating..." : "Create"}
             </Button>
           ) : (
             <Button
               onClick={handleSubmitRequest}
               disabled={requestLoading || !requestForm.courseCodeId}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto cursor-pointer"
             >
               {requestLoading ? "Submitting..." : "Send Request"}
             </Button>
           )}
-          <Button variant="ghost" onClick={onCancel} className="w-full sm:w-auto">
+          <Button variant="ghost" onClick={onCancel} className="w-full sm:w-auto cursor-pointer">
             Cancel
           </Button>
         </DialogFooter>

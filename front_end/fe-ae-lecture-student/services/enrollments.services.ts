@@ -5,6 +5,7 @@ import {
 } from "@/types/enrollments/enrollments.payload";
 import {
   ImportEnrollmentsResponse,
+  ImportStudentsTemplateResponse,
 } from "@/types/enrollments/enrollments.response";
 
 export const EnrollmentsService = {
@@ -37,6 +38,30 @@ export const EnrollmentsService = {
     );
 
     return response.data;
+  },
+
+  downloadImportStudentsTemplate: async (): Promise<ImportStudentsTemplateResponse> => {
+    const response = await courseAxiosInstance.get<Blob>(
+      "/enrollments/courses/import-students-template",
+      {
+        responseType: "blob", // !important: để axios trả về file
+        headers: {
+          Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      }
+    );
+
+    const contentDisposition = response.headers["content-disposition"];
+    const fileName =
+      contentDisposition?.split("filename=")[1]?.replace(/['"]/g, "") ||
+      "CourseStudentsTemplate_20251015.xlsx";
+
+    return {
+      success: true,
+      file: response.data,
+      fileName,
+      contentType: response.headers["content-type"],
+    };
   },
 };
 

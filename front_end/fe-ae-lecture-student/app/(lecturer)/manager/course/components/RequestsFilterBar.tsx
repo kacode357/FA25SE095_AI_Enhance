@@ -28,11 +28,11 @@ export default function RequestsFilterBar({
   onApply, onClear, resultCount, totalCount, loading
 }: Props) {
   return (
-    <div className="border border-slate-200 rounded-md p-2 bg-white">
+    <div className="border cursor-default border-slate-200 rounded-md p-2 bg-white">
       <div className="flex items-center gap-2 text-slate-600 mb-2">
-        <Filter className="size-4" />
-        <span className="text-sm">Filters</span>
-        <span className="ml-auto text-xs text-slate-500">
+        <Filter className="size-4 cursor-default" />
+        <span className="text-sm cursor-text">Filters</span>
+        <span className="ml-auto text-xs cursor-text text-slate-500">
           {loading ? "Loading..." : `${resultCount}/${totalCount} results`}
         </span>
       </div>
@@ -66,36 +66,36 @@ export default function RequestsFilterBar({
         </div>
 
         <div className="relative">
-          <Calendar className="size-3 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Calendar className="size-3 cursor-pointer text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="date"
             value={createdAfter}
             onChange={(e) => setCreatedAfter(e.target.value)}
-            className="h-8 text-xs border border-slate-300 rounded-md px-6 bg-white w-full"
+            className="h-8 text-xs border cursor-text border-slate-300 rounded-md px-6 bg-white w-full"
             placeholder="Created after"
           />
         </div>
 
         <div className="relative">
-          <Calendar className="size-3 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Calendar className="size-3 cursor-pointer text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="date"
             value={createdBefore}
             onChange={(e) => setCreatedBefore(e.target.value)}
-            className="h-8 text-xs border border-slate-300 rounded-md px-6 bg-white w-full"
+            className="h-8 text-xs border cursor-text border-slate-300 rounded-md px-6 bg-white w-full"
             placeholder="Created before"
           />
         </div>
 
         <div className="relative">
-          <Tag className="size-3 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Tag className="size-3 cursor-pointer text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           <select
             aria-label="Status"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="h-8 text-xs border border-slate-300 rounded-md pl-6 bg-white w-full"
+            className="h-8 text-xs border border-slate-300 rounded-md pl-6 cursor-pointer bg-white w-full"
           >
-            <option value="">All statuses</option>
+            <option value="">All Statuses</option>
             <option value="1">Pending</option>
             <option value="2">Approved</option>
             <option value="3">Rejected</option>
@@ -105,10 +105,10 @@ export default function RequestsFilterBar({
       </div>
 
       <div className="flex items-center justify-end gap-2 mt-2">
-        <Button variant="ghost" className="h-8 px-2 text-[11px] text-slate-600" onClick={onClear}>
+        <Button variant="ghost" className="h-8 cursor-pointer px-2 text-[11px] text-slate-600" onClick={onClear}>
           Clear
         </Button>
-        <Button className="h-8 px-3 text-[11px]" onClick={onApply}>
+        <Button className="h-8 cursor-pointer px-3 text-[11px]" onClick={onApply}>
           Apply
         </Button>
       </div>

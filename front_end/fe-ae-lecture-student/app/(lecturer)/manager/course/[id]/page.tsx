@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
+import { useImportStudentTemplate } from "@/hooks/enrollments/useImportStudentTemplate";
 import { ArrowLeft, FileSpreadsheet, FolderPlus, HardDriveDownload, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -18,6 +19,7 @@ import ImportStudentsDialog from "./components/ImportStudentsDialog";
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: course, loading, error, fetchCourseById } = useGetCourseById();
+  const { downloadTemplate, loading: downloading } = useImportStudentTemplate();
   const [openImport, setOpenImport] = useState(false);
   const [openGroup, setOpenGroup] = useState(false);
   const [openAssign, setOpenAssign] = useState(false);
@@ -28,8 +30,6 @@ export default function CourseDetailPage() {
   useEffect(() => {
     if (id) fetchCourseById(id);
   }, [id, fetchCourseById]);
-
-  // groups fetching is handled inside GroupsPanel
 
   const title = useMemo(() => {
     if (!course) return "";
@@ -44,7 +44,7 @@ export default function CourseDetailPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/manager/course">
-            <Button variant="ghost" className="h-8 px-2">
+            <Button variant="ghost" className="h-8 px-2 cursor-pointer">
               <ArrowLeft className="size-4" />
             </Button>
           </Link>
@@ -83,27 +83,28 @@ export default function CourseDetailPage() {
           {activeTab === "students" && (
             <div className="flex gap-5">
               <button
-                onClick={() => setOpenImport(true)}
-                className="flex cursor-pointer items-center gap-1 text-sm text-emerald-600 hover:text-emerald-800 underline"
+                onClick={downloadTemplate}
+                disabled={downloading}
+                className="flex cursor-pointer items-center gap-1 text-sm text-emerald-600 hover:text-emerald-800 underline disabled:opacity-50"
               >
                 <HardDriveDownload className="size-4 mr-1" />
-                Download Template
+                {downloading ? "Downloading..." : "Download Template"}
               </button>
 
               <Button className="h-8 cursor-pointer" onClick={() => setOpenImport(true)}>
                 <FileSpreadsheet className="size-4" />
-                Import Excel
+                Import Students
               </Button>
             </div>
           )}
           {activeTab === "groups" && (
-            <Button className="h-8" onClick={() => setOpenGroup(true)}>
+            <Button className="h-8 cursor-pointer" onClick={() => setOpenGroup(true)}>
               <FolderPlus className="size-4 mr-2" />
               Create Group
             </Button>
           )}
           {activeTab === "assignments" && (
-            <Button className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setOpenAssign(true)}>
+            <Button className="h-8 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setOpenAssign(true)}>
               <PlusCircle className="size-4 mr-2" />
               New Assignment
             </Button>
@@ -128,9 +129,9 @@ export default function CourseDetailPage() {
       {/* Tabs: Students / Groups / Assignments (UI only) */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
         <TabsList>
-          <TabsTrigger value="students">Students</TabsTrigger>
-          <TabsTrigger value="groups">Groups</TabsTrigger>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="students">Students</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="groups">Groups</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="assignments">Assignments</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="space-y-2">

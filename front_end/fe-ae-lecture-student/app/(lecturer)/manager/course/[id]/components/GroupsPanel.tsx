@@ -83,7 +83,7 @@ export default function GroupsPanel({
                             {groups.map((g) => (
                                 <Card
                                     key={g.id}
-                                    className="h-full border-slate-200 hover:shadow-sm transition cursor-default"
+                                    className="h-full  border-slate-200 hover:shadow-sm transition cursor-pointer"
                                 >
                                     <CardHeader className="pb-2">
                                         <div className="flex justify-between items-start">
@@ -98,7 +98,7 @@ export default function GroupsPanel({
                                             <div className="flex items-center gap-1">
                                                 <Button
                                                     variant="ghost"
-                                                    className="h-7 px-0 text-emerald-600 hover:bg-emerald-50"
+                                                    className="h-7 px-0 cursor-pointer text-emerald-600 hover:bg-emerald-50"
                                                     title="Edit group"
                                                     onClick={() => handleEdit(g.id)}
                                                 >
@@ -106,7 +106,7 @@ export default function GroupsPanel({
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
-                                                    className="h-7 px-0 !text-red-600 hover:bg-red-50"
+                                                    className="h-7 px-0 cursor-pointer !text-red-600 hover:bg-red-50"
                                                     title="Delete group"
                                                     onClick={() => handleDeleteClick(g)}
                                                     disabled={deleting}

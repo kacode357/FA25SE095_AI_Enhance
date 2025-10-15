@@ -84,8 +84,8 @@ export default function CoursesPage() {
         {/* Header */}
         <header className="sticky top-0 z-20 flex flex-col gap-3 bg-white/90 p-2 rounded-md border border-slate-200">
           <TabsList>
-            <TabsTrigger value="courses">Courses</TabsTrigger>
-            <TabsTrigger value="requests">Course Requests</TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="courses">Courses</TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="requests">Course Requests</TabsTrigger>
           </TabsList>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -97,7 +97,7 @@ export default function CoursesPage() {
               {/* Import Student in many Courses */}
               <Dialog open={openImportStudents} onOpenChange={setOpenImportStudents}>
                 <DialogTrigger asChild>
-                  <Button className="h-9 bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
+                  <Button className="h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
                     <FileUp className="size-4" />
                     Import Students
                   </Button>
@@ -114,7 +114,7 @@ export default function CoursesPage() {
               </Dialog>
               <Dialog open={openImportEnrollments} onOpenChange={setOpenImportEnrollments}>
                 <DialogTrigger asChild>
-                  <Button className="h-9 bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
+                  <Button className="h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
                     <Upload className="size-4" />
                     Import Enrollments
                   </Button>
@@ -133,7 +133,7 @@ export default function CoursesPage() {
               {/* Create Course */}
               <Dialog open={openCreate} onOpenChange={setOpenCreate}>
                 <DialogTrigger asChild>
-                  <Button className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
+                  <Button className="h-9 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
                     <Plus className="size-4" />
                     Create Course
                   </Button>

@@ -199,7 +199,7 @@ export default function CourseCard({
               <div className="flex items-center gap-1 pt-1">
                 <Button
                   variant="ghost"
-                  className="h-8 px-2"
+                  className="h-8 px-2 cursor-pointer"
                   onClick={toggleReveal}
                   disabled={revealDisabled}
                   aria-label={showCode ? "Hide code" : "Show code"}
@@ -213,7 +213,7 @@ export default function CourseCard({
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="h-8 px-2"
+                        className="h-8 px-2 cursor-pointer"
                         onClick={copy}
                         disabled={copyDisabled}
                         aria-label="Copy code"
@@ -231,7 +231,7 @@ export default function CourseCard({
                     <DialogTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="h-8 px-2 text-slate-700 hover:bg-slate-50"
+                        className="h-8 px-2 cursor-pointer text-slate-700 hover:bg-slate-50"
                         onClick={openUpdateClick}
                         aria-label="Update access code"
                         title="Update access code"
@@ -268,7 +268,7 @@ export default function CourseCard({
             <div className="flex items-center justify-end gap-1">
               <Button
                 variant="ghost"
-                className="h-8 px-2 text-emerald-600 hover:bg-emerald-50"
+                className="h-8 cursor-pointer px-2 text-emerald-600 hover:bg-emerald-50"
                 onClick={onEditClick}
                 aria-label="Edit"
                 title="Edit"
@@ -277,7 +277,7 @@ export default function CourseCard({
               </Button>
               <Button
                 variant="ghost"
-                className="h-8 px-2 !text-red-600 hover:bg-red-50"
+                className="h-8 cursor-pointer px-2 !text-red-600 hover:bg-red-50"
                 onClick={onDeleteClick}
                 aria-label="Delete"
                 title="Delete"

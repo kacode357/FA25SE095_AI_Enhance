@@ -24,3 +24,10 @@ export interface ApiErrorResponse {
   instance: string;
   [key: string]: any;
 }
+
+export interface ImportStudentsTemplateResponse {
+  success: boolean;
+  file: Blob;
+  fileName: string;
+  contentType: string;
+}

@@ -79,7 +79,7 @@ export default function EditDialog({
         <div className="space-y-4 py-2">
           {/* Course Code */}
           <div>
-            <Label>Course Code</Label>
+            <Label className="cursor-text">Course Code</Label>
             {!editingCode ? (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-slate-700">
@@ -87,7 +87,7 @@ export default function EditDialog({
                 </p>
                 <Button
                   variant="ghost"
-                  className="text-emerald-600 px-2 h-7"
+                  className="text-emerald-600 px-2 h-7 cursor-pointer"
                   onClick={() => setEditingCode(true)}
                 >
                   Change
@@ -99,7 +99,7 @@ export default function EditDialog({
                   title="Code"
                   value={form.courseCodeId}
                   onChange={(e) => handleChange("courseCodeId", e.target.value)}
-                  className="flex-1 border border-slate-300 rounded-md p-2 text-sm"
+                  className="flex-1 border border-slate-300 rounded-md p-2 text-sm cursor-pointer"
                 >
                   <option value="">-- Select Course Code --</option>
                   {courseCodeOptions.map((cc) => (
@@ -110,7 +110,7 @@ export default function EditDialog({
                 </select>
                 <Button
                   variant="ghost"
-                  className="text-slate-500 px-2 h-7"
+                  className="text-slate-500 px-2 h-7 cursor-pointer"
                   onClick={() => setEditingCode(false)}
                 >
                   Cancel
@@ -121,7 +121,7 @@ export default function EditDialog({
 
           {/* Description */}
           <div>
-            <Label>Description</Label>
+            <Label className="cursor-text">Description</Label>
             <Input
               value={form.description}
               onChange={(e) => handleChange("description", e.target.value)}
@@ -130,7 +130,7 @@ export default function EditDialog({
 
           {/* Term */}
           <div>
-            <Label>Term</Label>
+            <Label className="cursor-text">Term</Label>
             <Input
               value={form.term}
               onChange={(e) => handleChange("term", e.target.value)}
@@ -139,7 +139,7 @@ export default function EditDialog({
 
           {/* Year */}
           <div>
-            <Label>Year</Label>
+            <Label className="cursor-text">Year</Label>
             <Input
               type="number"
               value={form.year}
@@ -150,10 +150,10 @@ export default function EditDialog({
       )}
 
       <DialogFooter>
-        <Button onClick={handleSave} disabled={loading || !form.courseCodeId}>
+        <Button className="cursor-pointer" onClick={handleSave} disabled={loading || !form.courseCodeId}>
           {loading ? "Saving..." : "Save"}
         </Button>
-        <Button variant="ghost" onClick={onCancel}>
+        <Button className="cursor-pointer" variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
       </DialogFooter>

@@ -113,35 +113,35 @@ export default function CourseRequests({ active = true }: Props) {
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-1 gap-2">
             {reqs.map((r) => (
-              <Card key={r.id} className="border-slate-200">
+              <Card key={r.id} className="border-slate-200 cursor-default">
                 <div className="px-3 text-sm">
                   <div className="flex items-start justify-between gap-5">
                     <div className="min-w-0">
-                      <div className="font-medium pb-3 text-slate-900 truncate">
+                      <div className="font-medium cursor-text pb-3 text-slate-900 truncate">
                         {r.courseCode} — {r.courseCodeTitle}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5 flex flex-wrap gap-x-2 gap-y-1">
-                        <span><span className="font-medium text-slate-700">{r.term}</span></span>•
-                        <span><span className="font-medium text-slate-700">{r.year}</span></span>
+                        <span><span className="font-medium cursor-text text-slate-700">{r.term}</span></span>•
+                        <span><span className="font-medium cursor-text text-slate-700">{r.year}</span></span>
                         {r.department && (
-                          <span>Dept: <span className="font-medium text-slate-700">{r.department}</span></span>
+                          <span className="cursor-text">Dept: <span className="font-medium cursor-text text-slate-700">{r.department}</span></span>
                         )}
                       </div>
                     </div>
-                    <Badge variant="outline" className={`text-[11px] ${statusInfo(r.status).className}`}>
+                    <Badge variant="outline" className={`text-[11px] cursor-text ${statusInfo(r.status).className}`}>
                       {statusInfo(r.status).label}
                     </Badge>
                   </div>
 
                   {r.description && (
-                    <div className="text-xs pb-3 text-slate-700 mt-4 line-clamp-2">
+                    <div className="text-xs cursor-text pb-3 text-slate-700 mt-4 line-clamp-2">
                       {r.description}
                     </div>
                   )}
 
                   <div className="text-[11px] text-slate-500 mt-2 flex flex-wrap gap-x-2 gap-y-1">
-                    <span>Lecturer: <span className="text-slate-700">{r.lecturerName}</span></span>
-                    <span>Created: <span className="text-slate-700">{new Date(r.createdAt).toLocaleDateString("en-GB")}</span></span>
+                    <span className="cursor-text">Lecturer: <span className="text-slate-700 cursor-text">{r.lecturerName}</span></span>
+                    <span className="cursor-text">Created: <span className="text-slate-700 cursor-text">{new Date(r.createdAt).toLocaleDateString("en-GB")}</span></span>
                     {r.requestReason && (
                       <span className="truncate">Reason: <span className="text-slate-700">{r.requestReason}</span></span>
                     )}
@@ -151,7 +151,7 @@ export default function CourseRequests({ active = true }: Props) {
             ))}
           </div>
 
-          <div className="text-xs flex justify-end px-2 pt-2 text-slate-500">Total: {reqTotal} • Page {reqPage} of {totalPages}</div>
+          <div className="text-xs cursor-text flex justify-end px-2 pt-2 text-slate-500">Total: {reqTotal} • Page {reqPage} of {totalPages}</div>
         </div>
       )}
     </div>

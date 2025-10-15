@@ -1,7 +1,7 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface DeleteConfirmProps {
   open: boolean;
@@ -25,12 +25,14 @@ export default function DeleteConfirm({ open, onOpenChange, onConfirm, loading }
             variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={loading}
+            className="cursor-pointer"
           >
             Cancel
           </Button>
           <Button
             onClick={onConfirm}
             disabled={loading}
+            className="cursor-pointer"
           >
             {loading ? "Deleting..." : "Delete"}
           </Button>
