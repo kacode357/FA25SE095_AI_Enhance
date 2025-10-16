@@ -15,7 +15,6 @@ export function useImportStudentsSpecificCourse() {
   ): Promise<ImportStudentsSpecificCourseResponse | null> => {
     setLoading(true);
     setErrors([]);
-debugger
     try {
       const response = await EnrollmentsService.importStudentsSpecificCourse(data);
 

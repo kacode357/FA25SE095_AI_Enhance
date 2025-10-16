@@ -34,7 +34,11 @@ export default function ImportStudentsDialog({
   const handleImport = async () => {
     if (!file) return;
     const res = await importStudents({ file, courseId });
-    if (res?.success) onSubmit?.();
+    if (res?.success) {
+      onSubmit?.();
+      setFile(null); //reset file luôn (để sạch giao diện sau khi đóng)
+      onOpenChange(false);
+    }
   };
 
   return (

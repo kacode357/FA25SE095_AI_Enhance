@@ -16,6 +16,7 @@ import CreateAssignmentSheet from "./components/CreateAssignmentSheet";
 import CreateGroupSheet from "./components/CreateGroupSheet";
 import GroupsPanel from "./components/GroupsPanel";
 import ImportStudentsDialog from "./components/ImportStudentsDialog";
+import StudentList from "./components/StudentListImport";
 
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -164,10 +165,7 @@ export default function CourseDetailPage() {
               <CardTitle className="text-base">Student List</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Placeholder UI – không gọi API */}
-              <div className="text-sm text-slate-500">
-                No students yet. Use <b>Import Excel</b> to add students.
-              </div>
+              <StudentList courseId={id} />
             </CardContent>
           </Card>
         </TabsContent>

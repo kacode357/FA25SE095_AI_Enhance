@@ -1,8 +1,8 @@
 "use client";
 
 import { CourseService } from "@/services/course.services";
-import { GetCourseEnrollmentsQuery } from "@/types/course/course.payload";
-import { GetCourseEnrollmentsResponse } from "@/types/course/course.response";
+import { GetCourseEnrollmentsQuery } from "@/types/courses/course.payload";
+import { GetCourseEnrollmentsResponse } from "@/types/courses/course.response";
 import { useState } from 'react';
 
 /** ✅ Hook để lấy danh sách enrollments cho 1 course */
@@ -16,6 +16,7 @@ export function useCourseEnrollments() {
   ) => {
     setLoading(true);
     const res = await CourseService.getEnrollments(courseId, query);
+    console.log(res)
     setData(res);
     setLoading(false);
   };

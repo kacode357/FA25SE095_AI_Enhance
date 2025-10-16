@@ -41,3 +41,11 @@ export interface UpdateAccessCodeRequest {
   expiresAt?: string;
   regenerateCode?: boolean;
 }
+
+/** ✅ Query cho GET /api/Courses/{id}/enrollments */
+export interface GetCourseEnrollmentsQuery {
+  page?: number;
+  pageSize?: number;
+  studentName?: string;
+  sortDirection?: "asc" | "desc";
+}

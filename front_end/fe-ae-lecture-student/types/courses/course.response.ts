@@ -70,3 +70,30 @@ export interface UpdateAccessCodeResponse {
   accessCodeCreatedAt: string | null;
   accessCodeExpiresAt: string | null;
 }
+
+export interface GetCourseEnrollmentsResponse {
+  success: boolean;
+  message: string;
+  course: CourseItem;
+  enrollments: Enrollment[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+export interface Enrollment {
+  id: string;
+  courseId: string;
+  courseName: string;
+  courseCode: string;
+  studentId: string;
+  studentName: string;
+  joinedAt: string;
+  unenrolledAt: string | null;
+  status: number; // 1 = Active, 2 = Unenrolled, ...
+  unenrollmentReason: string | null;
+  createdAt: string;
+}

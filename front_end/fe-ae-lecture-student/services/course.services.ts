@@ -2,17 +2,19 @@
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
   CreateCoursePayload,
+  GetCourseEnrollmentsQuery,
   GetMyCoursesQuery,
-  UpdateCoursePayload,
   UpdateAccessCodeRequest,
+  UpdateCoursePayload,
 } from "@/types/courses/course.payload";
 import {
   CreateCourseResponse,
-  GetMyCoursesResponse,
-  UpdateCourseResponse,
-  GetCourseByIdResponse,
   DeleteCourseResponse,
+  GetCourseByIdResponse,
+  GetCourseEnrollmentsResponse,
+  GetMyCoursesResponse,
   UpdateAccessCodeResponse,
+  UpdateCourseResponse,
 } from "@/types/courses/course.response";
 
 export const CourseService = {
@@ -51,6 +53,18 @@ export const CourseService = {
     body: UpdateAccessCodeRequest
   ): Promise<UpdateAccessCodeResponse> => {
     const res = await courseAxiosInstance.post<UpdateAccessCodeResponse>(`/Courses/${id}/access-code`, body);
+    return res.data;
+  },
+
+  /** ✅ GET /api/Courses/{id}/enrollments (Lecturer/Staff only) */
+  getEnrollments: async (
+    id: string,
+    params?: GetCourseEnrollmentsQuery
+  ): Promise<GetCourseEnrollmentsResponse> => {
+    const res = await courseAxiosInstance.get<GetCourseEnrollmentsResponse>(
+      `/Courses/${id}/enrollments`,
+      { params }
+    );
     return res.data;
   },
 };

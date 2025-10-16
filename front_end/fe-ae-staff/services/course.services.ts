@@ -1,17 +1,17 @@
 // services/course.services.ts
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
-  GetAllCoursesQuery,
   ApproveCoursePayload,
-  RejectCoursePayload,
+  GetAllCoursesQuery,
   GetCourseEnrollmentsQuery,
+  RejectCoursePayload,
 } from "@/types/course/course.payload";
 import {
-  GetAllCoursesResponse,
   ApproveCourseResponse,
-  RejectCourseResponse,
+  GetAllCoursesResponse,
   GetCourseByIdResponse,
-  GetCourseEnrollmentsResponse, // ✅ thêm
+  GetCourseEnrollmentsResponse,
+  RejectCourseResponse,
 } from "@/types/course/course.response";
 
 export const CourseService = {
@@ -46,6 +46,7 @@ export const CourseService = {
     );
     return res.data;
   },
+  
    /** ✅ GET /api/Courses/{id}/enrollments (Lecturer/Staff only) */
   getEnrollments: async (
     id: string,
