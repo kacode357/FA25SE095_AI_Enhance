@@ -25,9 +25,27 @@ export interface ApiErrorResponse {
   [key: string]: any;
 }
 
+export interface ImportTemplateResponse {
+  success: boolean;
+  file: Blob;
+  fileName: string;
+  contentType: string;
+}
+
 export interface ImportStudentsTemplateResponse {
   success: boolean;
   file: Blob;
   fileName: string;
   contentType: string;
+}
+
+export interface ImportStudentsSpecificCourseResponse {
+  success: boolean;
+  message: string;
+  totalRows: number;
+  successfulEnrollments: number;
+  failedEnrollments: number;
+  errors: string[];
+  courseId: string;
+  courseName: string;
 }

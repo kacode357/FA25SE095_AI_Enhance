@@ -1,11 +1,13 @@
-// services/enrollments.services.ts
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
   ImportEnrollmentsPayload,
+  ImportStudentsSpecificCoursePayload,
 } from "@/types/enrollments/enrollments.payload";
 import {
   ImportEnrollmentsResponse,
+  ImportStudentsSpecificCourseResponse,
   ImportStudentsTemplateResponse,
+  ImportTemplateResponse,
 } from "@/types/enrollments/enrollments.response";
 
 export const EnrollmentsService = {
@@ -40,6 +42,30 @@ export const EnrollmentsService = {
     return response.data;
   },
 
+    downloadImportTemplate: async (): Promise<ImportTemplateResponse> => {
+    const response = await courseAxiosInstance.get<Blob>(
+      "/enrollments/import-template",
+      {
+        responseType: "blob", // !important: để axios trả về file
+        headers: {
+          Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      }
+    );
+
+    const contentDisposition = response.headers["content-disposition"];
+    const fileName =
+      contentDisposition?.split("filename=")[1]?.replace(/['"]/g, "") ||
+      "StudentEnrollmentTemplate_20251016.xlsx";
+
+    return {
+      success: true,
+      file: response.data,
+      fileName,
+      contentType: response.headers["content-type"],
+    };
+  },
+
   downloadImportStudentsTemplate: async (): Promise<ImportStudentsTemplateResponse> => {
     const response = await courseAxiosInstance.get<Blob>(
       "/enrollments/courses/import-students-template",
@@ -62,6 +88,23 @@ export const EnrollmentsService = {
       fileName,
       contentType: response.headers["content-type"],
     };
+  },
+
+  importStudentsSpecificCourse: async (
+    data: ImportStudentsSpecificCoursePayload
+  ): Promise<ImportStudentsSpecificCourseResponse> => {
+    const formData = new FormData();
+    formData.append("file", data.file);
+
+    const response = await courseAxiosInstance.post<ImportStudentsSpecificCourseResponse>(
+      `/enrollments/courses/${data.courseId}/import-students`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return response.data;
   },
 };
 

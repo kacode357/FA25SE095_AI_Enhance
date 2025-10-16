@@ -10,3 +10,8 @@ export interface ImportEnrollmentsPayload {
   /** Optional: apply this import to specific courses; when omitted, backend may infer from file */
   courseIds?: string[];
 }
+
+export interface ImportStudentsSpecificCoursePayload {
+  courseId: string;
+  file: File;
+}

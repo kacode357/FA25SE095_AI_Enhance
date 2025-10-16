@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useImportStudentTemplate } from "@/hooks/enrollments/useImportStudentTemplate";
+import { CourseStatus } from "@/types/courses/course.response";
 import { ArrowLeft, FileSpreadsheet, FolderPlus, HardDriveDownload, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -26,6 +27,13 @@ export default function CourseDetailPage() {
   const [activeTab, setActiveTab] = useState<"students" | "groups" | "assignments">("students");
   const [groupsRefresh, setGroupsRefresh] = useState(0);
   const [assignmentsRefresh, setAssignmentsRefresh] = useState(0);
+
+  const CourseStatusText: Record<CourseStatus, string> = {
+    [CourseStatus.PendingApproval]: "Pending Approval",
+    [CourseStatus.Active]: "Active",
+    [CourseStatus.Inactive]: "Inactive",
+    [CourseStatus.Rejected]: "Rejected",
+  };
 
   useEffect(() => {
     if (id) fetchCourseById(id);
@@ -56,7 +64,21 @@ export default function CourseDetailPage() {
               <>
                 <h1 className="text-lg font-semibold text-slate-800">
                   {title}
+                  {course?.status && (
+                    <span
+                      className={`
+      ml-2 px-2 py-[2px] rounded-full text-xs font-medium border
+      ${course.status === CourseStatus.PendingApproval ? "border-amber-300 bg-amber-50 text-amber-800" :
+                          course.status === CourseStatus.Active ? "border-green-300 bg-green-50 text-green-800" :
+                            course.status === CourseStatus.Rejected ? "border-red-300 bg-red-50 text-red-800" :
+                              "border-gray-300 bg-gray-50 text-gray-700"}
+    `}
+                    >
+                      {CourseStatusText[course.status]}
+                    </span>
+                  )}
                 </h1>
+
                 {course && (
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     {(course.term || course.year) && (
@@ -91,10 +113,12 @@ export default function CourseDetailPage() {
                 {downloading ? "Downloading..." : "Download Template"}
               </button>
 
-              <Button className="h-8 cursor-pointer" onClick={() => setOpenImport(true)}>
-                <FileSpreadsheet className="size-4" />
-                Import Students
-              </Button>
+              {course?.status === CourseStatus.Active && (
+                <Button className="h-8 cursor-pointer" onClick={() => setOpenImport(true)}>
+                  <FileSpreadsheet className="size-4" />
+                  Import Students
+                </Button>
+              )}
             </div>
           )}
           {activeTab === "groups" && (
@@ -158,7 +182,7 @@ export default function CourseDetailPage() {
       </Tabs>
 
       {/* Dialogs/Sheets */}
-      <ImportStudentsDialog open={openImport} onOpenChange={setOpenImport} />
+      <ImportStudentsDialog open={openImport} onOpenChange={setOpenImport} courseId={id} />
       <CreateGroupSheet
         open={openGroup}
         onOpenChange={setOpenGroup}

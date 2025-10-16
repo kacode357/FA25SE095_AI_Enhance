@@ -6,13 +6,14 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
 import { motion } from "framer-motion";
-import { FileUp, Plus, Upload } from "lucide-react";
+import { FileUp, HardDriveDownload, Plus, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import CourseRequests from "./components/CourseRequests";
 
 import { useDeleteCourse } from "@/hooks/course/useDeleteCourse";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 
+import { useImportTemplate } from "@/hooks/enrollments/useImportTemplate";
 import { CourseItem } from "@/types/courses/course.response";
 import CourseCard from "./components/CourseCard";
 import CreateDialog from "./components/CreateDialog";
@@ -24,6 +25,7 @@ import ImportDialog from "./components/ImportDialog";
 export default function CoursesPage() {
   const { listData, totalCount, currentPage, loading, fetchMyCourses } = useMyCourses();
   const { deleteCourse, loading: deleting } = useDeleteCourse();
+  const { downloadImportTemplate, loading: downloading } = useImportTemplate();
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openImportStudents, setOpenImportStudents] = useState(false);
@@ -66,7 +68,6 @@ export default function CoursesPage() {
 
   useEffect(() => {
     fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(() => listData, [listData]);
@@ -94,6 +95,15 @@ export default function CoursesPage() {
             </p>
 
             <div className="flex text-xs items-center gap-2">
+              {/* Download Template */}
+              <button
+                onClick={downloadImportTemplate}
+                disabled={downloading}
+                className="flex cursor-pointer items-center gap-1 text-sm text-emerald-600 mr-5 hover:text-emerald-800 underline disabled:opacity-50"
+              >
+                <HardDriveDownload className="size-4 mr-1" />
+                {downloading ? "Downloading..." : "Download Template"}
+              </button>
               {/* Import Student in many Courses */}
               <Dialog open={openImportStudents} onOpenChange={setOpenImportStudents}>
                 <DialogTrigger asChild>
