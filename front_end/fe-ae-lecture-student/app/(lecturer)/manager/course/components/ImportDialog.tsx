@@ -22,9 +22,12 @@ const { importEnrollments, loading, errors, setErrors } = useImportEnrollments()
   const [file, setFile] = useState<File | null>(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
 
-  const sortedCourses = useMemo(() => {
-    return [...courses].sort((a, b) => a.courseCodeTitle.localeCompare(b.courseCodeTitle));
-  }, [courses]);
+const sortedCourses = useMemo(() => {
+  return courses
+    .filter((c) => c.status === 2)
+    .sort((a, b) => a.courseCodeTitle.localeCompare(b.courseCodeTitle));
+}, [courses]);
+
 
   const toggleCourse = (id: string) => {
     setSelectedCourseIds((prev) =>
