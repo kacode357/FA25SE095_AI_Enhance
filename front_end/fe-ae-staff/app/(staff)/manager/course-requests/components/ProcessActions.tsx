@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useProcessCourseRequest } from "@/hooks/course-request/useProcessCourseRequest";
@@ -17,7 +16,7 @@ import { CourseRequestStatus } from "@/config/course-request-status";
 interface ProcessActionsProps {
   id: string;
   currentStatus: number;
-  onProcessed?: () => void; // callback reload sau khi xử lý xong
+  onProcessed?: () => void;
 }
 
 export default function ProcessActions({
@@ -30,7 +29,12 @@ export default function ProcessActions({
   const [action, setAction] = useState<"approve" | "reject" | null>(null);
   const [comment, setComment] = useState("");
 
-  // ✅ Gửi request xử lý
+  const openWith = (a: "approve" | "reject") => {
+    setAction(a);
+    setComment("");
+    setOpen(true);
+  };
+
   const handleSubmit = async () => {
     if (!action) return;
     const status =
@@ -45,74 +49,76 @@ export default function ProcessActions({
 
     if (res?.success) {
       setOpen(false);
-      setComment("");
       setAction(null);
+      setComment("");
       onProcessed?.();
     }
   };
 
-  // Nếu đã processed rồi thì ẩn nút
   if (currentStatus !== CourseRequestStatus.Pending) return null;
 
   return (
-    <div className="mt-4 flex items-center gap-3">
+    <div className="flex items-center gap-2">
+      {/* Approve */}
+      <Button
+        variant="primary"
+        className="px-5 whitespace-nowrap rounded-xl"
+        onClick={() => openWith("approve")}
+        disabled={loading}
+      >
+        Approve
+      </Button>
+
+      {/* Reject — outline để không bị “ô trắng không chữ” */}
+      <Button
+        variant="outline"
+        className="px-5 whitespace-nowrap rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-slate-300"
+        onClick={() => openWith("reject")}
+        disabled={loading}
+      >
+        Reject
+      </Button>
+
+      {/* Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button
-            className="bg-green-600 hover:bg-green-700 text-white"
-            onClick={() => {
-              setAction("approve");
-              setOpen(true);
-            }}
-            disabled={loading}
-          >
-            Approve
-          </Button>
-        </DialogTrigger>
-
-        <DialogTrigger asChild>
-          <Button
-        
-            onClick={() => {
-              setAction("reject");
-              setOpen(true);
-            }}
-            disabled={loading}
-          >
-            Reject
-          </Button>
-        </DialogTrigger>
-
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-w-2xl sm:max-w-lg rounded-2xl p-6 border border-slate-200 shadow-lg">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="text-2xl font-semibold">
               {action === "approve" ? "Approve Request" : "Reject Request"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="mt-2 space-y-2">
-            <p className="text-sm text-slate-600">
-              {action === "approve"
-                ? "Please provide an optional approval comment."
-                : "Please provide a rejection reason (optional)."}
-            </p>
-            <Textarea
-              placeholder={
-                action === "approve"
-                  ? "Approval comments..."
-                  : "Rejection reason..."
-              }
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
+          <p className="text-sm text-slate-500 mb-3">
+            {action === "approve"
+              ? "Please provide an optional approval comment."
+              : "Please provide a rejection reason (optional)."}
+          </p>
 
-          <DialogFooter className="mt-4">
-            <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Textarea
+            placeholder={
+              action === "approve" ? "Approval comments..." : "Rejection reason..."
+            }
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="min-h-[120px] rounded-xl border border-slate-300 bg-white placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 shadow-sm"
+          />
+
+          <DialogFooter className="mt-5 flex gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl"
+              onClick={() => setOpen(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={loading}>
+
+            <Button
+              variant={action === "reject" ? "danger" : "primary"}
+              className="h-10 px-5 rounded-xl"
+              onClick={handleSubmit}
+              disabled={loading}
+            >
               {loading
                 ? "Processing..."
                 : action === "approve"

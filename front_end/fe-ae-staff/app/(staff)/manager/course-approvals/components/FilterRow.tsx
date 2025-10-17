@@ -22,7 +22,8 @@ export default function FilterRow({
   onClear,
 }: Props) {
   return (
-    <TableRow className="bg-slate-50 !border-0">
+    <TableRow className="bg-slate-50 !border-0 text-xs">
+      {/* Course Name */}
       <TableCell className="pl-4 py-2">
         <Input
           placeholder="Course Name"
@@ -32,6 +33,7 @@ export default function FilterRow({
         />
       </TableCell>
 
+      {/* Lecturer */}
       <TableCell className="py-2">
         <Input
           placeholder="Lecturer"
@@ -41,9 +43,16 @@ export default function FilterRow({
         />
       </TableCell>
 
-      <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
+      {/* Term */}
       <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
 
+      {/* Year */}
+      <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
+
+      {/* Created At */}
+      <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
+
+      {/* Action buttons */}
       <TableCell className="py-2 text-center">
         <div className="flex justify-center items-center gap-2">
           <Button className="h-8 px-3 text-xs" onClick={onApply}>

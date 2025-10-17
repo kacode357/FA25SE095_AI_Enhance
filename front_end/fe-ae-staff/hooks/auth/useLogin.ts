@@ -54,7 +54,7 @@ export function useLogin() {
         toast.error("Only staff members are allowed to log in!");
         return null;
       }
-      router.push("/manager/course-codes");
+      router.push("/manager/terms");
       return res;
     } catch {
       return null;

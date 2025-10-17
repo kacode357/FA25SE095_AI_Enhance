@@ -46,8 +46,6 @@ const mainNav = [
   },
 ];
 
-
-
 const secondaryNav = [
   { href: "/manager/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/manager/settings", label: "Settings", icon: Settings },
@@ -70,14 +68,21 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+        <div
+          className={clsx(
+            "flex items-center",
+            collapsed ? "justify-center" : "justify-between"
+          )}
+        >
           {!collapsed && (
             <div>
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
                 <GraduationCap className="w-5 h-5 text-blue-600" />
                 Instructor
               </h2>
-              <p className="text-sm text-gray-500 mt-1">Dashboard Management</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Dashboard Management
+              </p>
             </div>
           )}
           <Button
@@ -86,7 +91,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
           >
             <ChevronRight
               className={clsx(
-                "w-4 h-4 text-white transition-transform",
+                "w-4 h-4 text-gray-600 transition-transform", // Changed from text-white
                 collapsed ? "rotate-0" : "rotate-180"
               )}
             />
@@ -111,7 +116,8 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                 key={href}
                 href={href}
                 className={clsx(
-                  "group flex items-center gap-3 p-3 rounded-lg transition-all duration-200 relative",
+                  "group flex items-center p-3 rounded-lg transition-all duration-200 relative",
+                  collapsed ? "justify-center" : "gap-3", // Added conditional layout
                   active
                     ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25"
                     : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600"
@@ -120,8 +126,11 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
               >
                 <Icon
                   className={clsx(
-                    "w-5 h-5 transition-transform group-hover:scale-110",
-                    active ? "text-white" : "text-gray-500 group-hover:text-blue-600"
+                    "transition-transform group-hover:scale-110",
+                    collapsed ? "w-6 h-6" : "w-5 h-5", // Added conditional size
+                    active
+                      ? "text-white"
+                      : "text-gray-500 group-hover:text-blue-600"
                   )}
                 />
                 {!collapsed && (
@@ -149,7 +158,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                   </div>
                 )}
 
-                {active && (
+                {active && !collapsed && (
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-l-full"></div>
                 )}
               </Link>
@@ -172,14 +181,20 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                 key={href}
                 href={href}
                 className={clsx(
-                  "group flex items-center gap-3 p-3 rounded-lg transition-all duration-200",
+                  "group flex items-center p-3 rounded-lg transition-all duration-200",
+                  collapsed ? "justify-center" : "gap-3", // Added conditional layout
                   active
                     ? "bg-gray-100 text-gray-900"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 )}
                 title={collapsed ? label : undefined}
               >
-                <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <Icon
+                  className={clsx(
+                    "group-hover:scale-110 transition-transform",
+                    collapsed ? "w-6 h-6" : "w-5 h-5" // Added conditional size
+                  )}
+                />
                 {!collapsed && <span className="font-medium">{label}</span>}
               </Link>
             );
