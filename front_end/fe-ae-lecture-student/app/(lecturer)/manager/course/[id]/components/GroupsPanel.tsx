@@ -14,6 +14,7 @@ import { useDeleteGroup } from "@/hooks/group/useDeleteGroup";
 import { useGroupsByCourseId } from "@/hooks/group/useGroups";
 import { GroupDetail } from "@/types/group/group.response";
 import { Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CreateGroupSheet from "./CreateGroupSheet";
@@ -33,6 +34,7 @@ export default function GroupsPanel({
     const [editingGroup, setEditingGroup] = useState<GroupDetail | null>(null);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState<GroupDetail | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
         if (courseId) fetchByCourseId(courseId, true);
@@ -43,6 +45,11 @@ export default function GroupsPanel({
         if (!g) return;
         setEditingGroup(g);
         setOpenSheet(true);
+    };
+
+    const handleOpenDetails = (id: string) => {
+        // navigate to group details page
+        router.push(`/manager/course/${courseId}/group/${id}`);
     };
 
     const handleDeleteClick = (g: GroupDetail) => {
@@ -65,90 +72,84 @@ export default function GroupsPanel({
 
     return (
         <>
-            <Card className="border-emerald-500">
-                <CardHeader>
-                    <CardTitle className="text-base border-b-emerald-500">Groups</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {loading && <div className="text-sm text-slate-500">Loading groups...</div>}
-                    {!loading && error && <div className="text-sm text-red-600">{error}</div>}
-                    {!loading && !error && groups.length === 0 && (
-                        <div className="text-sm text-slate-500">
-                            No groups yet. Click <b>Create Group</b> to make one.
-                        </div>
-                    )}
+            {loading && <div className="text-sm text-slate-500">Loading groups...</div>}
+            {!loading && error && <div className="text-sm text-red-600">{error}</div>}
+            {!loading && !error && groups.length === 0 && (
+                <div className="text-sm text-slate-500">
+                    No groups yet. Click <b>Create Group</b> to make one.
+                </div>
+            )}
 
-                    {!loading && !error && groups.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            {groups.map((g) => (
-                                <Card
-                                    key={g.id}
-                                    className="h-full  border-slate-200 hover:shadow-sm transition cursor-pointer"
-                                >
-                                    <CardHeader className="pb-2">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <CardTitle className="text-sm text-slate-900 font-semibold">
-                                                    {g.name}
-                                                </CardTitle>
-                                                {g.description && (
-                                                    <div className="text-xs text-slate-500">{g.description}</div>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    className="h-7 px-0 cursor-pointer text-emerald-600 hover:bg-emerald-50"
-                                                    title="Edit group"
-                                                    onClick={() => handleEdit(g.id)}
-                                                >
-                                                    <Pencil className="size-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    className="h-7 px-0 cursor-pointer !text-red-600 hover:bg-red-50"
-                                                    title="Delete group"
-                                                    onClick={() => handleDeleteClick(g)}
-                                                    disabled={deleting}
-                                                >
-                                                    <Trash2 className="size-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
+            {!loading && !error && groups.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {groups.map((g) => (
+                        <Card
+                            key={g.id}
+                            onClick={() => handleOpenDetails(g.id)}
+                            className="h-full  border-slate-200 hover:shadow-sm transition cursor-pointer"
+                        >
+                            <CardHeader className="pb-2">
+                                <div className="flex justify-between items-start">
+                                    <div className="cursor-pointer">
+                                        <CardTitle className="text-sm text-slate-900 font-semibold">
+                                            {g.name}
+                                        </CardTitle>
+                                        {g.description && (
+                                            <div className="text-xs text-slate-500">{g.description}</div>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            className="h-7 px-0 cursor-pointer text-emerald-600 hover:bg-emerald-50"
+                                            title="Edit group"
+                                            onClick={() => handleEdit(g.id)}
+                                        >
+                                            <Pencil className="size-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="h-7 px-0 cursor-pointer !text-red-600 hover:bg-red-50"
+                                            title="Delete group"
+                                            onClick={() => handleDeleteClick(g)}
+                                            disabled={deleting}
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardHeader>
 
-                                    <CardContent className="pt-0">
-                                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                                            <div>
-                                                <span className="text-slate-500">Members:</span>{" "}
-                                                {g.memberCount}/{g.maxMembers}
-                                            </div>
-                                            <div>
-                                                <span className="text-slate-500">Leader:</span>{" "}
-                                                {g.leaderName || "—"}
-                                            </div>
-                                            <div className="col-span-2">
-                                                <span className="text-slate-500">Assignment:</span>{" "}
-                                                {g.assignmentTitle || "—"}
-                                            </div>
-                                            <div>
-                                                <span className="text-slate-500">Locked:</span>{" "}
-                                                {g.isLocked ? "Yes" : "No"}
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="text-slate-500">By:</span> {g.createdBy}
-                                            </div>
-                                            <div className="col-span-2 text-right text-[10px] text-slate-400">
-                                                Created: {new Date(g.createdAt).toLocaleString()}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                            <CardContent className="pt-0">
+                                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                                    <div>
+                                        <span className="text-slate-500">Members:</span>{" "}
+                                        {g.memberCount}/{g.maxMembers}
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-500">Leader:</span>{" "}
+                                        {g.leaderName || "—"}
+                                    </div>
+                                    <div className="col-span-2">
+                                        <span className="text-slate-500">Assignment:</span>{" "}
+                                        {g.assignmentTitle || "—"}
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-500">Locked:</span>{" "}
+                                        {g.isLocked ? "Yes" : "No"}
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-slate-500">By:</span> {g.createdBy}
+                                    </div>
+                                    <div className="col-span-2 text-right text-[10px] text-slate-400">
+                                        Created: {new Date(g.createdAt).toLocaleString()}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
 
             {/* ✅ Delete Confirmation Dialog */}
             <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>

@@ -89,6 +89,7 @@ export default function CreateGroupSheet({
           maxMembers: payload.maxMembers,
           isLocked: payload.isLocked,
         };
+        
         const res = await GroupService.updateGroup(initialData.id, updatePayload);
         if (res?.success) {
           // Prefer group on response if available; otherwise pass through current values

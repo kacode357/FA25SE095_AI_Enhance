@@ -57,7 +57,6 @@ export default function ClassDetailPage() {
   function saveChanges() {
     const payload = { id, code, name, semester, status, inviteCode, schedules };
     // UI-only: log and show minimal feedback
-    console.log("Save class payload:", payload);
     // show ephemeral feedback
     alert("Saved changes (UI-only). Check console for payload.");
   }

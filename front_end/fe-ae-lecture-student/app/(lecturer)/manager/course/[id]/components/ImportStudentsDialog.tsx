@@ -16,6 +16,7 @@ interface ImportStudentsDialogProps {
   onOpenChange: (v: boolean) => void;
   courseId: string;
   onSubmit?: () => void;
+  onImported?: () => void;
 }
 
 export default function ImportStudentsDialog({
@@ -23,6 +24,7 @@ export default function ImportStudentsDialog({
   onOpenChange,
   courseId,
   onSubmit,
+  onImported,
 }: ImportStudentsDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const { importStudents, loading, errors, setErrors } = useImportStudentsSpecificCourse();
@@ -31,15 +33,16 @@ export default function ImportStudentsDialog({
     if (!open) setErrors([]);
   }, [open]);
 
-  const handleImport = async () => {
-    if (!file) return;
-    const res = await importStudents({ file, courseId });
-    if (res?.success) {
-      onSubmit?.();
-      setFile(null); //reset file luôn (để sạch giao diện sau khi đóng)
-      onOpenChange(false);
-    }
-  };
+const handleImport = async () => {
+  if (!file) return;
+  const res = await importStudents({ file, courseId });
+  if (res?.success) {
+    onSubmit?.();
+    onImported?.();
+    setFile(null);
+    onOpenChange(false);
+  }
+};
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

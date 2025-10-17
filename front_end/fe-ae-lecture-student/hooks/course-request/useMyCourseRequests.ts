@@ -30,7 +30,6 @@ export function useMyCourseRequests() {
     setError(null);
     try {
       const res = await CourseRequestService.getAll(params);
-      console.log("res", res)
       cache.set(key, res);
       setListData(res.courseRequests || []);
       setTotalCount(res.totalCount);

@@ -7,7 +7,6 @@ import {
   Bell,
   ChevronDown,
   CircleArrowOutUpRight,
-  // Đã bỏ import Search
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,13 +34,13 @@ export default function ManagerHeader({ onMenuClick }: Props) {
 
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
-      <div className="h-16 px-4 sm:px-6 flex items-center justify-between">
+      <div className="h-16 px-4 sm:px-3 flex items-center justify-between">
         <Link
           href="/"
           className="inline-flex items-center gap-3 group transition-transform hover:scale-105"
           aria-label="AI Enhance"
         >
-          <div className="relative">
+          <div className="relative ml-2">
             <Image
               src="/ai-enhance-logo.svg"
               alt="AI Enhance"

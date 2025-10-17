@@ -1,6 +1,6 @@
 import { courseAxiosInstance } from "@/config/axios.config";
 import { CreateGroupPayload, UpdateGroupPayload } from "@/types/group/group.payload";
-import { CreateGroupResponse, DeleteGroupResponse, GetGroupsByCourseIdResponse, UpdateGroupsResponse } from "@/types/group/group.response";
+import { CreateGroupResponse, DeleteGroupResponse, GetGroupsByCourseIdResponse, GroupDetail, UpdateGroupsResponse } from "@/types/group/group.response";
 
 export const GroupService = {
   create: async (data: CreateGroupPayload): Promise<CreateGroupResponse> => {
@@ -15,7 +15,14 @@ export const GroupService = {
     return response.data;
   },
 
-    updateGroup: async (groupId: string, data: UpdateGroupPayload): Promise<UpdateGroupsResponse> => {
+  getById: async (groupId: string): Promise<GroupDetail> => {
+    const response = await courseAxiosInstance.get<GroupDetail>(
+      `/groups/${groupId}`
+    );
+    return response.data;
+  },
+
+  updateGroup: async (groupId: string, data: UpdateGroupPayload): Promise<UpdateGroupsResponse> => {
     const response = await courseAxiosInstance.put<UpdateGroupsResponse>(
       `/groups/${groupId}`,
       data

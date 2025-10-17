@@ -16,7 +16,6 @@ export function useCourseEnrollments() {
   ) => {
     setLoading(true);
     const res = await CourseService.getEnrollments(courseId, query);
-    console.log(res)
     setData(res);
     setLoading(false);
   };

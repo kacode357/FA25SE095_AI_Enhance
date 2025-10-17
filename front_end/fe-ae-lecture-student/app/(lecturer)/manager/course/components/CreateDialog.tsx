@@ -115,7 +115,7 @@ export default function CreateDialog({
 
     const res = await createCourseRequest(payload);
     if (res) {
-      setSuccessMessage("Course request submitted successfully and is pending staff approval. Please wait.");
+      setSuccessMessage("Course request submitted successfully and is pending Staff approval. Please wait.");
       setOpenSuccess(true);
       onSubmit();
     }

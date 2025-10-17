@@ -1,16 +1,12 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import Button from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useImportStudentTemplate } from "@/hooks/enrollments/useImportStudentTemplate";
-import { CourseStatus } from "@/types/courses/course.response";
-import { ArrowLeft, FileSpreadsheet, FolderPlus, HardDriveDownload, PlusCircle } from "lucide-react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { FileSpreadsheet, FolderPlus, PlusCircle } from "lucide-react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import AssignmentsPanel from "./components/AssignmentsPanel";
 import CreateAssignmentSheet from "./components/CreateAssignmentSheet";
 import CreateGroupSheet from "./components/CreateGroupSheet";
@@ -20,7 +16,9 @@ import StudentList from "./components/StudentListImport";
 
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: course, loading, error, fetchCourseById } = useGetCourseById();
+  const search = useSearchParams();
+  const router = useRouter();
+  const action = search?.get?.("action") || null;
   const { downloadTemplate, loading: downloading } = useImportStudentTemplate();
   const [openImport, setOpenImport] = useState(false);
   const [openGroup, setOpenGroup] = useState(false);
@@ -28,130 +26,24 @@ export default function CourseDetailPage() {
   const [activeTab, setActiveTab] = useState<"students" | "groups" | "assignments">("students");
   const [groupsRefresh, setGroupsRefresh] = useState(0);
   const [assignmentsRefresh, setAssignmentsRefresh] = useState(0);
+  const [studentsRefresh, setStudentsRefresh] = useState(0);
 
-  const CourseStatusText: Record<CourseStatus, string> = {
-    [CourseStatus.PendingApproval]: "Pending Approval",
-    [CourseStatus.Active]: "Active",
-    [CourseStatus.Inactive]: "Inactive",
-    [CourseStatus.Rejected]: "Rejected",
-  };
-
+  // synchronize open states with ?action= query param
   useEffect(() => {
-    if (id) fetchCourseById(id);
-  }, [id, fetchCourseById]);
+    setOpenImport(action === "import");
+    setOpenGroup(action === "createGroup");
+    setOpenAssign(action === "createAssign");
+  }, [action]);
 
-  const title = useMemo(() => {
-    if (!course) return "";
-    const code = course.courseCode ?? "";
-    const codeTitle = course.courseCodeTitle ?? course.name ?? "";
-    return `${code} — ${codeTitle}`;
-  }, [course]);
+  function clearAction() {
+    // remove action param
+    const url = new URL(window.location.href);
+    url.searchParams.delete("action");
+    router.replace(url.pathname + url.search);
+  }
 
   return (
-    <div className="p-3 space-y-3">
-      {/* Top bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/manager/course">
-            <Button variant="ghost" className="h-8 px-2 cursor-pointer">
-              <ArrowLeft className="size-4" />
-            </Button>
-          </Link>
-          <div>
-            <div className="text-sm text-slate-500">Course Detail</div>
-            {loading ? (
-              <div className="h-6 w-64 rounded bg-slate-100 animate-pulse" />
-            ) : (
-              <>
-                <h1 className="text-lg font-semibold text-slate-800">
-                  {title}
-                  {course?.status && (
-                    <span
-                      className={`
-      ml-2 px-2 py-[2px] rounded-full text-xs font-medium border
-      ${course.status === CourseStatus.PendingApproval ? "border-amber-300 bg-amber-50 text-amber-800" :
-                          course.status === CourseStatus.Active ? "border-green-300 bg-green-50 text-green-800" :
-                            course.status === CourseStatus.Rejected ? "border-red-300 bg-red-50 text-red-800" :
-                              "border-gray-300 bg-gray-50 text-gray-700"}
-    `}
-                    >
-                      {CourseStatusText[course.status]}
-                    </span>
-                  )}
-                </h1>
-
-                {course && (
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {(course.term || course.year) && (
-                      <Badge className="text-[10px]">
-                        {course.term}
-                        {course.term && course.year ? " • " : ""}
-                        {course.year}
-                      </Badge>
-                    )}
-                    {course.department && (
-                      <Badge variant="outline" className="text-[10px]">{course.department}</Badge>
-                    )}
-                    {course.lecturerName && (
-                      <Badge variant="secondary" className="text-[10px]">{course.lecturerName}</Badge>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {activeTab === "students" && (
-            <div className="flex gap-5">
-              <button
-                onClick={downloadTemplate}
-                disabled={downloading}
-                className="flex cursor-pointer items-center gap-1 text-sm text-emerald-600 hover:text-emerald-800 underline disabled:opacity-50"
-              >
-                <HardDriveDownload className="size-4 mr-1" />
-                {downloading ? "Downloading..." : "Download Template"}
-              </button>
-
-              {course?.status === CourseStatus.Active && (
-                <Button className="h-8 cursor-pointer" onClick={() => setOpenImport(true)}>
-                  <FileSpreadsheet className="size-4" />
-                  Import Students
-                </Button>
-              )}
-            </div>
-          )}
-          {activeTab === "groups" && (
-            <Button className="h-8 cursor-pointer" onClick={() => setOpenGroup(true)}>
-              <FolderPlus className="size-4 mr-2" />
-              Create Group
-            </Button>
-          )}
-          {activeTab === "assignments" && (
-            <Button className="h-8 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setOpenAssign(true)}>
-              <PlusCircle className="size-4 mr-2" />
-              New Assignment
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* About */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-slate-600">
-          {loading && <div className="h-4 w-72 rounded bg-slate-100 animate-pulse" />}
-          {!loading && error && (
-            <div className="text-red-600">{error}</div>
-          )}
-          {!loading && !error && (course?.description || "No description.")}
-        </CardContent>
-      </Card>
-
-      {/* Tabs: Students / Groups / Assignments (UI only) */}
+    <>
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
         <TabsList>
           <TabsTrigger className="cursor-pointer" value="students">Students</TabsTrigger>
@@ -161,38 +53,93 @@ export default function CourseDetailPage() {
 
         <TabsContent value="students" className="space-y-2">
           <Card className="border-emerald-500">
-            <CardHeader>
+            <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-base">Student List</CardTitle>
+
+              <Button
+                className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
+                onClick={() => setOpenImport(true)}
+              >
+                <FileSpreadsheet className="size-4 mr-1" />
+                Import Students
+              </Button>
             </CardHeader>
+
             <CardContent>
-              <StudentList courseId={id} />
+              <StudentList courseId={id} refreshSignal={studentsRefresh} />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="groups" className="space-y-2">
-          <GroupsPanel courseId={id} refreshSignal={groupsRefresh} />
+          <Card className="border-emerald-500">
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="text-base">Groups List</CardTitle>
+
+              <Button
+                className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
+                onClick={() => setOpenGroup(true)}
+              >
+                <FolderPlus className="size-4 mr-1" />
+                Create Group
+              </Button>
+            </CardHeader>
+
+            <CardContent>
+              <GroupsPanel courseId={id} refreshSignal={groupsRefresh} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="assignments" className="space-y-2">
-          <AssignmentsPanel courseId={id} refreshSignal={assignmentsRefresh} />
+          <Card className="border-emerald-500">
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="text-base">Assignments</CardTitle>
+
+              <Button
+                className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
+                onClick={() => setOpenAssign(true)}
+              >
+                <PlusCircle className="size-4 mr-1" />
+                New Assignment
+              </Button>
+            </CardHeader>
+
+            <CardContent>
+              <AssignmentsPanel courseId={id} refreshSignal={assignmentsRefresh} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
       {/* Dialogs/Sheets */}
-      <ImportStudentsDialog open={openImport} onOpenChange={setOpenImport} courseId={id} />
+      <ImportStudentsDialog
+        open={openImport}
+        onOpenChange={(v) => {
+          setOpenImport(v);
+          if (!v) clearAction();
+        }}
+        courseId={id}
+        onImported={() => setStudentsRefresh((v) => v + 1)}
+      />
       <CreateGroupSheet
         open={openGroup}
-        onOpenChange={setOpenGroup}
+        onOpenChange={(v) => {
+          setOpenGroup(v);
+          if (!v) clearAction();
+        }}
         courseId={id}
         onCreated={() => setGroupsRefresh((v) => v + 1)}
       />
       <CreateAssignmentSheet
         open={openAssign}
-        onOpenChange={setOpenAssign}
+        onOpenChange={(v) => {
+          setOpenAssign(v);
+          if (!v) clearAction();
+        }}
         courseId={id}
         onCreated={() => setAssignmentsRefresh((v) => v + 1)}
       />
-    </div>
+    </>
   );
 }
