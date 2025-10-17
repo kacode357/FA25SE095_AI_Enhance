@@ -21,14 +21,12 @@ export interface GroupMember {
   notes: string;
 }
 
-export interface DeleteGroupMemberResponse {
+export interface DeleteMemberResponse {
   success: boolean;
   message: string;
 }
 
-
 //
-
 export enum Role {
   Student = 0,
 }
@@ -60,4 +58,15 @@ export interface AddGroupMembersResponse {
   successCount: number;
   failureCount: number;
   results: AddGroupMembersResultItem[];
+}
+
+//
+export interface AssignLeaderResponse {
+  success: boolean;
+  message: string;
+  groupId: string;
+  newLeaderId: string;
+  newLeaderName: string;
+  previousLeaderId: string;
+  previousLeaderName: string;
 }

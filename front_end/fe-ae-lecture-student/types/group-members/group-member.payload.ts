@@ -10,10 +10,9 @@ export interface AddGroupMemberPayload {
   notes?: string;
 }
 
-export interface DeleteGroupMemberPayload {
+export interface DeleteMemberPayload {
   groupId: string;
   studentId: string;
-  reason?: string;
 }
 
 export interface GetAllMembersPayload {
@@ -26,4 +25,10 @@ export interface GetAllMembersPayload {
 export interface AddGroupMembersPayload {
   groupId: string;
   studentIds: string[];
+}
+
+//
+export interface AssignLeadPayload {
+  groupId: string;
+  studentId: string;
 }

@@ -92,7 +92,8 @@ export default function AccessCodeDialog({
   };
 
   return (
-    <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-md">
+    <DialogContent onClick={(e) => e.stopPropagation()}
+      className="bg-white border-slate-200 text-slate-900 max-w-md">
       <DialogHeader>
         <DialogTitle>Update Access Code</DialogTitle>
       </DialogHeader>
@@ -175,9 +176,17 @@ export default function AccessCodeDialog({
       </div>
 
       <DialogFooter className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
+        <Button
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenChange(false);
+          }}
+          disabled={loading}
+        >
           Cancel
         </Button>
+
         <Button onClick={handleSubmit} disabled={loading || !requiresAccessCode || !accessCodeType}>
           {loading ? "Updating..." : "Update"}
         </Button>

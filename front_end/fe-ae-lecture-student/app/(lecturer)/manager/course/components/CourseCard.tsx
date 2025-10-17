@@ -12,13 +12,14 @@ import {
 } from "@/components/ui/tooltip";
 import { CourseItem, CourseStatus } from "@/types/courses/course.response";
 import {
+  BookOpenCheck,
   ClipboardCopy,
   Eye,
   EyeOff,
   Pencil,
   RefreshCw,
   Trash2,
-  Users,
+  Users
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -50,7 +51,7 @@ export default function CourseCard({
   const accessActive = hasCodeFeature && !course.isAccessCodeExpired;
   const code = course.accessCode ?? "";
   const masked = useMemo(() => (code ? "•".repeat(code.length) : "—"), [code]);
-  // ===== Status badge mapping (right side like Course Requests) =====
+
   const statusInfo = useMemo(() => {
     const s = course.status;
     if (s === undefined || s === null) return { label: undefined, className: "" };
@@ -71,8 +72,6 @@ export default function CourseCard({
   const revealDisabled = !hasCodeFeature || !code;
   const copyDisabled = !hasCodeFeature || !code;
 
-
-  // ===== Điều hướng khi click card =====
   const goDetail = () => router.push(`/manager/course/${course.id}`);
   const onKeyEnter = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -81,7 +80,6 @@ export default function CourseCard({
     }
   };
 
-  // ===== Helpers chặn bubble để không điều hướng khi bấm nút =====
   const stop = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -99,7 +97,7 @@ export default function CourseCard({
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
-    } catch {}
+    } catch { }
   };
 
   const openUpdateClick = (e: React.MouseEvent) => {
@@ -127,15 +125,15 @@ export default function CourseCard({
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-3">
-        <CardTitle className="text-sm text-slate-800">
-          <span className="font-semibold">{course.courseCode}</span>
-          <span className="text-slate-500"> — {course.courseCodeTitle}</span>
-        </CardTitle>
-        {statusInfo.label && (
-          <Badge variant="outline" className={`text-[11px] ${statusInfo.className}`}>
-            {statusInfo.label}
-          </Badge>
-        )}
+          <CardTitle className="text-sm text-slate-800">
+            <span className="font-semibold">{course.courseCode}</span>
+            <span className="text-slate-500"> — {course.courseCodeTitle}</span>
+          </CardTitle>
+          {statusInfo.label && (
+            <Badge variant="outline" className={`text-[11px] ${statusInfo.className}`}>
+              {statusInfo.label}
+            </Badge>
+          )}
         </div>
 
         <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -164,127 +162,109 @@ export default function CourseCard({
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col justify-between gap-3">
-            {course.description && (
-              <p className="text-sm text-slate-600">{course.description}</p>
+        <div className="flex items-center gap-4">
+          {/* Description */}
+          <div className="flex-1 text-sm text-slate-600">{course.description || "-"}</div>
+
+          {/* Enrollments */}
+          <div className="flex-1 text-xs text-slate-500 flex items-center gap-1">
+            <Users className="size-4" />
+            <span>{course.enrollmentCount} enrollments</span>
+          </div>
+
+          {/* Created */}
+          <div className="flex-1 text-xs text-slate-500">Created: {fmtDate(course.createdAt)}</div>
+
+          {/* Access Code + Controls */}
+          <div className="flex items-center gap-1 text-xs text-black">
+            <span
+              className={`select-all ${!code ? "text-slate-400 italic" : ""
+                }`}
+            >
+              {showCode
+                ? code || "No Access Code"
+                : code
+                  ? masked
+                  : "No Access Code"}
+            </span>
+
+            <Button
+              variant="ghost"
+              className="h-7 px-2 cursor-pointer"
+              onClick={toggleReveal}
+              disabled={revealDisabled}
+              aria-label={showCode ? "Hide code" : "Show code"}
+            >
+              {showCode ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </Button>
+
+            <TooltipProvider>
+              <Tooltip open={copied || undefined}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="h-7 px-2 cursor-pointer"
+                    onClick={copy}
+                    disabled={copyDisabled}
+                    aria-label="Copy code"
+                  >
+                    <ClipboardCopy className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="py-1 px-2 text-xs">Copied!</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {hasCodeFeature && (
+              <Dialog open={openUpdate} onOpenChange={setOpenUpdate}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="h-7 px-2 cursor-pointer text-slate-700 hover:bg-slate-50"
+                    onClick={openUpdateClick}
+                    aria-label="Update access code"
+                  >
+                    <RefreshCw className="size-4" />
+                  </Button>
+                </DialogTrigger>
+
+                <AccessCodeDialog
+                  courseId={course.id}
+                  defaultType={undefined}
+                  defaultCustom={course.accessCode ?? undefined}
+                  defaultExpiresAt={course.accessCodeExpiresAt}
+                  open={openUpdate}
+                  onOpenChange={setOpenUpdate}
+                  onUpdated={onUpdated}
+                />
+              </Dialog>
             )}
+          </div>
 
-            {/* Access Code block — luôn render để đồng bộ chiều cao */}
-            <div className="flex items-start justify-between gap-2 text-sm">
-              <div className="text-slate-500">
-                <div className="flex items-center gap-2">
-                  <span>Code:</span>
-                  <span className="font-semibold text-slate-700 select-all">
-                    {hasCodeFeature
-                      ? showCode
-                        ? code || "—"
-                        : masked
-                      : "No access code"}
-                  </span>
-                </div>
-                <div className="text-xs text-slate-400">
-                  {hasCodeFeature ? (
-                    <>
-                      Issued: {fmtDate(course.accessCodeCreatedAt)}
-                      {course.accessCodeExpiresAt && (
-                        <> • Expires: {fmtDate(course.accessCodeExpiresAt)}</>
-                      )}
-                    </>
-                  ) : (
-                    <>—</>
-                  )}
-                </div>
-              </div>
+        </div>
 
-              {/* Controls (Reveal / Copy / Update) */}
-              <div className="flex items-center gap-1 pt-1">
-                <Button
-                  variant="ghost"
-                  className="h-8 px-2 cursor-pointer"
-                  onClick={toggleReveal}
-                  disabled={revealDisabled}
-                  aria-label={showCode ? "Hide code" : "Show code"}
-                  title={showCode ? "Hide code" : "Show code"}
-                >
-                  {showCode ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </Button>
-
-                <TooltipProvider>
-                  <Tooltip open={copied || undefined}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 px-2 cursor-pointer"
-                        onClick={copy}
-                        disabled={copyDisabled}
-                        aria-label="Copy code"
-                        title="Copy code"
-                      >
-                        <ClipboardCopy className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="py-1 px-2 text-xs">Copied!</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                {hasCodeFeature && (
-                  <Dialog open={openUpdate} onOpenChange={setOpenUpdate}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 px-2 cursor-pointer text-slate-700 hover:bg-slate-50"
-                        onClick={openUpdateClick}
-                        aria-label="Update access code"
-                        title="Update access code"
-                      >
-                        <RefreshCw className="size-4" />
-                      </Button>
-                    </DialogTrigger>
-
-                    <AccessCodeDialog
-                      courseId={course.id}
-                      defaultType={undefined} // map accessCodeType từ BE nếu có
-                      defaultCustom={course.accessCode ?? undefined}
-                      defaultExpiresAt={course.accessCodeExpiresAt}
-                      open={openUpdate}
-                      onOpenChange={setOpenUpdate}
-                      onUpdated={onUpdated}
-                    />
-                  </Dialog>
-                )}
-              </div>
-            </div>
-
-            {/* Meta + CRUD */}
-            <div className="mt-auto flex items-end justify-between pt-2">
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <Users className="size-4" />
-                <span>{course.enrollmentCount} enrollments</span>
-              </div>
-              <div className="text-xs text-slate-500">
-                Created: {fmtDate(course.createdAt)}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-1">
-              <Button
-                variant="ghost"
-                className="h-8 cursor-pointer px-2 text-emerald-600 hover:bg-emerald-50"
-                onClick={onEditClick}
-                aria-label="Edit"
-                title="Edit"
-              >
-                <Pencil className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-8 cursor-pointer px-2 !text-red-600 hover:bg-red-50"
-                onClick={onDeleteClick}
-                aria-label="Delete"
-                title="Delete"
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </div>
+        {/* Actions row */}
+        <div className="flex justify-between gap-1 mt-2">
+          <div className="text-xs flex gap-2 items-center italic text-slate-500"><BookOpenCheck className="size-4" />Welcome to the new course, glad to join. Please contact to Staff if you have any problems with the course.</div>
+          <div>
+            <Button
+              variant="ghost"
+              className="h-7 px-2 text-emerald-600 hover:bg-emerald-50"
+              onClick={onEditClick}
+              aria-label="Edit"
+            >
+              <Pencil className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-7 px-2 !text-red-600 hover:bg-red-50"
+              onClick={onDeleteClick}
+              aria-label="Delete"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -7,12 +7,25 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAllMembers } from "@/hooks/group-member/useAllMembers";
+import { useAssignLead } from "@/hooks/group-member/useAssignLead";
+import { useDeleteMember } from "@/hooks/group-member/useDeleteMember";
 import { useGroupById } from "@/hooks/group/useGroupById";
 import { GroupMember } from "@/types/group-members/group-member.response";
-import { CalendarClock, Info, Lock, User, UserRoundMinus, UserRoundPen, UserRoundPlus } from "lucide-react";
+import {
+  CalendarClock,
+  Info,
+  Lock,
+  User,
+  UserRoundMinus,
+  UserRoundPen,
+  UserRoundPlus,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import AddMemberSheet from "./components/AddMemberSheet";
 
 export default function GroupDetailPage() {
@@ -20,7 +33,15 @@ export default function GroupDetailPage() {
   const router = useRouter();
   const { data: group, loading, error, fetchGroupById } = useGroupById();
   const { members, loading: membersLoading, fetchAllMembers } = useAllMembers();
+  const { deleteMember, loading: deleting } = useDeleteMember();
+
   const [openAddMember, setOpenAddMember] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<GroupMember | null>(null);
+
+  const { assignLead, loading: assigning } = useAssignLead();
+  const [leaderModalOpen, setLeaderModalOpen] = useState(false);
+  const [selectedLeader, setSelectedLeader] = useState<string | null>(null);
 
   useEffect(() => {
     if (groupId) {
@@ -34,13 +55,38 @@ export default function GroupDetailPage() {
   if (error) return <div className="text-red-500 text-sm">Error: {error}</div>;
   if (!group) return <div className="text-slate-500 text-sm">Group not found.</div>;
 
-  const handleDeleteMember = (member: GroupMember) => {
-    if (confirm(`Are you sure you want to delete ${member.studentName}?`)) {
-      // Gọi API xóa member
-      console.log("Delete member", member);
-    }
+  const handleDeleteClick = (member: GroupMember) => {
+    setSelectedMember(member);
+    setConfirmOpen(true);
   };
 
+  const handleConfirmDelete = async () => {
+    if (!selectedMember) return;
+    const res = await deleteMember({ groupId, studentId: selectedMember.studentId });
+    if (res?.success) {
+      toast.success(res.message);
+      fetchAllMembers(groupId);
+    } else {
+      toast.error(res?.message || "Delete failed");
+    }
+    setConfirmOpen(false);
+    setSelectedMember(null);
+  };
+
+  const openLeaderModal = () => {
+    setSelectedLeader(group?.leaderId || null);
+    setLeaderModalOpen(true);
+  };
+
+  const handleConfirmLeader = async () => {
+    if (!selectedLeader || !groupId) return;
+    const res = await assignLead({ groupId, studentId: selectedLeader });
+    if (res?.success) {
+      setLeaderModalOpen(false);
+      fetchAllMembers(groupId);
+      fetchGroupById(groupId);
+    }
+  };
 
   return (
     <div className="space-y-6 p-4">
@@ -145,11 +191,15 @@ export default function GroupDetailPage() {
                     <th className="px-3 py-2 text-left">Name</th>
                     <th className="px-3 py-2 text-left">Email</th>
                     <th className="px-3 py-2 text-center">Role</th>
-                    <th className="px-3 cursor-pointer py-2 flex gap-1 text-center">Leader
-                        <UserRoundPen className="size-4" />
-                      </th>
+                    <th
+                      className="px-3 cursor-pointer py-2 flex gap-1 text-center"
+                      onClick={openLeaderModal}
+                    >
+                      Leader <UserRoundPen color="#059669" className="size-4" />
+                    </th>
+
                     <th className="px-3 py-2 text-center">Joined At</th>
-                    <th className="px-3 py-2 text-center">Actions</th>
+                    <th className="px-3 py-2 text-center">Remove</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -157,9 +207,11 @@ export default function GroupDetailPage() {
                     <tr key={m.id} className="border-t border-slate-200">
                       <td className="px-3 py-2">{m.studentName}</td>
                       <td className="px-3 py-2">{m.studentEmail}</td>
-                      <td className="px-3 py-2 text-center">{m.roleDisplay}</td>
                       <td className="px-3 py-2 text-center">
-                        {m.isLeader ? (
+                        {m.isLeader || m.studentId === selectedLeader ? "Leader" : "Member"}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        {m.isLeader || m.studentId === selectedLeader ? (
                           <span className="text-emerald-600 font-medium">Yes</span>
                         ) : (
                           "No"
@@ -167,11 +219,10 @@ export default function GroupDetailPage() {
                       </td>
                       <td className="px-3 py-2 text-center">{new Date(m.joinedAt).toLocaleString()}</td>
                       <td className="px-3 py-2 text-center flex justify-center gap-2">
-                        {/* Delete Button */}
                         <button
                           title="Delete"
                           className="text-red-600 cursor-pointer hover:text-red-800"
-                          onClick={() => handleDeleteMember(m)}
+                          onClick={() => handleDeleteClick(m)}
                         >
                           <UserRoundMinus className="size-4" />
                         </button>
@@ -185,15 +236,79 @@ export default function GroupDetailPage() {
           )}
         </section>
       </div>
+
       <AddMemberSheet
         open={openAddMember}
-        onOpenChange={(v) => {
-          setOpenAddMember(v);
-          if (!v) fetchAllMembers(groupId);
-        }}
+        onOpenChange={(v) => setOpenAddMember(v)}
         groupId={groupId}
         courseId={courseId}
+        existingMemberIds={members.map((m) => m.studentId)}
+        groupHasLeader={members.some((m) => m.isLeader)}
+        onAdded={() => fetchAllMembers(groupId)}
       />
+
+      {/* Confirm Delete Modal */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold">{selectedMember?.studentName}</span>?
+          </div>
+          <DialogFooter className="flex gap-3">
+            <Button
+              className="cursor-pointer"
+              variant="ghost"
+              onClick={() => setConfirmOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="cursor-pointer"
+              onClick={handleConfirmDelete} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={leaderModalOpen} onOpenChange={setLeaderModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Group Leader</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="mb-2 text-sm text-slate-600">Set a new group Leader:</p>
+            <div className="flex flex-col gap-2 max-h-60 overflow-auto">
+              {members.map((m: GroupMember) => (
+                <label key={m.id} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="leader"
+                    value={m.studentId}
+                    checked={selectedLeader === m.studentId}
+                    onChange={() => setSelectedLeader(m.studentId)}
+                    className="cursor-pointer"
+                  />
+                  <span>{m.studentName} {m.isLeader ? "(Current Leader)" : ""}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <DialogFooter className="flex gap-3 mt-4">
+            <Button className="cursor-pointer" variant="ghost" onClick={() => setLeaderModalOpen(false)} disabled={assigning}>
+              Cancel
+            </Button>
+            <Button className="cursor-pointer" onClick={handleConfirmLeader} disabled={assigning || !selectedLeader}>
+              {assigning ? "Assigning..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

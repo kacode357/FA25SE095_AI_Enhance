@@ -1,6 +1,16 @@
 import { courseAxiosInstance } from "@/config/axios.config";
-import { AddGroupMemberPayload, AddGroupMembersPayload, DeleteGroupMemberPayload } from "@/types/group-members/group-member.payload";
-import { AddGroupMembersResponse, DeleteGroupMemberResponse, GroupMembersResponse } from "@/types/group-members/group-member.response";
+import {
+  AddGroupMemberPayload,
+  AddGroupMembersPayload,
+  AssignLeadPayload,
+  DeleteMemberPayload,
+} from "@/types/group-members/group-member.payload";
+import {
+  AddGroupMembersResponse,
+  AssignLeaderResponse,
+  DeleteMemberResponse,
+  GroupMembersResponse,
+} from "@/types/group-members/group-member.response";
 
 export const GroupMembersService = {
   getAllMembers: async (groupId: string): Promise<GroupMembersResponse> => {
@@ -32,15 +42,26 @@ export const GroupMembersService = {
   },
 
   deleteGroupMember: async (
-    data: DeleteGroupMemberPayload
-  ): Promise<DeleteGroupMemberResponse> => {
-    const { groupId, studentId, reason } = data;
+    data: DeleteMemberPayload
+  ): Promise<DeleteMemberResponse> => {
+    const { groupId, studentId } = data;
 
-    const response = await courseAxiosInstance.delete<DeleteGroupMemberResponse>(
-      `/group-members/groups/${groupId}/members/${studentId}`,
-      {
-        data: reason ? { reason } : {},
-      }
+    const response = await courseAxiosInstance.delete<DeleteMemberResponse>(
+      `/group-members`,
+      { params: { groupId, studentId } }
+    );
+
+    return response.data;
+  },
+
+  // ✅ Assign a member as group leader
+  assignLeader: async (
+    data: AssignLeadPayload
+  ): Promise<AssignLeaderResponse> => {
+    const { groupId, studentId } = data;
+    const response = await courseAxiosInstance.put<AssignLeaderResponse>(
+      `/group-members/groups/${groupId}/leader`,
+      { studentId }
     );
     return response.data;
   },

@@ -107,7 +107,7 @@ export default function CoursesPage() {
               {/* Import Student in many Courses */}
               <Dialog open={openImportStudents} onOpenChange={setOpenImportStudents}>
                 <DialogTrigger asChild>
-                  <Button className="h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
+                  <Button className="h-9 cursor-pointer text-xs bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
                     <FileUp className="size-4" />
                     Import Students
                   </Button>
@@ -124,7 +124,7 @@ export default function CoursesPage() {
               </Dialog>
               <Dialog open={openImportEnrollments} onOpenChange={setOpenImportEnrollments}>
                 <DialogTrigger asChild>
-                  <Button className="h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
+                  <Button className="h-9 cursor-pointer text-xs bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
                     <Upload className="size-4" />
                     Import Enrollments
                   </Button>
@@ -143,7 +143,7 @@ export default function CoursesPage() {
               {/* Create Course */}
               <Dialog open={openCreate} onOpenChange={setOpenCreate}>
                 <DialogTrigger asChild>
-                  <Button className="h-9 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
+                  <Button className="h-9 cursor-pointer text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
                     <Plus className="size-4" />
                     Create Course
                   </Button>
