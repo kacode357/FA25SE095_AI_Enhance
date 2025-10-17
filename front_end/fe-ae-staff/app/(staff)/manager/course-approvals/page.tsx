@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -11,11 +12,11 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { useCourses } from "@/hooks/course/useCourses";
 import { Course } from "@/types/course/course.response";
 import FilterRow from "./components/FilterRow";
+import PaginationBar from "../../../../components/common/PaginationBar";
+import { Button } from "@/components/ui/button";
 
 export default function CourseApprovalsPage() {
   const router = useRouter();
@@ -24,11 +25,10 @@ export default function CourseApprovalsPage() {
   const [page, setPage] = useState(1);
   const [pendingCourses, setPendingCourses] = useState<Course[]>([]);
 
-  // ✅ Filters
+  // Filters
   const [name, setName] = useState("");
   const [lecturerName, setLecturerName] = useState("");
 
-  // ✅ Fetch pending courses
   const fetchAll = async (pageNum = 1) => {
     await fetchCourses({
       page: pageNum,
@@ -50,56 +50,42 @@ export default function CourseApprovalsPage() {
   }, [listData]);
 
   const totalPages = listData?.totalPages || 1;
+  const totalCount = listData?.totalCount || 0;
 
   return (
     <div className="min-h-full flex flex-col p-3 bg-white text-slate-900">
-      {/* ✅ PAGE HEADER */}
-      <header className="sticky top-0 z-20 mb-4 bg-white/90 p-3 rounded-md border border-slate-200 shadow-sm">
-        <h1 className="text-lg font-semibold text-slate-800">
-          Course Approvals
-        </h1>
+      {/* Header */}
+      <header className="sticky top-0 z-20 mb-4 bg-white/90 p-3 rounded-md border border-slate-200">
+        <h1 className="text-lg font-semibold text-slate-800">Course Approvals</h1>
         <p className="text-sm text-slate-600 mt-1">
-          Review and approve new course requests submitted by lecturers.  
-          Only <b>pending</b> courses are shown here.
+          Review and approve new course requests submitted by lecturers. Only <b>pending</b> courses are shown here.
         </p>
       </header>
 
-      {/* ✅ Main Table */}
-      <Card className="flex-1 border border-slate-200 shadow-sm">
+      {/* Table card */}
+      <Card className="flex-1 border border-slate-200">
         <CardHeader>
           <CardTitle className="text-base font-semibold text-slate-800">
             Pending Course Approvals{" "}
-            <span className="text-slate-500 text-sm">
-              ({listData?.totalCount ?? 0})
-            </span>
+            <span className="text-slate-500 text-sm">({totalCount})</span>
           </CardTitle>
         </CardHeader>
 
         <CardContent className="px-0">
           <div className="overflow-auto">
-            <Table className="w-full text-sm">
-              <TableHeader className="sticky top-0 bg-slate-50 z-10">
-                <TableRow className="text-slate-600 border-b">
-                  <TableHead className="pl-4 font-semibold w-1/3">
-                    Course Name
-                  </TableHead>
-                  <TableHead className="font-semibold w-1/5">
-                    Lecturer
-                  </TableHead>
-                  <TableHead className="text-center font-semibold w-1/6">
-                    Term
-                  </TableHead>
-                  <TableHead className="text-center font-semibold w-1/6">
-                    Year
-                  </TableHead>
-                  <TableHead className="text-center font-semibold w-1/6">
-                    Created At
-                  </TableHead>
+            <Table className="table-auto w-full">
+              {/* Header + Filter (no dark borders) */}
+              <TableHeader className="sticky top-0 z-10 bg-slate-50">
+                <TableRow className="text-slate-600 border-b border-t border-slate-200">
+                  <TableHead className="pl-4 font-bold w-1/4 text-left">Course Name</TableHead>
+                  <TableHead className="font-bold w-1/5 text-left">Lecturer</TableHead>
+                  <TableHead className="font-bold w-1/6 text-center">Term</TableHead>
+                  <TableHead className="font-bold w-1/6 text-center">Year</TableHead>
+                  <TableHead className="font-bold w-1/6 text-center">Created At</TableHead>
+                  <TableHead className="font-bold w-[120px] text-center">Action</TableHead>
                 </TableRow>
-              </TableHeader>
 
-              <TableBody>
-                {/* ✅ Filter Row */}
+                {/* Filter row đặt trong Header cho đồng bộ */}
                 <FilterRow
                   name={name}
                   setName={setName}
@@ -112,8 +98,9 @@ export default function CourseApprovalsPage() {
                     fetchAll(1);
                   }}
                 />
+              </TableHeader>
 
-                {/* ✅ Data Rows */}
+              <TableBody>
                 {!loading &&
                   pendingCourses.map((c) => (
                     <motion.tr
@@ -121,24 +108,30 @@ export default function CourseApprovalsPage() {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      onClick={() =>
-                        router.push(`/manager/course-approvals/${c.id}`)
-                      }
-                      className="border-b hover:bg-blue-50/50 cursor-pointer"
+                      className="border-b border-slate-100 hover:bg-blue-50/40"
                     >
-                      <TableCell className="pl-4">{c.courseCodeTitle}</TableCell>
-                      <TableCell>{c.lecturerName}</TableCell>
+                      <TableCell className="pl-4 text-left">{c.courseCodeTitle}</TableCell>
+                      <TableCell className="text-left">{c.lecturerName}</TableCell>
                       <TableCell className="text-center">{c.term}</TableCell>
                       <TableCell className="text-center">{c.year}</TableCell>
-                      <TableCell className="text-center text-xs">
+                      <TableCell className="text-center text-xs whitespace-nowrap">
                         {new Date(c.createdAt).toLocaleDateString("en-GB")}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          size="sm"
+                          className="h-8 px-3 text-xs"
+                          onClick={() => router.push(`/manager/course-approvals/${c.id}`)}
+                        >
+                          View Detail
+                        </Button>
                       </TableCell>
                     </motion.tr>
                   ))}
 
                 {!loading && pendingCourses.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500">
+                    <td colSpan={6} className="py-10 text-center text-slate-500">
                       No pending courses.
                     </td>
                   </tr>
@@ -146,7 +139,7 @@ export default function CourseApprovalsPage() {
 
                 {loading && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500">
+                    <td colSpan={6} className="py-10 text-center text-slate-500">
                       Loading...
                     </td>
                   </tr>
@@ -157,26 +150,14 @@ export default function CourseApprovalsPage() {
         </CardContent>
       </Card>
 
-      {/* ✅ Pagination */}
-      <div className="flex justify-center items-center gap-3 py-3 border-t border-slate-200 mt-3">
-        <Button
-          className="h-8 px-3 text-xs"
-          disabled={page <= 1 || loading}
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-        >
-          Prev
-        </Button>
-        <span className="text-sm text-slate-700">
-          Page {page} / {totalPages}
-        </span>
-        <Button
-          className="h-8 px-3 text-xs"
-          disabled={page >= totalPages || loading}
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-        >
-          Next
-        </Button>
-      </div>
+      {/* Pagination */}
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        loading={loading}
+        onPageChange={(newPage) => setPage(newPage)}
+      />
     </div>
   );
 }

@@ -9,10 +9,12 @@ import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@
 import { useCourses } from "@/hooks/course/useCourses";
 import { Course } from "@/types/course/course.response";
 import FilterRow from "./components/FilterRow";
+import PaginationBar from "@/components/common/PaginationBar";
 
 export default function CoursesPage() {
   const router = useRouter();
   const { listData, loading, fetchCourses } = useCourses();
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [page, setPage] = useState(1);
 
@@ -21,11 +23,13 @@ export default function CoursesPage() {
   const [courseCode, setCourseCode] = useState("");
   const [lecturerName, setLecturerName] = useState("");
 
+  const pageSize = 10;
+
   // ✅ Fetch chỉ lấy Active courses
   const fetchAll = async (pageNum = 1) => {
     await fetchCourses({
       page: pageNum,
-      pageSize: 10,
+      pageSize,
       sortBy: "CreatedAt",
       sortDirection: "desc",
       name: name || undefined,
@@ -33,18 +37,23 @@ export default function CoursesPage() {
       lecturerName: lecturerName || undefined,
       status: 2, // Active
     });
+    setPage(pageNum);
   };
 
   useEffect(() => {
-    fetchAll(page);
-  }, [page]);
+    fetchAll(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (listData?.courses) setCourses(listData.courses);
   }, [listData]);
 
   const filtered = useMemo(() => courses, [courses]);
-  const totalPages = listData?.totalPages || 1;
+
+  const totalPages =
+    listData?.totalPages ??
+    Math.max(1, Math.ceil((listData?.totalCount ?? 0) / pageSize));
 
   return (
     <div className="min-h-full flex flex-col p-2 bg-white text-slate-900">
@@ -57,7 +66,10 @@ export default function CoursesPage() {
       <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="text-base text-slate-800">
-            Active Courses <span className="text-slate-500">({listData?.totalCount ?? 0})</span>
+            Active Courses{" "}
+            <span className="text-slate-500">
+              ({listData?.totalCount ?? 0})
+            </span>
           </CardTitle>
         </CardHeader>
 
@@ -130,28 +142,18 @@ export default function CoursesPage() {
             </Table>
           </div>
         </CardContent>
-      </Card>
 
-      {/* ✅ Pagination */}
-      <div className="flex justify-center items-center gap-3 py-3 border-t border-slate-200">
-        <Button
-          className="h-8 px-3 text-xs"
-          disabled={page <= 1 || loading}
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-        >
-          Prev
-        </Button>
-        <span className="text-sm text-slate-700">
-          Page {page} / {totalPages}
-        </span>
-        <Button
-          className="h-8 px-3 text-xs"
-          disabled={page >= totalPages || loading}
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-        >
-          Next
-        </Button>
-      </div>
+        {/* ✅ Pagination */}
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          totalCount={listData?.totalCount ?? 0}
+          loading={loading}
+          onPageChange={(p) => {
+            if (p !== page) fetchAll(p);
+          }}
+        />
+      </Card>
     </div>
   );
 }

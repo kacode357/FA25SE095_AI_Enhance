@@ -16,6 +16,7 @@ import EditDialog from "./components/EditDialog";
 import DeleteConfirm from "./components/DeleteConfirm";
 import FilterRow from "./components/FilterRow";
 
+import PaginationBar from "@/components/common/PaginationBar";
 import { CourseCode } from "@/types/course-codes/course-codes.response";
 
 export default function CourseCodesPage() {
@@ -31,32 +32,45 @@ export default function CourseCodesPage() {
   const [filterTitle, setFilterTitle] = useState("");
   const [filterDept, setFilterDept] = useState("");
   const [createdAt, setCreatedAt] = useState("");
-  const [filterActive, setFilterActive] = useState(""); // ✅ thêm filter Active
+  const [filterActive, setFilterActive] = useState(""); // ✅ Active filter
 
   const [courseCodes, setCourseCodes] = useState<CourseCode[]>([]);
+  const [page, setPage] = useState(1);
 
-  // Fetch all with filters
-  const fetchAll = async (page = 1) => {
+  // Dùng 10 như fetchAll đang cố định để đồng bộ phân trang
+  const pageSizeFixed = 10;
+
+  // Fetch with filters
+  const fetchAll = async (p = 1) => {
     await fetchCourseCodes({
-      page,
-      pageSize: 10,
+      page: p,
+      pageSize: pageSizeFixed,
       sortBy: "CreatedAt",
       sortDirection: "desc",
       code: filterCode || undefined,
       title: filterTitle || undefined,
       department: filterDept || undefined,
       createdAfter: createdAt || undefined,
-      isActive: filterActive === "" ? undefined : filterActive === "true", // ✅ thêm filter active
+      isActive: filterActive === "" ? undefined : filterActive === "true",
     });
+    setPage(p);
   };
 
   useEffect(() => {
-    fetchAll();
+    fetchAll(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     setCourseCodes(listData);
   }, [listData]);
+
+  // Sync page from hook (nếu hook có quản lý currentPage)
+  useEffect(() => {
+    if (typeof currentPage === "number" && currentPage > 0) {
+      setPage(currentPage);
+    }
+  }, [currentPage]);
 
   const filtered = useMemo(() => courseCodes, [courseCodes]);
 
@@ -64,10 +78,12 @@ export default function CourseCodesPage() {
     if (!deleteId) return;
     const res = await deleteCourseCode(deleteId);
     if (res?.success) {
-      await fetchAll(currentPage);
+      await fetchAll(page); // giữ nguyên trang hiện tại sau khi xóa
     }
     setDeleteId(null);
   };
+
+  const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / (pageSize ?? pageSizeFixed)));
 
   return (
     <div className="min-h-full flex flex-col p-2 bg-white text-slate-900">
@@ -87,7 +103,7 @@ export default function CourseCodesPage() {
             <CreateDialog
               title="Create New Course Code"
               onSubmit={async () => {
-                await fetchAll();
+                await fetchAll(1);
                 setOpenCreate(false);
               }}
               onCancel={() => setOpenCreate(false)}
@@ -100,7 +116,10 @@ export default function CourseCodesPage() {
       <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="text-base text-slate-800">
-            Course Code List <span className="text-slate-500">({totalCount})</span>
+            Course Code List{" "}
+            <span className="text-slate-500">
+              ({typeof totalCount === "number" ? totalCount : 0})
+            </span>
           </CardTitle>
         </CardHeader>
 
@@ -109,11 +128,8 @@ export default function CourseCodesPage() {
             <Table className="table-auto w-full">
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
-                  {/* CODE: Căn trái */}
                   <TableHead className="w-28 text-left font-bold pl-5">Code</TableHead>
-                  {/* TITLE: Căn trái */}
                   <TableHead className="w-56 text-left font-bold">Title</TableHead>
-                  {/* DEPARTMENT: Căn trái */}
                   <TableHead className="w-44 text-left font-bold">Department</TableHead>
                   <TableHead className="w-28 text-center font-bold">Active</TableHead>
                   <TableHead className="w-36 text-center font-bold">Created At</TableHead>
@@ -125,15 +141,15 @@ export default function CourseCodesPage() {
                   filterTitle={filterTitle} setFilterTitle={setFilterTitle}
                   filterDept={filterDept} setFilterDept={setFilterDept}
                   createdAt={createdAt} setCreatedAt={setCreatedAt}
-                  filterActive={filterActive} setFilterActive={setFilterActive} // ✅ truyền filter Active
-                  fetchAll={fetchAll}
+                  filterActive={filterActive} setFilterActive={setFilterActive}
+                  fetchAll={() => fetchAll(1)} // apply -> về trang 1
                   clearAll={() => {
                     setFilterCode("");
                     setFilterTitle("");
                     setFilterDept("");
                     setCreatedAt("");
-                    setFilterActive(""); // ✅ reset luôn
-                    fetchAll();
+                    setFilterActive("");
+                    fetchAll(1);
                   }}
                 />
               </TableHeader>
@@ -147,11 +163,8 @@ export default function CourseCodesPage() {
                     transition={{ duration: 0.2 }}
                     className="border-b border-slate-100 hover:bg-emerald-50/50"
                   >
-                    {/* CODE: Căn trái, thêm padding */}
                     <TableCell className="text-left pl-5">{c.code}</TableCell>
-                    {/* TITLE: Căn trái */}
                     <TableCell className="text-left">{c.title}</TableCell>
-                    {/* DEPARTMENT: Căn trái */}
                     <TableCell className="text-left">{c.department}</TableCell>
                     <TableCell className="text-center">
                       {c.isActive ? (
@@ -180,7 +193,7 @@ export default function CourseCodesPage() {
                               courseCodeId={c.id}
                               title="Edit Course Code"
                               onSubmit={async () => {
-                                await fetchAll(currentPage);
+                                await fetchAll(page);
                                 setOpenEditId(null);
                               }}
                               onCancel={() => setOpenEditId(null)}
@@ -219,6 +232,19 @@ export default function CourseCodesPage() {
             </Table>
           </div>
         </CardContent>
+
+        {/* Pagination */}
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          totalCount={totalCount ?? 0}
+          loading={loading}
+          onPageChange={(p) => {
+            if (p !== page) {
+              fetchAll(p);
+            }
+          }}
+        />
       </Card>
 
       {/* Delete Confirm Dialog */}
