@@ -76,7 +76,7 @@ export default function GroupsPanel({
             {!loading && error && <div className="text-sm text-red-600">{error}</div>}
             {!loading && !error && groups.length === 0 && (
                 <div className="text-sm text-slate-500">
-                    No groups yet. Click <b>Create Group</b> to make one.
+                    No groups yet. Click <b>Create Group</b> to make one. This action is only available when the course is active.
                 </div>
             )}
 
@@ -85,13 +85,15 @@ export default function GroupsPanel({
                     {groups.map((g) => (
                         <Card
                             key={g.id}
-                            onClick={() => handleOpenDetails(g.id)}
-                            className="h-full  border-slate-200 hover:shadow-sm transition cursor-pointer"
+                            className="h-full  border-slate-200 hover:shadow-sm transition cursor-default"
                         >
                             <CardHeader className="pb-2">
                                 <div className="flex justify-between items-start">
-                                    <div className="cursor-pointer">
-                                        <CardTitle className="text-sm text-slate-900 font-semibold">
+                                    <div
+                                        onClick={() => handleOpenDetails(g.id)}
+                                        className="cursor-pointer">
+                                        <CardTitle
+                                            className="text-sm text-emerald-500 font-semibold">
                                             {g.name}
                                         </CardTitle>
                                         {g.description && (
@@ -122,26 +124,26 @@ export default function GroupsPanel({
 
                             <CardContent className="pt-0">
                                 <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                                    <div>
-                                        <span className="text-slate-500">Members:</span>{" "}
+                                    <div className="cursor-text">
+                                        <span className="text-slate-500 cursor-text">Members:</span>{" "}
                                         {g.memberCount}/{g.maxMembers}
                                     </div>
-                                    <div>
-                                        <span className="text-slate-500">Leader:</span>{" "}
+                                    <div className="cursor-text">
+                                        <span className="text-slate-500 cursor-text">Leader:</span>{" "}
                                         {g.leaderName || "—"}
                                     </div>
-                                    <div className="col-span-2">
-                                        <span className="text-slate-500">Assignment:</span>{" "}
+                                    <div className="col-span-2 cursor-text">
+                                        <span className="text-slate-500 cursor-text">Assignment:</span>{" "}
                                         {g.assignmentTitle || "—"}
                                     </div>
-                                    <div>
-                                        <span className="text-slate-500">Locked:</span>{" "}
+                                    <div className="cursor-text">
+                                        <span className="text-slate-500 cursor-text">Locked:</span>{" "}
                                         {g.isLocked ? "Yes" : "No"}
                                     </div>
-                                    <div className="text-right">
-                                        <span className="text-slate-500">By:</span> {g.createdBy}
+                                    <div className="text-right cursor-text">
+                                        <span className="text-slate-500 cursor-text">By:</span> {g.createdBy}
                                     </div>
-                                    <div className="col-span-2 text-right text-[10px] text-slate-400">
+                                    <div className="col-span-2 text-right text-[10px] cursor-text text-slate-400">
                                         Created: {new Date(g.createdAt).toLocaleString()}
                                     </div>
                                 </div>

@@ -15,3 +15,15 @@ export interface DeleteGroupMemberPayload {
   studentId: string;
   reason?: string;
 }
+
+export interface GetAllMembersPayload {
+  groupId: string;
+  courseId?: string;
+}
+
+
+//
+export interface AddGroupMembersPayload {
+  groupId: string;
+  studentIds: string[];
+}

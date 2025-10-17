@@ -24,9 +24,10 @@ export function useGroupById() {
 
     try {
       const res = await GroupService.getById(groupId);
-      cache.set(groupId, res);
-      setData(res);
-      return res;
+      const groupData = res.group;
+      cache.set(groupId, groupData);
+      setData(groupData);
+      return groupData;
     } catch (e: any) {
       setError(e?.message || "Failed to fetch group detail");
       return null;

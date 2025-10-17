@@ -57,8 +57,8 @@ export default function StudentList({
             {loading ? (
                 <div className="text-center text-slate-500 py-6">Loading...</div>
             ) : students.length === 0 ? (
-                <div className="text-sm text-slate-500 py-4 text-center">
-                    No students found. Use <b>Import Excel</b> to add students.
+                <div className="text-sm text-slate-500">
+                    No students found. Use <b>Import Excel</b> to add students. This action is only available when the course is active.
                 </div>
             ) : (
                 <div className="overflow-x-auto rounded-md border border-slate-200">

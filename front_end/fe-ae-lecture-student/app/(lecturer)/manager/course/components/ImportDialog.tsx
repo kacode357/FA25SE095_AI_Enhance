@@ -18,15 +18,15 @@ export default function ImportDialog({
   onCancel: () => void;
   courses?: CourseItem[];
 }) {
-const { importEnrollments, loading, errors, setErrors } = useImportEnrollments();
+  const { importEnrollments, loading, errors, setErrors } = useImportEnrollments();
   const [file, setFile] = useState<File | null>(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
 
-const sortedCourses = useMemo(() => {
-  return courses
-    .filter((c) => c.status === 2)
-    .sort((a, b) => a.courseCodeTitle.localeCompare(b.courseCodeTitle));
-}, [courses]);
+  const sortedCourses = useMemo(() => {
+    return courses
+      .filter((c) => c.status === 2)
+      .sort((a, b) => a.courseCodeTitle.localeCompare(b.courseCodeTitle));
+  }, [courses]);
 
 
   const toggleCourse = (id: string) => {
@@ -69,7 +69,7 @@ const sortedCourses = useMemo(() => {
           type="file"
           accept=".xlsx,.xls"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="w-full border border-slate-300 rounded-md p-2 text-sm"
+          className="w-full border border-slate-300 rounded-md p-2 cursor-pointer text-sm"
         />
 
         {file && (
@@ -82,10 +82,10 @@ const sortedCourses = useMemo(() => {
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-slate-700">Apply to Courses</p>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" className="h-7 px-2 text-xs" onClick={selectAll} disabled={sortedCourses.length === 0}>
+              <Button variant="ghost" className="h-7 cursor-pointer px-2 text-xs" onClick={selectAll} disabled={sortedCourses.length === 0}>
                 Select all
               </Button>
-              <Button variant="ghost" className="h-7 px-2 text-xs" onClick={clearAll} disabled={selectedCourseIds.length === 0}>
+              <Button variant="ghost" className="h-7 cursor-pointer px-2 text-xs" onClick={clearAll} disabled={selectedCourseIds.length === 0}>
                 Clear
               </Button>
             </div>
@@ -115,16 +115,16 @@ const sortedCourses = useMemo(() => {
             You can import one file into multiple courses at once. Selected courses: <span className="font-bold">{selectedCourseIds.length}</span>
           </p>
 
-{errors.length > 0 && (
-  <div className="mt-2 max-h-40 overflow-y-auto border border-red-200 rounded-md p-2 bg-red-50">
-    <p className="text-sm font-semibold text-red-700 mb-1">Import Errors:</p>
-    <div className="space-y-1 text-sm text-red-600">
-      {errors.map((err, i) => (
-        <div key={i}>• {err}</div>
-      ))}
-    </div>
-  </div>
-)}
+          {errors.length > 0 && (
+            <div className="mt-2 max-h-40 overflow-y-auto border border-red-200 rounded-md p-2 bg-red-50">
+              <p className="text-sm font-semibold text-red-700 mb-1">Import Errors:</p>
+              <div className="space-y-1 text-sm text-red-600">
+                {errors.map((err, i) => (
+                  <div key={i}>• {err}</div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
@@ -133,11 +133,11 @@ const sortedCourses = useMemo(() => {
         <Button
           onClick={handleSubmit}
           disabled={loading || !file || selectedCourseIds.length === 0}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="bg-emerald-600 cursor-pointer hover:bg-emerald-700 text-white"
         >
           {loading ? "Importing..." : "Import"}
         </Button>
-        <Button variant="ghost" onClick={onCancel} disabled={loading}>
+        <Button className="cursor-pointer" variant="ghost" onClick={onCancel} disabled={loading}>
           Cancel
         </Button>
       </DialogFooter>

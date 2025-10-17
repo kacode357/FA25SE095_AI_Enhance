@@ -27,6 +27,13 @@ export interface GetGroupsByCourseIdResponse {
   message: string;
   groups: GroupDetail[];
 }
+
+export interface GetGroupByIdResponse {
+  success: boolean;
+  message: string;
+  group: GroupDetail;
+}
+
 export interface UpdateGroupsResponse {
   success: boolean;
   message: string;

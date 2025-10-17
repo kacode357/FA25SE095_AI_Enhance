@@ -7,7 +7,6 @@ export interface GroupMembersResponse {
 export enum MemberRole {
   Student = 0,
 }
-
 export interface GroupMember {
   id: string;
   groupId: string;
@@ -25,4 +24,40 @@ export interface GroupMember {
 export interface DeleteGroupMemberResponse {
   success: boolean;
   message: string;
+}
+
+
+//
+
+export enum Role {
+  Student = 0,
+}
+export interface GroupMembers {
+  id: string;
+  groupId: string;
+  groupName: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  isLeader: boolean;
+  role: Role;
+  roleDisplay: string;
+  joinedAt: string; // ISO datetime
+  notes: string;
+}
+
+export interface AddGroupMembersResultItem {
+  studentId: string;
+  success: boolean;
+  message: string;
+  member?: GroupMembers;
+}
+
+export interface AddGroupMembersResponse {
+  success: boolean;
+  message: string;
+  totalRequested: number;
+  successCount: number;
+  failureCount: number;
+  results: AddGroupMembersResultItem[];
 }
