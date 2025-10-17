@@ -106,7 +106,7 @@ export default function CourseDetailPage() {
             </CardHeader>
 
             <CardContent>
-              <AssignmentsPanel courseId={id} refreshSignal={assignmentsRefresh} />
+       
             </CardContent>
           </Card>
         </TabsContent>
