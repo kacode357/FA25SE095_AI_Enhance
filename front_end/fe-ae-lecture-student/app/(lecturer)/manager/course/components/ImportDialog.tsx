@@ -18,7 +18,7 @@ export default function ImportDialog({
   onCancel: () => void;
   courses?: CourseItem[];
 }) {
-  const { importEnrollments, loading, errors, setErrors } = useImportEnrollments();
+  const { importEnrollments, loading } = useImportEnrollments();
   const [file, setFile] = useState<File | null>(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
 
@@ -41,13 +41,11 @@ export default function ImportDialog({
   const handleSubmit = async () => {
     if (!file || selectedCourseIds.length === 0) return;
 
-    setErrors([]); // reset lỗi cũ
     const res = await importEnrollments({ file, courseIds: selectedCourseIds });
 
+    // Chỉ đóng dialog nếu API trả về thành công (logic toast/lỗi đã nằm trong hook)
     if (res?.success) {
       onSubmit();
-    } else if (res?.errors?.length) {
-      setErrors(res.errors); // 🧩 hiển thị lỗi nếu có
     }
   };
 
@@ -114,18 +112,6 @@ export default function ImportDialog({
           <p className="text-[11px] text-slate-500">
             You can import one file into multiple courses at once. Selected courses: <span className="font-bold">{selectedCourseIds.length}</span>
           </p>
-
-          {errors.length > 0 && (
-            <div className="mt-2 max-h-40 overflow-y-auto border border-red-200 rounded-md p-2 bg-red-50">
-              <p className="text-sm font-semibold text-red-700 mb-1">Import Errors:</p>
-              <div className="space-y-1 text-sm text-red-600">
-                {errors.map((err, i) => (
-                  <div key={i}>• {err}</div>
-                ))}
-              </div>
-            </div>
-          )}
-
         </div>
       </div>
 

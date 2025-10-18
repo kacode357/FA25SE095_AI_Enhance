@@ -1,4 +1,4 @@
-"use client"; // ⚠️ thêm dòng này vì layout sẽ chứa component client (Header)
+"use client";
 
 import Header from "./components/header";
 
@@ -8,9 +8,12 @@ export default function StudentLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      <Header /> 
-      <main className="flex-1 container mx-auto p-4 sm:p-6">{children}</main>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* ✅ Header không dính */}
+      <Header />
+
+      {/* ✅ Nội dung chính (layout con sẽ tự thêm padding) */}
+      <main>{children}</main>
     </div>
   );
 }

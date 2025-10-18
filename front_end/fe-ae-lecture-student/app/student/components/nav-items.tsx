@@ -8,7 +8,6 @@ const navs = [
   { label: "Home", href: "/home" },
   { label: "All Courses", href: "/all-courses" },
   { label: "My Courses", href: "/my-courses" },
- 
 ];
 
 export default function NavItems() {

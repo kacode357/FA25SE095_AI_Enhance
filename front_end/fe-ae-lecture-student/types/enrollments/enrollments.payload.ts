@@ -1,17 +1,14 @@
-// types/enrollments/enrollments.payload.ts
-
-/**
- * ✅ Generic import payload for multi-upload operations
- * Used for importing enrollments via Excel file
- */
 export interface ImportEnrollmentsPayload {
-  /** The Excel file (.xlsx or .xls) containing enrollment data */
   file: File;
-  /** Optional: apply this import to specific courses; when omitted, backend may infer from file */
   courseIds?: string[];
 }
 
 export interface ImportStudentsSpecificCoursePayload {
   courseId: string;
   file: File;
+}
+
+/** ✅ Payload khi sinh viên join course */
+export interface JoinCoursePayload {
+  accessCode?: string;
 }

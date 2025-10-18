@@ -20,8 +20,6 @@ export function useImportStudentTemplate() {
       window.URL.revokeObjectURL(url);
 
       toast.success("Template downloaded successfully");
-    } catch (error) {
-      toast.error("Failed to download student import template");
     } finally {
       setLoading(false);
     }

@@ -20,9 +20,9 @@ export function useImportTemplate() {
       window.URL.revokeObjectURL(url);
 
       toast.success("Template downloaded successfully");
-    } catch (error) {
-      toast.error("Failed to download student import template");
-    } finally {
+    } 
+    // Loại bỏ khối catch
+    finally {
       setLoading(false);
     }
   };
