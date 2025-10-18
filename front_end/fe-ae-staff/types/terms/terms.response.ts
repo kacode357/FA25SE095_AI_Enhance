@@ -19,6 +19,12 @@ export interface GetTermsResponse {
   success: boolean;
   message: string;
   terms: Term[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
 }
 
 export interface GetTermByIdResponse {

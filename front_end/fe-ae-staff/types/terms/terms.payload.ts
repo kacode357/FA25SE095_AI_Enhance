@@ -13,5 +13,10 @@ export interface UpdateTermPayload {
 }
 
 export interface GetTermsQuery {
-  activeOnly?: boolean;
+  activeOnly?: boolean;        
+  name?: string;                 
+  page?: number;
+  pageSize?: number;         
+  sortBy?: "Name" | "CreatedAt" | "UpdatedAt";
+  sortDirection?: "asc" | "desc"; 
 }

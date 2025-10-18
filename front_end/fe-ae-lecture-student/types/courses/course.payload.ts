@@ -49,3 +49,18 @@ export interface GetCourseEnrollmentsQuery {
   studentName?: string;
   sortDirection?: "asc" | "desc";
 }
+
+/** ✅ Query cho GET /api/Courses/available (Student) */
+export interface GetAvailableCoursesQuery {
+  name?: string;
+  courseCode?: string;
+  lecturerName?: string;
+  createdAfter?: string;
+  createdBefore?: string;
+  minEnrollmentCount?: number;
+  maxEnrollmentCount?: number;
+  page?: number;
+  pageSize?: number;
+  sortBy?: "Name" | "CourseCode" | "CreatedAt" | "EnrollmentCount";
+  sortDirection?: "asc" | "desc";
+}

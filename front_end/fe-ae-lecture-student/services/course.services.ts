@@ -2,6 +2,7 @@
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
   CreateCoursePayload,
+  GetAvailableCoursesQuery,
   GetCourseEnrollmentsQuery,
   GetMyCoursesQuery,
   UpdateAccessCodeRequest,
@@ -10,6 +11,7 @@ import {
 import {
   CreateCourseResponse,
   DeleteCourseResponse,
+  GetAvailableCoursesResponse,
   GetCourseByIdResponse,
   GetCourseEnrollmentsResponse,
   GetMyCoursesResponse,
@@ -63,6 +65,17 @@ export const CourseService = {
   ): Promise<GetCourseEnrollmentsResponse> => {
     const res = await courseAxiosInstance.get<GetCourseEnrollmentsResponse>(
       `/Courses/${id}/enrollments`,
+      { params }
+    );
+    return res.data;
+  },
+
+  /** ✅ GET /api/Courses/available (Student public access) */
+  getAvailableCourses: async (
+    params?: GetAvailableCoursesQuery
+  ): Promise<GetAvailableCoursesResponse> => {
+    const res = await courseAxiosInstance.get<GetAvailableCoursesResponse>(
+      "/Courses/available",
       { params }
     );
     return res.data;

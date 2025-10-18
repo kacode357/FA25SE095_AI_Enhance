@@ -57,7 +57,7 @@ export function useLogin() {
 
       // 3) Điều hướng theo role
       if (roleEnum === UserRole.Student) {
-        router.push("/student/dashboard");
+        router.push("/student/home");
       } else {
         // Mặc định (ví dụ Lecturer)
         router.push("/manager/course");

@@ -15,25 +15,32 @@ import { Term } from "@/types/terms/terms.response";
 import CreateDialog from "./components/CreateDialog";
 import EditDialog from "./components/EditDialog";
 import FilterRow from "./components/FilterRow";
+import PaginationBar from "@/components/common/PaginationBar";
 
 export default function TermsPage() {
-  const { listData, loading, fetchTerms } = useTerms();
+  const { listData, totalPages, totalCount, page, pageSize, loading, fetchTerms } = useTerms();
   const { updateTerm, loading: updating } = useUpdateTerm();
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openEditId, setOpenEditId] = useState<string | null>(null);
   const [filterActive, setFilterActive] = useState("");
   const [terms, setTerms] = useState<Term[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchAll = async () => {
+  // 🔹 Fetch all terms with filters & pagination
+  const fetchAll = async (pageNum = 1) => {
     await fetchTerms({
       activeOnly: filterActive === "" ? undefined : filterActive === "true",
+      page: pageNum,
+      pageSize:10,
+      sortBy: "CreatedAt",
+      sortDirection: "desc",
     });
   };
 
   useEffect(() => {
-    fetchAll();
-  }, []);
+    fetchAll(currentPage);
+  }, [currentPage, filterActive]);
 
   useEffect(() => {
     setTerms(listData);
@@ -48,7 +55,7 @@ export default function TermsPage() {
       description: term.description,
       isActive: !term.isActive,
     });
-    await fetchAll();
+    await fetchAll(currentPage);
   };
 
   return (
@@ -82,7 +89,7 @@ export default function TermsPage() {
       <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="text-base text-slate-800">
-            Term List <span className="text-slate-500">({terms.length})</span>
+            Term List <span className="text-slate-500">({totalCount})</span>
           </CardTitle>
         </CardHeader>
 
@@ -101,10 +108,10 @@ export default function TermsPage() {
                 <FilterRow
                   filterActive={filterActive}
                   setFilterActive={setFilterActive}
-                  fetchAll={fetchAll}
+                  fetchAll={() => fetchAll(currentPage)}
                   clearAll={() => {
                     setFilterActive("");
-                    fetchAll();
+                    fetchAll(1);
                   }}
                 />
               </TableHeader>
@@ -147,7 +154,7 @@ export default function TermsPage() {
                               termId={t.id}
                               title="Edit Term"
                               onSubmit={async () => {
-                                await fetchAll();
+                                await fetchAll(currentPage);
                                 setOpenEditId(null);
                               }}
                               onCancel={() => setOpenEditId(null)}
@@ -188,6 +195,15 @@ export default function TermsPage() {
             </Table>
           </div>
         </CardContent>
+
+        {/* ✅ Pagination */}
+        <PaginationBar
+          page={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          loading={loading}
+          onPageChange={(p) => setCurrentPage(p)}
+        />
       </Card>
     </div>
   );

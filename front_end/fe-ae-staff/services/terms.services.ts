@@ -21,7 +21,7 @@ export const TermService = {
     return response.data;
   },
 
-  /** GET /api/Terms - Lấy tất cả term (public) */
+  /** GET /api/Terms - Lấy tất cả term (public, có lọc & phân trang) */
   getAll: async (params?: GetTermsQuery): Promise<GetTermsResponse> => {
     const response = await courseAxiosInstance.get<GetTermsResponse>("/Terms", { params });
     return response.data;
@@ -39,7 +39,7 @@ export const TermService = {
     return response.data;
   },
 
-  /** DELETE /api/Terms/{id} - Xoá term (nếu API có hỗ trợ, dự phòng) */
+  /** DELETE /api/Terms/{id} - Xoá term */
   delete: async (id: string): Promise<DeleteTermResponse> => {
     const response = await courseAxiosInstance.delete<DeleteTermResponse>(`/Terms/${id}`);
     return response.data;
@@ -50,5 +50,4 @@ export const TermService = {
     const response = await courseAxiosInstance.get<GetTermDropdownResponse>("/Terms/dropdown");
     return response.data;
   },
-  
 };

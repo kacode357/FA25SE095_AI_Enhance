@@ -97,3 +97,38 @@ export interface Enrollment {
   unenrollmentReason: string | null;
   createdAt: string;
 }
+
+export interface EnrollmentStatus {
+  isEnrolled: boolean;
+  joinedAt: string | null;
+  status: string | null;
+}
+
+/** ✅ Available course item cho student */
+export interface AvailableCourseItem {
+  id: string;
+  courseCode: string;
+  name: string;
+  lecturerId: string;
+  lecturerName: string;
+  createdAt: string;
+  enrollmentCount: number;
+  requiresAccessCode: boolean;
+  isAccessCodeExpired: boolean;
+  enrollmentStatus: EnrollmentStatus | null;
+  canJoin: boolean;
+  joinUrl: string | null;
+}
+
+/** ✅ Response GET /api/Courses/available */
+export interface GetAvailableCoursesResponse {
+  success: boolean;
+  message: string;
+  courses: AvailableCourseItem[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
