@@ -24,7 +24,7 @@ export function useGroupById() {
 
     try {
       const res = await GroupService.getById(groupId);
-      const groupData = res.group;
+      const groupData = res as GroupDetail;
       cache.set(groupId, groupData);
       setData(groupData);
       return groupData;

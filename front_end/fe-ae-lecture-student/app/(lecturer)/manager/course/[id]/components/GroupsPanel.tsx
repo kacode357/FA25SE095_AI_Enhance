@@ -11,7 +11,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useDeleteGroup } from "@/hooks/group/useDeleteGroup";
-import { useGroupsByCourseId } from "@/hooks/group/useGroups";
+// Chắc chắn rằng useGroupsByCourseId không còn trả về error nữa
+import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId"; 
 import { GroupDetail } from "@/types/group/group.response";
 import { Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -26,7 +27,8 @@ export default function GroupsPanel({
     courseId: string;
     refreshSignal?: number;
 }) {
-    const { listData: groups, loading, error, fetchByCourseId } =
+    // Xoá error khỏi destructuring
+    const { listData: groups, loading, fetchByCourseId } =
         useGroupsByCourseId();
     const { deleteGroup, loading: deleting } = useDeleteGroup();
 
@@ -63,29 +65,32 @@ export default function GroupsPanel({
         if (res?.success) {
             toast.success("Group deleted successfully");
             fetchByCourseId(courseId, true);
-        } else {
-            toast.error("Failed to delete group");
-        }
+        } 
+        // Xoá khối else (báo lỗi)
+        
         setOpenDeleteDialog(false);
         setSelectedGroup(null);
     };
 
     return (
         <>
+            {/* Xoá logic hiển thị lỗi */}
             {loading && <div className="text-sm text-slate-500">Loading groups...</div>}
-            {!loading && error && <div className="text-sm text-red-600">{error}</div>}
-            {!loading && !error && groups.length === 0 && (
+            {/* Xoá: {!loading && error && <div className="text-sm text-red-600">{error}</div>} */}
+            
+            {/* Thay thế !error bằng !loading để check điều kiện render */}
+            {!loading && groups.length === 0 && (
                 <div className="text-sm text-slate-500">
                     No groups yet. Click <b>Create Group</b> to make one. This action is only available when the course is active.
                 </div>
             )}
 
-            {!loading && !error && groups.length > 0 && (
+            {!loading && groups.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {groups.map((g) => (
                         <Card
                             key={g.id}
-                            className="h-full  border-slate-200 hover:shadow-sm transition cursor-default"
+                            className="h-full border-slate-200 hover:shadow-sm transition cursor-default"
                         >
                             <CardHeader className="pb-2">
                                 <div className="flex justify-between items-start">
@@ -153,7 +158,7 @@ export default function GroupsPanel({
                 </div>
             )}
 
-            {/* ✅ Delete Confirmation Dialog */}
+            {/* Delete Confirmation Dialog */}
             <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>

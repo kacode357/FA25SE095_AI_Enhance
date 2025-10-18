@@ -4,15 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import { useImportStudentTemplate } from "@/hooks/enrollments/useImportStudentTemplate";
-import { FileSpreadsheet, FolderPlus, PlusCircle } from "lucide-react";
+import { FolderPlus } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import CreateAssignmentSheet from "./components/CreateAssignmentSheet";
 import CreateGroupSheet from "./components/CreateGroupSheet";
 import GroupsPanel from "./components/GroupsPanel";
-import ImportStudentsDialog from "./components/ImportStudentsDialog";
 import StudentList from "./components/StudentListImport";
+import AssignmentsPanel from "./assignments/AssignmentsPanel"; // Giữ lại import này
 
 import { CourseStatus } from "@/types/courses/course.response";
 
@@ -24,27 +22,21 @@ export default function CourseDetailPage() {
 
   const { data: course, fetchCourseById } = useGetCourseById();
 
-  const { downloadTemplate, loading: downloading } = useImportStudentTemplate();
-
-  const [openImport, setOpenImport] = useState(false);
   const [openGroup, setOpenGroup] = useState(false);
-  const [openAssign, setOpenAssign] = useState(false);
 
   const [activeTab, setActiveTab] = useState<"students" | "groups" | "assignments">("students");
   const [groupsRefresh, setGroupsRefresh] = useState(0);
-  const [assignmentsRefresh, setAssignmentsRefresh] = useState(0);
   const [studentsRefresh, setStudentsRefresh] = useState(0);
+  // assignmentsRefresh bị xoá
 
   // 🚀 Fetch course info once
   useEffect(() => {
     if (id) fetchCourseById(id);
   }, [id, fetchCourseById]);
 
-  // Sync modals with ?action query
+  // Sync modals với ?action (chỉ còn lại logic Groups)
   useEffect(() => {
-    setOpenImport(action === "import");
     setOpenGroup(action === "createGroup");
-    setOpenAssign(action === "createAssign");
   }, [action]);
 
   function clearAction() {
@@ -71,19 +63,10 @@ export default function CourseDetailPage() {
         </TabsList>
 
         <TabsContent value="students" className="space-y-2">
-          <Card className="border-emerald-500">
+          <Card>
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-base">Student List</CardTitle>
-
-              {isActive && (
-                <Button
-                  className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
-                  onClick={() => setOpenImport(true)}
-                >
-                  <FileSpreadsheet className="size-4 mr-1" />
-                  Import Students
-                </Button>
-              )}
+              {/* Nút Import Students đã bị xoá */}
             </CardHeader>
 
             <CardContent>
@@ -93,7 +76,7 @@ export default function CourseDetailPage() {
         </TabsContent>
 
         <TabsContent value="groups" className="space-y-2">
-          <Card className="border-emerald-500">
+          <Card>
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-base">Groups List</CardTitle>
 
@@ -115,35 +98,14 @@ export default function CourseDetailPage() {
         </TabsContent>
 
         <TabsContent value="assignments" className="space-y-2">
-          <Card className="border-emerald-500">
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="text-base">Assignments</CardTitle>
-
-              {isActive && (
-                <Button
-                  className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
-                  onClick={() => setOpenAssign(true)}
-                >
-                  <PlusCircle className="size-4 mr-1" />
-                  New Assignment
-                </Button>
-              )}
-            </CardHeader>
-
-            <CardContent>{/* Assignment */}</CardContent>
-          </Card>
+          <AssignmentsPanel
+            courseId={id}
+            isActive={isActive ?? false}
+            refreshSignal={0} // Giá trị hardcode 0 vì assignmentsRefresh đã bị xoá
+            // onNew property bị xoá vì logic tạo mới Assignment đã bị xoá
+          />
         </TabsContent>
       </Tabs>
-
-      <ImportStudentsDialog
-        open={openImport}
-        onOpenChange={(v) => {
-          setOpenImport(v);
-          if (!v) clearAction();
-        }}
-        courseId={id}
-        onImported={() => setStudentsRefresh((v) => v + 1)}
-      />
 
       <CreateGroupSheet
         open={openGroup}
@@ -154,16 +116,7 @@ export default function CourseDetailPage() {
         courseId={id}
         onCreated={() => setGroupsRefresh((v) => v + 1)}
       />
-
-      <CreateAssignmentSheet
-        open={openAssign}
-        onOpenChange={(v) => {
-          setOpenAssign(v);
-          if (!v) clearAction();
-        }}
-        courseId={id}
-        onCreated={() => setAssignmentsRefresh((v) => v + 1)}
-      />
+      {/* Các component ImportStudentsDialog và CreateAssignmentSheet đã bị xoá */}
     </>
   );
 }

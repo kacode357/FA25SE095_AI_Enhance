@@ -102,3 +102,94 @@ input, button { font-family: inherit; }
 .auth-scope .btn-ghost { color: var(--color-brand-600); }
 .auth-scope a { color: var(--color-brand); }
 .auth-scope a:hover { color: var(--color-brand-600); }
+
+/* ================= RTE overrides ================= */
+@layer base {
+  /* Nếu editor/viewer lỡ nằm trong .prose thì clear style prose */
+  .prose .rte h1,
+  .prose .rte h2,
+  .prose .rte h3,
+  .prose .rte p,
+  .prose .rte blockquote {
+    all: unset;
+    display: block;
+  }
+  .prose .rte ul,
+  .prose .rte ol {
+    list-style: revert !important;
+    padding-left: 1.5rem !important;
+  }
+
+  /* Heading sizes (editor & viewer) */
+  .rte h1, .rte-view h1 {
+    font-size: 1.75rem !important;   /* ~28px */
+    line-height: 2.25rem !important; /* ~36px */
+    font-weight: 700 !important;
+    margin: 0.75rem 0 0.5rem !important;
+  }
+  .rte h2, .rte-view h2 {
+    font-size: 1.5rem !important;    /* 24px */
+    line-height: 2rem !important;    /* 32px */
+    font-weight: 700 !important;
+    margin: 0.75rem 0 0.5rem !important;
+  }
+  .rte h3, .rte-view h3 {
+    font-size: 1.25rem !important;   /* 20px */
+    line-height: 1.75rem !important; /* 28px */
+    font-weight: 600 !important;
+    margin: 0.5rem 0 0.4rem !important;
+  }
+
+  /* Paragraph */
+  .rte p, .rte-view p {
+    margin: 0.25rem 0 !important;
+  }
+
+  /* Blockquote UI */
+  .rte blockquote, .rte-view blockquote {
+    border-left: 3px solid #cbd5e1 !important;
+    margin: 0.5rem 0 !important;
+    padding: 0.35rem 0.75rem !important;
+    color: #475569 !important;
+    background: #f8fafc !important;
+    border-radius: 0.25rem !important;
+  }
+
+  /* ===== Force list markers hiển thị (thắng Tailwind reset) ===== */
+  .rte ul, .rte-view ul {
+    list-style-type: disc !important;
+    list-style-position: outside !important;
+    padding-left: 1.5rem !important;
+    margin: 0.35rem 0 !important;
+  }
+  .rte ol, .rte-view ol {
+    list-style-type: decimal !important;
+    list-style-position: outside !important;
+    padding-left: 1.5rem !important;
+    margin: 0.35rem 0 !important;
+  }
+  .rte li, .rte-view li {
+    display: list-item !important;
+    margin: 0.125rem 0 !important;
+  }
+  .rte li::marker, .rte-view li::marker {
+    color: #334155 !important; /* slate-700 */
+  }
+  .dark .rte li::marker, .dark .rte-view li::marker {
+    color: #e2e8f0 !important; /* slate-100 */
+  }
+
+  /* Link look */
+  .rte a, .rte-view a {
+    color: #2563eb !important;
+    text-decoration: underline !important;
+  }
+
+  /* Ảnh trong nội dung */
+  .rte img, .rte-view img {
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: 0.5rem !important;
+    display: inline-block !important;
+  }
+}

@@ -53,7 +53,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
     const statusInfo = course ? getStatusDisplay(course.status) : null;
 
     return (
-        <div className="p-3 space-y-3">
+        <div className="p-3">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Link href="/manager/course">
@@ -106,7 +106,6 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                 </div>
 
                 <div className="flex items-center mr-8">
-                    {/* Download Template */}
                     <button
                         onClick={() => downloadTemplate()}
                         disabled={downloading}

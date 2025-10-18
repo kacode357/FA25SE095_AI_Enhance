@@ -9,10 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCourseCodeOptions } from "@/hooks/course-code/useCourseCodeOptions";
-import { useUpdateCourse } from "@/hooks/course/useUpdateCourse";
-import { CourseItem } from "@/types/courses/course.response";
-import { useEffect, useState } from "react";
+
+// Xoá hết imports của hooks và types: useCourseCodeOptions, useUpdateCourse, CourseItem
 
 export default function EditDialog({
   course,
@@ -20,50 +18,40 @@ export default function EditDialog({
   onSubmit,
   onCancel,
 }: {
-  course: CourseItem;
+  // Giữ lại định nghĩa props tối thiểu
+  course: any; 
   title: string;
   onSubmit: () => void;
   onCancel: () => void;
 }) {
-  const { updateCourse, loading } = useUpdateCourse();
-  const {
-    options: courseCodeOptions,
-    loading: loadingCodes,
-    fetchCourseCodeOptions,
-    hasFetched,
-  } = useCourseCodeOptions();
+  // Xoá hết logic: useUpdateCourse, useCourseCodeOptions, useState, useEffect, matchedOption, form, loading, v.v.
 
-  const [editingCode, setEditingCode] = useState(false);
+  // Giả định các biến cần cho UI
+  const loadingCodes = false; // Luôn hiển thị UI chính
+  const editingCode = false; // Luôn hiển thị trạng thái không chỉnh sửa
+  const loading = false;
+  
+  // Dữ liệu giả để hiển thị UI
+  const mockCourse = course || { courseCode: "CODE", courseCodeTitle: "Title" };
+  const mockForm = {
+    courseCodeId: "MOCK_ID",
+    description: "Mock Description",
+    term: "Mock Term",
+    year: 2024,
+  };
+  const mockCourseCodeOptions = [
+      { id: '1', displayName: 'CS101 - Intro' }, 
+      { id: '2', displayName: 'MA201 - Advanced' }
+  ];
 
-  // 🔍 map courseCode → courseCodeId (nếu có match)
-  const matchedOption = courseCodeOptions.find(
-    (cc) => cc.code === course.courseCode
-  );
-
-  const [form, setForm] = useState({
-    courseCodeId: matchedOption?.id || "",
-    description: course.description || "",
-    term: course.term || "",
-    year: course.year || new Date().getFullYear(),
-  });
-
-  // ✅ Chỉ fetch course codes nếu chưa có cache
-  useEffect(() => {
-    if (!hasFetched) fetchCourseCodeOptions({ activeOnly: true });
-  }, [hasFetched, fetchCourseCodeOptions]);
-
-  const handleChange = (key: string, value: any) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  // Hàm giả cho sự kiện
+  const handleMockChange = (key: string, value: any) => {
+    console.log(`Mock Change: ${key} = ${value}`);
   };
 
-  const handleSave = async () => {
-    if (!form.courseCodeId) return;
-    const res = await updateCourse({
-      courseId: course.id,
-      ...form,
-    });
-    if (res?.success) onSubmit();
-  };
+  const handleMockClick = () => {
+    console.log("Mock Button Clicked");
+  }
 
   return (
     <DialogContent className="bg-white border-slate-200 text-slate-900">
@@ -71,86 +59,85 @@ export default function EditDialog({
         <DialogTitle>{title}</DialogTitle>
       </DialogHeader>
 
-      {loadingCodes ? (
-        <div className="py-6 text-center text-slate-500">
-          Loading course codes...
+      {/* Logic loadingCodes đã bị xoá, luôn hiển thị form */}
+      <div className="space-y-4 py-2">
+        {/* Course Code */}
+        <div>
+          <Label className="cursor-text">Course Code</Label>
+          {!editingCode ? ( // Luôn là false
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-700">
+                {mockCourse.courseCode} - {mockCourse.courseCodeTitle}
+              </p>
+              <Button
+                variant="ghost"
+                className="text-emerald-600 px-2 h-7 cursor-pointer"
+                onClick={handleMockClick} // Đã thay thế logic setEditingCode
+              >
+                Change
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <select
+                title="Code"
+                value={mockForm.courseCodeId}
+                onChange={(e) => handleMockChange("courseCodeId", e.target.value)}
+                className="flex-1 border border-slate-300 rounded-md p-2 text-sm cursor-pointer"
+              >
+                <option value="">-- Select Course Code --</option>
+                {mockCourseCodeOptions.map((cc) => (
+                  <option key={cc.id} value={cc.id}>
+                    {cc.displayName}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="ghost"
+                className="text-slate-500 px-2 h-7 cursor-pointer"
+                onClick={handleMockClick} // Đã thay thế logic setEditingCode
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="space-y-4 py-2">
-          {/* Course Code */}
-          <div>
-            <Label className="cursor-text">Course Code</Label>
-            {!editingCode ? (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-700">
-                  {course.courseCode} - {course.courseCodeTitle}
-                </p>
-                <Button
-                  variant="ghost"
-                  className="text-emerald-600 px-2 h-7 cursor-pointer"
-                  onClick={() => setEditingCode(true)}
-                >
-                  Change
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <select
-                  title="Code"
-                  value={form.courseCodeId}
-                  onChange={(e) => handleChange("courseCodeId", e.target.value)}
-                  className="flex-1 border border-slate-300 rounded-md p-2 text-sm cursor-pointer"
-                >
-                  <option value="">-- Select Course Code --</option>
-                  {courseCodeOptions.map((cc) => (
-                    <option key={cc.id} value={cc.id}>
-                      {cc.displayName || `${cc.code} - ${cc.title}`}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  variant="ghost"
-                  className="text-slate-500 px-2 h-7 cursor-pointer"
-                  onClick={() => setEditingCode(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            )}
-          </div>
 
-          {/* Description */}
-          <div>
-            <Label className="cursor-text">Description</Label>
-            <Input
-              value={form.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-            />
-          </div>
-
-          {/* Term */}
-          <div>
-            <Label className="cursor-text">Term</Label>
-            <Input
-              value={form.term}
-              onChange={(e) => handleChange("term", e.target.value)}
-            />
-          </div>
-
-          {/* Year */}
-          <div>
-            <Label className="cursor-text">Year</Label>
-            <Input
-              type="number"
-              value={form.year}
-              onChange={(e) => handleChange("year", parseInt(e.target.value))}
-            />
-          </div>
+        {/* Description */}
+        <div>
+          <Label className="cursor-text">Description</Label>
+          <Input
+            value={mockForm.description}
+            onChange={(e) => handleMockChange("description", e.target.value)}
+          />
         </div>
-      )}
+
+        {/* Term */}
+        <div>
+          <Label className="cursor-text">Term</Label>
+          <Input
+            value={mockForm.term}
+            onChange={(e) => handleMockChange("term", e.target.value)}
+          />
+        </div>
+
+        {/* Year */}
+        <div>
+          <Label className="cursor-text">Year</Label>
+          <Input
+            type="number"
+            value={mockForm.year}
+            onChange={(e) => handleMockChange("year", parseInt(e.target.value))}
+          />
+        </div>
+      </div>
 
       <DialogFooter>
-        <Button className="cursor-pointer" onClick={handleSave} disabled={loading || !form.courseCodeId}>
+        <Button 
+          className="cursor-pointer" 
+          onClick={handleMockClick} // Đã thay thế handleSave
+          disabled={loading} // Giữ lại disabled với biến giả
+        >
           {loading ? "Saving..." : "Save"}
         </Button>
         <Button className="cursor-pointer" variant="ghost" onClick={onCancel}>

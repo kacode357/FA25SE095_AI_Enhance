@@ -1,10 +1,10 @@
 "use client";
 
-import { AssignmentService } from "@/services/assignment.services";
-import { CreateAssignmentPayload } from "@/types/assignment/assignment.payload";
-import { CreateAssignmentResponse } from "@/types/assignment/assignment.response";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AssignmentService } from "@/services/assignment.services";
+import { CreateAssignmentPayload } from "@/types/assignments/assignment.payload";
+import { CreateAssignmentResponse } from "@/types/assignments/assignment.response";
 
 export function useCreateAssignment() {
   const [loading, setLoading] = useState(false);
@@ -12,14 +12,12 @@ export function useCreateAssignment() {
   const createAssignment = async (
     payload: CreateAssignmentPayload
   ): Promise<CreateAssignmentResponse | null> => {
+    if (loading) return null;
     setLoading(true);
     try {
       const res = await AssignmentService.create(payload);
-      toast.success(res.message || "Assignment created successfully");
+      toast.success(res.message || "Assignment created");
       return res;
-    } catch {
-      // lỗi đã có interceptor xử lý (nếu có)
-      return null;
     } finally {
       setLoading(false);
     }
