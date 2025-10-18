@@ -24,7 +24,6 @@ export function useGroupsByCourseId() {
 
     try {
       const res = await GroupService.getByCourseId(courseId);
-      
       cache.set(key, res);
       setListData(res.groups || []);
       return res;
