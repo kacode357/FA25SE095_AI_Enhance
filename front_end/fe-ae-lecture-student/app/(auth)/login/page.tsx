@@ -4,12 +4,14 @@
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
 import { useLogin } from "@/hooks/auth/useLogin";
 import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { mapRole, ROLE_HOME } from "@/config/user-role";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const { login, loading } = useLogin();
@@ -18,26 +20,46 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // ✅ check nếu đã login thì redirect
-  useAuthRedirect();
+  const { user, isReady } = useAuth() as any;
+  const router = useRouter();
+
+  // Nếu đã đăng nhập thì vào thẳng ROLE_HOME (không cần next)
+  useEffect(() => {
+    if (!isReady) return;
+    if (user) {
+      const rawRole = user?.role ?? user?.roleName ?? user?.role?.name;
+      const role = mapRole(rawRole);
+      const target = role ? ROLE_HOME[role] : "/";
+      router.replace(target);
+    }
+  }, [isReady, user, router]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await login(
+
+    const result = await login(
       { email: email.trim(), password: password.trim() },
-      rememberMe
+      { remember: rememberMe }
     );
+
+    if (result.ok && result.role !== null) {
+      router.replace(ROLE_HOME[result.role]);
+    } else {
+      // (tuỳ) hiện toast lỗi
+    }
   };
 
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
       await new Promise((r) => setTimeout(r, 900));
-      // TODO: gọi Google API thật
     } finally {
       setGoogleLoading(false);
     }
   };
+
+  if (!isReady) return null;
+  if (user) return null;
 
   return (
     <AuthShell
@@ -52,22 +74,8 @@ export default function LoginPage() {
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="youremail@example.com"
-          required
-        />
-        <Input
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          required
-        />
+        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
 
         <div className="flex items-center mb-6 justify-between text-sm text-slate-600">
           <label className="inline-flex items-center gap-2 select-none">
@@ -84,9 +92,7 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <Button type="submit" className="w-full" loading={loading}>
-          Sign in
-        </Button>
+        <Button type="submit" className="w-full" loading={loading}>Sign in</Button>
 
         <div className="relative my-4">
           <div className="border-t border-slate-200" />
@@ -114,14 +120,8 @@ export default function LoginPage() {
           className="text-center text-xs text-slate-500"
         >
           By continuing, you agree to our{" "}
-          <a href="#" className="text-green-600">
-            Terms
-          </a>{" "}
-          and{" "}
-          <a href="#" className="text-green-600">
-            Privacy Policy
-          </a>
-          .
+          <a href="#" className="text-green-600">Terms</a> and{" "}
+          <a href="#" className="text-green-600">Privacy Policy</a>.
         </motion.div>
       </form>
     </AuthShell>

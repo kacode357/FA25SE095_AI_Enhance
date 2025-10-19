@@ -1,4 +1,4 @@
-// hooks/useLogout.ts
+// hooks/auth/useLogout.ts
 "use client";
 
 import { useState, useCallback } from "react";
@@ -18,17 +18,16 @@ export function useLogout() {
     async (payload: LogoutPayload): Promise<LogoutResponse | null> => {
       setLoading(true);
       try {
-        const res = await AuthService.logout(payload);
+        const res = await AuthService.logout(payload).catch(() => null);
 
-        // clear token + context
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
+        Cookies.remove("accessToken", { path: "/" });
+        Cookies.remove("refreshToken", { path: "/" });
         if (typeof window !== "undefined") {
           sessionStorage.removeItem("accessToken");
+          sessionStorage.removeItem("just_logged_in"); // ✅ dọn cờ
         }
         setUser(null);
 
-        // chuyển về login
         router.replace("/login");
         return res;
       } catch {
