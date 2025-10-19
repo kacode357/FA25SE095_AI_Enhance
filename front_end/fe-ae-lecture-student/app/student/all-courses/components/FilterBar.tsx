@@ -17,13 +17,9 @@ type Props = {
 export default function FilterBar({ onFilter, onReset }: Props) {
   const [name, setName] = useState("");
   const [lecturerName, setLecturerName] = useState("");
-  const [sortBy, setSortBy] = useState<
-    "CreatedAt" | "Name" | "EnrollmentCount"
-  >("CreatedAt");
+  const [sortBy, setSortBy] = useState<"CreatedAt" | "Name" | "EnrollmentCount">("CreatedAt");
 
-  const handleApply = () => {
-    onFilter({ name, lecturerName, sortBy });
-  };
+  const handleApply = () => onFilter({ name, lecturerName, sortBy });
 
   const handleReset = () => {
     setName("");
@@ -33,39 +29,35 @@ export default function FilterBar({ onFilter, onReset }: Props) {
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-      {/* ✅ Left section */}
-      <div className="flex flex-col sm:flex-row gap-3 flex-1">
+    <div className="bg-white border border-slate-200 rounded-xl p-3 md:p-3 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+      {/* Left */}
+      <div className="flex flex-col sm:flex-row gap-2 flex-1">
         <div className="flex items-center gap-2 flex-1">
-          <Search className="w-4 h-4 text-green-600" />
+          <Search className="w-3.5 h-3.5 text-green-600" />
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Search by course code..."
-            className="h-9"
+            className="h-8 text-sm"
           />
         </div>
 
         <div className="flex items-center gap-2 flex-1">
-          <Filter className="w-4 h-4 text-green-600" />
+          <Filter className="w-3.5 h-3.5 text-green-600" />
           <Input
             value={lecturerName}
             onChange={(e) => setLecturerName(e.target.value)}
             placeholder="Filter by lecturer name..."
-            className="h-9"
+            className="h-8 text-sm"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-slate-600">
-            Sort by:
-          </label>
+          <label className="text-xs font-medium text-slate-600">Sort by:</label>
           <select
             value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as "CreatedAt" | "Name" | "EnrollmentCount")
-            }
-            className="h-9 border border-slate-300 rounded-lg px-2 text-sm focus:ring-2 focus:ring-green-300 focus:outline-none"
+            onChange={(e) => setSortBy(e.target.value as "CreatedAt" | "Name" | "EnrollmentCount")}
+            className="h-8 rounded-lg border border-slate-300 px-2 text-sm focus:ring-2 focus:ring-green-300 focus:outline-none"
           >
             <option value="CreatedAt">Newest</option>
             <option value="Name">Name</option>
@@ -74,21 +66,21 @@ export default function FilterBar({ onFilter, onReset }: Props) {
         </div>
       </div>
 
-      {/* ✅ Right section (buttons) */}
-      <div className="flex items-center gap-3 justify-end">
+      {/* Right buttons */}
+      <div className="flex items-center gap-2 justify-end">
         <Button
           onClick={handleApply}
-          className="bg-green-600 hover:bg-green-700 text-white"
+          className="h-8 px-3 text-sm rounded-lg bg-green-600 hover:bg-green-700 text-white"
         >
-          <Filter className="w-4 h-4 mr-1" />
+          <Filter className="w-3.5 h-3.5 mr-1" />
           Apply
         </Button>
         <Button
           variant="outline"
           onClick={handleReset}
-          className="border-green-600 text-green-600 hover:bg-green-50"
+          className="h-8 px-3 text-sm rounded-lg border-green-600 text-green-600 hover:bg-green-50"
         >
-          <RotateCcw className="w-4 h-4 mr-1" />
+          <RotateCcw className="w-3.5 h-3.5 mr-1" />
           Reset
         </Button>
       </div>
