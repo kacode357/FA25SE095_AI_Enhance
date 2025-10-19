@@ -20,12 +20,19 @@ export function useAllMembers() {
     setError(null);
 
     try {
-      const res = await GroupMembersService.getAllMembers(groupId);
-      if (res.success) {
-        setMembers(res.members);
-      } else {
-        toast.error(res.message || "Failed to load members");
+      const res: any = await GroupMembersService.getAllMembers(groupId);
+      // 👇 hỗ trợ cả res.members lẫn res.data?.members
+      const list: GroupMember[] =
+        res?.members ??
+        res?.data?.members ??
+        [];
+
+      console.debug("[useAllMembers] groupId:", groupId, "members:", list);
+
+      if (res?.success === false) {
+        toast.error(res?.message || "Failed to load members");
       }
+      setMembers(Array.isArray(list) ? list : []);
     } catch (err: any) {
       const msg = err?.message || "Error fetching members";
       setError(msg);

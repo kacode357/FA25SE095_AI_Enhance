@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useImportStudentsSpecificCourse } from "@/hooks/enrollments/useImportStudentsSpecificCourse";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface ImportStudentsDialogProps {
   open: boolean;
@@ -27,22 +27,23 @@ export default function ImportStudentsDialog({
   onImported,
 }: ImportStudentsDialogProps) {
   const [file, setFile] = useState<File | null>(null);
-  const { importStudents, loading, errors, setErrors } = useImportStudentsSpecificCourse();
+  // Chỉ lấy importStudents và loading từ hook
+  const { importStudents, loading } = useImportStudentsSpecificCourse();
 
-  useEffect(() => {
-    if (!open) setErrors([]);
-  }, [open]);
+  // Loại bỏ useEffect và setErrors
 
-const handleImport = async () => {
-  if (!file) return;
-  const res = await importStudents({ file, courseId });
-  if (res?.success) {
-    onSubmit?.();
-    onImported?.();
-    setFile(null);
-    onOpenChange(false);
-  }
-};
+  const handleImport = async () => {
+    if (!file) return;
+    const res = await importStudents({ file, courseId });
+    
+    // Nếu API trả về thành công (logic toast/lỗi đã nằm trong hook)
+    if (res?.success) {
+      onSubmit?.();
+      onImported?.();
+      setFile(null);
+      onOpenChange(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,20 +70,9 @@ const handleImport = async () => {
               Selected file: <span className="font-medium">{file.name}</span>
             </div>
           )}
-
-          {errors.length > 0 && (
-            <div className="mt-2 border border-red-300 bg-red-50 text-red-700 text-xs rounded-md p-2 max-h-40 overflow-y-auto">
-              <div className="font-medium mb-1">
-                Import failed for {errors.length} student{errors.length > 1 ? "s" : ""}:
-              </div>
-              <ul className="list-disc list-inside space-y-0.5">
-                {errors.map((err, i) => (
-                  <li key={i}>{err}</li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
+        
+        {/* Loại bỏ phần hiển thị errors ở đây */}
 
         <DialogFooter className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
