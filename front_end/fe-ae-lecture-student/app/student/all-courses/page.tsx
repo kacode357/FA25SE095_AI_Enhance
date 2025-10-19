@@ -3,7 +3,13 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Users, CalendarDays, Loader2, KeyRound } from "lucide-react";
+import {
+  BookOpen,
+  Users,
+  CalendarDays,
+  Loader2,
+  KeyRound,
+} from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAvailableCourses } from "@/hooks/course/useAvailableCourses";
@@ -21,14 +27,39 @@ type AvailableCourse = {
   enrollmentCount: number;
   requiresAccessCode: boolean;
   isAccessCodeExpired?: boolean;
-  enrollmentStatus?: { isEnrolled: boolean; joinedAt: string | null; status?: string | null } | null;
+  enrollmentStatus?: {
+    isEnrolled: boolean;
+    joinedAt: string | null;
+    status?: string | null;
+  } | null;
   canJoin: boolean;
 };
 
 function formatDate(iso?: string) {
   if (!iso) return "";
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+// ✅ Map màu cho status
+function statusStyle(s?: string | null) {
+  switch ((s || "").toLowerCase()) {
+    case "active":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "pending":
+    case "pendingapproval":
+      return "border-amber-200 bg-amber-50 text-amber-700";
+    case "rejected":
+      return "border-red-200 bg-red-50 text-red-700";
+    case "inactive":
+      return "border-slate-200 bg-slate-50 text-slate-600";
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-600";
+  }
 }
 
 export default function AllCoursesPage() {
@@ -44,7 +75,10 @@ export default function AllCoursesPage() {
 
   const [loadingCourseId, setLoadingCourseId] = useState<string | null>(null);
   const [accessOpen, setAccessOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<{ id: string; title: string } | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchAvailableCourses(lastQueryRef.current);
@@ -61,14 +95,20 @@ export default function AllCoursesPage() {
       ...filters,
       page: 1,
       pageSize: 12,
-      sortDirection: !filters.sortBy || filters.sortBy === "CreatedAt" ? "desc" : "asc",
+      sortDirection:
+        !filters.sortBy || filters.sortBy === "CreatedAt" ? "desc" : "asc",
     } as const;
     lastQueryRef.current = query as any;
     fetchAvailableCourses(query);
   };
 
   const handleReset = () => {
-    const query = { page: 1, pageSize: 12, sortBy: "CreatedAt" as const, sortDirection: "desc" as const };
+    const query = {
+      page: 1,
+      pageSize: 12,
+      sortBy: "CreatedAt" as const,
+      sortDirection: "desc" as const,
+    };
     lastQueryRef.current = query;
     fetchAvailableCourses(query);
   };
@@ -77,7 +117,9 @@ export default function AllCoursesPage() {
     if (course.requiresAccessCode) {
       setSelectedCourse({
         id: course.id,
-        title: `${course.courseCode}${course.description ? ` — ${course.description}` : ""}`,
+        title: `${course.courseCode}${
+          course.description ? ` — ${course.description}` : ""
+        }`,
       });
       setAccessOpen(true);
       return;
@@ -98,7 +140,9 @@ export default function AllCoursesPage() {
           <BookOpen className="w-7 h-7 text-green-600" />
           All Courses
         </h1>
-        <p className="text-slate-500 text-sm mt-1">Browse and discover all available courses you can join.</p>
+        <p className="text-slate-500 text-sm mt-1">
+          Browse and discover all available courses you can join.
+        </p>
       </div>
 
       {/* Filter */}
@@ -130,11 +174,12 @@ export default function AllCoursesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
             >
-              {/* ⭐ Flex column + h-full đảm bảo cao bằng nhau */}
+              {/* Flex column + h-full để thẻ cao bằng nhau */}
               <Card className="relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white shadow-md transition-all duration-200 hover:shadow-lg">
                 <CardHeader className="pb-0">
-                  {/* Row badges/date: giữ CHIỀU CAO CỐ ĐỊNH */}
-                  <div className="flex flex-wrap items-center gap-2 mb-2 min-h-[28px]">
+                  {/* Row badges/date: chiều cao ổn định */}
+                  <div className="mb-2 flex min-h-[28px] flex-wrap items-center gap-2">
+                    {/* Access code / Open enrollment */}
                     <span
                       className={
                         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border " +
@@ -153,41 +198,54 @@ export default function AllCoursesPage() {
                       )}
                     </span>
 
+                    {/* ✅ Status with proper colors (Active = green) */}
                     {course.enrollmentStatus?.status ? (
-                      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
+                      <span
+                        className={
+                          "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium " +
+                          statusStyle(course.enrollmentStatus.status)
+                        }
+                      >
                         {course.enrollmentStatus.status}
                       </span>
                     ) : (
-                      // 👇 Giữ chỗ khi không có status để chiều cao hàng này không đổi
-                      <span className="invisible inline-flex rounded-full border px-2.5 py-1 text-xs">placeholder</span>
+                      // giữ chỗ để không nhảy layout
+                      <span className="invisible inline-flex rounded-full border px-2.5 py-1 text-xs">
+                        placeholder
+                      </span>
                     )}
 
+                    {/* Created date (optional) */}
                     {course.createdAt ? (
-                      <span className="text-xs text-slate-400">Created {formatDate(course.createdAt)}</span>
+                      <span className="text-xs text-slate-400">
+                        Created {formatDate(course.createdAt)}
+                      </span>
                     ) : (
-                      // 👇 Giữ chỗ cho Created
                       <span className="invisible text-xs">placeholder</span>
                     )}
                   </div>
 
-                  {/* Title: courseCode — description (không đổi chiều cao nhiều) */}
+                  {/* Title */}
                   <CardTitle className="text-lg font-bold text-slate-900 leading-tight">
                     {course.courseCode}
                     {course.description ? ` — ${course.description}` : ""}
                   </CardTitle>
 
-                  {/* Subtitle: Lecturer name (luôn có) */}
-                  <p className="mt-1 text-sm font-medium text-slate-600">{course.lecturerName}</p>
+                  {/* Lecturer */}
+                  <p className="mt-1 text-sm font-medium text-slate-600">
+                    {course.lecturerName}
+                  </p>
                 </CardHeader>
 
-                {/* ⭐ Content = flex-grow; CTA đẩy xuống đáy bằng mt-auto */}
+                {/* Content = grow; CTA ở đáy */}
                 <CardContent className="mt-3 flex grow flex-col gap-3 text-sm text-slate-600">
                   <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-green-600" />
-                    <span className="text-slate-700">{course.enrollmentCount} enrolled</span>
+                    <Users className="h-4 w-4 text-green-600" />
+                    <span className="text-slate-700">
+                      {course.enrollmentCount} enrolled
+                    </span>
                   </div>
 
-                  {/* push CTA to bottom */}
                   <div className="mt-auto">
                     {course.canJoin ? (
                       <Button
@@ -203,13 +261,18 @@ export default function AllCoursesPage() {
                       </Button>
                     ) : course.enrollmentStatus?.isEnrolled ? (
                       <Button
-                        onClick={() => (window.location.href = `/student/courses/${course.id}`)}
+                        onClick={() =>
+                          (window.location.href = `/student/courses/${course.id}`)
+                        }
                         className="w-full rounded-xl bg-blue-500 text-white transition-all hover:bg-blue-600"
                       >
                         View Course
                       </Button>
                     ) : (
-                      <Button disabled className="w-full rounded-xl bg-gray-100 font-medium text-gray-500">
+                      <Button
+                        disabled
+                        className="w-full rounded-xl bg-gray-100 font-medium text-gray-500"
+                      >
                         Not Available
                       </Button>
                     )}

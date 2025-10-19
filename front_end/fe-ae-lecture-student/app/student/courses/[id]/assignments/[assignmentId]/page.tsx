@@ -71,8 +71,6 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
               </div>
             </div>
           </div>
-
-          {/* ĐÃ BỎ: Joined time */}
         </li>
       ))}
     </ul>
@@ -234,7 +232,7 @@ export default function AssignmentDetailPage() {
           </Card>
         </div>
 
-        {/* RIGHT: 3/10 — Meta & Assigned Groups (auto show members) */}
+        {/* RIGHT: 3/10 — Meta & Assigned Groups */}
         <div className="lg:col-span-3 flex flex-col gap-4 lg:sticky lg:top-24">
           <Card className="rounded-2xl border border-slate-200 shadow-md bg-white">
             <CardHeader>
@@ -256,30 +254,30 @@ export default function AssignmentDetailPage() {
               </CardHeader>
               <CardContent className="text-sm text-slate-700">
                 <ul className="space-y-3">
-                  {a.assignedGroups.map((g: GroupItem) => (
-                    <li key={g.id} className="border border-slate-200 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{g.name}</span>
-                          <span className="text-xs text-slate-500">
-                            {g.memberCount}/{g.maxMembers}
-                          </span>
-                        </div>
-                        <span
-                          className={`text-[11px] px-2 py-0.5 rounded-md border ${
-                            g.isLocked
-                              ? "bg-red-50 text-red-700 border-red-200"
-                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          }`}
-                        >
-                          {g.isLocked ? "Locked" : "Open"}
-                        </span>
-                      </div>
+                  {a.assignedGroups.map((g: GroupItem) => {
+                    const membersLabel =
+                      g.maxMembers === null || g.maxMembers === undefined
+                        ? `${g.memberCount ?? 0} ${g.memberCount === 1 ? "member" : "members"}`
+                        : `${g.memberCount}/${g.maxMembers} ${g.maxMembers === 1 ? "member" : "members"}`;
 
-                      {/* Mount là fetch luôn & render members, KHÔNG toggle, KHÔNG joined time */}
-                      <GroupMembersPanel groupId={g.id} />
-                    </li>
-                  ))}
+                    return (
+                      <li key={g.id} className="border border-slate-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{g.name}</span>
+                            <span className="text-xs text-slate-500">• {membersLabel}</span>
+                          </div>
+                          {g.isLocked && (
+                            <span className="text-[11px] px-2 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200">
+                              Locked
+                            </span>
+                          )}
+                        </div>
+                        <GroupMembersPanel groupId={g.id} />
+                      </li>
+                    );
+                  })}
+
                 </ul>
               </CardContent>
             </Card>

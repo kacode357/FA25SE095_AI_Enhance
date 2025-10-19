@@ -9,7 +9,7 @@ import { useMyCourses } from "@/hooks/course/useMyCourses";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
+import { Input } from "@/components/ui/input";
 
 import {
   ListChecks,
@@ -22,6 +22,7 @@ import {
   Timer,
   Eye,
   X,
+  Search,
 } from "lucide-react";
 
 import type { MyAssignmentsQuery } from "@/types/assignments/assignment.payload";
@@ -35,73 +36,68 @@ import type { CourseItem } from "@/types/courses/course.response";
 export default function MyAssignmentsPage() {
   const router = useRouter();
 
-  // ===== Hooks
+  // Hooks
   const { listData, loading, fetchMyAssignments } = useMyAssignments();
-  const {
-    listData: myCourses,
-    loading: loadingCourses,
-    fetchMyCourses,
-    refetch: refetchCourses,
-  } = useMyCourses();
+  const { listData: myCourses, loading: loadingCourses, fetchMyCourses } = useMyCourses();
 
-  // ===== Local state
-  const [courseId, setCourseId] = useState<string>(""); // all
+  // Local state
+  const [courseId, setCourseId] = useState<string>("");
+  const [courseNameQuery, setCourseNameQuery] = useState<string>("");
   const [pageNumber, setPageNumber] = useState(1);
   const pageSize = 10;
 
-  // ===== API query (chuẩn payload)
+  // Assignments query (payload)
   const query: MyAssignmentsQuery = useMemo(
     () => ({ pageNumber, pageSize }),
     [pageNumber, pageSize]
   );
 
-  // ===== Fetch
+  // Fetch assignments
   useEffect(() => {
     fetchMyAssignments(query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.pageNumber, query.pageSize]);
 
+  // Fetch courses (first load & whenever courseNameQuery changes)
   useEffect(() => {
-    const courseQuery: GetMyCoursesQuery = {
+    const q: GetMyCoursesQuery = {
       asLecturer: false,
       page: 1,
       pageSize: 100,
       sortBy: "Name",
       sortDirection: "asc",
+      name: courseNameQuery.trim() || undefined,
     };
-    fetchMyCourses(courseQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  // ===== Derived
+    const t = setTimeout(() => {
+      fetchMyCourses(q);
+    }, 350); // debounce
+
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseNameQuery]);
+
+  // Derived
   const data: GetMyAssignmentsResponse | null = listData;
   const total = data?.totalCount ?? 0;
   const empty = !loading && (!data || data.assignments.length === 0);
 
-  // Filter client-side chỉ theo course
+  // Client-side filter by selected course
   const assignmentsToShow = useMemo(() => {
     const items = data?.assignments ?? [];
-    if (!courseId) return items;
-    return items.filter((a) => a.courseId === courseId);
+    return courseId ? items.filter((a) => a.courseId === courseId) : items;
   }, [data, courseId]);
 
-  // ===== Handlers
+  // Handlers
   const onRefresh = () => fetchMyAssignments(query);
   const gotoDetail = (cid: string, aid: string) =>
     router.push(`/student/courses/${cid}/assignments/${aid}`);
-  const onClearFilters = () => setCourseId("");
-  const onReloadCourses = () => {
-    const courseQuery: GetMyCoursesQuery = {
-      asLecturer: false,
-      page: 1,
-      pageSize: 100,
-      sortBy: "Name",
-      sortDirection: "asc",
-    };
-    refetchCourses(courseQuery);
+  const onClearFilters = () => {
+    setCourseId("");
+    setCourseNameQuery("");
   };
 
-  // ===== UI helpers
+  // UI helpers
   const statusTone = (s: AssignmentStatus) => {
     switch (s) {
       case AssignmentStatus.Active:
@@ -116,61 +112,43 @@ export default function MyAssignmentsPage() {
     }
   };
 
-  const fmt = (iso?: string | null) =>
-    iso ? new Date(iso).toLocaleString("en-GB") : "—";
+  const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString("en-GB") : "—");
 
   return (
-    // ✅ Thêm padding 2 bên: px-4 sm:px-6 lg:px-8
     <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
-      {/* Header */}
+      {/* Header (single Refresh button) */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-green-700 flex items-center gap-2">
           <ListChecks className="w-6 h-6 text-green-600" />
           My Assignments
         </h1>
 
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={onRefresh}>
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Refreshing…
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </>
-            )}
-          </Button>
-        </div>
+        <Button variant="secondary" onClick={onRefresh} disabled={loading}>
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Refreshing…
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </>
+          )}
+        </Button>
       </div>
 
-      {/* Content: 9/3 ~ 7/3 */}
+      {/* Content 9/3 */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Left: Assignments */}
+        {/* Left: assignments */}
         <div className="md:col-span-9">
           <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">Danh sách bài tập của bạn</CardTitle>
-                  <p className="text-xs text-slate-500">
-                    Tổng: <b>{total}</b> assignment{total > 1 ? "s" : ""}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onRefresh}
-                  className="text-slate-600"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                </Button>
+              <div>
+                <CardTitle className="text-base">Your assignments</CardTitle>
+                <p className="text-xs text-slate-500">
+                  Total: <b>{total}</b> assignment{total > 1 ? "s" : ""}
+                </p>
               </div>
             </CardHeader>
 
@@ -179,7 +157,7 @@ export default function MyAssignmentsPage() {
               {loading && (
                 <div className="flex justify-center items-center py-10 text-green-700">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  <span className="text-sm">Loading my assignments…</span>
+                  <span className="text-sm">Loading assignments…</span>
                 </div>
               )}
 
@@ -187,8 +165,8 @@ export default function MyAssignmentsPage() {
               {empty && (
                 <div className="flex flex-col items-center py-10 text-slate-600">
                   <AlertTriangle className="w-10 h-10 text-slate-400 mb-2" />
-                  <p className="mb-1 text-sm text-center">Bạn chưa có assignment nào.</p>
-                  <p className="text-xs text-slate-500">Hãy kiểm tra lại các môn học của bạn.</p>
+                  <p className="mb-1 text-sm text-center">You have no assignments.</p>
+                  <p className="text-xs text-slate-500">Please check your courses again.</p>
                 </div>
               )}
 
@@ -203,7 +181,7 @@ export default function MyAssignmentsPage() {
                         <div className="rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                           {/* Row 1 */}
                           <div className="px-4 pt-4 grid grid-cols-1 md:grid-cols-12 gap-3">
-                            {/* TL */}
+                            {/* Left */}
                             <div className="md:col-span-7 min-w-0 flex items-center gap-3">
                               <span
                                 className={
@@ -219,15 +197,11 @@ export default function MyAssignmentsPage() {
                               </h3>
                             </div>
 
-                            {/* TR */}
+                            {/* Right */}
                             <div className="md:col-span-5 min-w-0 flex items-center justify-start md:justify-end gap-2 flex-wrap">
                               <span className="text-[11px] px-2 py-0.5 rounded-full border border-slate-200 text-slate-700 inline-flex items-center gap-1 shrink-0">
                                 <Users className="w-3 h-3" />
-                                {a.isGroupAssignment ? (
-                                  <>Group • {a.assignedGroupsCount}</>
-                                ) : (
-                                  <>Individual</>
-                                )}
+                                {a.isGroupAssignment ? <>Group • {a.assignedGroupsCount}</> : <>Individual</>}
                               </span>
 
                               <Button
@@ -242,7 +216,7 @@ export default function MyAssignmentsPage() {
                             </div>
                           </div>
 
-                          {/* Row 2 (gọn, chỉ info chính) */}
+                          {/* Row 2 */}
                           <div className="px-4 pb-4 pt-3 grid grid-cols-1 md:grid-cols-12 gap-3">
                             <div className="md:col-span-12 min-w-0 flex flex-wrap items-center gap-3 text-sm">
                               <span className="inline-flex items-center gap-1">
@@ -254,9 +228,7 @@ export default function MyAssignmentsPage() {
                                 Due: <b>{fmt(due)}</b>
                               </span>
                               {a.extendedDueDate && (
-                                <span className="text-xs text-slate-500">
-                                  extended từ {fmt(a.dueDate)}
-                                </span>
+                                <span className="text-xs text-slate-500">extended from {fmt(a.dueDate)}</span>
                               )}
 
                               <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5">
@@ -292,8 +264,7 @@ export default function MyAssignmentsPage() {
               {!loading && data && data.totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between">
                   <div className="text-sm text-slate-600">
-                    Page <b>{data.pageNumber}</b> / {data.totalPages} • Total:{" "}
-                    <b>{data.totalCount}</b>
+                    Page <b>{data.pageNumber}</b> / {data.totalPages} • Total: <b>{data.totalCount}</b>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -317,30 +288,32 @@ export default function MyAssignmentsPage() {
           </Card>
         </div>
 
-        {/* Right: chỉ Course filter */}
+        {/* Right: Filter (Course + Course name search via API) */}
         <div className="md:col-span-3">
           <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Filter</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onReloadCourses}
-                  className="text-slate-600"
-                  title="Reload my courses"
-                >
-                  {loadingCourses ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
+              <CardTitle className="text-base">Filter</CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Course select */}
+              {/* Course name (server-side search) */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Course name</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    className="pl-9"
+                    placeholder="Type to search courses…"
+                    value={courseNameQuery}
+                    onChange={(e) => setCourseNameQuery(e.target.value)}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  {loadingCourses ? "Searching…" : `${myCourses?.length ?? 0} course(s)`}
+                </p>
+              </div>
+
+              {/* Course select (results filtered by Course name) */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-600">Course</label>
                 <div className="relative">
@@ -360,9 +333,6 @@ export default function MyAssignmentsPage() {
                     ▾
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  {loadingCourses ? "Đang tải courses…" : `${myCourses?.length ?? 0} course(s)`}
-                </p>
               </div>
 
               {/* Actions */}
@@ -372,6 +342,10 @@ export default function MyAssignmentsPage() {
                   Clear
                 </Button>
               </div>
+
+              <p className="text-[11px] text-slate-500">
+                Select a course to filter assignments. Type a course name to search from the server.
+              </p>
             </CardContent>
           </Card>
         </div>

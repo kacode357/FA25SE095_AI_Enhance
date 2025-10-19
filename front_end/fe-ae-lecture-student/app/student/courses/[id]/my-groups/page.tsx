@@ -10,14 +10,13 @@ import {
   ListChecks,
   Users,
   Lock,
-  Unlock,
   Loader2,
-  RefreshCw,
   ArrowLeft,
   Eye,
   Crown,
   BookOpen,
   FileText,
+  RefreshCw,
 } from "lucide-react";
 
 export default function MyGroupsByCoursePage() {
@@ -41,10 +40,10 @@ export default function MyGroupsByCoursePage() {
 
   if (!courseId) {
     return (
-      <div className="flex flex-col items-center gap-3 py-16 text-slate-600">
+      <div className="flex flex-col items-center gap-3 py-16 text-slate-600 px-4 sm:px-6 lg:px-8">
         <BookOpen className="w-8 h-8 text-slate-400" />
         <p>
-          Không tìm thấy <b>courseId</b> trong đường dẫn.
+          Could not find <b>courseId</b> in the path.
         </p>
         <Button variant="outline" onClick={() => router.push("/student/my-courses")}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -55,20 +54,25 @@ export default function MyGroupsByCoursePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6">
+    <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-green-700 flex items-center gap-2">
-          <ListChecks className="w-6 h-6 text-green-600" />
-          My Groups
-        </h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-bold text-green-700 flex items-center gap-2">
+            <ListChecks className="w-6 h-6 text-green-600" />
+            My Groups
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Course: <b>{courseName || "—"}</b>
+          </p>
+        </div>
 
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => router.push(`/student/courses/${courseId}`)}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Course
           </Button>
-          <Button variant="secondary" onClick={onRefresh}>
+          <Button variant="secondary" onClick={onRefresh} disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -84,19 +88,14 @@ export default function MyGroupsByCoursePage() {
         </div>
       </div>
 
+      {/* Wrapper */}
       <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-base">Nhóm của bạn trong khóa học</CardTitle>
-              <p className="text-xs text-slate-500">
-                {courseName ? <b>{courseName}</b> : "This course"} • {total} group
-                {total > 1 ? "s" : ""}
-              </p>
+              <CardTitle className="text-base">Your Groups</CardTitle>
+              <p className="text-xs text-slate-500">Total: <b>{total}</b> group{total > 1 ? "s" : ""}</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={onRefresh} className="text-slate-600">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            </Button>
           </div>
         </CardHeader>
 
@@ -105,7 +104,7 @@ export default function MyGroupsByCoursePage() {
           {loading && (
             <div className="flex justify-center items-center py-10 text-green-700">
               <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              <span className="text-sm">Loading my groups…</span>
+              <span className="text-sm">Loading your groups…</span>
             </div>
           )}
 
@@ -114,7 +113,7 @@ export default function MyGroupsByCoursePage() {
             <div className="flex flex-col items-center py-10 text-slate-600">
               <Users className="w-10 h-10 text-slate-400 mb-2" />
               <p className="mb-3 text-sm text-center">
-                Bạn chưa tham gia nhóm nào trong khóa học này.
+                You haven't joined any groups in this course.
               </p>
               <div className="flex gap-2">
                 <Button
@@ -122,7 +121,7 @@ export default function MyGroupsByCoursePage() {
                   onClick={() => router.push(`/student/courses/${courseId}/groups`)}
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  Xem danh sách nhóm
+                  View available groups
                 </Button>
               </div>
             </div>
@@ -130,37 +129,44 @@ export default function MyGroupsByCoursePage() {
 
           {/* List */}
           {!loading && !empty && (
-            <ul className="space-y-4">
+            <ul className="space-y-3">
               {groups.map((g) => {
-                const locked = g.isLocked;
                 const canViewAssignment = !!g.assignmentId;
+
+                // Member label
+                const membersLabel =
+                  g.maxMembers === null || g.maxMembers === undefined
+                    ? `${g.memberCount} ${g.memberCount === 1 ? "member" : "members"}`
+                    : `${g.memberCount}/${g.maxMembers} ${g.maxMembers === 1 ? "member" : "members"}`;
 
                 return (
                   <li key={g.groupId}>
-                    <div className="rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                      {/* === Row 1: TL + TR === */}
-                      <div className="px-4 pt-4 grid grid-cols-1 md:grid-cols-12 gap-3">
-                        {/* TL */}
-                        <div className="md:col-span-7 min-w-0 flex items-center gap-3">
-                          <span
-                            className={
-                              "inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border shrink-0 " +
-                              (locked
-                                ? "bg-red-50 text-red-700 border-red-200"
-                                : "bg-emerald-50 text-emerald-700 border-emerald-200")
-                            }
-                            title={locked ? "Group is locked" : "Group is open"}
-                          >
-                            {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                            {locked ? "Locked" : "Open"}
-                          </span>
+                    <div
+                      className="
+                        group relative rounded-xl border border-slate-200 bg-white
+                        hover:border-emerald-200 hover:bg-emerald-50/30
+                        transition-colors shadow-sm
+                      "
+                    >
+                      {/* Top row: name + role + actions */}
+                      <div className="px-4 pt-4 pb-3 grid grid-cols-1 md:grid-cols-12 gap-3">
+                        {/* Left block */}
+                        <div className="md:col-span-7 flex items-center gap-3 min-w-0">
+                          {/* Only show Locked (no “Open”) */}
+                          {g.isLocked && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200 shrink-0"
+                              title="Group is locked"
+                            >
+                              <Lock className="w-3 h-3" />
+                              Locked
+                            </span>
+                          )}
+
                           <h3 className="text-base font-semibold text-slate-900 truncate">
                             {g.groupName}
                           </h3>
-                        </div>
 
-                        {/* TR */}
-                        <div className="md:col-span-5 min-w-0 flex items-center justify-start md:justify-end gap-2 flex-wrap">
                           <span className="text-[11px] px-2 py-0.5 rounded-full border border-slate-200 text-slate-700 inline-flex items-center gap-1 shrink-0">
                             {g.isLeader ? (
                               <>
@@ -170,13 +176,27 @@ export default function MyGroupsByCoursePage() {
                               g.role || "Member"
                             )}
                           </span>
+                        </div>
 
+                        {/* Right block: actions align right */}
+                        <div className="md:col-span-5 flex items-center justify-start md:justify-end gap-2">
+                          {canViewAssignment && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                router.push(`/student/courses/${g.courseId}/assignments/${g.assignmentId}`)
+                              }
+                              className="shrink-0"
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              View assignment
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              router.push(`/student/courses/${g.courseId}/groups/${g.groupId}`)
-                            }
+                            onClick={() => router.push(`/student/courses/${g.courseId}/groups/${g.groupId}`)}
                             className="shrink-0"
                           >
                             <Eye className="w-4 h-4 mr-2" />
@@ -185,89 +205,50 @@ export default function MyGroupsByCoursePage() {
                         </div>
                       </div>
 
-                      {/* === Row 2: BL + BR === */}
-                      <div className="px-4 pb-4 pt-3 grid grid-cols-1 md:grid-cols-12 gap-3">
-                        {/* BL */}
-                        <div className="md:col-span-7 min-w-0 flex flex-col gap-2">
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-700">
-                            <span className="inline-flex items-center gap-1">
-                              <Users className="w-4 h-4 text-green-600" />
-                              <b>{g.memberCount}</b> / {g.maxMembers} members
-                            </span>
-                            <span className="text-xs text-slate-500">
-                              Joined: {new Date(g.joinedAt).toLocaleString("en-GB")}
-                            </span>
+                      {/* Divider */}
+                      <div className="h-px bg-slate-100" />
+
+                      {/* Bottom row: meta & description, layout clean */}
+                      <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-12 gap-3">
+                        {/* Meta chips */}
+                        <div className="md:col-span-12 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                          <span className="inline-flex items-center gap-1 text-slate-700">
+                            <Users className="w-4 h-4 text-green-600" />
+                            {membersLabel}
+                          </span>
+
+                          {g.assignmentTitle && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                canViewAssignment &&
+                                router.push(`/student/courses/${g.courseId}/assignments/${g.assignmentId}`)
+                              }
+                              className={
+                                "truncate max-w-[60ch] underline-offset-2 " +
+                                (canViewAssignment
+                                  ? "text-slate-700 hover:underline"
+                                  : "text-slate-400 cursor-not-allowed")
+                              }
+                              title={g.assignmentTitle || "Assignment"}
+                              disabled={!canViewAssignment}
+                            >
+                              <span className="text-slate-500 mr-1">Assignment:</span>
+                              <b className="text-slate-800">{g.assignmentTitle}</b>
+                            </button>
+                          )}
+
+                          <span className="text-xs text-slate-500">
+                            Joined: {new Date(g.joinedAt).toLocaleString("en-GB")}
+                          </span>
+                        </div>
+
+                        {/* Description (optional) */}
+                        {g.description && (
+                          <div className="md:col-span-12">
+                            <p className="text-sm text-slate-600 line-clamp-2">{g.description}</p>
                           </div>
-
-                          {g.description && (
-                            <p className="text-sm text-slate-600 line-clamp-2 break-words">
-                              {g.description}
-                            </p>
-                          )}
-
-                          {(g.courseName || g.courseCode) && (
-                            <p className="text-xs text-slate-500">
-                              Course: <b>{g.courseName}</b>
-                              {g.courseCode ? ` (${g.courseCode})` : ""}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* BR: ASSIGNMENT HIGHLIGHT */}
-                        <div className="md:col-span-5 min-w-0">
-                          {canViewAssignment ? (
-                            <div className="w-full max-w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-3">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex items-start gap-2 min-w-0">
-                                  <FileText className="w-4 h-4 mt-0.5 shrink-0" />
-                                  <div className="min-w-0">
-                                    <p className="text-xs uppercase tracking-wide text-emerald-700 font-semibold">
-                                      Assignment
-                                    </p>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        router.push(
-                                          `/student/courses/${g.courseId}/assignments/${g.assignmentId}`
-                                        )
-                                      }
-                                      className="text-sm font-medium text-emerald-800 underline-offset-2 hover:underline break-words line-clamp-2 text-left"
-                                      title={g.assignmentTitle || "View assignment"}
-                                    >
-                                      {g.assignmentTitle}
-                                    </button>
-                                  </div>
-                                </div>
-
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() =>
-                                    router.push(
-                                      `/student/courses/${g.courseId}/assignments/${g.assignmentId}`
-                                    )
-                                  }
-                                  className="shrink-0"
-                                >
-                                  <FileText className="w-4 h-4 mr-2" />
-                                  View
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="w-full max-w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-                              <div className="flex items-start gap-2 text-slate-500">
-                                <FileText className="w-4 h-4 mt-0.5 shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-xs uppercase tracking-wide font-semibold">
-                                    Assignment
-                                  </p>
-                                  <p className="text-sm truncate">—</p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
                   </li>
