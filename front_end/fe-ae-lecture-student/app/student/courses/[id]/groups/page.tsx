@@ -24,10 +24,10 @@ export default function CourseGroupsPage() {
   const router = useRouter();
   const courseId = typeof params?.id === "string" ? params.id : "";
 
-  // 🔹 Groups
+  // Groups
   const { listData, loading, fetchByCourseId, refetch } = useGroupsByCourseId();
 
-  // 🔹 Students (sidebar 30%)
+  // Students (sidebar 30%)
   const {
     loading: loadingStudents,
     students,
@@ -37,10 +37,9 @@ export default function CourseGroupsPage() {
   } = useCourseStudents();
 
   useEffect(() => {
-    if (courseId) {
-      fetchByCourseId(courseId);
-      fetchCourseStudents(courseId);
-    }
+    if (!courseId) return;
+    fetchByCourseId(courseId);
+    fetchCourseStudents(courseId);
   }, [courseId, fetchByCourseId, fetchCourseStudents]);
 
   const onRefresh = () => {
@@ -51,7 +50,7 @@ export default function CourseGroupsPage() {
 
   if (!courseId) {
     return (
-      <div className="flex flex-col items-center gap-3 py-16 text-slate-600">
+      <div className="flex flex-col items-center gap-3 py-16 text-slate-600 px-4 sm:px-6 lg:px-8">
         <FileText className="w-8 h-8 text-slate-400" />
         <p>
           Could not find <b>courseId</b> in the path.
@@ -64,7 +63,7 @@ export default function CourseGroupsPage() {
     );
   }
 
-  // ⏳ Total Loading (prioritizing groups)
+  // Prioritize groups loading
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[50vh] text-green-600">
@@ -77,13 +76,19 @@ export default function CourseGroupsPage() {
   const isEmpty = !listData || listData.length === 0;
 
   return (
-    <div className="flex flex-col gap-6 py-6">
-      {/* Header actions */}
+    // padding 2 sides
+    <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-green-700 flex items-center gap-2">
-          <Users className="w-6 h-6 text-green-600" />
-          Groups
-        </h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-bold text-green-700 flex items-center gap-2">
+            <Users className="w-6 h-6 text-green-600" />
+            Groups
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Course: <b>{courseName || "—"}</b>
+          </p>
+        </div>
 
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => router.push(`/student/courses/${courseId}`)}>
@@ -97,9 +102,9 @@ export default function CourseGroupsPage() {
         </div>
       </div>
 
-      {/* Main layout 7/3 → grid 10 columns */}
+      {/* Main layout 7/3 */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-        {/* LEFT: 7 parts = col-span-7 */}
+        {/* LEFT: groups list */}
         <div className="lg:col-span-7">
           {isEmpty ? (
             <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
@@ -127,6 +132,15 @@ export default function CourseGroupsPage() {
                 <ul className="divide-y divide-slate-200">
                   {listData.map((g) => {
                     const locked = g.isLocked;
+
+                    // ✅ Member label logic
+                    const memberLabel =
+                      g.maxMembers == null
+                        ? `${g.memberCount} ${g.memberCount === 1 ? "member" : "members"}`
+                        : `${g.memberCount}/${g.maxMembers} ${
+                            g.maxMembers === 1 ? "member" : "members"
+                          }`;
+
                     return (
                       <li
                         key={g.id}
@@ -182,7 +196,7 @@ export default function CourseGroupsPage() {
                           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-700">
                             <span className="flex items-center gap-1">
                               <Users className="w-4 h-4 text-green-600" />
-                              <b>{g.memberCount}</b> / {g.maxMembers} members
+                              <b>{memberLabel}</b>
                             </span>
 
                             {g.leaderName && (
@@ -193,8 +207,8 @@ export default function CourseGroupsPage() {
                             )}
 
                             {g.assignmentTitle && (
-                              <span className="text-slate-600">
-                                Assignment: <b>{g.assignmentTitle}</b>
+                              <span className="text-slate-600 truncate">
+                                Assignment: <b className="font-medium">{g.assignmentTitle}</b>
                               </span>
                             )}
                           </div>
@@ -215,7 +229,7 @@ export default function CourseGroupsPage() {
           )}
         </div>
 
-        {/* RIGHT: 3 parts = col-span-3 */}
+        {/* RIGHT: students sidebar */}
         <div className="lg:col-span-3">
           <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white h-full">
             <CardHeader className="pb-3">
@@ -240,7 +254,7 @@ export default function CourseGroupsPage() {
             </CardHeader>
 
             <CardContent className="pt-0">
-              {/* List students */}
+              {/* Students list */}
               <div className="max-h-[70vh] overflow-auto pr-1">
                 {loadingStudents && (
                   <div className="flex items-center gap-2 text-slate-500 py-4">

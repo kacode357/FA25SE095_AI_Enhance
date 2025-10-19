@@ -15,9 +15,11 @@ import {
   ListTodo,
 } from "lucide-react";
 
+// Mày nhớ kiểm tra lại các component này đã được import đúng chưa
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+// Mày nhớ kiểm tra lại các hook và type này đã tồn tại chưa
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
@@ -26,6 +28,7 @@ import Link from "next/link";
 export default function CourseDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  // Đảm bảo courseId là string, nếu không có thì là rỗng
   const courseId = typeof id === "string" ? id : "";
 
   // Course info
@@ -34,14 +37,16 @@ export default function CourseDetailPage() {
   // Assignments
   const { listData, loading: loadingAssignments, fetchAssignments } = useAssignments();
 
-  // Guard để không fetch lặp trong Strict Mode
+  // Guard để không fetch lặp trong Strict Mode của React (Next.js)
   const didFetchRef = useRef(false);
 
   useEffect(() => {
+    // Nếu không có ID hoặc đã fetch rồi thì dừng
     if (!courseId) return;
     if (didFetchRef.current) return;
     didFetchRef.current = true;
 
+    // Fetch dữ liệu
     fetchCourseById(courseId);
     fetchAssignments({
       courseId,
@@ -50,11 +55,13 @@ export default function CourseDetailPage() {
       pageNumber: 1,
       pageSize: 10,
     });
-  }, [courseId]); // chỉ phụ thuộc vào courseId
+  }, [courseId, fetchCourseById, fetchAssignments]); // dependency đầy đủ
 
+  // Lấy danh sách assignment và tổng số lượng
   const assignments = listData?.assignments ?? [];
   const totalAssignments = listData?.totalCount ?? 0;
 
+  // Hàm helper để định nghĩa màu sắc cho status badge
   const statusStyle = (s: AssignmentStatus) => {
     switch (s) {
       case AssignmentStatus.Draft:
@@ -71,6 +78,8 @@ export default function CourseDetailPage() {
         return "bg-slate-100 text-slate-700 border border-slate-200";
     }
   };
+
+  // --- RENDERING GUARDS ---
 
   if (!courseId) {
     return (
@@ -112,6 +121,8 @@ export default function CourseDetailPage() {
       </div>
     );
   }
+
+  // --- MAIN CONTENT ---
 
   return (
     <motion.div
@@ -156,6 +167,7 @@ export default function CourseDetailPage() {
               </CardTitle>
 
               <div className="flex items-center gap-2">
+                {/* Nút lọc Upcoming */}
                 <Button
                   variant="secondary"
                   size="sm"
@@ -166,13 +178,14 @@ export default function CourseDetailPage() {
                       sortOrder: "asc",
                       pageNumber: 1,
                       pageSize: 10,
-                      isUpcoming: true,
+                      isUpcoming: true, // Biến lọc
                     })
                   }
                 >
                   <Clock className="w-4 h-4 mr-1" />
                   Upcoming
                 </Button>
+                {/* Nút lọc Overdue */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -183,13 +196,14 @@ export default function CourseDetailPage() {
                       sortOrder: "asc",
                       pageNumber: 1,
                       pageSize: 10,
-                      isOverdue: true,
+                      isOverdue: true, // Biến lọc
                     })
                   }
                 >
                   <AlertTriangle className="w-4 h-4 mr-1" />
                   Overdue
                 </Button>
+                {/* Nút Reset (load lại ban đầu) */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -219,24 +233,30 @@ export default function CourseDetailPage() {
               ) : (
                 <ul className="divide-y divide-slate-200">
                   {assignments.map((a) => {
+                    // Xử lý ngày tháng
                     const due = new Date(a.dueDate);
                     const extended = a.extendedDueDate ? new Date(a.extendedDueDate) : null;
                     const finalDue = extended ?? due;
                     const dueLabel = extended ? "Extended due" : "Due";
+                    
+                    // Đường dẫn chi tiết Assignment (dùng cho cả Title)
+                    const assignmentDetailLink = `/student/courses/${courseId}/assignments/${a.id}`;
 
                     return (
                       <li key={a.id} className="py-4">
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                          {/* Left section */}
+                          {/* Left section: Title và Meta data */}
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
+                              {/* ĐÂY LÀ PHẦN SỬA: Tiêu đề là Link chính */}
                               <Link
-                                href={`/student/courses/${courseId}/assignments/${a.id}`}
-                                className="font-semibold text-slate-900 hover:underline truncate"
+                                href={assignmentDetailLink}
+                                className="font-bold text-lg text-green-700 hover:text-green-800 hover:underline truncate transition-colors"
                               >
                                 {a.title}
                               </Link>
 
+                              {/* Status Badge */}
                               <span
                                 className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md ${statusStyle(
                                   a.status
@@ -249,7 +269,7 @@ export default function CourseDetailPage() {
                                 {a.statusDisplay}
                               </span>
 
-                              {/* Giữ badge Group để biết loại, nhưng KHÔNG có nút/logic view group */}
+                              {/* Group Badge */}
                               {a.isGroupAssignment && (
                                 <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
                                   <Users className="w-3 h-3" />
@@ -258,40 +278,35 @@ export default function CourseDetailPage() {
                               )}
                             </div>
 
-                            <div className="mt-1 text-xs text-slate-500 flex items-center gap-3 flex-wrap">
+                            {/* Meta chi tiết */}
+                            <div className="mt-1 text-sm text-slate-500 flex items-center gap-4 flex-wrap">
                               <span className="flex items-center gap-1">
-                                <CalendarDays className="w-3.5 h-3.5" />
-                                {dueLabel}: {finalDue.toLocaleString("en-GB")}
+                                <CalendarDays className="w-4 h-4 text-green-600" />
+                                {dueLabel}: <b className="text-slate-700">{finalDue.toLocaleString("en-GB")}</b>
                               </span>
                               {typeof a.maxPoints === "number" && (
-                                <span>Points: <b>{a.maxPoints}</b></span>
+                                <span>Points: <b className="text-slate-700">{a.maxPoints}</b></span>
                               )}
                               {typeof a.assignedGroupsCount === "number" && a.isGroupAssignment && (
-                                <span>Groups: <b>{a.assignedGroupsCount}</b></span>
+                                <span>Groups: <b className="text-slate-700">{a.assignedGroupsCount}</b></span>
                               )}
                               {a.isOverdue && (
-                                <span className="text-red-600 font-medium">Overdue</span>
+                                <span className="text-red-600 font-bold flex items-center gap-1">
+                                    <AlertTriangle className="w-4 h-4" /> Overdue
+                                </span>
                               )}
                               {!a.isOverdue && a.daysUntilDue >= 0 && (
-                                <span className="text-emerald-700">
+                                <span className="text-emerald-700 font-medium">
                                   {a.daysUntilDue} day{a.daysUntilDue === 1 ? "" : "s"} left
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          {/* Right actions — chỉ còn View assignment */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                router.push(`/student/courses/${courseId}/assignments/${a.id}`)
-                              }
-                            >
-                              View
-                            </Button>
-                          </div>
+                          {/* Right actions: Đã xóa nút View */}
+                          {/* <div className="flex items-center gap-2 shrink-0">
+                            // Nút View bị xóa vì đã dùng Title làm link rồi.
+                          </div> */}
                         </div>
                       </li>
                     );
