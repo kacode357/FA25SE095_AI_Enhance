@@ -1,4 +1,4 @@
-// app/(lecturer)/manager/course/[id]/assignments/components/AssignmentDetailView.tsx
+// app/lecture/manager/course/[id]/assignments/components/AssignmentDetailView.tsx
 "use client";
 
 import { useEffect, useMemo } from "react";

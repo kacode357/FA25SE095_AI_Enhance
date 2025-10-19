@@ -1,4 +1,4 @@
-// app/(lecturer)/manager/course/[id]/assignments/components/NewAssignmentForm.tsx
+// app/lecture/manager/course/[id]/assignments/components/NewAssignmentForm.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";

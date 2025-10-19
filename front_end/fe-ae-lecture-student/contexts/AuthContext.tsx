@@ -10,15 +10,18 @@ import { UserService } from "@/services/user.services";
 type AuthContextType = {
   user: UserProfile | null;
   setUser: (u: UserProfile | null) => void;
+  isReady: boolean;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   setUser: () => {},
+  isReady: false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -30,23 +33,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       "/reset-password",
     ]);
 
-    // 1) Không có token -> không fetch profile
     const accessToken =
       Cookies.get("accessToken") ||
       (typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null);
 
+    // Không có token -> không fetch; đánh dấu ready
     if (!accessToken) {
       setUser(null);
+      setIsReady(true);
       return;
     }
 
-    // 2) Đang ở trang auth -> tránh fetch để ngăn vòng lặp reset
+    // Ở trang auth -> không fetch, vẫn ready
     if (authPages.has(pathname)) {
-      // vẫn giữ user như hiện tại; không gọi API ở /login
+      setIsReady(true);
       return;
     }
 
-    // 3) Fetch profile ở các trang “app” khác khi có token
+    // *** QUAN TRỌNG: reset về false trước khi fetch profile ở route mới
+    setIsReady(false);
+
     let mounted = true;
     (async () => {
       try {
@@ -54,7 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) setUser(res);
       } catch {
         if (mounted) setUser(null);
-        // interceptor sẽ clear token; đừng redirect ở đây
+      } finally {
+        if (mounted) setIsReady(true);
       }
     })();
 
@@ -64,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, isReady }}>
       {children}
     </AuthContext.Provider>
   );

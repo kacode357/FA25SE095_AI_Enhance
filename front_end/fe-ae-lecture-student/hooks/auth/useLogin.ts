@@ -1,7 +1,12 @@
-// hooks/useLogin.ts
+// hooks/auth/useLogin.ts
 "use client";
 
-import { ALLOWED_LOGIN_ROLES, mapRole, UserRole } from "@/config/user-role";
+import {
+  mapRole,
+  UserRole,
+  ROLE_HOME,
+  isAllowedAppRole,   
+} from "@/config/user-role";
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
 import { LoginPayload } from "@/types/auth/auth.payload";
@@ -10,61 +15,78 @@ import { UserProfile } from "@/types/user/user.response";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
+
+type LoginOptions = {
+  remember?: boolean;
+  next?: string;
+};
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const clearTokens = () => {
+    Cookies.remove("accessToken");
+    Cookies.remove("refreshToken");
+    sessionStorage.removeItem("accessToken");
+  };
+
+  const setSession = (accessToken: string, refreshToken?: string, remember?: boolean) => {
+    if (remember) {
+      Cookies.set("accessToken", accessToken, { secure: true, sameSite: "strict", path: "/" });
+      if (refreshToken) {
+        Cookies.set("refreshToken", refreshToken, {
+          expires: 7, secure: true, sameSite: "strict", path: "/",
+        });
+      }
+    } else {
+      sessionStorage.setItem("accessToken", accessToken);
+      Cookies.remove("accessToken");
+      Cookies.remove("refreshToken");
+    }
+  };
+
+  const resolveNext = (role: UserRole, next?: string) => {
+    const authPages = new Set([
+      "/login", "/register", "/verify-email", "/forgot-password", "/reset-password",
+    ]);
+    if (!next) return ROLE_HOME[role];
+    try {
+      const base = typeof window !== "undefined" ? window.location.origin : "http://localhost";
+      const url = new URL(next, base);
+      const path = url.pathname + (url.search || "");
+      if (authPages.has(url.pathname)) return ROLE_HOME[role];
+      return path;
+    } catch {
+      return ROLE_HOME[role];
+    }
+  };
+
   const login = async (
     payload: LoginPayload,
-    rememberMe: boolean
+    options: LoginOptions = {}
   ): Promise<LoginResponse | null> => {
+    const { remember = false, next } = options;
     setLoading(true);
+
     try {
-      // 1) Gọi login để lấy token
       const res = await AuthService.login(payload);
+      if (!res?.accessToken) return null;
 
-      if (res.accessToken) {
-        if (rememberMe) {
-          // Lưu cookie (persist) + refreshToken để interceptor có thể refresh
-          Cookies.set("accessToken", res.accessToken, { secure: true, sameSite: "strict" });
-          Cookies.set("refreshToken", res.refreshToken, {
-            expires: 7,
-            secure: true,
-            sameSite: "strict",
-          });
-        } else {
-          // Session only: chỉ lưu accessToken trong sessionStorage
-          sessionStorage.setItem("accessToken", res.accessToken);
-          Cookies.remove("accessToken");
-          Cookies.remove("refreshToken");
-        }
-      }
+      setSession(res.accessToken, res.refreshToken, remember);
 
-      // 2) Lấy profile để kiểm tra role
       const profile: UserProfile = await UserService.getProfile();
-      const roleEnum = mapRole(profile.role);
+      const role = mapRole(profile.role);
 
-      if (roleEnum === null || roleEnum === undefined || !ALLOWED_LOGIN_ROLES.includes(roleEnum)) {
-        // Không đúng role được phép → xoá token + báo lỗi
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
-        sessionStorage.removeItem("accessToken");
-        toast.error("Tài khoản không có quyền đăng nhập vào khu vực này.");
+      // ✅ dùng isAllowedAppRole thay cho ALLOWED_LOGIN_ROLES.includes
+      if (role == null || !isAllowedAppRole(role)) {
+        clearTokens();
         return null;
       }
 
-      // 3) Điều hướng theo role
-      if (roleEnum === UserRole.Student) {
-        router.push("/student/home");
-      } else {
-        // Mặc định (ví dụ Lecturer)
-        router.push("/manager/course");
-      }
+      router.push(resolveNext(role, next));
       return res;
     } catch {
-      // Lỗi đã có interceptor/toast chung lo phần lớn trường hợp
       return null;
     } finally {
       setLoading(false);

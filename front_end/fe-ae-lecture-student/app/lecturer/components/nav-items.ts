@@ -2,7 +2,7 @@ import { Layers3 } from "lucide-react";
 
 export const lecturerNav = [
   // { href: "/manager/class", label: "Classes", icon: Layers3 },
-  { href: "/manager/course", label: "Courses", icon: Layers3 },
+  { href: "/lecturer/manager/course", label: "Courses", icon: Layers3 },
   // { href: "/manager/assignment", label: "Assignments", icon: Layers3 },
   // { href: "/manager/group", label: "Groups", icon: Layers3 },
   // { href: "/manager/progress", label: "Progress", icon: BarChart3 },

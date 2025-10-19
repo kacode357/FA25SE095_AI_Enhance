@@ -1,4 +1,4 @@
-// app/(lecturer)/manager/course/[id]/assignments/components/AssignmentActionsBar.tsx
+// app/lecture/manager/course/[id]/assignments/components/AssignmentActionsBar.tsx
 "use client";
 
 import { useMemo, useState } from "react";

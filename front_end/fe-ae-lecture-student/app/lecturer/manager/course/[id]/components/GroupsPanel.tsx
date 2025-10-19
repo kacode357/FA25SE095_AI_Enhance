@@ -51,7 +51,7 @@ export default function GroupsPanel({
 
     const handleOpenDetails = (id: string) => {
         // navigate to group details page
-        router.push(`/manager/course/${courseId}/group/${id}`);
+        router.push(`/lecturer/manager/course/${courseId}/group/${id}`);
     };
 
     const handleDeleteClick = (g: GroupDetail) => {

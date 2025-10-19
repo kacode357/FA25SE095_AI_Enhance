@@ -96,7 +96,7 @@ export default function GroupDetailPage() {
           <BreadcrumbItem>
             <BreadcrumbLink
               className="cursor-pointer text-emerald-600 hover:underline"
-              onClick={() => router.push("/manager/course")}
+              onClick={() => router.push("/lecturer/manager/course")}
             >
               Manager
             </BreadcrumbLink>
@@ -105,7 +105,7 @@ export default function GroupDetailPage() {
           <BreadcrumbItem>
             <BreadcrumbLink
               className="cursor-pointer text-emerald-600 hover:underline"
-              onClick={() => router.push(`/manager/course/${courseId}`)}
+              onClick={() => router.push(`/lecturer/manager/course/${courseId}`)}
             >
               Course
             </BreadcrumbLink>

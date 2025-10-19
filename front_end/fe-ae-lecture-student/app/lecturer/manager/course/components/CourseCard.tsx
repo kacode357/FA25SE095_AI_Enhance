@@ -72,7 +72,7 @@ export default function CourseCard({
   const revealDisabled = !hasCodeFeature || !code;
   const copyDisabled = !hasCodeFeature || !code;
 
-  const goDetail = () => router.push(`/manager/course/${course.id}`);
+  const goDetail = () => router.push(`/lecturer/manager/course/${course.id}`);
   const onKeyEnter = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();

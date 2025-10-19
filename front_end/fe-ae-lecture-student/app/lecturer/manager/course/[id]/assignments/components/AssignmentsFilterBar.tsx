@@ -1,4 +1,4 @@
-// app/(lecturer)/manager/course/[id]/assignments/components/AssignmentsFilterBar.tsx
+// app/lecture/manager/course/[id]/assignments/components/AssignmentsFilterBar.tsx
 "use client";
 
 import { Input } from "@/components/ui/input";

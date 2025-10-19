@@ -56,7 +56,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
         <div className="p-3">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Link href="/manager/course">
+                    <Link href="/lecturer/manager/course">
                         <Button variant="ghost" className="h-8 px-2 cursor-pointer">
                             ←
                         </Button>
