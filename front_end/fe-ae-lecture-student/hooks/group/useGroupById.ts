@@ -13,6 +13,7 @@ export function useGroupById() {
 
   const fetchGroupById = useCallback(async (groupId: string, force = false) => {
     if (!groupId) return null;
+
     if (!force && cache.has(groupId)) {
       const cached = cache.get(groupId)!;
       setData(cached);
@@ -24,12 +25,16 @@ export function useGroupById() {
 
     try {
       const res = await GroupService.getById(groupId);
-      const groupData = res.group as GroupDetail;
+      const groupData = res.group;
       cache.set(groupId, groupData);
       setData(groupData);
       return groupData;
     } catch (e: any) {
-      setError(e?.message || "Failed to fetch group detail");
+      const message =
+        e?.response?.data?.message ||
+        e?.message ||
+        "Failed to fetch group detail";
+      setError(message);
       return null;
     } finally {
       setLoading(false);
