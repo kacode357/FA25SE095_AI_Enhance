@@ -1,6 +1,8 @@
+// app/student/all-courses/components/AccessCodeJoinSheet.tsx
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +14,8 @@ type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   courseId: string | null;
-  courseTitle?: string;
-  onJoined?: () => void; // callback để refetch list
+  courseTitle?: string; // hiển thị dạng "MATH201 — Started with Math"
+  onJoined?: () => void;  // callback refetch list (nếu cần)
 };
 
 export default function AccessCodeJoinSheet({
@@ -23,6 +25,7 @@ export default function AccessCodeJoinSheet({
   courseTitle,
   onJoined,
 }: Props) {
+  const router = useRouter();
   const [accessCode, setAccessCode] = useState("");
   const { joinCourse, loading } = useJoinCourse();
 
@@ -32,14 +35,13 @@ export default function AccessCodeJoinSheet({
 
   const handleSubmit = async () => {
     if (!courseId) return;
-    try {
-      const res = await joinCourse(courseId, { accessCode });
+    const res = await joinCourse(courseId, { accessCode });
+    if (res) {
       toast.success(res.message || "Joined course successfully");
       onOpenChange(false);
       onJoined?.();
-    } catch (e: any) {
-      const msg = e?.response?.data?.detail || e?.message || "Failed to join course";
-      toast.error(msg);
+      // ⬇️ Điều hướng thẳng vào trang course
+      router.push(`/student/courses/${courseId}`);
     }
   };
 
@@ -62,6 +64,7 @@ export default function AccessCodeJoinSheet({
             onChange={(e) => setAccessCode(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             autoFocus
+            disabled={loading}
           />
         </div>
 

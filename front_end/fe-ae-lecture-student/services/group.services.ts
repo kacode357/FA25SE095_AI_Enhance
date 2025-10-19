@@ -1,6 +1,18 @@
 import { courseAxiosInstance } from "@/config/axios.config";
-import { CreateGroupPayload, RandomizeGroupPayload, UpdateGroupPayload } from "@/types/group/group.payload";
-import { CreateGroupResponse, DeleteGroupResponse, GetGroupByIdResponse, GetGroupsByCourseIdResponse, RandomizeGroupsResponse, UpdateGroupsResponse } from "@/types/group/group.response";
+import {
+  CreateGroupPayload,
+  RandomizeGroupPayload,
+  UpdateGroupPayload,
+} from "@/types/group/group.payload";
+import {
+  CreateGroupResponse,
+  DeleteGroupResponse,
+  GetGroupByIdResponse,
+  GetGroupsByCourseIdResponse,
+  RandomizeGroupsResponse,
+  UpdateGroupsResponse,
+  GetMyGroupsResponse, // 👈 NEW
+} from "@/types/group/group.response";
 
 export const GroupService = {
   create: async (data: CreateGroupPayload): Promise<CreateGroupResponse> => {
@@ -30,7 +42,7 @@ export const GroupService = {
     return response.data;
   },
 
-    deleteGroup: async (groupId: string): Promise<DeleteGroupResponse> => {
+  deleteGroup: async (groupId: string): Promise<DeleteGroupResponse> => {
     const response = await courseAxiosInstance.delete<DeleteGroupResponse>(
       `/groups/${groupId}`
     );
@@ -46,6 +58,14 @@ export const GroupService = {
     );
     return response.data;
   },
+
+  /* ====== NEW: /api/groups/my-groups ======
+     Optional query ?courseId=... để filter theo course. */
+  getMyGroups: async (courseId?: string): Promise<GetMyGroupsResponse> => {
+    const response = await courseAxiosInstance.get<GetMyGroupsResponse>(
+      `/groups/my-groups`,
+      { params: courseId ? { courseId } : undefined }
+    );
+    return response.data;
+  },
 };
-
-

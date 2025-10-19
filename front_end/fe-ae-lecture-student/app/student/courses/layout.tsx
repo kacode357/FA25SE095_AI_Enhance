@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { BookOpen, BarChart3, Users } from "lucide-react";
+import { BookOpen, BarChart3, Users, ListChecks } from "lucide-react";
 
 export default function CoursesLayout({
   children,
@@ -12,16 +12,26 @@ export default function CoursesLayout({
 }) {
   const pathname = usePathname();
   const segments = pathname.split("/");
-  const courseId = segments.length >= 4 ? segments[3] : null;
-  const basePath = courseId ? `/student/courses/${courseId}` : "/student/courses";
+
+  // segs: ["", "student", "courses", "<maybe-course-id-or-my-groups>", ...]
+  const seg3 = segments.length >= 4 ? segments[3] : null;
+  const isMyGroupsPage = seg3 === "my-groups";
+  const courseId = seg3 && !isMyGroupsPage ? seg3 : null;
+
+  const basePath = courseId
+    ? `/student/courses/${courseId}`
+    : "/student/courses";
 
   const tabs = [
     { label: "Course", href: `${basePath}`, icon: BookOpen, visible: !!courseId },
     { label: "Groups", href: `${basePath}/groups`, icon: Users, visible: !!courseId },
+    { label: "My Groups", href: `${basePath}/my-groups`, icon: ListChecks, visible: true },
     { label: "Grades", href: `${basePath}/grades`, icon: BarChart3, visible: !!courseId },
   ];
 
-  // 🔧 Hàm tính active: "Course" chỉ active khi pathname === basePath
+  // 🔧 Active:
+  // - "Course" active khi pathname === basePath
+  // - Các tab còn lại active nếu pathname === href hoặc bắt đầu bằng `${href}/`
   const isTabActive = (href: string) => {
     if (href === basePath) return pathname === basePath;
     return pathname === href || pathname.startsWith(`${href}/`);

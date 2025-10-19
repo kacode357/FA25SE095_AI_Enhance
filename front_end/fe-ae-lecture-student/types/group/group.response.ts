@@ -76,3 +76,31 @@ export interface RandomizedGroup {
   leaderId: string;
   leaderName: string;
 }
+
+
+export type MyGroupRole = "Leader" | "Member" | "Pending" | "Unknown" | string;
+
+export interface MyGroupItem {
+  groupId: string;
+  groupName: string;
+  description: string | null;
+  courseId: string;
+  courseName: string;
+  courseCode: string;
+  isLocked: boolean;
+  maxMembers: number;
+  memberCount: number;
+  assignmentId: string | null;
+  assignmentTitle: string | null;
+  isLeader: boolean;
+  role: MyGroupRole;
+  joinedAt: string;  // ISO datetime
+  createdAt: string; // ISO datetime
+}
+
+export interface GetMyGroupsResponse {
+  success: boolean;
+  message: string;
+  groups: MyGroupItem[];
+  totalGroups: number;
+}

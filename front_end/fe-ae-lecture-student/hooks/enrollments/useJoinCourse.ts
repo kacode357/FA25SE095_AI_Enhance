@@ -2,28 +2,23 @@
 
 import { useState, useCallback } from "react";
 import { EnrollmentsService } from "@/services/enrollments.services";
-import {
-  JoinCoursePayload,
-} from "@/types/enrollments/enrollments.payload";
-import {
-  JoinCourseResponse,
-} from "@/types/enrollments/enrollments.response";
+import { JoinCoursePayload } from "@/types/enrollments/enrollments.payload";
+import { JoinCourseResponse } from "@/types/enrollments/enrollments.response";
 
-/**
- * 🧑‍🎓 Hook cho phép student join vào course
- */
 export function useJoinCourse() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<JoinCourseResponse | null>(null);
 
-  /** 🔹 Join course bằng courseId + optional accessCode */
   const joinCourse = useCallback(
-    async (courseId: string, payload?: JoinCoursePayload) => {
+    async (courseId: string, payload?: JoinCoursePayload): Promise<JoinCourseResponse | null> => {
       setLoading(true);
       try {
         const res = await EnrollmentsService.joinCourse(courseId, payload);
         setResult(res);
-        return res;
+        return res; 
+      } catch (_err) {
+        setResult(null);
+        return null;
       } finally {
         setLoading(false);
       }
@@ -31,9 +26,5 @@ export function useJoinCourse() {
     []
   );
 
-  return {
-    loading,
-    result,
-    joinCourse,
-  };
+  return { loading, result, joinCourse };
 }

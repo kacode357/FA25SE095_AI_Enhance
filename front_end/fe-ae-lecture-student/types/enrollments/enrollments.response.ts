@@ -101,3 +101,26 @@ export interface GetMyEnrolledCoursesResponse {
   courses: MyEnrolledCourse[];
   totalCount: number;
 }
+
+// --- Course enrolled students (for a specific course) ---
+export interface CourseEnrolledStudent {
+  studentId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  studentIdNumber: string;
+  profilePictureUrl: string;
+  joinedAt: string;        // ISO string
+  status: string;          // server trả string (VD: "Active" | "Pending" | "Unenrolled"...)
+  enrollmentId: string;
+}
+
+export interface GetCourseEnrolledStudentsResponse {
+  success: boolean;
+  message: string;
+  courseId: string;
+  courseName: string;
+  students: CourseEnrolledStudent[];
+  totalStudents: number;
+}

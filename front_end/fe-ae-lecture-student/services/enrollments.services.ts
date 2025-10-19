@@ -13,6 +13,7 @@ import {
   ImportTemplateResponse,
   JoinCourseResponse,
   LeaveCourseResponse,
+  GetCourseEnrolledStudentsResponse,   // 👈 thêm dòng này
 } from "@/types/enrollments/enrollments.response";
 
 export const EnrollmentsService = {
@@ -131,10 +132,22 @@ export const EnrollmentsService = {
     return response.data;
   },
 
-    getMyCourses: async (): Promise<GetMyEnrolledCoursesResponse> => {
+  /** 📚 Get my enrolled courses */
+  getMyCourses: async (): Promise<GetMyEnrolledCoursesResponse> => {
     const res = await courseAxiosInstance.get<GetMyEnrolledCoursesResponse>(
       "/enrollments/my-courses"
     );
+    return res.data;
+  },
+
+  /** 👥 Get all enrolled students in a course */
+  getCourseStudents: async (
+    courseId: string
+  ): Promise<GetCourseEnrolledStudentsResponse> => {
+    const res =
+      await courseAxiosInstance.get<GetCourseEnrolledStudentsResponse>(
+        `/enrollments/courses/${courseId}/students`
+      );
     return res.data;
   },
 };

@@ -8,6 +8,8 @@ const navs = [
   { label: "Home", href: "/home" },
   { label: "All Courses", href: "/all-courses" },
   { label: "My Courses", href: "/my-courses" },
+  // ✅ Thêm mục My Assignments
+  { label: "My Assignments", href: "/my-assignments" },
 ];
 
 export default function NavItems() {

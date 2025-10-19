@@ -41,7 +41,7 @@ export default function FilterBar({ onFilter, onReset }: Props) {
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Search by course name..."
+            placeholder="Search by course code..."
             className="h-9"
           />
         </div>
