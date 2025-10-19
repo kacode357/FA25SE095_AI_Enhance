@@ -9,3 +9,8 @@ export interface UpdateGroupPayload extends Partial<CreateGroupPayload> {
   groupId: string;
   courseId?: string;
 }
+
+export interface RandomizeGroupPayload {
+  courseId: string;
+  groupSize: number;
+}

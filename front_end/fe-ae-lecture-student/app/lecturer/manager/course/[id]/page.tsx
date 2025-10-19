@@ -2,18 +2,20 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import { FileSpreadsheet, FolderPlus } from "lucide-react";
+import { FileSpreadsheet, FolderPlus, Shuffle } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import AssignmentsPanel from "./assignments/AssignmentsPanel"; // Giữ lại import này
-import CreateGroupSheet from "./components/CreateGroupSheet";
-import GroupsPanel from "./components/GroupsPanel";
-import StudentList from "./components/StudentListImport";
 
 import { CourseStatus } from "@/types/courses/course.response";
+import AssignmentsPanel from "./assignments/AssignmentsPanel";
+import CreateGroupSheet from "./components/CreateGroupSheet";
+import GroupsPanel from "./components/GroupsPanel";
 import ImportStudentsDialog from "./components/ImportStudentsDialog";
+import StudentList from "./components/StudentListImport";
+import RandomizeGroupDialog from "./group/[groupId]/components/RandomizeGroupDialog";
 
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,21 +26,17 @@ export default function CourseDetailPage() {
   const { data: course, fetchCourseById } = useGetCourseById();
 
   const [openGroup, setOpenGroup] = useState(false);
-
-  const [activeTab, setActiveTab] = useState<"students" | "groups" | "assignments">("students");
+  const [openRandomize, setOpenRandomize] = useState(false);
   const [groupsRefresh, setGroupsRefresh] = useState(0);
   const [studentsRefresh, setStudentsRefresh] = useState(0);
   const [openImport, setOpenImport] = useState(false);
   const [openAssign, setOpenAssign] = useState(false);
+  const [activeTab, setActiveTab] = useState<"students" | "groups" | "assignments">("students");
 
-  // assignmentsRefresh bị xoá
-
-  // 🚀 Fetch course info once
   useEffect(() => {
     if (id) fetchCourseById(id);
   }, [id, fetchCourseById]);
 
-  // Sync modals với ?action (chỉ còn lại logic Groups)
   useEffect(() => {
     setOpenImport(action === "import");
     setOpenGroup(action === "createGroup");
@@ -81,7 +79,6 @@ export default function CourseDetailPage() {
                   Import Students
                 </Button>
               )}
-
             </CardHeader>
 
             <CardContent>
@@ -96,13 +93,23 @@ export default function CourseDetailPage() {
               <CardTitle className="text-base">Groups List</CardTitle>
 
               {isActive && (
-                <Button
-                  className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
-                  onClick={() => setOpenGroup(true)}
-                >
-                  <FolderPlus className="size-4 mr-1" />
-                  Create Group
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    className="h-9 text-xs cursor-pointer bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-1"
+                    onClick={() => setOpenRandomize(true)}
+                  >
+                    <Shuffle className="size-4 mr-1" />
+                    Randomize
+                  </Button>
+
+                  <Button
+                    className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
+                    onClick={() => setOpenGroup(true)}
+                  >
+                    <FolderPlus className="size-4 mr-1" />
+                    Create Group
+                  </Button>
+                </div>
               )}
             </CardHeader>
 
@@ -116,8 +123,7 @@ export default function CourseDetailPage() {
           <AssignmentsPanel
             courseId={id}
             isActive={isActive ?? false}
-            refreshSignal={0} // Giá trị hardcode 0 vì assignmentsRefresh đã bị xoá
-          // onNew property bị xoá vì logic tạo mới Assignment đã bị xoá
+            refreshSignal={0}
           />
         </TabsContent>
       </Tabs>
@@ -141,7 +147,16 @@ export default function CourseDetailPage() {
         courseId={id}
         onCreated={() => setGroupsRefresh((v) => v + 1)}
       />
-      {/* Các component ImportStudentsDialog và CreateAssignmentSheet đã bị xoá */}
+
+      <Dialog open={openRandomize} onOpenChange={setOpenRandomize}>
+        <DialogContent className="sm:max-w-lg">
+          <RandomizeGroupDialog
+            courseId={id}
+            onClose={() => setOpenRandomize(false)}
+            onRandomized={() => setGroupsRefresh((v) => v + 1)}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

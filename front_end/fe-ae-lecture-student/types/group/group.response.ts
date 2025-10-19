@@ -59,3 +59,20 @@ export interface DeleteGroupResponse {
   success: true;
   message: string;
 }
+
+export interface RandomizeGroupsResponse {
+  success: boolean;
+  message: string;
+  courseId: string;
+  groupsCreated: number;
+  studentsAssigned: number;
+  groups: RandomizedGroup[];
+}
+
+export interface RandomizedGroup {
+  id: string;
+  name: string;
+  memberCount: number;
+  leaderId: string;
+  leaderName: string;
+}

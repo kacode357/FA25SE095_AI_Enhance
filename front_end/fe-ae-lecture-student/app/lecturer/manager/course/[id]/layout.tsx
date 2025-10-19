@@ -118,7 +118,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                 </div>
             </div>
 
-            <Card className="border border-slate-200 shadow-sm rounded-lg !p-0">
+            <Card className="border border-slate-200 shadow-sm rounded-lg my-2 !p-0">
                 <div className="px-4 py-4">
                     <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                         <FolderPlus className="size-4 text-emerald-600" />

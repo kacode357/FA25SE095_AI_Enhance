@@ -85,7 +85,7 @@ export default function StudentList({
 
                         <TableBody>
                             {students.map((s, i) => (
-                                <TableRow key={s.id}>
+                                <TableRow key={s.id} className="border-0">
                                     <TableCell className="text-center text-slate-500">
                                         {i + 1}
                                     </TableCell>
