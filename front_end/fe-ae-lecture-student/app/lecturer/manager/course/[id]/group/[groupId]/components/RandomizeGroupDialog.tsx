@@ -5,6 +5,7 @@ import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRandomizeGroup } from "@/hooks/group/useRandomizeGroup";
+import { CircleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -70,10 +71,12 @@ export default function RandomizeGroupDialog({ courseId, onClose, onRandomized }
                             onChange={(e) => setGroupSize(Number(e.target.value))}
                             required
                         />
+                        <div className="flex flex-row items-center gap-2 mt-2.5 mb-5">
+                            <CircleAlert color="red" className="size-4" />
+                            {error && <p className="text-red-500 text-xs">{error}</p>}
+                        </div>
                     </div>
                 )}
-
-                {error && <p className="text-red-500 text-sm">{error}</p>}
 
                 {result && (
                     <div className="mt-3 border-t pt-3 text-sm">

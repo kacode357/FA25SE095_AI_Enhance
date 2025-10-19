@@ -13,12 +13,17 @@ export function useRandomizeGroup() {
   const randomizeGroups = async (payload: RandomizeGroupPayload) => {
     setLoading(true);
     setError(null);
+    setResult(null);
     try {
       const res = await GroupService.randomizeGroups(payload);
       setResult(res);
       return res;
     } catch (e: any) {
-      setError(e?.message || "Failed to randomize groups");
+      const message =
+        e?.response?.data?.message ||
+        e?.message ||
+        "Failed to randomize groups";
+      setError(message);
       return null;
     } finally {
       setLoading(false);
