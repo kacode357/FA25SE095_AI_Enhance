@@ -57,12 +57,12 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Link href="/lecturer/manager/course">
-                        <Button variant="ghost" className="h-8 px-2 cursor-pointer">
+                        <Button variant="ghost" className="h-8 px-2 !bg-emerald-50 rounded-xl cursor-pointer">
                             ←
                         </Button>
                     </Link>
                     <div>
-                        <div className="text-sm text-slate-500">Course Detail</div>
+                        {/* <div className="text-sm text-slate-500">Course Detail</div> */}
                         {loading ? (
                             <div className="h-6 w-64 rounded bg-slate-100 animate-pulse" />
                         ) : (

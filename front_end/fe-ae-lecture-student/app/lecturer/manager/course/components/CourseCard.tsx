@@ -12,13 +12,11 @@ import {
 } from "@/components/ui/tooltip";
 import { CourseItem, CourseStatus } from "@/types/courses/course.response";
 import {
-  BookOpenCheck,
   ClipboardCopy,
   Eye,
   EyeOff,
   Pencil,
   RefreshCw,
-  Trash2,
   Users
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -159,21 +157,19 @@ export default function CourseCard({
             </Badge>
           )}
         </div>
+        {/* Description */}
+        <div className="flex-1 mt-3 text-sm text-slate-600">{course.description || "-"}</div>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col justify-between gap-3">
         <div className="flex items-center gap-4">
-          {/* Description */}
-          <div className="flex-1 text-sm text-slate-600">{course.description || "-"}</div>
+
 
           {/* Enrollments */}
           <div className="flex-1 text-xs text-slate-500 flex items-center gap-1">
             <Users className="size-4" />
             <span>{course.enrollmentCount} enrollments</span>
           </div>
-
-          {/* Created */}
-          <div className="flex-1 text-xs text-slate-500">Created: {fmtDate(course.createdAt)}</div>
 
           {/* Access Code + Controls */}
           <div className="flex items-center gap-1 text-xs text-black">
@@ -244,25 +240,27 @@ export default function CourseCard({
         </div>
 
         {/* Actions row */}
-        <div className="flex justify-between gap-1 mt-2">
-          <div className="text-xs flex gap-2 items-center italic text-slate-500"><BookOpenCheck className="size-4" />Welcome to the new course, glad to join. Please contact to Staff if you have any problems with the course.</div>
+        <div className="flex items-center justify-between gap-1 mt-2">
+          {/* Created */}
+          <div className="flex-1 text-xs text-slate-500">Created: {fmtDate(course.createdAt)}</div>
+
           <div>
             <Button
               variant="ghost"
-              className="h-7 px-2 text-emerald-600 hover:bg-emerald-50"
+              className="flex-1 border border-slate-300 rounded-md text-sm cursor-pointer"
               onClick={onEditClick}
               aria-label="Edit"
             >
               <Pencil className="size-4" />
             </Button>
-            <Button
+            {/* <Button
               variant="ghost"
               className="h-7 px-2 !text-red-600 hover:bg-red-50"
               onClick={onDeleteClick}
               aria-label="Delete"
             >
               <Trash2 className="size-4" />
-            </Button>
+            </Button> */}
           </div>
         </div>
       </CardContent>

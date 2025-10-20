@@ -27,8 +27,8 @@ export default function FilterBar({
     <div className="border border-slate-200 rounded-md p-3 bg-white">
       {/* Header */}
       <div className="flex items-center gap-2 text-slate-600 mb-3">
-        <Filter className="size-4" />
-        <span className="text-sm font-medium">Filters</span>
+        <Filter className="size-3" />
+        <span className="text-xs font-medium">Filters</span>
         <span className="ml-auto text-xs text-slate-500">
           {loading ? "Loading..." : `${resultCount}/${totalCount} results`}
         </span>

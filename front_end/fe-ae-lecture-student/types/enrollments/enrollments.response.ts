@@ -11,6 +11,7 @@ export interface ImportEnrollmentsResponse {
   failedEnrollments: number;
   errors: string[];
   enrolledCourseIds: string[];
+  createdStudentEmails: string[];
 }
 
 /**
@@ -45,7 +46,9 @@ export interface ImportStudentsSpecificCourseResponse {
   totalRows: number;
   successfulEnrollments: number;
   failedEnrollments: number;
+  studentsCreated: number;
   errors: string[];
+  createdStudentEmails: string[];
   courseId: string;
   courseName: string;
 }

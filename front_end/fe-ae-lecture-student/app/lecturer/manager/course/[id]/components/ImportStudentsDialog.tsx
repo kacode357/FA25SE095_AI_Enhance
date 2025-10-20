@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -27,22 +28,44 @@ export default function ImportStudentsDialog({
   onImported,
 }: ImportStudentsDialogProps) {
   const [file, setFile] = useState<File | null>(null);
-  // Chỉ lấy importStudents và loading từ hook
+  const [createAccountChecked, setCreateAccountChecked] = useState(false);
+  const [failedImport, setFailedImport] = useState(false);
+  const [responseMsg, setResponseMsg] = useState<string | null>(null);
+
   const { importStudents, loading } = useImportStudentsSpecificCourse();
 
-  // Loại bỏ useEffect và setErrors
-
-  const handleImport = async () => {
+  const handleImport = async (createAccountIfNotFound = false) => {
     if (!file) return;
-    const res = await importStudents({ file, courseId });
-    
-    // Nếu API trả về thành công (logic toast/lỗi đã nằm trong hook)
-    if (res?.success) {
-      onSubmit?.();
-      onImported?.();
-      setFile(null);
-      onOpenChange(false);
+
+    const res = await importStudents({
+      file,
+      courseId,
+      createAccountIfNotFound,
+    });
+
+    if (res) {
+      setResponseMsg(res.message || null);
+
+      // Nếu có lỗi (students chưa có account)
+      if (res.failedEnrollments > 0 && !createAccountIfNotFound) {
+        setFailedImport(true);
+        return; // Không đóng dialog
+      }
+
+      // Nếu import hoàn toàn thành công hoặc đã tạo account thành công
+      if (res.success) {
+        setFailedImport(false);
+        setFile(null);
+        setCreateAccountChecked(false);
+        onSubmit?.();
+        onImported?.();
+        onOpenChange(false);
+      }
     }
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setCreateAccountChecked(checked);
   };
 
   return (
@@ -70,17 +93,55 @@ export default function ImportStudentsDialog({
               Selected file: <span className="font-medium">{file.name}</span>
             </div>
           )}
+
+          {responseMsg && (
+            <p
+              className={`text-sm mt-1 ${failedImport ? "text-red-500" : "text-green-600"
+                }`}
+            >
+              {responseMsg}
+            </p>
+          )}
+
+          {failedImport && (
+            <div className="flex items-center space-x-2 mt-2">
+              <Checkbox
+                id="createAccount"
+                checked={createAccountChecked}
+                onCheckedChange={handleCheckboxChange}
+              />
+              <label
+                htmlFor="createAccount"
+                className="text-sm text-slate-700 cursor-pointer select-none"
+              >
+                Create accounts for students not found
+              </label>
+            </div>
+          )}
         </div>
-        
-        {/* Loại bỏ phần hiển thị errors ở đây */}
 
         <DialogFooter className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleImport} disabled={!file || loading}>
-            {loading ? "Importing..." : "Confirm Import"}
-          </Button>
+
+          {!failedImport ? (
+            <Button onClick={() => handleImport()} disabled={!file || loading}>
+              {loading ? "Importing..." : "Confirm Import"}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleImport(true)}
+              disabled={!file || !createAccountChecked || loading}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {loading ? "Creating..." : "Create Accounts & Import"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

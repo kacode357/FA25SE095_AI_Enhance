@@ -13,23 +13,29 @@ export function useImportStudentsSpecificCourse() {
     data: ImportStudentsSpecificCoursePayload
   ): Promise<ImportStudentsSpecificCourseResponse | null> => {
     setLoading(true);
-
     try {
-      const response = await EnrollmentsService.importStudentsSpecificCourse(data);
+      const response = await EnrollmentsService.importStudentsSpecificCourse(
+        data
+      );
 
       if (response.success) {
         toast.success(
           `Imported ${response.successfulEnrollments}/${response.totalRows} students successfully`
         );
 
-        if (response.failedEnrollments > 0) {
-          toast.warning(`${response.failedEnrollments} students failed to import`);
+        if (response.studentsCreated > 0) {
+          toast.success(
+            `${response.studentsCreated} new student accounts created`
+          );
         }
+
       } else {
-        toast.error(response.message || "Import failed");
       }
 
       return response;
+    } catch (error: any) {
+      toast.error(error?.message || "An error occurred during import");
+      return null;
     } finally {
       setLoading(false);
     }

@@ -1,11 +1,11 @@
 import { courseAxiosInstance } from "@/config/axios.config";
-import { GetMyCoursesResponse } from "@/types/courses/course.response";
 import {
   ImportEnrollmentsPayload,
   ImportStudentsSpecificCoursePayload,
   JoinCoursePayload,
 } from "@/types/enrollments/enrollments.payload";
 import {
+  GetCourseEnrolledStudentsResponse,
   GetMyEnrolledCoursesResponse,
   ImportEnrollmentsResponse,
   ImportStudentsSpecificCourseResponse,
@@ -13,7 +13,6 @@ import {
   ImportTemplateResponse,
   JoinCourseResponse,
   LeaveCourseResponse,
-  GetCourseEnrolledStudentsResponse,   // 👈 thêm dòng này
 } from "@/types/enrollments/enrollments.response";
 
 export const EnrollmentsService = {
@@ -22,8 +21,10 @@ export const EnrollmentsService = {
     data: ImportEnrollmentsPayload
   ): Promise<ImportEnrollmentsResponse> => {
     const formData = new FormData();
-    formData.append("ExcelFile", data.file);
+
+    //  Đính file
     formData.append("file", data.file);
+    formData.append("ExcelFile", data.file);
 
     if (data.courseIds && data.courseIds.length > 0) {
       data.courseIds.forEach((id) => {
@@ -34,11 +35,19 @@ export const EnrollmentsService = {
       formData.append("CourseIdsJson", JSON.stringify(data.courseIds));
     }
 
+    formData.append(
+      "createAccountIfNotFound",
+      String(data.createAccountIfNotFound)
+    );
+
     const response = await courseAxiosInstance.post<ImportEnrollmentsResponse>(
       "/enrollments/import",
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
     );
+
     return response.data;
   },
 
@@ -101,6 +110,10 @@ export const EnrollmentsService = {
   ): Promise<ImportStudentsSpecificCourseResponse> => {
     const formData = new FormData();
     formData.append("file", data.file);
+    formData.append(
+      "createAccountIfNotFound",
+      String(data.createAccountIfNotFound)
+    );
 
     const response =
       await courseAxiosInstance.post<ImportStudentsSpecificCourseResponse>(

@@ -4,14 +4,14 @@
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { mapRole, ROLE_HOME } from "@/config/user-role";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLogin } from "@/hooks/auth/useLogin";
 import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { mapRole, ROLE_HOME } from "@/config/user-role";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const { login, loading } = useLogin();
@@ -74,8 +74,8 @@ export default function LoginPage() {
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
-        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <Input label="Email" placeholder="example@crawldata.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input label="Password" placeholder="•••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
 
         <div className="flex items-center mb-6 justify-between text-sm text-slate-600">
           <label className="inline-flex items-center gap-2 select-none">

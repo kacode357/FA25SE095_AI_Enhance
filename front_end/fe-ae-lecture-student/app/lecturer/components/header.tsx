@@ -12,7 +12,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { lecturerNav } from "./nav-items";
 
 type Props = { onMenuClick?: () => void };
 
@@ -169,39 +168,6 @@ export default function ManagerHeader({ onMenuClick }: Props) {
             )}
           </div>
         </div>
-      </div>
-
-      <div className="border-t border-gray-200">
-        <nav
-          className="px-2 sm:px-4 lg:px-3 py-2 flex items-center gap-1 overflow-x-auto"
-          aria-label="Lecturer navigation"
-        >
-          {lecturerNav.map(item => {
-            const active = pathname?.startsWith(item.href);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap
-    ${active ? "!text-emerald-800" : "text-gray-700 hover:text-emerald-800"}
- `}
-              >
-                <Icon
-                  className={`w-4 h-4 ${active ? "text-emerald-800" : "text-gray-500 group-hover:text-emerald-700"
-                    }`}
-                />
-                <span>{item.label}</span>
-
-                {active && (
-                  <span
-                    className="absolute left-3 right-3 bottom-0 h-[2px] bg-gradient-to-r from-emerald-300 via-emerald-500 to-emerald-700 rounded-full"
-                  ></span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
       </div>
     </header>
   );

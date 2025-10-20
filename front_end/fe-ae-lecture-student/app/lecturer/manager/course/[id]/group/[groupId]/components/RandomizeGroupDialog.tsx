@@ -72,8 +72,7 @@ export default function RandomizeGroupDialog({ courseId, onClose, onRandomized }
                             required
                         />
                         <div className="flex flex-row items-center gap-2 mt-2.5 mb-5">
-                            <CircleAlert color="red" className="size-4" />
-                            {error && <p className="text-red-500 text-xs">{error}</p>}
+                            {error && <p className="text-red-500 text-xs"><CircleAlert color="red" className="size-4" />{error}</p>}
                         </div>
                     </div>
                 )}

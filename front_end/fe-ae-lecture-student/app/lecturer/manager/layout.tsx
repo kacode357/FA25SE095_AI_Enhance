@@ -1,9 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
-import ManagerHeader from "../components/header";
 import RoleGate from "@/components/auth/RoleGate";
 import { UserRole } from "@/config/user-role";
+import { motion } from "framer-motion";
+import ManagerHeader from "../components/header";
 
 export default function ManagerLayout({
   children,

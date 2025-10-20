@@ -13,7 +13,6 @@ export function useImportEnrollments() {
     data: ImportEnrollmentsPayload
   ): Promise<ImportEnrollmentsResponse | null> => {
     setLoading(true);
-
     try {
       const response = await EnrollmentsService.importEnrollments(data);
 
@@ -23,13 +22,17 @@ export function useImportEnrollments() {
         );
 
         if (response.failedEnrollments > 0) {
-          toast.warning(`${response.failedEnrollments} enrollments failed to import`);
+          toast.warning(
+            `${response.failedEnrollments} enrollments failed to import`
+          );
         }
       } else {
-        toast.error(response.message || "Import failed");
       }
 
       return response;
+    } catch (err: any) {
+      // toast.error(err?.message || "An error occurred during import");
+      return null;
     } finally {
       setLoading(false);
     }
