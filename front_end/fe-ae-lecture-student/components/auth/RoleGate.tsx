@@ -1,91 +1,57 @@
 // components/auth/RoleGate.tsx
 "use client";
 
-import { ReactNode, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { ReactNode, useEffect, useMemo, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { mapRole, UserRole, ROLE_HOME, isAllowedAppRole } from "@/config/user-role";
+import { mapRole, UserRole } from "@/config/user-role";
 
-type Props = { allow: UserRole[]; children: ReactNode };
+type Props = {
+  allow: UserRole[];        // các role được phép vào
+  children: ReactNode;
+  fallback?: ReactNode;     // optional: loader UI
+};
 
-export default function RoleGate({ allow, children }: Props) {
-  const { user, isReady } = useAuth() as any;
+export default function RoleGate({ allow, children, fallback = null }: Props) {
+  const { user, isReady } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  const rawRole = user?.role ?? user?.roleName ?? user?.role?.name;
-  const redirectedRef = useRef(false);
-  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  // One-shot: nếu vừa login xong thì không redirect sớm trong lần render đầu
+  const skipRedirectOnceRef = useRef(false);
   useEffect(() => {
-    if (redirectedRef.current) return;
-    if (!isReady) return;
-
-    // Nếu đã có user → check role & allow
-    if (user) {
-      const role = mapRole(rawRole);
-      // đã xác thực xong → dọn cờ nếu còn
-      if (typeof window !== "undefined") {
-        sessionStorage.removeItem("just_logged_in");
-      }
-
-      if (!role || !isAllowedAppRole(role)) {
-        redirectedRef.current = true;
-        router.replace("/login");
-        return;
-      }
-      if (!allow.includes(role)) {
-        redirectedRef.current = true;
-        router.replace(ROLE_HOME[role]);
-        return;
-      }
-      // ok được xem
-      return;
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("just_logged_in") === "1") {
+      skipRedirectOnceRef.current = true;
+      sessionStorage.removeItem("just_logged_in");
     }
-
-    // === user == null tại thời điểm isReady ===
-    // Kiểm tra xem vừa login không (one-shot grace)
-    const justLoggedIn =
-      typeof window !== "undefined" &&
-      sessionStorage.getItem("just_logged_in") === "1";
-
-    if (justLoggedIn) {
-      // KHÔNG redirect ngay; chờ 2s cho AuthContext set user
-      if (!fallbackTimerRef.current) {
-        fallbackTimerRef.current = setTimeout(() => {
-          if (!redirectedRef.current) {
-            redirectedRef.current = true;
-            // hết thời gian mà vẫn chưa có user → về /login
-            router.replace("/login");
-            // dọn cờ để không kẹt
-            if (typeof window !== "undefined") {
-              sessionStorage.removeItem("just_logged_in");
-            }
-          }
-        }, 2000);
-      }
-      return;
-    }
-
-    // Không có cờ → chưa login/invalid token → về /login
-    redirectedRef.current = true;
-    router.replace("/login");
-  }, [isReady, user, rawRole, allow, router]);
-
-  useEffect(() => {
-    // cleanup timer khi unmount
-    return () => {
-      if (fallbackTimerRef.current) {
-        clearTimeout(fallbackTimerRef.current);
-        fallbackTimerRef.current = null;
-      }
-    };
   }, []);
 
-  if (!isReady) return null;
-  if (!user) return null;
+  const role = useMemo(() => {
+    const raw = (user as any)?.role ?? (user as any)?.roleName ?? (user as any)?.role?.name;
+    return mapRole(raw);
+  }, [user]);
 
-  const role = mapRole(rawRole);
-  if (!role || !allow.includes(role)) return null;
+  useEffect(() => {
+    if (!isReady) return; // CHỜ HẲN isReady
+
+    // Chưa có user hoặc không map được role -> login
+    if (!user || role == null) {
+      if (skipRedirectOnceRef.current) return; // cho qua tick đầu sau login
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    // Có user nhưng role không hợp lệ với trang này -> login
+    if (!allow.includes(role)) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [isReady, user, role, allow, router, pathname]);
+
+  // UI: khi chưa ready thì đừng render children để tránh flicker
+  if (!isReady) return <>{fallback}</>;
+  if (!user || role == null) return null;
+  if (!allow.includes(role)) return null;
 
   return <>{children}</>;
 }

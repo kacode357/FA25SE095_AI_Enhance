@@ -12,24 +12,20 @@ import {
   GetCourseByIdResponse,
   GetCourseEnrollmentsResponse,
   RejectCourseResponse,
+  GetCourseStatisticsResponse,
 } from "@/types/course/course.response";
 
 export const CourseService = {
-  /** ✅ GET /api/Courses/all (Staff only) */
   getAll: async (params?: GetAllCoursesQuery): Promise<GetAllCoursesResponse> => {
-    const res = await courseAxiosInstance.get<GetAllCoursesResponse>("/Courses/all", {
-      params,
-    });
+    const res = await courseAxiosInstance.get<GetAllCoursesResponse>("/Courses/all", { params });
     return res.data;
   },
 
-  /** ✅ GET /api/Courses/{id} (Staff only) */
   getById: async (id: string): Promise<GetCourseByIdResponse> => {
     const res = await courseAxiosInstance.get<GetCourseByIdResponse>(`/Courses/${id}`);
     return res.data;
   },
 
-  /** ✅ PUT /api/Courses/{id}/approve */
   approve: async (id: string, payload: ApproveCoursePayload): Promise<ApproveCourseResponse> => {
     const res = await courseAxiosInstance.put<ApproveCourseResponse>(
       `/Courses/${id}/approve`,
@@ -38,7 +34,6 @@ export const CourseService = {
     return res.data;
   },
 
-  /** ✅ PUT /api/Courses/{id}/reject */
   reject: async (id: string, payload: RejectCoursePayload): Promise<RejectCourseResponse> => {
     const res = await courseAxiosInstance.put<RejectCourseResponse>(
       `/Courses/${id}/reject`,
@@ -46,8 +41,8 @@ export const CourseService = {
     );
     return res.data;
   },
-  
-   /** ✅ GET /api/Courses/{id}/enrollments (Lecturer/Staff only) */
+
+  /** ✅ GET /api/Courses/{id}/enrollments (Lecturer/Staff only) */
   getEnrollments: async (
     id: string,
     params?: GetCourseEnrollmentsQuery
@@ -56,6 +51,12 @@ export const CourseService = {
       `/Courses/${id}/enrollments`,
       { params }
     );
+    return res.data;
+  },
+
+  /** (đã thêm trước) ✅ GET /api/Courses/{id}/statistics */
+  getStatistics: async (id: string): Promise<GetCourseStatisticsResponse> => {
+    const res = await courseAxiosInstance.get<GetCourseStatisticsResponse>(`/Courses/${id}/statistics`);
     return res.data;
   },
 };

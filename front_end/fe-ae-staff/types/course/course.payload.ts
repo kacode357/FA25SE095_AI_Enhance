@@ -33,3 +33,9 @@ export interface GetCourseEnrollmentsQuery {
   studentName?: string;
   sortDirection?: "asc" | "desc";
 }
+export interface GetCourseEnrollmentsQuery {
+  page?: number;              // default server: 1
+  pageSize?: number;          // default server: 10
+  studentName?: string;       // partial match
+  sortDirection?: "asc" | "desc"; // default server: desc
+}

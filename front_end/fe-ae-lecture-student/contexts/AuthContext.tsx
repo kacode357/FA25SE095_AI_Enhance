@@ -50,8 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // *** QUAN TRỌNG: reset về false trước khi fetch profile ở route mới
-    setIsReady(false);
+    if (!user) setIsReady(false);
 
     let mounted = true;
     (async () => {
@@ -68,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [pathname]);
+  }, [pathname, user]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, isReady }}>

@@ -88,3 +88,50 @@ export interface GetCourseEnrollmentsResponse {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
 }
+
+export interface CourseStatistics {
+  course: Course;
+  totalEnrollments: number;
+  totalAssignments: number;
+  totalGroups: number;
+  totalChatMessages: number;
+  totalNotifications: number;
+  recentEnrollments: number;
+  lastActivity: string | null; // ISO datetime hoặc null nếu chưa có
+  enrollmentsByMonth: Record<string, number>; // key: 'YYYY-MM', value: count
+}
+
+/** ✅ GET /api/Courses/{id}/statistics */
+export interface GetCourseStatisticsResponse {
+  success: boolean;
+  message: string;
+  statistics: CourseStatistics;
+}
+
+export interface Enrollment {
+  id: string;
+  courseId: string;
+  courseName: string;
+  courseCode: string;
+  studentId: string;
+  studentName: string;
+  joinedAt: string;
+  unenrolledAt: string | null;
+  status: number; // 1 = Active, 2 = Unenrolled, ...
+  unenrollmentReason: string | null;
+  createdAt: string;
+}
+
+/** ✅ GET /api/Courses/{id}/enrollments */
+export interface GetCourseEnrollmentsResponse {
+  success: boolean;
+  message: string;
+  course: Course;
+  enrollments: Enrollment[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}

@@ -44,3 +44,12 @@ export interface LogoutPayload {
   logoutAllDevices: boolean;
 }
 
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/** Dùng cho service vì API cần userId */
+export interface ChangePasswordRequest extends ChangePasswordPayload {
+  userId: string;
+}

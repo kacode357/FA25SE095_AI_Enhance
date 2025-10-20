@@ -2,24 +2,28 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
-import Cookies from "js-cookie";
+import { usePathname, useRouter } from "next/navigation";
 import { UserProfile } from "@/types/user/user.response";
 import { UserService } from "@/services/user.services";
+import { mapRole } from "@/config/user-role";
 
 type AuthContextType = {
   user: UserProfile | null;
   setUser: (u: UserProfile | null) => void;
+  loading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   setUser: () => {},
+  loading: true,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const authPages = new Set([
@@ -30,41 +34,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       "/reset-password",
     ]);
 
-    // 1) Không có token -> không fetch profile
-    const accessToken =
-      Cookies.get("accessToken") ||
-      (typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null);
-
-    if (!accessToken) {
-      setUser(null);
-      return;
-    }
-
-    // 2) Đang ở trang auth -> tránh fetch để ngăn vòng lặp reset
+    // ⚠️ TRANG AUTH → KHÔNG FETCH PROFILE để tránh 401 interceptor gây refresh loop
     if (authPages.has(pathname)) {
-      // vẫn giữ user như hiện tại; không gọi API ở /login
+      setUser(null);
+      setLoading(false);
       return;
     }
 
-    // 3) Fetch profile ở các trang “app” khác khi có token
     let mounted = true;
+
     (async () => {
       try {
-        const res = await UserService.getProfile();
-        if (mounted) setUser(res);
+        const profile = await UserService.getProfile();
+        if (!mounted) return;
+
+        setUser(profile);
+        setLoading(false);
+
+        const roleLower = (profile.role || "").toLowerCase();
+        const isStaff = mapRole(profile.role) !== null && roleLower === "staff";
+        const onStaffRoute = pathname.startsWith("/staff");
+
+        if (isStaff && !onStaffRoute) {
+          router.replace("/staff/manager/terms");
+          return;
+        }
+
+        if (!isStaff && onStaffRoute) {
+          router.replace("/login?error=forbidden");
+          return;
+        }
       } catch {
-        if (mounted) setUser(null);
-        // interceptor sẽ clear token; đừng redirect ở đây
+        if (!mounted) return;
+        setUser(null);
+        setLoading(false);
+
+        // Nếu đang ở /staff mà bị 401 → đẩy ra login
+        if (pathname.startsWith("/staff")) {
+          router.replace("/login");
+        }
+        // Nếu không phải /staff thì cứ để ở nguyên trang public
       }
     })();
 
     return () => {
       mounted = false;
     };
-  }, [pathname]);
+  }, [pathname, router]);
 
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,4 @@
-// hooks/useLogin.ts
+// hooks/auth/useLogin.ts
 "use client";
 
 import { useState } from "react";
@@ -9,7 +9,6 @@ import { LoginResponse } from "@/types/auth/auth.response";
 import { UserProfile } from "@/types/user/user.response";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { mapRole, ALLOWED_LOGIN_ROLES } from "@/config/user-role";
 
 export function useLogin() {
@@ -22,39 +21,40 @@ export function useLogin() {
   ): Promise<LoginResponse | null> => {
     setLoading(true);
     try {
-      // 1) Gọi login để lấy token
+      // 1) Gọi login nhận token
       const res = await AuthService.login(payload);
 
+      // 2) Lưu token vào storage (KHÔNG cookie)
       if (res.accessToken) {
         if (rememberMe) {
-          // Lưu cookie (persist) + refreshToken để interceptor có thể refresh
-          Cookies.set("accessToken", res.accessToken, { secure: true, sameSite: "strict" });
-          Cookies.set("refreshToken", res.refreshToken, {
-            expires: 7,
-            secure: true,
-            sameSite: "strict",
-          });
+          // nhớ lâu (tuỳ mày: localStorage)
+          localStorage.setItem("accessToken", res.accessToken);
+          localStorage.setItem("refreshToken", res.refreshToken);
+          sessionStorage.removeItem("accessToken");
         } else {
-          // Session only: chỉ lưu accessToken trong sessionStorage
+          // session only
           sessionStorage.setItem("accessToken", res.accessToken);
-          Cookies.remove("accessToken");
-          Cookies.remove("refreshToken");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
         }
       }
 
-      // 2) Lấy profile để kiểm tra role
+      // 3) Lấy profile để check role
       const profile: UserProfile = await UserService.getProfile();
       const roleEnum = mapRole(profile.role);
 
       if (!roleEnum || !ALLOWED_LOGIN_ROLES.includes(roleEnum)) {
-        // Không đúng role được phép → xoá token + báo lỗi
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
+        // Không phải staff
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         sessionStorage.removeItem("accessToken");
         toast.error("Only staff members are allowed to log in!");
+        router.replace("/login");
         return null;
       }
-      router.push("/manager/terms");
+
+      // 4) Staff → vào trang staff
+      router.replace("/staff/manager/terms");
       return res;
     } catch {
       return null;

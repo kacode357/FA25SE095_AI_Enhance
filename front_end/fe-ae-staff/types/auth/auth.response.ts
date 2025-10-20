@@ -55,3 +55,8 @@ export interface LogoutResponse {
   success: boolean;
   message: string;
 }
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+}

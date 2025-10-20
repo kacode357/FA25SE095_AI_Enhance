@@ -1,9 +1,12 @@
-import RouteLoader from "@/components/common/route-loader";
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+// Các component client dùng thẳng bên dưới — KHÔNG cần "use client" ở file này
+import RouteLoader from "@/components/common/route-loader";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
-import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
@@ -27,20 +30,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Client comps dùng trực tiếp trong Server layout */}
         <Suspense fallback={null}>
           <RouteLoader />
         </Suspense>
 
-        {/* 👇 Bọc toàn bộ app trong AuthProvider */}
         <AuthProvider>
           {children}
         </AuthProvider>

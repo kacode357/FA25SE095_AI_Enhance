@@ -14,10 +14,10 @@ export function useAuthRedirect() {
 
     UserService.getProfile()
       .then(() => {
-        router.replace("/manager/class");
+        router.replace("/staff/manager/terms");
       })
       .catch(() => {
-        // Nếu token hỏng hoặc refresh fail, interceptor sẽ tự clear
+   
       });
   }, [router]);
 }

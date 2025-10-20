@@ -1,22 +1,24 @@
 // services/auth.services.ts
 import { userAxiosInstance } from "@/config/axios.config";
-import { 
-  LoginPayload, 
-  RegisterPayload, 
-  ConfirmEmailPayload, 
-  RefreshTokenPayload,
+import {
+  ConfirmEmailPayload,
   ForgotPasswordPayload,
-  ResetPasswordPayload,
+  LoginPayload,
   LogoutPayload,
+  RefreshTokenPayload,
+  RegisterPayload,
+  ResetPasswordPayload,
+  ChangePasswordRequest, // <— thêm
 } from "@/types/auth/auth.payload";
-import { 
-  LoginResponse, 
-  RegisterResponse, 
-  ConfirmEmailResponse, 
-  RefreshTokenResponse,
+import {
+  ConfirmEmailResponse,
   ForgotPasswordResponse,
-  ResetPasswordResponse,
+  LoginResponse,
   LogoutResponse,
+  RefreshTokenResponse,
+  RegisterResponse,
+  ResetPasswordResponse,
+  ChangePasswordResponse, // <— thêm
 } from "@/types/auth/auth.response";
 
 export const AuthService = {
@@ -47,6 +49,12 @@ export const AuthService = {
 
   resetPassword: async (data: ResetPasswordPayload): Promise<ResetPasswordResponse> => {
     const response = await userAxiosInstance.post<ResetPasswordResponse>("/Auth/reset-password", data);
+    return response.data;
+  },
+
+  /** POST /api/Auth/change-password */
+  changePassword: async (data: ChangePasswordRequest): Promise<ChangePasswordResponse> => {
+    const response = await userAxiosInstance.post<ChangePasswordResponse>("/Auth/change-password", data);
     return response.data;
   },
 

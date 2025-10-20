@@ -3,18 +3,13 @@ export enum UserRole {
   Lecturer = 1,
   Staff = 2,
   Admin = 3,
-  PaidUser = 4,
 }
 
 export const ROLE_MAP: Record<string, UserRole> = {
   student: UserRole.Student,
-  students: UserRole.Student,   // alias nếu BE từng trả số nhiều
   lecturer: UserRole.Lecturer,
   staff: UserRole.Staff,
   admin: UserRole.Admin,
-  paiduser: UserRole.PaidUser,
-  "paid-user": UserRole.PaidUser,
-  "paid_user": UserRole.PaidUser,
 };
 
 /** Danh sách role được phép đăng nhập khu Lecturer (tuỳ biến tại đây) */
@@ -38,8 +33,6 @@ export function roleToString(role: UserRole): string {
       return "staff";
     case UserRole.Admin:
       return "admin";
-    case UserRole.PaidUser:
-      return "paiduser";
     default:
       return "";
   }
