@@ -134,7 +134,7 @@ export default function AdminDashboardPage() {
           <div className="border rounded-lg bg-white flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-3 border-b border-slate-200">
               <h3 className="font-semibold text-sm md:text-base text-slate-900">Recent Users</h3>
-              <Link href="/manager/users" className="text-xs font-medium text-emerald-600 hover:underline">View all</Link>
+              <Link href="/admin/manager/users" className="text-xs font-medium text-emerald-600 hover:underline">View all</Link>
             </div>
             <div className="flex-1 min-h-[180px]">
               <DataTable
@@ -154,12 +154,12 @@ export default function AdminDashboardPage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {[
-                { href: "/manager/users", label: "Users", icon: Users },
-                { href: "/manager/crawler", label: "Crawler", icon: Rocket },
-                { href: "/manager/templates", label: "Templates", icon: FileSpreadsheet },
-                { href: "/manager/monitoring/overview", label: "Monitoring", icon: Gauge },
-                { href: "/manager/plans/quota", label: "Quota", icon: Settings },
-                { href: "/manager/data/retention", label: "Retention", icon: Layers },
+                { href: "/admin/manager/users", label: "Users", icon: Users },
+                { href: "/admin/manager/crawler", label: "Crawler", icon: Rocket },
+                { href: "/admin/manager/templates", label: "Templates", icon: FileSpreadsheet },
+                { href: "/admin/manager/monitoring/overview", label: "Monitoring", icon: Gauge },
+                { href: "/admin/manager/plans/quota", label: "Quota", icon: Settings },
+                { href: "/admin/manager/data/retention", label: "Retention", icon: Layers },
               ].map((a) => (
                 <Link
                   key={a.href}

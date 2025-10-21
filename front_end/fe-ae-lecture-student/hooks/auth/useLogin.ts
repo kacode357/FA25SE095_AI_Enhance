@@ -1,7 +1,7 @@
 // hooks/auth/useLogin.ts
 "use client";
 
-import { mapRole, UserRole, isAllowedAppRole } from "@/config/user-role";
+import { mapRole, UserRole, isAllowedAppRole } from "@/config/classroom-service/user-role";
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
 import type { LoginPayload } from "@/types/auth/auth.payload";

@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import Header from "./components/header";
 import { useRoleGuard } from "@/components/auth/useRoleGuard";
-import { UserRole } from "@/config/user-role";
+import { UserRole } from "@/config/classroom-service/user-role";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const { allowed } = useRoleGuard(UserRole.Student);

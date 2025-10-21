@@ -1,18 +1,24 @@
 @import "tailwindcss";
 
+/* =======================
+   Root theme / Brand
+======================= */
 :root {
-  /* Light theme base */
+  /* Light base */
   --background: #ffffff;
-  --foreground: #0f172a; /* slate-900 */
+  --foreground: #0f172a;        /* slate-900 */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  /* Brand palette: brighter emerald/green */
-  --color-brand: #22c55e; /* green-500 */
-  --color-brand-600: #16a34a; /* green-600 */
-  --color-brand-700: #15803d; /* green-700 */
-  --color-muted: #64748b; /* slate-500 */
+
+  /* Emerald brand (mới, dịu) */
+  --color-brand: #10b981;       /* emerald-500 */
+  --color-brand-600: #059669;   /* emerald-600 */
+  --color-brand-700: #047857;   /* emerald-700 */
+
+  /* Neutrals */
+  --color-muted: #64748b;       /* slate-500 */
   --color-card: #ffffff;
-  --color-border: #e2e8f0; /* slate-200 */
+  --color-border: rgba(15, 23, 42, 0.06); /* viền rất mỏng */
 }
 
 .dark {
@@ -20,47 +26,92 @@
   --foreground: #f6f7f7;
 }
 
-body { background: var(--background); color: var(--foreground); }
-/* Force dark foreground within auth scope root container */
-.auth-scope { color: #f8fafc; }
+/* =======================
+   Base
+======================= */
+html, body { height: 100%; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+}
 
-/* Base resets and form elements */
 * { box-sizing: border-box; }
 a { color: var(--color-brand); text-decoration: none; }
 a:hover { color: var(--color-brand-600); }
 input, button { font-family: inherit; }
 
-/* Auth background styling (grid + vignette) */
+/* =======================
+   Auth scope visuals
+======================= */
+.auth-scope { color-scheme: dark; color: #e5f6ed; }
+
+/* BG: brand glows + gradient, không cần shadow */
 .auth-scope .auth-bg {
   position: fixed;
   inset: 0;
   background-color: #0a0f0a; /* fallback */
-  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent),
+  background:
+    radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent),
     radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 20%, transparent), transparent),
     linear-gradient(180deg, #0a0f0a, #020617);
 }
+
+/* Grid overlay (masked) */
 .auth-scope .auth-grid {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size: 32px 32px;
   -webkit-mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
   mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
 }
 
-/* Card */
-.card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 6px 24px rgba(2,6,23,0.06); }
+/* =======================
+   Card (ít viền, không bóng)
+======================= */
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: none;
+}
 
-.input { width: 100%; border: 1px solid var(--color-border); background: #ffffff; color: #0f172a; padding: 10px 12px; border-radius: 10px; outline: none; }
+/* Dark glassy card trong auth-scope */
+.auth-scope .card {
+  --color-card: rgba(2, 6, 23, 0.6);
+  --color-border: rgba(255, 255, 255, 0.12);
+  background: var(--color-card);
+  border-color: var(--color-border);
+  backdrop-filter: blur(6px);
+}
+
+/* =======================
+   Inputs (phẳng, không glow)
+======================= */
+.input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: #ffffff;
+  color: #0f172a;
+  padding: 10px 12px;
+  border-radius: 10px;
+  outline: none;
+  box-shadow: none;
+}
 .input:focus {
   border-color: var(--color-brand-600);
-  box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+  box-shadow: none; /* không glow */
 }
+
+/* Light input variant */
 .input-light { background:#ffffff !important; color:#0f172a !important; border-color: var(--color-border) !important; }
-.input-light::placeholder { color:#16a34a !important; /* emerald-600 */ }
-.input-light:focus::placeholder { color:#c2c2c2 !important; /* emerald-700 slightly darker on focus */ }
-/* Vendor prefixed for broader compatibility */
+.input-light::placeholder { color:#c2c2c2 !important; }
+.input-light:focus::placeholder { color:#c2c2c2 !important; }
+
+/* Placeholder vendor prefixes */
 .input-light::-webkit-input-placeholder { color:#c2c2c2 !important; }
 .input-light:focus::-webkit-input-placeholder { color:#c2c2c2 !important; }
 .input-light::-moz-placeholder { color:#c2c2c2 !important; opacity:1; }
@@ -70,39 +121,102 @@ input, button { font-family: inherit; }
 .input-light::-ms-input-placeholder { color:#c2c2c2 !important; }
 .input-light:focus::-ms-input-placeholder { color:#c2c2c2 !important; }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-weight: 600;
-}
-.btn-primary { background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700)); color: #ffffff; }
-.btn-primary:hover { filter: brightness(1.02) saturate(1.05); }
-.btn-ghost { background: transparent; color: #065f46; }
-.btn-ghost:hover { background: rgba(16,185,129,0.08); }
-
-/* Auth-scope color overrides: keep dark/green look */
-.auth-scope {
-  color-scheme: dark;
-  color: #e5f6ed;
-}
-.auth-scope .card {
-  --color-card: rgba(2, 6, 23, 0.65); /* slate-950 ~ */
-  --color-border: rgba(255, 255, 255, 0.12);
-  background: var(--color-card);
-  border-color: var(--color-border);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
+/* Inputs trong auth dark */
 .auth-scope .input {
   background: rgba(255,255,255,0.06);
   color: #f8fafc;
   border-color: rgba(255,255,255,0.16);
 }
 .auth-scope .input::placeholder { color: rgba(248, 250, 252, 0.6); }
+
+/* =======================
+   Buttons (emerald, phẳng)
+======================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  line-height: 1;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
+  border: 1px solid transparent;   /* viền tối giản */
+  box-shadow: none;                 /* bỏ bóng */
+}
+
+/* Sizes */
+.btn-xs { padding: 6px 8px; font-size: 12px; }
+.btn-sm { padding: 8px 10px; font-size: 13px; }
+.btn-md { padding: 10px 14px; font-size: 14px; }
+.btn-lg { padding: 12px 18px; font-size: 16px; }
+.btn-icon { padding: 8px; aspect-ratio: 1 / 1; }
+
+/* Focus (ring gọn) */
+.btn:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-brand) 45%, transparent);
+  outline-offset: 2px;
+}
+.btn:disabled,
+.btn[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
+
+/* Variants — phẳng, không gradient/bóng */
+.btn-primary {
+  background: var(--color-brand);
+  color: #ffffff;
+}
+.btn-primary:hover { background: var(--color-brand-600); }
+.btn-primary:active { background: var(--color-brand-700); }
+
+.btn-secondary {
+  background: color-mix(in oklab, var(--color-brand) 12%, #ffffff);
+  color: var(--color-brand-700);
+  border-color: color-mix(in oklab, var(--color-brand) 22%, #e2e8f0);
+}
+.btn-secondary:hover {
+  background: color-mix(in oklab, var(--color-brand) 16%, #ffffff);
+  border-color: color-mix(in oklab, var(--color-brand) 28%, #e2e8f0);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-brand-700);
+  border-color: var(--color-brand-600);
+}
+.btn-outline:hover { background: rgba(16,185,129,0.08); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-brand-700);
+  border-color: transparent;
+}
+.btn-ghost:hover { background: rgba(16,185,129,0.08); }
+
+.btn-default {
+  background: #111827; /* neutral phẳng */
+  color: #fff;
+  border-color: transparent;
+}
+.btn-default:hover { background: #0f172a; }
+
+.btn-destructive {
+  background: #ef4444;  /* phẳng */
+  color: #fff;
+}
+.btn-destructive:hover { background: #dc2626; }
+.btn-destructive:active { background: #b91c1c; }
+
+/* Buttons trong auth dark (nhẹ) */
+.auth-scope .btn-outline { color: #bbf7d0; border-color: rgba(255,255,255,0.22); }
 .auth-scope .btn-ghost { color: #bbf7d0; }
-.auth-scope a { color: #34d399; }
-.auth-scope a:hover { color: #10b981; }
+.auth-scope .btn-secondary {
+  color: #e5f6ed;
+  background: rgba(16,185,129,0.14);
+  border-color: rgba(16,185,129,0.22);
+}
+
+/* =======================
+   Utilities
+======================= */
+.hr-muted { border-color: var(--color-border); }
+.text-muted { color: var(--color-muted); }

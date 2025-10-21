@@ -3,7 +3,7 @@
 
 import { useLayoutEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserRole, homeOf } from "@/config/user-role";
+import { UserRole, homeOf } from "@/config/classroom-service/user-role";
 
 function mapRoleFromProfile(user: any): UserRole | null {
   const raw = user?.role ?? user?.roleName ?? user?.role?.name;

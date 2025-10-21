@@ -54,7 +54,7 @@ export function useLogin() {
         toast.error("Chỉ giảng viên (Lecturer) mới được phép đăng nhập!");
         return null;
       }
-      router.push("/manager/users");
+      router.push("/admin/manager/users");
       return res;
     } catch {
       // Lỗi đã có interceptor/toast chung lo phần lớn trường hợp

@@ -1,51 +1,48 @@
 // config/user-role.ts
 
-/** Enum chuẩn FE dùng xuyên suốt */
+/** Enum chuẩn FE dùng xuyên suốt (khớp BE) */
 export enum UserRole {
   Student = 0,
   Lecturer = 1,
   Staff = 2,
   Admin = 3,
-  PaidUser = 4,
 }
 
-/**
- * CHỈ SỬA Ở ĐÂY KHI BE ĐỔI TÊN ROLE
- * - Key: đúng theo BE trả (không phân biệt hoa/thường, có thể khai báo nhiều alias)
- * - Value: enum chuẩn dùng trong FE
- */
-export const ROLE_MAP: Record<string, UserRole> = {
+/** Map BE string -> enum (chỉ key đúng chuẩn, KHÔNG alias) */
+export const ROLE_MAP: Record<"student" | "lecturer" | "staff" | "admin", UserRole> = {
   student: UserRole.Student,
-  students: UserRole.Student, 
   lecturer: UserRole.Lecturer,
   staff: UserRole.Staff,
   admin: UserRole.Admin,
 };
 
-/** Danh sách role được phép đăng nhập khu Lecturer (tuỳ biến tại đây) */
+/** enum -> string BE mong muốn (đảo từ ROLE_MAP) */
+export const STRING_BY_ROLE: Record<UserRole, keyof typeof ROLE_MAP> = {
+  [UserRole.Student]: "student",
+  [UserRole.Lecturer]: "lecturer",
+  [UserRole.Staff]: "staff",
+  [UserRole.Admin]: "admin",
+};
+
+/** Nhãn hiển thị (UI) */
+export const ROLE_LABEL: Record<UserRole, string> = {
+  [UserRole.Student]: "Student",
+  [UserRole.Lecturer]: "Lecturer",
+  [UserRole.Staff]: "Staff",
+  [UserRole.Admin]: "Admin",
+};
+
+/** (tuỳ biến) Role được phép đăng nhập khu Lecturer */
 export const ALLOWED_LOGIN_ROLES: UserRole[] = [UserRole.Admin];
 
-/** Chuẩn hoá string từ BE -> enum (dùng mọi nơi) */
+/** Chuẩn hoá string từ BE -> enum */
 export function mapRole(role: string): UserRole | null {
   if (!role) return null;
-  const key = role.trim().toLowerCase();
+  const key = role.trim().toLowerCase() as keyof typeof ROLE_MAP;
   return ROLE_MAP[key] ?? null;
 }
 
-/** (tuỳ chọn) Convert enum -> key BE mong muốn khi cần gửi ngược */
+/** enum -> key BE khi cần gửi ngược */
 export function roleToString(role: UserRole): string {
-  switch (role) {
-    case UserRole.Student:
-      return "student";
-    case UserRole.Lecturer:
-      return "lecturer";
-    case UserRole.Staff:
-      return "staff";
-    case UserRole.Admin:
-      return "admin";
-    case UserRole.PaidUser:
-      return "paiduser";
-    default:
-      return "";
-  }
+  return STRING_BY_ROLE[role] ?? "";
 }

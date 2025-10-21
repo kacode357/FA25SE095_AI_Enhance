@@ -5,8 +5,7 @@ import {
   ChevronDown,
   CircleArrowOutUpRight,
   Menu,
-  Search,
-} from "lucide-react";
+} from "lucide-react"; // removed Search
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -45,6 +44,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
           >
             <Menu className="w-5 h-5 text-gray-700" />
           </button>
+
           <Link
             href="/"
             className="inline-flex items-center gap-3 group transition-transform hover:scale-105"
@@ -64,21 +64,14 @@ export default function ManagerHeader({ onMenuClick }: Props) {
               <span className="font-bold text-gray-900 text-lg tracking-tight">
                 AI Enhance
               </span>
+              {/* đổi subtitle thành Admin */}
               <span className="text-xs text-gray-500 font-medium">
-                Lecturer Manager
+                Admin
               </span>
             </div>
           </Link>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex items-center relative">
-            <Search className="absolute left-3 w-4 h-4 text-black" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="pl-10 pr-4 py-2 w-80 bg-gray-50 text-black border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-          </div>
+          {/* Search Bar removed */}
         </div>
 
         {/* Actions */}
@@ -127,20 +120,17 @@ export default function ManagerHeader({ onMenuClick }: Props) {
             >
               <div className="relative">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                  {user
-                    ? user.firstName[0] + user.lastName[0]
-                    : "LT"}
+                  {user ? user.firstName[0] + user.lastName[0] : "AD"}
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-semibold text-gray-900">
-                  {user
-                    ? `${user.firstName} ${user.lastName}`
-                    : "Lecturer User"}
+                  {user ? `${user.firstName} ${user.lastName}` : "Admin User"}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {user ? user.role : "Lecturer"}
+                  {/* hiển thị role, fallback Admin */}
+                  {user?.role ?? "Admin"}
                 </p>
               </div>
               <ChevronDown
@@ -154,36 +144,34 @@ export default function ManagerHeader({ onMenuClick }: Props) {
               <div className="absolute right-0 top-12 w-56 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-200">
                   <p className="font-semibold cursor-text text-gray-900">
-                    {user
-                      ? `${user.firstName} ${user.lastName}`
-                      : "Lecturer Tran"}
+                    {user ? `${user.firstName} ${user.lastName}` : "Admin Tran"}
                   </p>
                   <p className="text-sm cursor-text text-gray-500">
-                    {user ? user.email : "lecturer.tran@university.edu"}
+                    {user ? user.email : "admin@university.edu"}
                   </p>
                 </div>
                 <div className="py-1">
-  <Link
-    href="/manager/profile"
-    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-  >
-    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-    Personal profile
-  </Link>
-  <button className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-    Settings
-  </button>
-  <hr className="my-1 border-gray-200" />
-  <button
-    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-    onClick={handleLogout}
-    disabled={loading}
-  >
-    <CircleArrowOutUpRight className="w-4 h-4" />
-    {loading ? "Logging out..." : "Logout"}
-  </button>
-</div>
+                  <Link
+                    href="/manager/profile"
+                    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
+                    Personal profile
+                  </Link>
+                  <button className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
+                    Settings
+                  </button>
+                  <hr className="my-1 border-gray-200" />
+                  <button
+                    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    onClick={handleLogout}
+                    disabled={loading}
+                  >
+                    <CircleArrowOutUpRight className="w-4 h-4" />
+                    {loading ? "Logging out..." : "Logout"}
+                  </button>
+                </div>
               </div>
             )}
           </div>

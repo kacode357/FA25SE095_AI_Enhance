@@ -3,59 +3,63 @@
 import LogoLoader from "@/components/common/logo-loader";
 import { motion } from "framer-motion";
 import React from "react";
+import clsx from "clsx";
 
 type MotionButtonBase = React.ComponentPropsWithoutRef<typeof motion.button>;
-type ButtonSize = "sm" | "md" | "lg";
-type ButtonVariant = "primary" | "ghost" | "outline";
 
 type Props = MotionButtonBase & {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+  variant?: "primary" | "ghost" | "outline" | "secondary" | "default" | "destructive";
   loading?: boolean;
+  size?: "xs" | "sm" | "md" | "lg" | "icon" | "default";
   children?: React.ReactNode;
 };
 
 export function Button({
   variant = "primary",
   size = "md",
-  loading,
+  loading = false,
   className = "",
   children,
+  disabled,
   ...props
 }: Props) {
-  const sizeClasses =
-    size === "sm"
-      ? "h-8 px-3 text-xs"
-      : size === "lg"
-      ? "h-12 px-6 text-base"
-      : "h-10 px-4 text-sm";
+  const sizeClass =
+    {
+      xs: "btn-xs",
+      sm: "btn-sm",
+      md: "btn-md",
+      lg: "btn-lg",
+      icon: "btn-icon",
+      default: "btn-md",
+    }[size] ?? "btn-md";
 
-  const variantClasses =
-    variant === "primary"
-      ? "btn-primary"
-      : variant === "outline"
-      ? "btn-outline"
-      : "btn-ghost";
+  const variantClass =
+    {
+      primary: "btn-primary",
+      secondary: "btn-secondary",
+      outline: "btn-outline",
+      ghost: "btn-ghost",
+      default: "btn-default",
+      destructive: "btn-destructive",
+    }[variant] ?? "btn-primary";
 
   return (
     <motion.button
       whileHover={{ y: -1 }}
       whileTap={{ scale: 0.98 }}
-      className={`btn ${variantClasses} ${sizeClasses} ${
-        loading ? "opacity-90" : ""
-      } ${className}`}
+      className={clsx("btn", sizeClass, variantClass, loading && "is-loading", className)}
       {...props}
-      disabled={loading || props.disabled}
-      aria-busy={loading}
-      aria-disabled={loading || props.disabled ? true : undefined}
+      disabled={loading || disabled}
+      aria-busy={loading || undefined}
+      aria-disabled={loading || disabled ? true : undefined}
     >
       {loading ? (
         <span className="inline-flex items-center justify-center gap-2">
-          <LogoLoader size={20} />
+          <LogoLoader size={18} />
           {children}
         </span>
       ) : (
-        <>{children}</>
+        children
       )}
     </motion.button>
   );

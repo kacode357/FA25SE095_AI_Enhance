@@ -4,7 +4,7 @@
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mapRole, ROLE_HOME } from "@/config/user-role";
+import { mapRole, ROLE_HOME } from "@/config/classroom-service/user-role";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogin } from "@/hooks/auth/useLogin";
 import { motion } from "framer-motion";
