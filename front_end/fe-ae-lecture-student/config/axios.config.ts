@@ -1,132 +1,185 @@
 // config/axios.config.ts
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosInstance } from "axios";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 
-// BASE_URL cho User/Auth Service
-const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API; 
-// BASE_URL cho Course Service
-const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API; 
+/** ===== ENVs ===== */
+const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;    // vd: http://localhost:5001/api
+const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API!; // vd: http://localhost:5006/api
 
-// Hàm tạo Axios Instance với logic refresh token chung
-const createAxiosInstance = (baseURL: string) => {
+/** ===== Cookie keys ===== */
+const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+
+/** ===== Helpers ===== */
+const broadcast = (reason: "login" | "refresh" | "logout") => {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("auth:broadcast", JSON.stringify({ at: Date.now(), reason }));
+    } catch {}
+  }
+};
+
+const clearTokens = () => {
+  Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
+  Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
+};
+
+const goLogin = () => {
+  if (typeof window !== "undefined") {
+    window.location.replace("/login");
+  }
+};
+
+const goHome = () => {
+  if (typeof window !== "undefined") {
+    window.location.replace("/");
+  }
+};
+
+/** ===== Factory: create axios instance với refresh queue ===== */
+const createAxiosInstance = (baseURL: string): AxiosInstance => {
   const instance = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json; charset=UTF-8" },
   });
 
-  // === Gắn token từ cookie hoặc sessionStorage vào mỗi request ===
+  /** ----- Request: gắn Bearer từ cookie ----- */
   instance.interceptors.request.use((config) => {
-    const token = Cookies.get("accessToken") || sessionStorage.getItem("accessToken");
+    const token = Cookies.get(ACCESS_TOKEN_KEY);
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers = config.headers ?? {};
+      (config.headers as any).Authorization = `Bearer ${token}`;
     }
     return config;
   });
 
-  // ==== Refresh logic ====
+  /** ----- Refresh queue state ----- */
   let isRefreshing = false;
-  let failedQueue: { resolve: (token: string) => void; reject: (err: any) => void }[] = [];
+  let failedQueue: Array<{ resolve: (t: string) => void; reject: (e: any) => void }> = [];
 
   const processQueue = (error: any, token: string | null = null) => {
-    failedQueue.forEach((p) => {
-      if (error) {
-        p.reject(error);
-      } else {
-        p.resolve(token!);
-      }
-    });
+    failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
     failedQueue = [];
   };
 
+  /** ----- Response: handle errors ----- */
   instance.interceptors.response.use(
     (response) => response,
+
     async (error: AxiosError<any>) => {
       const status = error.response?.status;
-      const originalRequest = error.config as any;
+      const originalRequest: any = error.config;
 
-      // Lỗi khác 401 → xử lý toast bình thường
+      // Network/timeout -> báo lỗi chung
+      if (status == null) {
+        toast.error(error.message || "Không thể kết nối máy chủ");
+        return Promise.reject(error);
+      }
+
+      /** 403: Sai quyền -> về "/" cho guard xử lý */
+      if (status === 403) {
+        goHome();
+        return Promise.reject(error);
+      }
+
+      /** Khác 401/403 -> show toast */
       if (status !== 401) {
         const data = error.response?.data as { message?: string };
         const message = data?.message || error.message || "Đã có lỗi xảy ra";
-
         toast.error(message);
         return Promise.reject(error);
       }
 
-      // === Xử lý 401 ===
-      if (originalRequest._retry) {
-        // Đã thử refresh rồi mà vẫn lỗi → logout
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
-        sessionStorage.removeItem("accessToken");
-        window.location.href = "/login";
+      /** 401: Unauthorized -> thử refresh 1 lần */
+      if (originalRequest?._retry) {
+        // Đã refresh rồi mà vẫn 401 -> logout cứng
+        clearTokens();
+        broadcast("logout");
+        goLogin();
         return Promise.reject(error);
       }
       originalRequest._retry = true;
 
-      // Nếu đang refresh thì đẩy request vào hàng chờ
+      // Nếu đang refresh, xếp request vào hàng chờ
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({
-            resolve: (token: string) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve: (newToken: string) => {
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
               resolve(instance(originalRequest));
             },
-            reject: (err) => reject(err),
+            reject,
           });
         });
       }
 
       isRefreshing = true;
-      const refreshToken = Cookies.get("refreshToken"); 
 
-      // === Nếu không có refreshToken → logout ngay ===
+      // Lấy refreshToken từ cookie
+      const refreshToken = Cookies.get(REFRESH_TOKEN_KEY);
       if (!refreshToken) {
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
-        sessionStorage.removeItem("accessToken");
-        window.location.href = "/login";
+        isRefreshing = false;
+        clearTokens();
+        broadcast("logout");
+        goLogin();
         return Promise.reject(error);
       }
 
-      // === Có refreshToken → gọi API refresh ===
       try {
-        // QUAN TRỌNG: API refresh-token vẫn gọi về USER_BASE_URL (Auth service)
-        const res = await axios.post(`${USER_BASE_URL}/Auth/refresh-token`, { 
+        // GỌI VỀ AUTH SERVICE ĐỂ REFRESH
+        const res = await axios.post(`${USER_BASE_URL}/Auth/refresh-token`, {
           refreshToken,
-          ipAddress: "", 
-          userAgent: "",
+          ipAddress: "", // tuỳ BE
+          userAgent: "", // tuỳ BE
         });
 
-        const { accessToken, refreshToken: newRefresh } = res.data;
+        const { accessToken, refreshToken: newRefresh } = res.data || {};
 
-        // Lưu lại token mới
-        Cookies.set("accessToken", accessToken, { secure: true, sameSite: "strict" });
-        Cookies.set("refreshToken", newRefresh, { expires: 7, secure: true, sameSite: "strict" });
+        if (!accessToken) {
+          throw new Error("No accessToken from refresh");
+        }
 
+        // Lưu token mới
+        // Lưu ý: ở luồng refresh, mày có thể muốn giữ chính sách hạn theo lần login đầu.
+        // Simple: accessToken (session cookie), refreshToken 7 ngày.
+        Cookies.set(ACCESS_TOKEN_KEY, accessToken, {
+          secure: true,
+          sameSite: "strict",
+          path: "/",
+        });
+        if (newRefresh) {
+          Cookies.set(REFRESH_TOKEN_KEY, newRefresh, {
+            secure: true,
+            sameSite: "strict",
+            path: "/",
+            expires: 7,
+          });
+        }
+
+        // Broadcast "refresh" để AuthContext coi đây là đổi hợp lệ
+        broadcast("refresh");
+
+        // Đánh thức hàng chờ + retry request gốc
         processQueue(null, accessToken);
-
-        // Retry request gốc
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        return instance(originalRequest); 
+        return instance(originalRequest);
       } catch (err) {
+        // Refresh fail -> hủy queue và logout
         processQueue(err, null);
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
-        sessionStorage.removeItem("accessToken");
-        window.location.href = "/login";
+        clearTokens();
+        broadcast("logout");
+        goLogin();
         return Promise.reject(err);
       } finally {
         isRefreshing = false;
       }
     }
   );
+
   return instance;
 };
 
-// Instance cho User/Auth Service (http://localhost:5001/api)
-export const userAxiosInstance = createAxiosInstance(USER_BASE_URL!); 
-
-// Instance cho Course Service (http://localhost:5006/api)
-export const courseAxiosInstance = createAxiosInstance(COURSE_BASE_URL!);
+/** ===== Export axios instances ===== */
+export const userAxiosInstance = createAxiosInstance(USER_BASE_URL);
+export const courseAxiosInstance = createAxiosInstance(COURSE_BASE_URL);

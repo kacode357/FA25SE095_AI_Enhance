@@ -10,15 +10,27 @@ export enum UserRole {
   Student = 3,
 }
 
-/** Map từ string (BE trả) -> enum */
-export const ROLE_MAP: Record<string, UserRole> = {
+/** Min/Max để check nhanh số hợp lệ */
+const MIN_ROLE = UserRole.Admin;
+const MAX_ROLE = UserRole.Student;
+
+/** Map BE string -> enum (single source of truth) */
+export const ROLE_BY_STRING = {
   admin: UserRole.Admin,
   staff: UserRole.Staff,
   lecturer: UserRole.Lecturer,
   student: UserRole.Student,
+} as const;
+
+/** enum -> string BE mong muốn (đảo từ ROLE_BY_STRING) */
+export const STRING_BY_ROLE: Record<UserRole, keyof typeof ROLE_BY_STRING> = {
+  [UserRole.Admin]: "admin",
+  [UserRole.Staff]: "staff",
+  [UserRole.Lecturer]: "lecturer",
+  [UserRole.Student]: "student",
 };
 
-/** Nhãn hiển thị (nếu cần UI) */
+/** Nhãn hiển thị (UI) */
 export const ROLE_LABEL: Record<UserRole, string> = {
   [UserRole.Admin]: "Admin",
   [UserRole.Staff]: "Staff",
@@ -26,7 +38,11 @@ export const ROLE_LABEL: Record<UserRole, string> = {
   [UserRole.Student]: "Student",
 };
 
-export const APP_ALLOWED_ROLES: UserRole[] = [UserRole.Lecturer, UserRole.Student];
+/** App cho phép role nào */
+export const APP_ALLOWED_ROLES = new Set<UserRole>([
+  UserRole.Lecturer,
+  UserRole.Student,
+]);
 
 /** Landing path cho từng role */
 export const ROLE_HOME: Record<UserRole, string> = {
@@ -40,59 +56,35 @@ export const ROLE_HOME: Record<UserRole, string> = {
 export const isUserRole = (value: unknown): value is UserRole =>
   typeof value === "number" &&
   Number.isInteger(value) &&
-  value >= UserRole.Admin &&
-  value <= UserRole.Student; // Giới hạn đến Student (3)
+  value >= MIN_ROLE &&
+  value <= MAX_ROLE;
 
 /** FE-safe: map từ unknown -> enum, hỗ trợ number, "2"/"3", "lecturer"/"student"... */
 export function mapRole(role: unknown): UserRole | null {
-  if (role === null || role === undefined) return null;
+  if (role == null) return null;
 
-  // BE trả số (0, 1, 2, 3) -> dùng trực tiếp
-  if (typeof role === "number") {
-    return isUserRole(role) ? role : null;
-  }
+  if (typeof role === "number") return isUserRole(role) ? role : null;
 
-  // BE trả string: "0"/"1" hoặc "admin"/"lecturer"
   if (typeof role === "string") {
-    const trimmed = role.trim();
-
-    // "0", "1", ... (số dưới dạng string)
-    if (/^\d+$/.test(trimmed)) {
-      const n = Number(trimmed);
+    const s = role.trim().toLowerCase();
+    if (/^\d+$/.test(s)) {
+      const n = Number(s);
       return isUserRole(n) ? n : null;
     }
-
-    // "admin", "lecturer", ... (string chữ)
-    const key = trimmed.toLowerCase();
-    return ROLE_MAP[key] ?? null;
+    return ROLE_BY_STRING[s as keyof typeof ROLE_BY_STRING] ?? null;
   }
 
   return null;
 }
 
-/** Convert enum -> string BE mong muốn (khi cần gửi ngược) */
-export function roleToString(role: UserRole): string {
-  switch (role) {
-    case UserRole.Admin:
-      return "admin";
-    case UserRole.Staff:
-      return "staff";
-    case UserRole.Lecturer:
-      return "lecturer";
-    case UserRole.Student:
-      return "student";
-    default:
-      return "";
-  }
-}
+/** enum -> string BE mong muốn (gửi ngược) */
+export const roleToString = (role: UserRole): string => STRING_BY_ROLE[role] ?? "";
 
 /** Helpers */
 export const isAllowedAppRole = (r?: UserRole | null) =>
-  r !== null && r !== undefined && APP_ALLOWED_ROLES.includes(r as UserRole);
+  r != null && APP_ALLOWED_ROLES.has(r);
 
 export const isLecturer = (r?: UserRole | null) => r === UserRole.Lecturer;
 export const isStudent = (r?: UserRole | null) => r === UserRole.Student;
 
-export function homeOf(role: UserRole): string {
-  return ROLE_HOME[role] ?? "/";
-}
+export const homeOf = (role: UserRole): string => ROLE_HOME[role] ?? "/";

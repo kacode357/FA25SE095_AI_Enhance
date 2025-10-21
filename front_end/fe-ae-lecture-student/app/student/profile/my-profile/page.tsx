@@ -17,7 +17,7 @@ type ProfileForm = {
 };
 
 export default function MyProfilePage() {
-  const { user, isReady } = useAuth();
+  const { user } = useAuth(); // ⬅️ không còn isReady
   const { updateProfile, loading } = useUpdateProfile();
 
   const [form, setForm] = useState<ProfileForm>({
@@ -29,8 +29,9 @@ export default function MyProfilePage() {
     institutionAddress: "",
   });
 
+  // Prefill khi có user
   useEffect(() => {
-    if (!isReady || !user) return;
+    if (!user) return;
     setForm({
       firstName: safeStr(user.firstName),
       lastName: safeStr(user.lastName),
@@ -39,7 +40,7 @@ export default function MyProfilePage() {
       institutionName: safeStr(user.institutionName),
       institutionAddress: safeStr(user.institutionAddress),
     });
-  }, [isReady, user]);
+  }, [user]);
 
   const fullName = useMemo(() => {
     const f = form.firstName.trim();
@@ -65,8 +66,7 @@ export default function MyProfilePage() {
       ...(form.studentId ? { studentId: form.studentId } : {}),
     };
 
-    // Không toast/alert ở component; để hook lo hết
-    await updateProfile(payload);
+    await updateProfile(payload); // toast xử lý trong hook
   };
 
   const quotaPct = useMemo(() => {
@@ -76,18 +76,8 @@ export default function MyProfilePage() {
     return Math.min(100, Math.round((used / limit) * 100));
   }, [user]);
 
-  if (!isReady) {
-    return (
-      <div className="card p-6 flex items-center justify-center" style={{ borderColor: "var(--color-border)" }}>
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Loading profile...
-        </div>
-      </div>
-    );
-  }
-
-  if (isReady && !user) {
+  // Không dùng isReady: nếu chưa có user -> coi như chưa đăng nhập
+  if (!user) {
     return (
       <div className="card p-6" style={{ borderColor: "var(--color-border)" }}>
         <h2 className="text-lg font-semibold text-slate-900 mb-2">My Profile</h2>
@@ -109,18 +99,18 @@ export default function MyProfilePage() {
               background: "color-mix(in oklab, var(--color-brand) 10%, white)",
             }}
           >
-            {initials(user?.firstName, user?.lastName)}
+            {initials(user.firstName, user.lastName)}
           </div>
 
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-slate-900">{fullName || user?.email}</h2>
+            <h2 className="text-xl font-semibold text-slate-900">{fullName || user.email}</h2>
             <p className="text-sm text-slate-600 mt-0.5">Manage your personal and institution information.</p>
 
             {/* Only label: value lines */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
               <StatLine label="Role" value={"Student"} />
-              <StatLine label="Account Status" value={user?.status || "—"} />
-              <StatLine label="Subscription Plan" value={user?.subscriptionTier || "—"} />
+              <StatLine label="Account Status" value={user.status || "—"} />
+              <StatLine label="Subscription Plan" value={user.subscriptionTier || "—"} />
             </div>
           </div>
         </div>
@@ -130,18 +120,18 @@ export default function MyProfilePage() {
       <div className="card p-6" style={{ borderColor: "var(--color-border)" }}>
         <h3 className="text-sm font-semibold text-slate-900 mb-4">Account Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <InfoItem label="Email" value={user?.email ?? ""} />
-          <InfoItem label="Student ID" value={safeStr(user?.studentId) || "-"} />
-          <InfoItem label="Last Login" value={formatDateTime(user?.lastLoginAt)} />
+          <InfoItem label="Email" value={user.email ?? ""} />
+          <InfoItem label="Student ID" value={safeStr(user.studentId) || "-"} />
+          <InfoItem label="Last Login" value={formatDateTime(user.lastLoginAt)} />
         </div>
 
         <div className="mt-5">
           <label className="block text-sm text-slate-700 mb-2">Crawl Quota</label>
           <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
             <span>
-              Used {user?.crawlQuotaUsed ?? 0} / {user?.crawlQuotaLimit ?? 0}
+              Used {user.crawlQuotaUsed ?? 0} / {user.crawlQuotaLimit ?? 0}
             </span>
-            {user?.quotaResetDate && <span>Reset: {formatDateTime(user.quotaResetDate, true)}</span>}
+            {user.quotaResetDate && <span>Reset: {formatDateTime(user.quotaResetDate, true)}</span>}
           </div>
           <div className="h-2 rounded-full bg-slate-100 border" style={{ borderColor: "var(--color-border)" }}>
             <div

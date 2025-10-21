@@ -20,32 +20,29 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const { user, isReady } = useAuth() as any;
+  // ⬇️ Không còn isReady
+  const { user } = useAuth();
   const router = useRouter();
 
-  // Nếu đã đăng nhập thì vào thẳng ROLE_HOME (không cần next)
+  // Nếu đã đăng nhập thì vào thẳng HOME theo role
   useEffect(() => {
-    if (!isReady) return;
-    if (user) {
-      const rawRole = user?.role ?? user?.roleName ?? user?.role?.name;
-      const role = mapRole(rawRole);
-      const target = role ? ROLE_HOME[role] : "/";
-      router.replace(target);
-    }
-  }, [isReady, user, router]);
+    if (!user) return;
+    const rawRole = (user as any)?.role ?? (user as any)?.roleName ?? (user as any)?.role?.name;
+    const role = mapRole(rawRole);
+    const target = role ? ROLE_HOME[role] : "/";
+    router.replace(target);
+  }, [user, router]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     const result = await login(
       { email: email.trim(), password: password.trim() },
       { remember: rememberMe }
     );
-
     if (result.ok && result.role !== null) {
       router.replace(ROLE_HOME[result.role]);
     } else {
-      // (tuỳ) hiện toast lỗi
+      // TODO: toast lỗi nếu cần
     }
   };
 
@@ -58,7 +55,7 @@ export default function LoginPage() {
     }
   };
 
-  if (!isReady) return null;
+  // Nếu đã có user thì đang redirect, đừng render gì
   if (user) return null;
 
   return (
@@ -74,8 +71,22 @@ export default function LoginPage() {
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
-        <Input label="Email" placeholder="example@crawldata.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <Input label="Password" placeholder="•••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <Input
+          label="Email"
+          placeholder="example@crawldata.com"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <Input
+          label="Password"
+          placeholder="•••••••••"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
         <div className="flex items-center mb-6 justify-between text-sm text-slate-600">
           <label className="inline-flex items-center gap-2 select-none">
@@ -92,7 +103,9 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <Button type="submit" className="w-full" loading={loading}>Sign in</Button>
+        <Button type="submit" className="w-full" loading={loading}>
+          Sign in
+        </Button>
 
         <div className="relative my-4">
           <div className="border-t border-slate-200" />

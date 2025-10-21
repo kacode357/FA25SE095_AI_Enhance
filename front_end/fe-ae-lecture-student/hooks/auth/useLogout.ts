@@ -3,40 +3,45 @@
 
 import { useState, useCallback } from "react";
 import { AuthService } from "@/services/auth.services";
-import { LogoutPayload } from "@/types/auth/auth.payload";
-import { LogoutResponse } from "@/types/auth/auth.response";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import type { LogoutPayload } from "@/types/auth/auth.payload";
+import type { LogoutResponse } from "@/types/auth/auth.response";
 import { useAuth } from "@/contexts/AuthContext";
+
+const broadcast = (reason: "logout") => {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("auth:broadcast", JSON.stringify({ at: Date.now(), reason }));
+    } catch {}
+  }
+};
 
 export function useLogout() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const { setUser } = useAuth();
+  const { logout: ctxLogout } = useAuth();
 
   const logout = useCallback(
-    async (payload: LogoutPayload): Promise<LogoutResponse | null> => {
+    async (payload?: LogoutPayload): Promise<LogoutResponse | null> => {
       setLoading(true);
       try {
-        const res = await AuthService.logout(payload).catch(() => null);
+        const res = await (AuthService.logout?.(payload as LogoutPayload) ?? Promise.resolve(null))
+          .catch(() => null);
 
-        Cookies.remove("accessToken", { path: "/" });
-        Cookies.remove("refreshToken", { path: "/" });
-        if (typeof window !== "undefined") {
-          sessionStorage.removeItem("accessToken");
-          sessionStorage.removeItem("just_logged_in"); // ✅ dọn cờ
-        }
-        setUser(null);
+        // Clear + redirect qua AuthContext
+        ctxLogout();
 
-        router.replace("/login");
+        // Broadcast đa tab (và là dấu vết hợp lệ)
+        broadcast("logout");
+
         return res;
       } catch {
+        try { ctxLogout(); } catch {}
+        broadcast("logout");
         return null;
       } finally {
         setLoading(false);
       }
     },
-    [router, setUser]
+    [ctxLogout]
   );
 
   return { logout, loading };
