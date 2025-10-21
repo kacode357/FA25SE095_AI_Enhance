@@ -22,7 +22,7 @@ export default function ImportDialog({
   const { importEnrollments, loading } = useImportEnrollments();
   const [file, setFile] = useState<File | null>(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
-  const [createAccounts, setCreateAccounts] = useState(false);
+  const [createAccounts, setCreateAccounts] = useState(true);
 
   const sortedCourses = useMemo(() => {
     return courses
@@ -92,7 +92,7 @@ export default function ImportDialog({
             htmlFor="createAccounts"
             className="text-sm text-slate-700 cursor-pointer select-none"
           >
-            Create accounts for students not found
+            Auto-create accounts for unknown emails
           </label>
         </div>
 

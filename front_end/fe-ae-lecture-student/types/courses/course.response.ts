@@ -49,14 +49,67 @@ export interface GetMyCoursesResponse {
 export interface UpdateCourseResponse {
   success: boolean;
   message: string;
-  updatedCourse: CourseItem;
+  updatedCourse: UpdatedCourseItems;
+}
+export interface UpdatedCourseItems {
+  id: string;
+  courseCode: string;
+  courseCodeTitle: string;
+  name: string;
+  description: string;
+  term: string;
+  year: number;
+  lecturerId: string;
+  lecturerName: string;
+  createdAt: string;
+  enrollmentCount: number;
+  status: number;
+  approvedBy: string;
+  approvedByName: string;
+  approvedAt: string;
+  approvalComments: string;
+  rejectionReason: string;
+  canEnroll: boolean;
+  requiresAccessCode: boolean;
+  accessCode: string;
+  accessCodeCreatedAt: string;
+  accessCodeExpiresAt: string;
+  isAccessCodeExpired: boolean;
+  department: string;
 }
 
 export interface GetCourseByIdResponse {
   success: boolean;
   message: string;
-  course: CourseItem;
+  course: GetCourseByIdItems;
 }
+export interface GetCourseByIdItems {
+  id: string;
+  courseCode: string;
+  courseCodeTitle: string;
+  name: string;
+  description: string;
+  term: string;
+  year: number;
+  lecturerId: string;
+  lecturerName: string;
+  createdAt: string;
+  enrollmentCount: number;
+  status: number;
+  approvedBy: string;
+  approvedByName: string | null;
+  approvedAt: string;
+  approvalComments: string | null;
+  rejectionReason: string | null;
+  canEnroll: boolean;
+  requiresAccessCode: boolean;
+  accessCode: string | null;
+  accessCodeCreatedAt: string | null;
+  accessCodeExpiresAt: string | null;
+  isAccessCodeExpired: boolean | null;
+  department: string;
+}
+
 
 export interface DeleteCourseResponse {
   success: boolean;

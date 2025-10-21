@@ -15,7 +15,6 @@ import {
   ClipboardCopy,
   Eye,
   EyeOff,
-  Pencil,
   RefreshCw,
   Users
 } from "lucide-react";
@@ -105,8 +104,8 @@ export default function CourseCard({
 
   const onEditClick = (e: React.MouseEvent) => {
     stop(e);
-    onEdit();
-  };
+    router.push(`/lecturer/manager/course/${course.id}/course`); // Chuyển hướng đến trang EditCourse
+  }
 
   const onDeleteClick = (e: React.MouseEvent) => {
     stop(e);
@@ -244,23 +243,14 @@ export default function CourseCard({
           {/* Created */}
           <div className="flex-1 text-xs text-slate-500">Created: {fmtDate(course.createdAt)}</div>
 
-          <div>
-            <Button
-              variant="ghost"
-              className="flex-1 border border-slate-300 rounded-md text-sm cursor-pointer"
-              onClick={onEditClick}
-              aria-label="Edit"
-            >
-              <Pencil className="size-4" />
-            </Button>
-            {/* <Button
-              variant="ghost"
-              className="h-7 px-2 !text-red-600 hover:bg-red-50"
-              onClick={onDeleteClick}
-              aria-label="Delete"
-            >
-              <Trash2 className="size-4" />
-            </Button> */}
+          <div
+            className="border border-emerald-500 rounded-md text-white px-3 py-1 bg-emerald-500 
+             shadow-2xl text-sm cursor-pointer 
+             hover:bg-emerald-600 hover:shadow-lg transition-all duration-200"
+            onClick={onEditClick}
+            aria-label="Edit"
+          >
+            Details
           </div>
         </div>
       </CardContent>

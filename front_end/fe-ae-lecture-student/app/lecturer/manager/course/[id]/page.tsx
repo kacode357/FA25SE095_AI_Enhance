@@ -5,7 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import { FileSpreadsheet, FolderPlus, Shuffle } from "lucide-react";
+import {
+  ChevronRight,
+  FileSpreadsheet,
+  FolderPlus,
+  Shuffle,
+} from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -16,6 +21,41 @@ import GroupsPanel from "./components/GroupsPanel";
 import ImportStudentsDialog from "./components/ImportStudentsDialog";
 import StudentList from "./components/StudentListImport";
 import RandomizeGroupDialog from "./group/[groupId]/components/RandomizeGroupDialog";
+
+function renderStatusBadge(status?: CourseStatus) {
+  switch (status) {
+    case CourseStatus.PendingApproval:
+      return (
+        <span className="px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700">
+          Pending Approval
+        </span>
+      );
+    case CourseStatus.Active:
+      return (
+        <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
+          Active
+        </span>
+      );
+    case CourseStatus.Inactive:
+      return (
+        <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+          Inactive
+        </span>
+      );
+    case CourseStatus.Rejected:
+      return (
+        <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
+          Rejected
+        </span>
+      );
+    default:
+      return (
+        <span className="px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-600">
+          Unknown
+        </span>
+      );
+  }
+}
 
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +71,8 @@ export default function CourseDetailPage() {
   const [studentsRefresh, setStudentsRefresh] = useState(0);
   const [openImport, setOpenImport] = useState(false);
   const [openAssign, setOpenAssign] = useState(false);
-  const [activeTab, setActiveTab] = useState<"students" | "groups" | "assignments">("students");
+  const [activeTab, setActiveTab] =
+    useState<"students" | "groups" | "assignments">("students");
 
   useEffect(() => {
     if (id) fetchCourseById(id);
@@ -52,27 +93,75 @@ export default function CourseDetailPage() {
   const isActive = course?.status === CourseStatus.Active;
 
   return (
-    <>
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList>
-          <TabsTrigger className="cursor-pointer" value="students">
+    <div className="space-y-6 px-3">
+      <nav
+        className="flex items-center text-sm text-slate-500"
+        aria-label="Breadcrumb"
+      >
+        <a
+          href="/lecturer/manager/course"
+          className="text-emerald-600 hover:underline font-medium"
+        >
+          Courses
+        </a>
+        <ChevronRight className="h-4 w-4 mx-2 text-slate-400" />
+        <span className="text-slate-700 font-semibold">
+          {course?.name || "Course Detail"}
+        </span>
+      </nav>
+
+      {/* HEADER */}
+      <div className="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-800">
+            {course?.courseCode} - {course?.courseCodeTitle}
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {course?.name || "Untitled Course"}
+          </p>
+        </div>
+
+        <div className="flex items-center">{renderStatusBadge(course?.status)}</div>
+      </div>
+
+      {/* TABS */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as any)}
+        className="w-full"
+      >
+        <TabsList className="border-b border-slate-200 bg-transparent w-full justify-start gap-6 px-1 mb-3">
+          <TabsTrigger
+            className="data-[state=active]:border-b-2 data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            value="students"
+          >
             Students
           </TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="groups">
+          <TabsTrigger
+            className="data-[state=active]:border-b-2 data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            value="groups"
+          >
             Groups
           </TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="assignments">
+          <TabsTrigger
+            className="data-[state=active]:border-b-2 data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            value="assignments"
+          >
             Assignments
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="students" className="space-y-2">
+        {/* STUDENTS TAB */}
+        <TabsContent value="students">
           <Card>
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="text-base">Student List</CardTitle>
+            <CardHeader className="flex items-center justify-between pb-3">
+              <CardTitle className="text-base font-semibold">
+                Student List
+              </CardTitle>
+
               {isActive && (
                 <Button
-                  className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
+                  className="h-9 text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
                   onClick={() => setOpenImport(true)}
                 >
                   <FileSpreadsheet className="size-4 mr-1" />
@@ -80,30 +169,29 @@ export default function CourseDetailPage() {
                 </Button>
               )}
             </CardHeader>
-
             <CardContent>
               <StudentList courseId={id} refreshSignal={studentsRefresh} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="groups" className="space-y-2">
+        {/* GROUPS TAB */}
+        <TabsContent value="groups">
           <Card>
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="text-base">Groups List</CardTitle>
+            <CardHeader className="flex items-center justify-between pb-3">
+              <CardTitle className="text-base font-semibold">Groups</CardTitle>
 
               {isActive && (
                 <div className="flex items-center gap-2">
                   <Button
-                    className="h-9 text-xs cursor-pointer bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-1"
+                    className="h-9 text-xs bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-1"
                     onClick={() => setOpenRandomize(true)}
                   >
                     <Shuffle className="size-4 mr-1" />
                     Randomize
                   </Button>
-
                   <Button
-                    className="h-9 text-xs cursor-pointer bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
+                    className="h-9 text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
                     onClick={() => setOpenGroup(true)}
                   >
                     <FolderPlus className="size-4 mr-1" />
@@ -119,7 +207,8 @@ export default function CourseDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="assignments" className="space-y-2">
+        {/* ASSIGNMENTS TAB */}
+        <TabsContent value="assignments">
           <AssignmentsPanel
             courseId={id}
             isActive={isActive ?? false}
@@ -128,6 +217,7 @@ export default function CourseDetailPage() {
         </TabsContent>
       </Tabs>
 
+      {/* DIALOGS */}
       <ImportStudentsDialog
         open={openImport}
         onOpenChange={(v) => {
@@ -157,6 +247,6 @@ export default function CourseDetailPage() {
           />
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

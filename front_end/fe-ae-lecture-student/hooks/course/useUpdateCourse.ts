@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { CourseService } from "@/services/course.services";
 import { UpdateCoursePayload } from "@/types/courses/course.payload";
 import { UpdateCourseResponse } from "@/types/courses/course.response";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export function useUpdateCourse() {
@@ -14,7 +14,7 @@ export function useUpdateCourse() {
     setLoading(true);
     try {
       const res = await CourseService.updateCourse(payload);
-      toast.success(res.message || "Cập nhật khoá học thành công");
+      toast.success(res.message || "Course update successfully");
       return res;
     } catch (err: any) {
       toast.error(err?.message || "Failed to update course");

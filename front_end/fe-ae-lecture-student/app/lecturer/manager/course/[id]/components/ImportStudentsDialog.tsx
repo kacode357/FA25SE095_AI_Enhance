@@ -28,7 +28,7 @@ export default function ImportStudentsDialog({
   onImported,
 }: ImportStudentsDialogProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [createAccountChecked, setCreateAccountChecked] = useState(false);
+  const [createAccountChecked, setCreateAccountChecked] = useState(true);
   const [failedImport, setFailedImport] = useState(false);
   const [responseMsg, setResponseMsg] = useState<string | null>(null);
 
@@ -114,7 +114,7 @@ export default function ImportStudentsDialog({
                 htmlFor="createAccount"
                 className="text-sm text-slate-700 cursor-pointer select-none"
               >
-                Create accounts for students not found
+                Auto-create accounts for unknown emails
               </label>
             </div>
           )}

@@ -12,7 +12,6 @@ export interface CreateCoursePayload {
 }
 export interface UpdateCoursePayload {
   courseId: string;
-  courseCodeId: string;
   description: string;
   termId: string;
   year: number;
