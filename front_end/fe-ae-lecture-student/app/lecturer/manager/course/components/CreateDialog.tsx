@@ -143,7 +143,7 @@ export default function CreateDialog({
           <TabsContent value="course">
             <div className="py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <Label className="cursor-text" htmlFor="courseCode">Course Code</Label>
+                <Label className="cursor-text mb-2" htmlFor="courseCode">Course Code</Label>
                 <select
                   id="courseCode"
                   value={form.courseCodeId}
@@ -161,7 +161,7 @@ export default function CreateDialog({
               </div>
 
               <div className="sm:col-span-2">
-                <Label className="cursor-text" htmlFor="description">Description</Label>
+                <Label className="cursor-text mb-2" htmlFor="description">Description</Label>
                 <Input
                   id="description"
                   value={form.description}
@@ -170,7 +170,7 @@ export default function CreateDialog({
               </div>
 
               <div>
-                <Label className="cursor-text" htmlFor="term">Term</Label>
+                <Label className="cursor-text mb-2" htmlFor="term">Term</Label>
                 <select
                   id="term"
                   value={form.termId}
@@ -188,7 +188,7 @@ export default function CreateDialog({
               </div>
 
               <div>
-                <Label className="cursor-text" htmlFor="year">Year</Label>
+                <Label className="cursor-text mb-2" htmlFor="year">Year</Label>
                 <Input
                   id="year"
                   type="number"
@@ -258,7 +258,7 @@ export default function CreateDialog({
           <TabsContent value="request">
             <div className="py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <Label className="cursor-text" htmlFor="requestCourseCode">Course Code</Label>
+                <Label className="cursor-text mb-2" htmlFor="requestCourseCode">Course Code</Label>
                 <select
                   id="requestCourseCode"
                   required
@@ -280,7 +280,7 @@ export default function CreateDialog({
               </div>
 
               <div className="sm:col-span-2">
-                <Label className="cursor-text" htmlFor="requestDescription">Description</Label>
+                <Label className="cursor-text mb-2" htmlFor="requestDescription">Description</Label>
                 <Input
                   id="requestDescription"
                   required
@@ -291,7 +291,7 @@ export default function CreateDialog({
               </div>
 
               <div>
-                <Label className="cursor-text" htmlFor="requestTerm">Term</Label>
+                <Label className="cursor-text mb-2" htmlFor="requestTerm">Term</Label>
                 <select
                   id="requestTerm"
                   required
@@ -311,7 +311,7 @@ export default function CreateDialog({
               </div>
 
               <div>
-                <Label className="cursor-text" htmlFor="requestYear">Year</Label>
+                <Label className="cursor-text mb-2" htmlFor="requestYear">Year</Label>
                 <Input
                   id="requestYear"
                   type="number"
@@ -321,7 +321,7 @@ export default function CreateDialog({
               </div>
 
               <div className="sm:col-span-2">
-                <Label className="cursor-text" htmlFor="requestReason">Request Reason (optional)</Label>
+                <Label className="cursor-text mb-2" htmlFor="requestReason">Request Reason (optional)</Label>
                 <Input
                   id="requestReason"
                   value={requestForm.requestReason}
@@ -331,7 +331,7 @@ export default function CreateDialog({
               </div>
 
               <div className="sm:col-span-2">
-                <Label className="cursor-text" htmlFor="studentEnrollmentFile">Student Enrollment File (optional)</Label>
+                <Label className="cursor-text mb-2" htmlFor="studentEnrollmentFile">Student Enrollment File (optional)</Label>
                 <Input
                   id="studentEnrollmentFile"
                   type="file"
