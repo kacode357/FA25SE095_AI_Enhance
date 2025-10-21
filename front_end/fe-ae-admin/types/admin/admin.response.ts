@@ -35,11 +35,13 @@ export interface AdminGetUsersResponse {
 }
 
 /** ==== DETAIL RESPONSE ==== */
+// Cập nhật theo GET /api/Admin/users/{userId}
 export interface AdminUserDetailResponse {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
+  fullName: string;                // ✅ mới
   role: string;
   status: string;
   subscriptionTier: string;
@@ -54,6 +56,7 @@ export interface AdminUserDetailResponse {
   institutionName: string;
   institutionAddress: string;
   studentId: string;
+  profilePictureUrl: string;       // ✅ mới
   department: string;
   createdAt: string;
   updatedAt: string;
