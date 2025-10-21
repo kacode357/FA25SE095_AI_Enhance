@@ -62,14 +62,15 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
 
         <div className="lg:col-span-2">
           <div className="text-xs text-slate-600  mb-1">Status</div>
-          <div className="flex border-slate-300 flex-wrap gap-3 rounded-md border p-3">
+          <div className="flex border-slate-300 flex-wrap text-sm gap-3 rounded-md border px-2 pl-4">
             {ALL_STATUS.map(({ value: st, label }) => (
-              <label key={st} className="flex items-center gap-2 text-sm">
+              <label key={st} className="flex items-center gap-2">
                 <Checkbox
+                  className="text-sm"
                   checked={!!statuses[st]}
                   onCheckedChange={(v) => onChange({ statuses: { ...statuses, [st]: !!v } })}
                 />
-                <span>{label}</span>
+                <span className="text-xs">{label}</span>
               </label>
             ))}
             <Button
@@ -94,7 +95,7 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
               onChange({ groupType: (v as "all" | "group" | "individual") })
             }
           >
-            <SelectTrigger className="bg-white w-[140px] dark:bg-input/30">
+            <SelectTrigger className="bg-white w-[210px] border-slate-200">
               <SelectValue className="border-slate-200 w-[140px]" placeholder="Type" />
             </SelectTrigger>
             <SelectContent className="border-slate-200 !bg-white">
@@ -110,7 +111,7 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
         <div>
           <div className="text-xs text-slate-600 mb-1">Due from</div>
           <Input
-          className="text-sm"
+            className="text-sm"
             type="date"
             value={dueFrom}
             onChange={(e) => onChange({ dueFrom: e.target.value })}
@@ -119,14 +120,14 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
         <div>
           <div className="text-xs text-slate-600 mb-1">Due to</div>
           <Input
-          className="text-sm"
+            className="text-sm"
             type="date"
             value={dueTo}
             onChange={(e) => onChange({ dueTo: e.target.value })}
           />
         </div>
 
-        <div className="flex items-end gap-4">
+        <div className="flex items-center pt-5 gap-4">
           <label className="flex items-center gap-2 text-sm">
             <Checkbox
               checked={isUpcoming}
@@ -171,7 +172,7 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
               onChange({ sortOrder: (v as "asc" | "desc") })
             }
           >
-            <SelectTrigger className="w-[120px] border-slate-200 bg-white dark:bg-input/30">
+            <SelectTrigger className="w-[128px] border-slate-200 bg-white dark:bg-input/30">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="w-[100px] border-slate-200 !bg-white">
@@ -189,10 +190,10 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
             value={String(pageSize)}
             onValueChange={(v: string) => onChange({ pageSize: parseInt(v, 10) || 10 })}
           >
-            <SelectTrigger className="w-[100px] border-slate-200 bg-white dark:bg-input/30">
+            <SelectTrigger className="w-[128px] border-slate-200 bg-white dark:bg-input/30">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="w-[80px] border-slate-200 !bg-white">
+            <SelectContent className="w-[50px] border-slate-200 !bg-white">
               <SelectItem value="5">5</SelectItem>
               <SelectItem value="10">10</SelectItem>
               <SelectItem value="20">20</SelectItem>
