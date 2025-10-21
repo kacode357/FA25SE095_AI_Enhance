@@ -132,19 +132,19 @@ export default function CourseDetailPage() {
       >
         <TabsList className="border-b border-slate-200 bg-transparent w-full justify-start gap-6 px-1 mb-3">
           <TabsTrigger
-            className="data-[state=active]:border-b-2 data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="data-[state=active]:border-b-2 pt-3 cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
             value="students"
           >
             Students
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="data-[state=active]:border-b-2 pt-3 cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
             value="groups"
           >
             Groups
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="data-[state=active]:border-b-2 pt-3 cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
             value="assignments"
           >
             Assignments
@@ -161,7 +161,7 @@ export default function CourseDetailPage() {
 
               {isActive && (
                 <Button
-                  className="h-9 text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
+                  className="h-9 text-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
                   onClick={() => setOpenImport(true)}
                 >
                   <FileSpreadsheet className="size-4 mr-1" />
@@ -184,14 +184,14 @@ export default function CourseDetailPage() {
               {isActive && (
                 <div className="flex items-center gap-2">
                   <Button
-                    className="h-9 text-xs bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-1"
+                    className="h-9 cursor-pointer text-xs bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-1"
                     onClick={() => setOpenRandomize(true)}
                   >
                     <Shuffle className="size-4 mr-1" />
                     Randomize
                   </Button>
                   <Button
-                    className="h-9 text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
+                    className="h-9 text-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
                     onClick={() => setOpenGroup(true)}
                   >
                     <FolderPlus className="size-4 mr-1" />

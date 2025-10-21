@@ -1,20 +1,20 @@
 // app/lecture/manager/course/[id]/assignments/AssignmentsPanel.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import PaginationBar from "@/components/common/PaginationBar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAssignments } from "@/hooks/assignment/useAssignments";
-import type { AssignmentStatus } from "@/types/assignments/assignment.response";
 import type { AssignmentStatusFilter, GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
+import type { AssignmentStatus } from "@/types/assignments/assignment.response";
 
-import NewAssignmentForm from "./components/NewAssignmentForm";
 import AssignmentDetailView from "./components/AssignmentDetailView";
 import AssignmentsFilterBar, { FilterState } from "./components/AssignmentsFilterBar";
+import NewAssignmentForm from "./components/NewAssignmentForm";
 
 type Props = {
   courseId: string;
@@ -161,9 +161,9 @@ export default function AssignmentsPanel({
   return (
     <Card className="border-0 shadow-none">
       <CardHeader className="flex flex-row items-center justify-between gap-3">
-        <CardTitle className="text-xl font-semibold md:text-2xl">Assignments</CardTitle>
-        <div className="flex items-center gap-2">
-          <Button onClick={openCreate}>New Assignment</Button>
+        <CardTitle className="text-xl font-semibold md:text-xl">Assignments</CardTitle>
+        <div className="flex items-center cursor-pointer gap-2">
+          <Button className="cursor-pointer text-xs" onClick={openCreate}>New Assignment</Button>
         </div>
       </CardHeader>
 

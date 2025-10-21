@@ -216,21 +216,21 @@ export default function EditCourse() {
                                 className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm mt-1"
                             >
                                 <div className="flex flex-col">
-                                    <label className="text-slate-500 text-xs uppercase mb-1">
+                                    <label className="text-slate-500 text-xs cursor-text uppercase mb-1">
                                         Name
                                     </label>
-                                    <Input value={course.name} disabled className="bg-slate-50" />
+                                    <Input value={course.name} disabled className="bg-slate-50 cursor-text" />
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label className="text-slate-500 text-xs uppercase mb-1">
+                                    <label className="text-slate-500 text-xs cursor-text uppercase mb-1">
                                         Term
                                     </label>
                                     <select
                                         title="Select"
                                         value={selectedTermId}
                                         onChange={(e) => setSelectedTermId(e.target.value)}
-                                        className="border rounded-lg border-slate-200 px-2 py-2.5 bg-white focus:ring-2 focus:ring-emerald-500"
+                                        className="border rounded-lg cursor-pointer border-slate-200 px-2 py-2.5 bg-white focus:ring-2 focus:ring-emerald-500"
                                     >
                                         <option value="">Select term</option>
                                         {terms?.map((t) => (
@@ -242,7 +242,7 @@ export default function EditCourse() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label className="text-slate-500 text-xs uppercase mb-1">
+                                    <label className="text-slate-500 cursor-text text-xs uppercase mb-1">
                                         Year
                                     </label>
                                     <Input
@@ -255,7 +255,7 @@ export default function EditCourse() {
                                 </div>
 
                                 <div className="flex flex-col col-span-2">
-                                    <label className="text-slate-500 text-xs uppercase mb-1">
+                                    <label className="text-slate-500 cursor-text text-xs uppercase mb-1">
                                         Description
                                     </label>
                                     <Textarea

@@ -245,8 +245,8 @@ export default function CourseCard({
 
           <div
             className="border border-emerald-500 rounded-md text-white px-3 py-1 bg-emerald-500 
-             shadow-2xl text-sm cursor-pointer 
-             hover:bg-emerald-600 hover:shadow-lg transition-all duration-200"
+              shadow-2xl text-sm cursor-pointer 
+              hover:bg-emerald-600 hover:shadow-lg transition-all duration-200"
             onClick={onEditClick}
             aria-label="Edit"
           >
