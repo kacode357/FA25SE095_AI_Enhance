@@ -3,8 +3,7 @@
 import { CourseService } from "@/services/course.services";
 import { GetCourseEnrollmentsQuery } from "@/types/courses/course.payload";
 import { GetCourseEnrollmentsResponse } from "@/types/courses/course.response";
-import { useState } from 'react';
-import { toast } from "sonner";
+import { useState } from "react";
 
 export function useCourseEnrollments() {
   const [data, setData] = useState<GetCourseEnrollmentsResponse | null>(null);
@@ -18,9 +17,7 @@ export function useCourseEnrollments() {
     try {
       const res = await CourseService.getEnrollments(courseId, query);
       setData(res);
-      
-      toast.success(res.message || "Course enrollments fetched successfully"); 
-      
+
       return res;
     } catch {
       setData(null);

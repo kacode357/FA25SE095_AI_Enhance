@@ -96,7 +96,7 @@ export default function ImportStudentsDialog({
 
           {responseMsg && (
             <p
-              className={`text-sm mt-1 ${failedImport ? "text-red-500" : "text-green-600"
+              className={`text-sm mt-1 ${failedImport ? "text-yellow-500" : "text-green-600"
                 }`}
             >
               {responseMsg}
