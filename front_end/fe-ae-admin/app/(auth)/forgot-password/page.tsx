@@ -4,7 +4,7 @@
 import { AuthCard, AuthShellAdmin } from "@/components/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useForgotPassword } from "@/hooks/useForgotPassword";
+import { useForgotPassword } from "@/hooks/auth/useForgotPassword";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";

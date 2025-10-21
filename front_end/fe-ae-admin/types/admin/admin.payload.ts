@@ -8,7 +8,7 @@ export interface PendingApprovalParams {
 
 export interface SuspendUserPayload {
   reason: string;
-  suspendUntil: string; 
+  suspendUntil: string;
 }
 
 export interface GetUsersParams {
@@ -20,4 +20,9 @@ export interface GetUsersParams {
   subscriptionTier?: string;
   sortBy?: string;
   sortOrder?: string;
+}
+
+/** GET /api/Admin/users/{userId} — path params */
+export interface GetUserDetailParams {
+  userId: string;
 }

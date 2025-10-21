@@ -86,7 +86,6 @@ export default function UsersFilterInline({
           <option value={UserRole.Lecturer}>Lecturer</option>
           <option value={UserRole.Student}>Student</option>
           <option value={UserRole.Staff}>Staff</option>
-          <option value={UserRole.PaidUser}>Paid User</option>
         </select>
 
         {/* Status */}

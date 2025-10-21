@@ -14,8 +14,8 @@ import {
 import { RotateCw, Users } from "lucide-react";
 import EmptyState from "../components/EmptyState";
 import TableSkeleton from "../components/TableSkeleton";
-import { usePendingApprovalUsers } from "@/hooks/usePendingApprovalUsers";
-import { useUserApproval } from "@/hooks/useUserApproval";
+import { usePendingApprovalUsers } from "@/hooks/admin/usePendingApprovalUsers";
+import { useUserApproval } from "@/hooks/admin/useUserApproval";
 import { AdminUserItemResponse } from "@/types/admin/admin.response";
 
 // Dialog components
@@ -29,7 +29,8 @@ import {
 import { Input } from "@/components/ui/input";
 
 export default function PendingApprovalPage() {
-  const { data, loading, error, fetchPendingUsers } = usePendingApprovalUsers();
+  // ⬇️ Hook không còn error
+  const { data, loading, fetchPendingUsers } = usePendingApprovalUsers();
   const { approveUser, suspendUser, loading: actionLoading } = useUserApproval();
 
   // filter state
@@ -48,6 +49,7 @@ export default function PendingApprovalPage() {
   const [suspendUntil, setSuspendUntil] = useState("");
 
   useEffect(() => {
+    // Không bắt lỗi ở đây, interceptor sẽ lo
     fetchPendingUsers({ page: 1, pageSize: 20 });
   }, [fetchPendingUsers]);
 
@@ -144,10 +146,8 @@ export default function PendingApprovalPage() {
         </CardHeader>
 
         <CardContent className="px-0 flex-1 overflow-hidden">
-          {error && (
-            <div className="p-6 text-red-500 text-sm font-medium">{error}</div>
-          )}
-          {!error && (!filtered || filtered.length === 0) && !loading ? (
+          {/* ❌ ĐÃ BỎ KHỐI HIỂN THỊ ERROR */}
+          {!filtered?.length && !loading ? (
             <div className="p-6">
               <EmptyState
                 title="No pending users"
@@ -160,6 +160,19 @@ export default function PendingApprovalPage() {
               <Table className="table-auto w-full">
                 <TableHeader className="sticky top-0 z-10 bg-slate-50">
                   {/* giữ nguyên table head, đã bỏ FilterRow */}
+                  <TableRow>
+                    <TableHead className="px-4 py-2 text-left">Email</TableHead>
+                    <TableHead className="px-4 py-2 text-left">Name</TableHead>
+                    <TableHead className="px-4 py-2 text-center">Role</TableHead>
+                    <TableHead className="px-4 py-2 text-left">Institution</TableHead>
+                    <TableHead className="px-4 py-2 text-right hidden xl:table-cell">
+                      Created At
+                    </TableHead>
+                    <TableHead className="px-4 py-2 text-right hidden xl:table-cell">
+                      Last Login
+                    </TableHead>
+                    <TableHead className="px-4 py-2 text-center">Actions</TableHead>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading && <TableSkeleton rows={5} columns={7} />}

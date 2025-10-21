@@ -4,8 +4,7 @@
 import { AuthCard, AuthShellAdmin, OAuthDivider } from "@/components/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { useLogin } from "@/hooks/useLogin";
+import { useLogin } from "@/hooks/auth/useLogin";
 import { Chrome } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -16,9 +15,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
-  // ✅ check nếu đã login thì redirect
-  useAuthRedirect();
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -98,14 +94,7 @@ export default function LoginPage() {
             <Chrome size={18} className="text-emerald-500" />
             <span className="ml-1 text-emerald-500">Sign in with Google</span>
           </Button>
-          <div className="pt-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between text-[11px] uppercase tracking-wide font-medium text-slate-500">
-              <span>SECURITY</span>
-              <span>CONTROL</span>
-              <span>OBSERVABILITY</span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-emerald-200 via-emerald-400 to-emerald-600" />
-          </div>
+         
         </form>
       </AuthCard>
     </AuthShellAdmin>

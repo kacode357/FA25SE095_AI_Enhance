@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthCard, AuthShellAdmin } from "@/components/admin";
-import { useConfirmEmail } from "@/hooks/useConfirmEmail";
+import { useConfirmEmail } from "@/hooks/auth/useConfirmEmail";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
