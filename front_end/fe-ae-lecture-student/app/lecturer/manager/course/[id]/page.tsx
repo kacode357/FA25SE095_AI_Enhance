@@ -138,13 +138,13 @@ export default function CourseDetailPage() {
             Students
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 pt-3 cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="data-[state=active]:border-b-2 pt-3inactivate cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
             value="groups"
           >
             Groups
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 pt-3 cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="data-[state=active]:border-b-2 pt-3inactivate cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
             value="assignments"
           >
             Assignments

@@ -185,3 +185,9 @@ export interface GetAvailableCoursesResponse {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
 }
+
+export interface InactivateCourseResponse {
+  success: boolean;
+  message: string;
+  courseId: string;
+}

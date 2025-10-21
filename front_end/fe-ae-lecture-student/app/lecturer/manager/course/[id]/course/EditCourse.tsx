@@ -11,9 +11,10 @@ import { useUpdateCourse } from "@/hooks/course/useUpdateCourse";
 import { useTerms } from "@/hooks/term/useTerms";
 import { CourseStatus } from "@/types/courses/course.response";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, SquarePen, X } from "lucide-react";
+import { FolderLock, Loader2, SquarePen, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import InactivateCourseDialog from "./components/InactivateCourseDialog";
 
 export default function EditCourse() {
     const [editMode, setEditMode] = useState(false);
@@ -26,6 +27,7 @@ export default function EditCourse() {
     const { updateCourse, loading: updating } = useUpdateCourse();
     const { id } = useParams<{ id: string }>();
     const { data: course, loading, error, fetchCourseById, refetch } = useGetCourseById();
+    const [inactivateOpen, setInactivateOpen] = useState(false);
 
     useEffect(() => {
         if (id) fetchCourseById(id);
@@ -126,16 +128,41 @@ export default function EditCourse() {
 
     return (
         <div className="h-screen flex flex-col px-6 py-5 overflow-hidden bg-slate-50">
+            <InactivateCourseDialog
+                open={inactivateOpen}
+                onOpenChange={setInactivateOpen}
+                courseId={id || ""}
+                courseName={course?.name}
+                lecturerId={course?.lecturerId}
+                onConfirmed={async () => {
+                    await refetch(id);
+                }}
+            />
             {/* Breadcrumb */}
-            <nav className="flex items-center text-sm mb-5 gap-2" aria-label="Breadcrumb">
-                <a
-                    href="/lecturer/manager/course"
-                    className="text-emerald-500 hover:underline cursor-pointer"
-                >
-                    Courses
-                </a>
-                <span className="text-slate-400">/</span>
-                <span className="text-emerald-800 font-semibold">{course.name}</span>
+            <nav className="flex flex-row justify-between items-center text-sm mb-5 gap-2" aria-label="Breadcrumb">
+                <div className="flex flex-row justify-between items-center text-sm gap-2">
+                    <a
+                        href="/lecturer/manager/course"
+                        className="text-emerald-500 hover:underline cursor-pointer"
+                    >
+                        Courses
+                    </a>
+                    <span className="text-slate-400">/</span>
+                    <span className="text-emerald-800 font-semibold">{course.name}</span>
+                </div>
+                {course?.status === CourseStatus.Active && (
+                    <div>
+                        <button
+                            title="Lock"
+                            onClick={() => setInactivateOpen(true)}
+                            className="bg-amber-700 text-white flex gap-2 cursor-pointer items-center px-4 py-2 rounded-md text-sm font-medium
+               hover:bg-amber-800 hover:shadow-md active:scale-95
+               transition-all duration-200 ease-in-out"
+                        >
+                            <FolderLock className="size-4" /> Inactivate Course
+                        </button>
+                    </div>
+                )}
             </nav>
 
             {/* Main Content */}
@@ -147,12 +174,14 @@ export default function EditCourse() {
                             General Information
                         </h3>
                         {!editMode ? (
-                            <SquarePen
-                                role="button"
-                                aria-label="Edit course"
-                                className="size-5 cursor-pointer text-emerald-600 hover:text-emerald-700 transition"
-                                onClick={() => setEditMode(true)}
-                            />
+                            course?.status === CourseStatus.Active ? (
+                                <SquarePen
+                                    role="button"
+                                    aria-label="Edit course"
+                                    className="size-5 cursor-pointer text-emerald-600 hover:text-emerald-700 transition"
+                                    onClick={() => setEditMode(true)}
+                                />
+                            ) : null
                         ) : (
                             <Button
                                 variant="ghost"
@@ -219,7 +248,7 @@ export default function EditCourse() {
                                     <label className="text-slate-500 text-xs cursor-text uppercase mb-1">
                                         Name
                                     </label>
-                                    <Input value={course.name} disabled className="bg-slate-50 cursor-text" />
+                                    <Input value={course.name} disabled className="!bg-slate-200 cursor-text" />
                                 </div>
 
                                 <div className="flex flex-col">

@@ -5,6 +5,7 @@ import {
   GetAvailableCoursesQuery,
   GetCourseEnrollmentsQuery,
   GetMyCoursesQuery,
+  InactivateCoursePayload,
   UpdateAccessCodeRequest,
   UpdateCoursePayload,
 } from "@/types/courses/course.payload";
@@ -15,6 +16,7 @@ import {
   GetCourseByIdResponse,
   GetCourseEnrollmentsResponse,
   GetMyCoursesResponse,
+  InactivateCourseResponse,
   UpdateAccessCodeResponse,
   UpdateCourseResponse,
 } from "@/types/courses/course.response";
@@ -80,4 +82,16 @@ export const CourseService = {
     );
     return res.data;
   },
+
+  /** PUT /api/Courses/{id}/inactivate (Lecturer only - own courses) */
+inactivateCourse: async (
+  id: string,
+  data: InactivateCoursePayload
+): Promise<InactivateCourseResponse> => {
+  const res = await courseAxiosInstance.put<InactivateCourseResponse>(
+    `/Courses/${id}/inactivate`,
+    data
+  );
+  return res.data;
+},
 };

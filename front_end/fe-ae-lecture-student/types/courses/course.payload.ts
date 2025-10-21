@@ -63,3 +63,9 @@ export interface GetAvailableCoursesQuery {
   sortBy?: "Name" | "CourseCode" | "CreatedAt" | "EnrollmentCount";
   sortDirection?: "asc" | "desc";
 }
+
+export interface InactivateCoursePayload {
+  courseId: string;
+  lecturerId: string;
+  reason: string;
+}
