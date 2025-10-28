@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useGetAccessCodes } from "@/hooks/access-code/useGetAccessCodes";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
+import { useUpdateAccessCode } from "@/hooks/course/useUpdateAccessCode";
 import { useUpdateCourse } from "@/hooks/course/useUpdateCourse";
 import { useTerms } from "@/hooks/term/useTerms";
 import { CourseStatus } from "@/types/courses/course.response";
 import { AnimatePresence, motion } from "framer-motion";
-import { FolderLock, Loader2, SquarePen, X } from "lucide-react";
+import { Eye, EyeOff, FolderLock, Loader2, SquarePen, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import InactivateCourseDialog from "./components/InactivateCourseDialog";
@@ -27,7 +29,10 @@ export default function EditCourse() {
     const { updateCourse, loading: updating } = useUpdateCourse();
     const { id } = useParams<{ id: string }>();
     const { data: course, loading, error, fetchCourseById, refetch } = useGetCourseById();
+    const { data: access, loading: accessLoading, error: accessError } = useGetAccessCodes(id || undefined);
+    const { updateAccessCode, loading: updatingAccess, error: updateAccessError } = useUpdateAccessCode();
     const [inactivateOpen, setInactivateOpen] = useState(false);
+    const [showAccessCode, setShowAccessCode] = useState(false);
 
     useEffect(() => {
         if (id) fetchCourseById(id);
@@ -332,14 +337,76 @@ export default function EditCourse() {
                 {/* RIGHT */}
                 <div className="flex-[0.35] flex flex-col gap-5 overflow-auto">
                     <Card className="p-5 border-slate-200 shadow-sm">
-                        <h3 className="text-sm font-semibold text-slate-700 mb-3">
-                            Access Code
-                        </h3>
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-slate-700 mb-3">Access Code</h3>
+                            {id && (
+                                <Button
+                                    size="sm"
+                                    variant={access?.requiresAccessCode ? "destructive" : "outline"}
+                                    onClick={async () => {
+                                        if (!id) return;
+                                        const enable = !(access?.requiresAccessCode ?? course.requiresAccessCode);
+                                        try {
+                                            await updateAccessCode(id, { requiresAccessCode: enable, regenerateCode: enable });
+                                            await refetch(id);
+                                        } catch (e) {
+                                            console.error("Failed to update access code:", e);
+                                        }
+                                    }}
+                                    disabled={updatingAccess}
+                                >
+                                    {updatingAccess ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : access?.requiresAccessCode ?? course.requiresAccessCode ? (
+                                        "Disable"
+                                    ) : (
+                                        "Enable"
+                                    )}
+                                </Button>
+                            )}
+                        </div>
                         <div className="flex flex-col gap-2 text-sm">
-                            <Info label="Requires Code" value={course.requiresAccessCode ? "Yes" : "No"} />
-                            <Info label="Access Code" value={course.accessCode || "—"} mono />
-                            <Info label="Access Code Created" value={course.accessCodeCreatedAt || "—"} />
-                            <Info label="Access Code Expires At" value={course.accessCodeExpiresAt || "—"} />
+                            {accessLoading ? (
+                                <p className="text-slate-500">Loading access code...</p>
+                            ) : accessError ? (
+                                <p className="text-red-500">Failed to load access code</p>
+                            ) : access ? (
+                                <>
+                                    <Info label="Requires Code" value={access.requiresAccessCode ? "Yes" : "No"} />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-slate-500">Access Code:</span>
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className={`font-medium font-mono tracking-tight ${showAccessCode ? "text-slate-800" : "text-slate-400"
+                                                    }`}
+                                            >
+                                                {showAccessCode ? access.accessCode || "—" : "•••••••"}
+                                            </span>
+                                            {access.accessCode && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowAccessCode((prev) => !prev)}
+                                                    className="text-slate-500 hover:text-slate-700 transition"
+                                                    title={showAccessCode ? "Hide code" : "Show code"}
+                                                >
+                                                    {showAccessCode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <Info label="Access Code Created" value={access.accessCodeCreatedAt ? String(access.accessCodeCreatedAt) : "—"} />
+                                    <Info label="Access Code Expires At" value={access.accessCodeExpiresAt ? String(access.accessCodeExpiresAt) : "—"} />
+                                    <Info label="Is Expired" value={access.isExpired ? "Yes" : "No"} />
+                                    <Info label="Failed Attempts" value={String(access.failedAttempts ?? 0)} />
+                                </>
+                            ) : (
+                                <>
+                                    <Info label="Requires Code" value={course.requiresAccessCode ? "Yes" : "No"} />
+                                    <Info label="Access Code" value={course.accessCode || "—"} mono />
+                                    <Info label="Access Code Created" value={course.accessCodeCreatedAt || "—"} />
+                                    <Info label="Access Code Expires At" value={course.accessCodeExpiresAt || "—"} />
+                                </>
+                            )}
                         </div>
                     </Card>
 

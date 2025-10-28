@@ -138,9 +138,9 @@ export default function AssignmentsPanel({
   // Create view
   if (mode === "create") {
     return (
-      <Card className="border-0 shadow-none">
+      <Card className="border-0 border-slate-100 shadow-none">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-xl md:text-2xl">New Assignment</CardTitle>
+          <CardTitle className="text-sm md:text-lg">New Assignment</CardTitle>
           <Button variant="outline" onClick={backToList}>
             Back
           </Button>

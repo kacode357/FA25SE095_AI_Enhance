@@ -138,13 +138,13 @@ export default function CourseDetailPage() {
             Students
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 pt-3inactivate cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="data-[state=active]:border-b-2 pt-3 inactivate cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
             value="groups"
           >
             Groups
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 pt-3inactivate cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="data-[state=active]:border-b-2 pt-3 inactivate cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
             value="assignments"
           >
             Assignments
@@ -153,7 +153,7 @@ export default function CourseDetailPage() {
 
         {/* STUDENTS TAB */}
         <TabsContent value="students">
-          <Card>
+          <Card className="border-slate-100">
             <CardHeader className="flex items-center justify-between pb-3">
               <CardTitle className="text-base font-semibold">
                 Student List
@@ -177,7 +177,7 @@ export default function CourseDetailPage() {
 
         {/* GROUPS TAB */}
         <TabsContent value="groups">
-          <Card>
+          <Card className="border-slate-100">
             <CardHeader className="flex items-center justify-between pb-3">
               <CardTitle className="text-base font-semibold">Groups</CardTitle>
 

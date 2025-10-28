@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { CourseService } from "@/services/course.services";
 import { CreateCoursePayload } from "@/types/courses/course.payload";
 import { CreateCourseResponse } from "@/types/courses/course.response";
-import { toast } from "sonner";
+import { useState } from "react";
 
 export function useCreateCourse() {
   const [loading, setLoading] = useState(false);
@@ -17,7 +16,7 @@ export function useCreateCourse() {
     setLoading(true);
     try {
       const res = await CourseService.createCourse(payload);
-      toast.success(res.message || "Course created successfully");
+      // toast.success(res.message || "Course created successfully");
       return res;
     } finally {
       setLoading(false);
