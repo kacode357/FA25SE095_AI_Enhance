@@ -1,63 +1,95 @@
 @import "tailwindcss";
 
+
 :root {
-  /* Light theme base */
+
   --background: #ffffff;
-  --foreground: #0f172a; /* slate-900 */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  /* Brand palette: brighter emerald/green */
-  --color-brand: #22c55e; /* green-500 */
-  --color-brand-600: #16a34a; /* green-600 */
-  --color-brand-700: #15803d; /* green-700 */
-  --color-muted: #64748b; /* slate-500 */
-  --color-card: #ffffff;
-  --color-border: #e2e8f0; /* slate-200 */
+  --foreground: #0f172a;     
+
+  /* Brand (tím) */
+  --brand: #7f71f4;
+  --brand-600: #6f60ee;
+  --brand-700: #5e4fe8;
+
+  /* Accent (cam) */
+  --accent: #f4a23b;
+  --accent-600: #ea961f;
+  --accent-700: #d9840c;
+  
+  /* Hiệu ứng focus chung (dựa trên tím) */
+  --focus-ring: rgba(127, 113, 244, 0.28);
+
+  /* === NAV Colors (header menu) === */
+  --nav: #15157a;            
+  --nav-active: #8b7cf8;     
 }
 
-.dark {
-  --background: #0a0f0a;
-  --foreground: #f6f7f7;
+
+html, body {
+  height: 100%;
 }
 
-body { background: var(--background); color: var(--foreground); }
-/* Force dark foreground within auth scope root container */
-.auth-scope { color: #f8fafc; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1400px 900px at 85% -10%, color-mix(in oklab, var(--brand) 12%, transparent), transparent),
+    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--brand) 8%, transparent), transparent),
+    linear-gradient(180deg, #f7fafc, #f8fbff);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-/* Base resets and form elements */
+/* Reset cơ bản */
 * { box-sizing: border-box; }
-a { color: var(--color-brand); text-decoration: none; }
-a:hover { color: var(--color-brand-600); }
-input, button { font-family: inherit; }
+img, video { max-width: 100%; height: auto; display: block; }
+a { color: var(--brand); text-decoration: none; }
+a:hover { color: var(--brand-600); }
+input, button, textarea, select { font-family: inherit; }
 
-/* Auth background styling (grid + vignette) */
-.auth-scope .auth-bg {
-  position: fixed;
-  inset: 0;
-  background-color: #0a0f0a; /* fallback */
-  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent),
-    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 20%, transparent), transparent),
-    linear-gradient(180deg, #0a0f0a, #020617);
+.text-brand   { color: var(--brand) !important; }
+.text-accent  { color: var(--accent) !important; }
+.bg-brand     { background-color: var(--brand) !important; }
+.bg-accent    { background-color: var(--accent) !important; }
+.border-brand { border-color: var(--brand) !important; }
+.border-accent{ border-color: var(--accent) !important; }
+
+/* Nav (header menu) */
+.text-nav { color: var(--nav) !important; }
+.text-nav-active { color: var(--nav-active) !important; }
+.hover\:text-nav-active:hover   { color: var(--nav-active) !important; }
+.focus\:text-nav-active:focus   { color: var(--nav-active) !important; }
+.active\:text-nav-active:active { color: var(--nav-active) !important; }
+.visited\:text-nav:visited      { color: var(--nav) !important; }
+
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(2, 6, 23, 0.06);
 }
-.auth-scope .auth-grid {
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size: 32px 32px;
-  -webkit-mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
-  mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
+
+/* Input theo brand tím */
+.input {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--foreground);
+  padding: 10px 12px;
+  border-radius: 10px;
+  outline: none;
+  transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
 }
-
-/* Card */
-.card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 6px 24px rgba(2,6,23,0.06); }
-
-.input { width: 100%; border: 1px solid var(--color-border); background: #ffffff; color: #0f172a; padding: 10px 12px; border-radius: 10px; outline: none; }
+.input::placeholder {
+  color: color-mix(in oklab, var(--brand) 35%, #94a3b8);
+}
 .input:focus {
-  border-color: var(--color-brand-600);
-  box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
+/* Button cơ bản */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -66,130 +98,37 @@ input, button { font-family: inherit; }
   border-radius: 12px;
   padding: 10px 14px;
   font-weight: 600;
+  transition: filter .15s ease, transform .02s ease, box-shadow .15s ease;
+  cursor: pointer;
+  border: 0;                
 }
-.btn-primary { background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700)); color: #ffffff; }
-.btn-primary:hover { filter: brightness(1.02) saturate(1.05); }
-.btn-ghost { background: transparent; color: #065f46; }
-.btn-ghost:hover { background: rgba(16,185,129,0.08); }
 
-/* Auth-scope color overrides: lighter/brighter tone */
-.auth-scope {
-  color-scheme: light;
-  /* keep text readable on light backgrounds within auth */
-  color: var(--foreground);
+/* Gradient tím hồng (CTA) */
+.btn-gradient {
+  background: linear-gradient(135deg, #f4a7df 0%, #7f71f4 100%);
+  color: #ffffff;
+  border-radius: 7px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1; 
+  transition: color 0.7s ease-in-out; 
 }
-.auth-scope .auth-bg {
-  /* soften the background to a subtle pale vignette instead of dark */
-  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 8%, transparent), transparent),
-    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 6%, transparent), transparent),
-    linear-gradient(180deg, #fbfdfc, #f6fbf7);
+
+.btn-gradient::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #13127d;
+  z-index: -1; 
+  transition: clip-path 0.7s cubic-bezier(0.2, 1, 0.3, 1);
+  clip-path: circle(0% at 50% 50%); 
 }
-.auth-scope .card {
-  --color-card: #ffffff;
-  --color-border: rgba(15, 23, 42, 0.06); /* subtle slate border */
-  background: var(--color-card);
-  border-color: var(--color-border);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+
+.btn-gradient:hover::after {
+  clip-path: circle(150% at 50% 50%); 
 }
-.auth-scope .input {
-  background: #ffffff;
-  color: var(--foreground);
-  border-color: var(--color-border);
-}
-.auth-scope .input::placeholder { color: rgba(99, 102, 241, 0.35); }
-.auth-scope .btn-ghost { color: var(--color-brand-600); }
-.auth-scope a { color: var(--color-brand); }
-.auth-scope a:hover { color: var(--color-brand-600); }
 
-/* ================= RTE overrides ================= */
-@layer base {
-  /* Nếu editor/viewer lỡ nằm trong .prose thì clear style prose */
-  .prose .rte h1,
-  .prose .rte h2,
-  .prose .rte h3,
-  .prose .rte p,
-  .prose .rte blockquote {
-    all: unset;
-    display: block;
-  }
-  .prose .rte ul,
-  .prose .rte ol {
-    list-style: revert !important;
-    padding-left: 1.5rem !important;
-  }
 
-  /* Heading sizes (editor & viewer) */
-  .rte h1, .rte-view h1 {
-    font-size: 1.75rem !important;   /* ~28px */
-    line-height: 2.25rem !important; /* ~36px */
-    font-weight: 700 !important;
-    margin: 0.75rem 0 0.5rem !important;
-  }
-  .rte h2, .rte-view h2 {
-    font-size: 1.5rem !important;    /* 24px */
-    line-height: 2rem !important;    /* 32px */
-    font-weight: 700 !important;
-    margin: 0.75rem 0 0.5rem !important;
-  }
-  .rte h3, .rte-view h3 {
-    font-size: 1.25rem !important;   /* 20px */
-    line-height: 1.75rem !important; /* 28px */
-    font-weight: 600 !important;
-    margin: 0.5rem 0 0.4rem !important;
-  }
-
-  /* Paragraph */
-  .rte p, .rte-view p {
-    margin: 0.25rem 0 !important;
-  }
-
-  /* Blockquote UI */
-  .rte blockquote, .rte-view blockquote {
-    border-left: 3px solid #cbd5e1 !important;
-    margin: 0.5rem 0 !important;
-    padding: 0.35rem 0.75rem !important;
-    color: #475569 !important;
-    background: #f8fafc !important;
-    border-radius: 0.25rem !important;
-  }
-
-  /* ===== Force list markers hiển thị (thắng Tailwind reset) ===== */
-  .rte ul, .rte-view ul {
-    list-style-type: disc !important;
-    list-style-position: outside !important;
-    padding-left: 1.5rem !important;
-    margin: 0.35rem 0 !important;
-  }
-  .rte ol, .rte-view ol {
-    list-style-type: decimal !important;
-    list-style-position: outside !important;
-    padding-left: 1.5rem !important;
-    margin: 0.35rem 0 !important;
-  }
-  .rte li, .rte-view li {
-    display: list-item !important;
-    margin: 0.125rem 0 !important;
-  }
-  .rte li::marker, .rte-view li::marker {
-    color: #334155 !important; /* slate-700 */
-  }
-  .dark .rte li::marker, .dark .rte-view li::marker {
-    color: #e2e8f0 !important; /* slate-100 */
-  }
-
-  /* Link look */
-  .rte a, .rte-view a {
-    color: #2563eb !important;
-    text-decoration: underline !important;
-  }
-
-  /* Ảnh trong nội dung */
-  .rte img, .rte-view img {
-    max-width: 100% !important;
-    height: auto !important;
-    border-radius: 0.5rem !important;
-    display: inline-block !important;
-  }
-}

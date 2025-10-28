@@ -8,7 +8,7 @@ import { UserRole } from "@/config/classroom-service/user-role";
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const { allowed } = useRoleGuard(UserRole.Student);
 
-  if (!allowed) return null; // Không render gì, hook sẽ tự redirect nếu cần
+  if (!allowed) return null; 
 
   return (
     <div

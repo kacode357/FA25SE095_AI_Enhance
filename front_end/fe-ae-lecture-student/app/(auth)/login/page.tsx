@@ -20,14 +20,16 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // ⬇️ Không còn isReady
   const { user } = useAuth();
   const router = useRouter();
 
   // Nếu đã đăng nhập thì vào thẳng HOME theo role
   useEffect(() => {
     if (!user) return;
-    const rawRole = (user as any)?.role ?? (user as any)?.roleName ?? (user as any)?.role?.name;
+    const rawRole =
+      (user as any)?.role ??
+      (user as any)?.roleName ??
+      (user as any)?.role?.name;
     const role = mapRole(rawRole);
     const target = role ? ROLE_HOME[role] : "/";
     router.replace(target);
@@ -88,8 +90,8 @@ export default function LoginPage() {
           required
         />
 
-        <div className="flex items-center mb-6 justify-between text-sm text-slate-600">
-          <label className="inline-flex items-center gap-2 select-none">
+        <div className="mb-6 flex items-center justify-between text-sm text-slate-600">
+          <label className="inline-flex select-none items-center gap-2">
             <input
               type="checkbox"
               checked={rememberMe}
@@ -103,17 +105,25 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <Button type="submit" className="w-full" loading={loading}>
-          Sign in
-        </Button>
+        {/* ✅ Nút Gradient tím hồng (CTA) từ globals.css */}
+        <button
+          type="submit"
+          className="btn btn-gradient w-full"
+          disabled={loading}
+          aria-busy={loading}
+        >
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
 
         <div className="relative my-4">
           <div className="border-t border-slate-200" />
-          <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[--color-card] px-2 text-[11px] tracking-wide text-slate-500">
+          {/* fix var: --color-card -> --card */}
+          <span className="bg-[--card] absolute -top-2 left-1/2 -translate-x-1/2 px-2 text-[11px] tracking-wide text-slate-500">
             Or continue with
           </span>
         </div>
 
+        {/* Giữ nút Google như cũ */}
         <Button
           type="button"
           variant="ghost"
@@ -133,8 +143,14 @@ export default function LoginPage() {
           className="text-center text-xs text-slate-500"
         >
           By continuing, you agree to our{" "}
-          <a href="#" className="text-green-600">Terms</a> and{" "}
-          <a href="#" className="text-green-600">Privacy Policy</a>.
+          <a href="#" className="text-green-600">
+            Terms
+          </a>{" "}
+          and{" "}
+          <a href="#" className="text-green-600">
+            Privacy Policy
+          </a>
+          .
         </motion.div>
       </form>
     </AuthShell>
