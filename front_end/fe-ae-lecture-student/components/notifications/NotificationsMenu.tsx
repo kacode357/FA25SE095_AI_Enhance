@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 type Props = {
   open: boolean;
@@ -39,7 +39,7 @@ export default function NotificationsMenu({
     <div ref={rootRef} className="relative">
       <button
         onClick={toggle}
-        className="relative p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+        className="relative p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
         aria-label="Notifications"
         aria-expanded={open}
         aria-haspopup="menu"

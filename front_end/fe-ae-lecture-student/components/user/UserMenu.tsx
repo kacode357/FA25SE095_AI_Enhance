@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import Link from "next/link";
 import { ChevronDown, CircleArrowOutUpRight } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef } from "react";
 
 type UserLite = {
   id?: string;
@@ -52,9 +52,9 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
   }, [onOpenChange]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative cursor-pointer">
       <button
-        className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 hover:shadow-md transition-all"
+        className="flex items-center cursor-pointer gap-3 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 hover:shadow-md transition-all"
         onClick={toggle}
         aria-expanded={open}
         aria-haspopup="menu"
@@ -97,7 +97,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
             </Link>
             <hr className="my-1 border-gray-200" />
             <button
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
               onClick={() => {
                 onOpenChange(false);
                 onLogout();

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 
 type LogoProps = {
   href?: string;
@@ -30,8 +30,8 @@ export default function Logo({
         <Image
           src={imgSrc}
           alt={imgAlt}
-          width={32}
-          height={32}
+          width={50}
+          height={50}
           className="drop-shadow-sm"
           priority
         />
@@ -39,10 +39,10 @@ export default function Logo({
       </div>
 
       <div className="flex flex-col">
-        <span className="font-bold text-black text-lg tracking-tight">
+        <span className="font-bold text-nav-active font-sans text-lg tracking-tight">
           {title}
         </span>
-        <span className="text-xs text-black font-medium">{subtitle}</span>
+        <span className="text-xs text-nav-active font-sans  font-medium">{subtitle}</span>
       </div>
     </Link>
   );

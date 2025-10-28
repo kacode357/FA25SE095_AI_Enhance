@@ -1,12 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 
-
 :root {
+  --font-sans: 'Sansation', 'Roboto', sans-serif;
 
+  /* Core colors */
   --background: #ffffff;
-  --foreground: #0f172a;     
+  --foreground: #0f172a;
+  --white: #ffffff;
 
-  /* Brand (tím) */
+  /* Brand (tím / pink gradient accents) */
   --brand: #7f71f4;
   --brand-600: #6f60ee;
   --brand-700: #5e4fe8;
@@ -15,53 +18,108 @@
   --accent: #f4a23b;
   --accent-600: #ea961f;
   --accent-700: #d9840c;
-  
+
+  /* Neutral / surfaces */
+  --card: #ffffff;
+  --border: #e6e9f2;
+  --muted: #94a3b8;
+  --text-muted: #6b7280;
+
   /* Hiệu ứng focus chung (dựa trên tím) */
   --focus-ring: rgba(127, 113, 244, 0.28);
 
   /* === NAV Colors (header menu) === */
-  --nav: #15157a;            
-  --nav-active: #8b7cf8;     
+  --nav: #15157a;
+  --nav-active: #8b7cf8;
 }
 
-
-html, body {
+html,
+body {
   height: 100%;
 }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1400px 900px at 85% -10%, color-mix(in oklab, var(--brand) 12%, transparent), transparent),
-    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--brand) 8%, transparent), transparent),
+  background: radial-gradient(
+      1400px 900px at 85% -10%,
+      color-mix(in oklab, var(--brand) 12%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      900px 700px at 0% 100%,
+      color-mix(in oklab, var(--brand) 8%, transparent),
+      transparent
+    ),
     linear-gradient(180deg, #f7fafc, #f8fbff);
   color: var(--foreground);
+  /* Global font for lecture-student app */
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* Reset cơ bản */
-* { box-sizing: border-box; }
-img, video { max-width: 100%; height: auto; display: block; }
-a { color: var(--brand); text-decoration: none; }
-a:hover { color: var(--brand-600); }
-input, button, textarea, select { font-family: inherit; }
+* {
+  box-sizing: border-box;
+}
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--brand-600);
+}
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
+}
 
-.text-brand   { color: var(--brand) !important; }
-.text-accent  { color: var(--accent) !important; }
-.bg-brand     { background-color: var(--brand) !important; }
-.bg-accent    { background-color: var(--accent) !important; }
-.border-brand { border-color: var(--brand) !important; }
-.border-accent{ border-color: var(--accent) !important; }
+.text-brand {
+  color: var(--brand) !important;
+}
+.text-accent {
+  color: var(--accent) !important;
+}
+.bg-brand {
+  background-color: var(--brand) !important;
+}
+.bg-accent {
+  background-color: var(--accent) !important;
+}
+.border-brand {
+  border-color: var(--brand) !important;
+}
+.border-accent {
+  border-color: var(--accent) !important;
+}
 
 /* Nav (header menu) */
-.text-nav { color: var(--nav) !important; }
-.text-nav-active { color: var(--nav-active) !important; }
-.hover\:text-nav-active:hover   { color: var(--nav-active) !important; }
-.focus\:text-nav-active:focus   { color: var(--nav-active) !important; }
-.active\:text-nav-active:active { color: var(--nav-active) !important; }
-.visited\:text-nav:visited      { color: var(--nav) !important; }
-
+.text-nav {
+  color: var(--nav) !important;
+}
+.text-nav-active {
+  color: var(--nav-active) !important;
+}
+.hover\:text-nav-active:hover {
+  color: var(--nav-active) !important;
+}
+.focus\:text-nav-active:focus {
+  color: var(--nav-active) !important;
+}
+.active\:text-nav-active:active {
+  color: var(--nav-active) !important;
+}
+.visited\:text-nav:visited {
+  color: var(--nav) !important;
+}
 
 .card {
   background: var(--card);
@@ -79,7 +137,8 @@ input, button, textarea, select { font-family: inherit; }
   padding: 10px 12px;
   border-radius: 10px;
   outline: none;
-  transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 .input::placeholder {
   color: color-mix(in oklab, var(--brand) 35%, #94a3b8);
@@ -98,9 +157,9 @@ input, button, textarea, select { font-family: inherit; }
   border-radius: 12px;
   padding: 10px 14px;
   font-weight: 600;
-  transition: filter .15s ease, transform .02s ease, box-shadow .15s ease;
+  transition: filter 0.15s ease, transform 0.02s ease, box-shadow 0.15s ease;
   cursor: pointer;
-  border: 0;                
+  border: 0;
 }
 
 /* Gradient tím hồng (CTA) */
@@ -110,25 +169,23 @@ input, button, textarea, select { font-family: inherit; }
   border-radius: 7px;
   position: relative;
   overflow: hidden;
-  z-index: 1; 
-  transition: color 0.7s ease-in-out; 
+  z-index: 1;
+  transition: color 0.7s ease-in-out;
 }
 
 .btn-gradient::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: #13127d;
-  z-index: -1; 
+  z-index: -1;
   transition: clip-path 0.7s cubic-bezier(0.2, 1, 0.3, 1);
-  clip-path: circle(0% at 50% 50%); 
+  clip-path: circle(0% at 50% 50%);
 }
 
 .btn-gradient:hover::after {
-  clip-path: circle(150% at 50% 50%); 
+  clip-path: circle(150% at 50% 50%);
 }
-
-
