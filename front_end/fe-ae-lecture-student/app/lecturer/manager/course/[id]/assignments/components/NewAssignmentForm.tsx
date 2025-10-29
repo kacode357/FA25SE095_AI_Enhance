@@ -1,17 +1,18 @@
 // app/lecture/manager/course/[id]/assignments/components/NewAssignmentForm.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import LiteRichTextEditor from "@/components/common/LiteRichTextEditor";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import LiteRichTextEditor from "@/components/common/LiteRichTextEditor";
+import { courseAxiosInstance } from "@/config/axios.config";
 import { useCreateAssignment } from "@/hooks/assignment/useCreateAssignment";
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
+import { useGetTopicsDropdown } from "@/hooks/topic/useGetTopicsDropdown";
 import type { CreateAssignmentPayload } from "@/types/assignments/assignment.payload";
-import { courseAxiosInstance } from "@/config/axios.config";
+import { useEffect, useMemo, useState } from "react";
 
 function normalizeHtmlForSave(input?: string | null): string {
   if (!input) return "";
@@ -32,10 +33,12 @@ type Props = {
 
 export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Props) {
   const { createAssignment, loading } = useCreateAssignment();
+  const { data: topics, loading: loadingTopics, fetchDropdown } = useGetTopicsDropdown();
   const { listData: courseGroups, loading: loadingGroups, fetchByCourseId } = useGroupsByCourseId();
 
   const [form, setForm] = useState({
     title: "",
+    topicId: "",
     description: "",
     startDate: "",
     dueDate: "",
@@ -51,6 +54,10 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
+  useEffect(() => {
+    fetchDropdown();
+  }, []);
+
   const selectedGroupSet = useMemo(() => new Set(form.groupIds), [form.groupIds]);
 
   const toggleGroup = (gid: string, checked: boolean | string) => {
@@ -65,6 +72,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
   const resetForm = () =>
     setForm({
       title: "",
+      topicId: "",
       description: "",
       startDate: "",
       dueDate: "",
@@ -94,6 +102,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     const payload: CreateAssignmentPayload = {
       courseId,
       title: form.title.trim(),
+      topicId: form.topicId.trim(),
       description: descriptionClean || undefined,
       startDate: new Date(form.startDate).toISOString(),
       dueDate: new Date(form.dueDate).toISOString(),
@@ -134,25 +143,49 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value }))}
           />
         </div>
-
         <div>
-          <Label className="text-sm">Start Date *</Label>
-          <Input
-            type="datetime-local"
-            value={form.startDate}
-            onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
-          />
+          <Label className="text-sm">Topic</Label>
+          {loadingTopics ? (
+            <div className="text-sm text-slate-500 p-2">Loading topics...</div>
+          ) : (topics?.length ?? 0) === 0 ? (
+            <div className="text-sm text-slate-500 p-2">No topics available.</div>
+          ) : (
+            <select
+              title="Topic"
+              className="w-full border border-slate-200 placeholder:text-xs rounded-lg px-2 py-3"
+              value={form.topicId}
+              onChange={(e) => setForm((p) => ({ ...p, topicId: e.target.value }))}
+            >
+              <option value="">Select a topic</option>
+              {topics?.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
+        <div className="flex gap-5 justify-start w-full">
+          <div>
+            <Label className="text-sm">Start Date *</Label>
+            <Input
+              type="datetime-local"
+              value={form.startDate}
+              onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
+              className="w-full"
+            />
+          </div>
 
-        <div>
-          <Label className="text-sm">Due Date *</Label>
-          <Input
-            type="datetime-local"
-            value={form.dueDate}
-            onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
-          />
+          <div>
+            <Label className="text-sm">Due Date *</Label>
+            <Input
+              type="datetime-local"
+              value={form.dueDate}
+              onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
+              className="w-full"
+            />
+          </div>
         </div>
-
         <div className="md:col-span-2">
           <Label className="text-sm block mb-1">Description (rich text)</Label>
           <LiteRichTextEditor
@@ -160,7 +193,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             value={form.description}
             onChange={(html) => setForm((p) => ({ ...p, description: html }))}
             placeholder="Mô tả bài tập…"
-            // onImageUpload={uploadImageToServer} // bật nếu editor hỗ trợ
+          // onImageUpload={uploadImageToServer} // bật nếu editor hỗ trợ
           />
         </div>
 

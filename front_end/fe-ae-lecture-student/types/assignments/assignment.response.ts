@@ -30,6 +30,8 @@ export interface AssignmentItem {
   courseId: string;
   courseName: string;
   title: string;
+  topicId: string;
+  topicName: string;
   startDate: string;
   dueDate: string;
   extendedDueDate: string | null;

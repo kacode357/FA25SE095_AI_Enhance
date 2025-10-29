@@ -12,9 +12,11 @@ import { useAssignments } from "@/hooks/assignment/useAssignments";
 import type { AssignmentStatusFilter, GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
 import type { AssignmentStatus } from "@/types/assignments/assignment.response";
 
+import { toast } from "sonner";
 import AssignmentDetailView from "./components/AssignmentDetailView";
 import AssignmentsFilterBar, { FilterState } from "./components/AssignmentsFilterBar";
 import NewAssignmentForm from "./components/NewAssignmentForm";
+import NewTopicSheet from "./components/NewTopicSheet";
 
 type Props = {
   courseId: string;
@@ -57,6 +59,7 @@ export default function AssignmentsPanel({
 
   const [mode, setMode] = useState<"list" | "create" | "detail">("list");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [topicSheetOpen, setTopicSheetOpen] = useState(false);
 
   // paging (page tách riêng để giữ PaginationBar đơn giản)
   const [page, setPage] = useState<number>(1);
@@ -106,15 +109,15 @@ export default function AssignmentsPanel({
     setFilter((prev) => ({ ...prev, ...patch }));
     // reset page khi filter thay đổi (trừ pageSize riêng sẽ tự set 1 từ component)
     if ("search" in patch ||
-        "statuses" in patch ||
-        "groupType" in patch ||
-        "dueFrom" in patch ||
-        "dueTo" in patch ||
-        "isUpcoming" in patch ||
-        "isOverdue" in patch ||
-        "sortBy" in patch ||
-        "sortOrder" in patch ||
-        "pageSize" in patch) {
+      "statuses" in patch ||
+      "groupType" in patch ||
+      "dueFrom" in patch ||
+      "dueTo" in patch ||
+      "isUpcoming" in patch ||
+      "isOverdue" in patch ||
+      "sortBy" in patch ||
+      "sortOrder" in patch ||
+      "pageSize" in patch) {
       setPage(1);
     }
   };
@@ -162,8 +165,13 @@ export default function AssignmentsPanel({
     <Card className="border-0 shadow-none">
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <CardTitle className="text-xl font-semibold md:text-xl">Assignments</CardTitle>
-        <div className="flex items-center cursor-pointer gap-2">
-          <Button className="cursor-pointer text-xs" onClick={openCreate}>New Assignment</Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center cursor-pointer gap-2">
+            <Button className="cursor-pointer text-xs" onClick={() => setTopicSheetOpen(true)}>Topic</Button>
+          </div>
+          <div className="flex items-center cursor-pointer gap-2">
+            <Button className="cursor-pointer text-xs" onClick={openCreate}>New Assignment</Button>
+          </div>
         </div>
       </CardHeader>
 
@@ -236,6 +244,14 @@ export default function AssignmentsPanel({
             totalCount={totalCount}
             loading={loading}
             onPageChange={(p) => setPage(p)}
+          />
+
+          <NewTopicSheet
+            open={topicSheetOpen}
+            onOpenChange={setTopicSheetOpen}
+            onCreated={() => {
+              toast.success("Topic created!");
+            }}
           />
         </div>
       </CardContent>

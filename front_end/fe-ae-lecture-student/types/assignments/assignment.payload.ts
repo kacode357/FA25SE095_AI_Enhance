@@ -6,6 +6,7 @@ export type AssignmentStatusFilter = 0 | 1 | 2 | 3 | 4;
 export interface CreateAssignmentPayload {
   courseId: string;                 // uuid
   title: string;
+  topicId: string;
   description?: string;
   startDate: string;                // ISO datetime
   dueDate: string;                  // ISO datetime
