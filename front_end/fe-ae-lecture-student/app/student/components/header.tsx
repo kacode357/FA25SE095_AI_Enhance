@@ -51,7 +51,7 @@ export default function Header() {
                   className={
                     "text-base font-semibold leading-none transition-colors visited:text-nav " +
                     (item.isActive
-                      ? "text-nav-active underline" // active: tím
+                      ? "text-nav-active" // đã bỏ 'underline' ở trạng thái active
                       : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active")
                   }
                 >
