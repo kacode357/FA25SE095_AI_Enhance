@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Filter, Search, RotateCcw } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Filter, Search, RotateCcw, SortAsc } from "lucide-react";
 
 type Props = {
   onFilter: (filters: {
@@ -19,70 +17,76 @@ export default function FilterBar({ onFilter, onReset }: Props) {
   const [lecturerName, setLecturerName] = useState("");
   const [sortBy, setSortBy] = useState<"CreatedAt" | "Name" | "EnrollmentCount">("CreatedAt");
 
-  const handleApply = () => onFilter({ name, lecturerName, sortBy });
+  const canApply = useMemo(() => name.trim() !== "" || lecturerName.trim() !== "" || sortBy !== "CreatedAt", [name, lecturerName, sortBy]);
 
-  const handleReset = () => {
-    setName("");
-    setLecturerName("");
-    setSortBy("CreatedAt");
-    onReset?.();
-  };
+  const handleApply = () => onFilter({ name, lecturerName, sortBy });
+  const handleReset = () => { setName(""); setLecturerName(""); setSortBy("CreatedAt"); onReset?.(); };
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") handleApply(); };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-3 md:p-3 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-      {/* Left */}
-      <div className="flex flex-col sm:flex-row gap-2 flex-1">
-        <div className="flex items-center gap-2 flex-1">
-          <Search className="w-3.5 h-3.5 text-green-600" />
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Search by course code..."
-            className="h-8 text-sm"
-          />
+    <div
+      className="rounded-2xl shadow-sm"
+      style={{ background: "rgba(255,255,255,0.9)", border: "1px solid var(--border)" }}
+    >
+      <div className="flex flex-col gap-3 p-3 md:p-4 md:flex-row md:items-center">
+        {/* LEFT: 3 fields in grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
+          {/* Search */}
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4" style={{ color: "var(--brand)" }} />
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Search by course code..."
+              className="input h-10 text-sm"
+            />
+          </div>
+
+          {/* Lecturer */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4" style={{ color: "var(--brand)" }} />
+            <input
+              value={lecturerName}
+              onChange={(e) => setLecturerName(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Filter by lecturer name..."
+              className="input h-10 text-sm"
+            />
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <SortAsc className="w-4 h-4" style={{ color: "var(--brand)" }} />
+            <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+              Sort by:
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="input h-10 text-sm"
+              style={{ minWidth: 180 }}
+            >
+              <option value="CreatedAt">Newest</option>
+              <option value="Name">Name</option>
+              <option value="EnrollmentCount">Most Enrolled</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-1">
-          <Filter className="w-3.5 h-3.5 text-green-600" />
-          <Input
-            value={lecturerName}
-            onChange={(e) => setLecturerName(e.target.value)}
-            placeholder="Filter by lecturer name..."
-            className="h-8 text-sm"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-600">Sort by:</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as "CreatedAt" | "Name" | "EnrollmentCount")}
-            className="h-8 rounded-lg border border-slate-300 px-2 text-sm focus:ring-2 focus:ring-green-300 focus:outline-none"
+        {/* RIGHT: Buttons */}
+        <div className="flex items-center gap-2 justify-end">
+          <button onClick={handleApply} disabled={!canApply} className="btn btn-gradient h-10 px-4 text-sm">
+            <Filter className="w-3.5 h-3.5" /> Apply
+          </button>
+          <button
+            onClick={handleReset}
+            className="btn h-10 px-4 text-sm"
+            style={{ background: "var(--card)", color: "var(--brand)", border: "1px solid var(--brand)" }}
           >
-            <option value="CreatedAt">Newest</option>
-            <option value="Name">Name</option>
-            <option value="EnrollmentCount">Most Enrolled</option>
-          </select>
+            <RotateCcw className="w-3.5 h-3.5" /> Reset
+          </button>
         </div>
-      </div>
-
-      {/* Right buttons */}
-      <div className="flex items-center gap-2 justify-end">
-        <Button
-          onClick={handleApply}
-          className="h-8 px-3 text-sm rounded-lg bg-green-600 hover:bg-green-700 text-white"
-        >
-          <Filter className="w-3.5 h-3.5 mr-1" />
-          Apply
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleReset}
-          className="h-8 px-3 text-sm rounded-lg border-green-600 text-green-600 hover:bg-green-50"
-        >
-          <RotateCcw className="w-3.5 h-3.5 mr-1" />
-          Reset
-        </Button>
       </div>
     </div>
   );

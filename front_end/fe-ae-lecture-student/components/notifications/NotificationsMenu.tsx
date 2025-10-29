@@ -15,7 +15,6 @@ export default function NotificationsMenu({
   badgeCount = 3,
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-
   const toggle = () => onOpenChange(!open);
 
   // Outside click + ESC
@@ -39,15 +38,25 @@ export default function NotificationsMenu({
     <div ref={rootRef} className="relative">
       <button
         onClick={toggle}
-        className="relative p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+        className="relative p-2 rounded-lg cursor-pointer transition-colors text-nav hover:bg-[var(--focus-ring)] focus:bg-[var(--focus-ring)] focus:outline-none"
         aria-label="Notifications"
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <Bell className="w-5 h-5 text-gray-600" />
+        <Bell className="w-5 h-5" />
         {badgeCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-3 h-3 px-0.5 bg-red-500 rounded-full flex items-center justify-center">
-            <span className="text-[10px] text-white font-bold leading-none">
+          <span
+            // Đã fix: Tăng kích thước và điều chỉnh vị trí
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-0.5 rounded-full flex items-center justify-center"
+            style={{
+              background: "var(--accent)",
+              border: "2px solid var(--card)",
+            }}
+          >
+            <span
+              className="text-[10px] font-bold leading-none"
+              style={{ color: "var(--white)" }}
+            >
               {badgeCount}
             </span>
           </span>
@@ -57,31 +66,57 @@ export default function NotificationsMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50"
+          className="absolute right-0 top-12 w-80 rounded-2xl shadow-xl py-2 z-50"
+          style={{
+            background: "var(--card)",
+            border: "1px solid var(--border)",
+            color: "var(--foreground)",
+          }}
         >
-          <div className="px-4 py-2 border-b border-gray-200">
-            <h3 className="font-semibold text-black">Notifications</h3>
+          <div
+            className="px-4 py-2"
+            style={{ borderBottom: "1px solid var(--border)" }}
+          >
+            <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>
+              Notifications
+            </h3>
           </div>
+
           <div className="max-h-80 overflow-y-auto">
             <button
-              className="w-full text-left px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              className="w-full text-left px-4 py-3 transition-colors"
               onClick={() => onOpenChange(false)}
               role="menuitem"
             >
-              <p className="text-sm text-black">
-                You have new assignments to review
-              </p>
-              <p className="text-xs text-gray-500 mt-1">2 minutes ago</p>
+              <div className="rounded-md hover:bg-[var(--focus-ring)] p-2 -m-2">
+                <p className="text-sm" style={{ color: "var(--foreground)" }}>
+                  You have new assignments to review
+                </p>
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  2 minutes ago
+                </p>
+              </div>
             </button>
+
             <button
-              className="w-full text-left px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              className="w-full text-left px-4 py-3 transition-colors"
               onClick={() => onOpenChange(false)}
               role="menuitem"
             >
-              <p className="text-sm text-black">
-                Course “CS101” has a new announcement
-              </p>
-              <p className="text-xs text-gray-500 mt-1">5 minutes ago</p>
+              <div className="rounded-md hover:bg-[var(--focus-ring)] p-2 -m-2">
+                <p className="text-sm" style={{ color: "var(--foreground)" }}>
+                  Course “CS101” has a new announcement
+                </p>
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  5 minutes ago
+                </p>
+              </div>
             </button>
           </div>
         </div>

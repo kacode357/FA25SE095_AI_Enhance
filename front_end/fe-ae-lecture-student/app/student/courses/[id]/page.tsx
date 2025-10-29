@@ -1,3 +1,4 @@
+// app/student/courses/[id]/page.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -15,38 +16,52 @@ import {
   ListTodo,
 } from "lucide-react";
 
-// Mày nhớ kiểm tra lại các component này đã được import đúng chưa
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+// Button của shadcn để lại, nhưng tao style theo globals.css ở className
 import { Button } from "@/components/ui/button";
 
-// Mày nhớ kiểm tra lại các hook và type này đã tồn tại chưa
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 import Link from "next/link";
 
+/* ===== Helpers (màu theo globals.css) ===== */
+const badgeStyle = (bg: string, fg: string) => ({
+  background: bg,
+  color: fg,
+  border: "1px solid var(--border)",
+});
+const statusBadge = (s: AssignmentStatus) => {
+  switch (s) {
+    case AssignmentStatus.Draft:
+      return badgeStyle("rgba(148,163,184,0.10)", "var(--foreground)");
+    case AssignmentStatus.Active:
+      return badgeStyle("rgba(127,113,244,0.10)", "var(--brand)");
+    case AssignmentStatus.Extended:
+      return badgeStyle("rgba(244,162,59,0.10)", "var(--accent)");
+    case AssignmentStatus.Overdue:
+      return badgeStyle("rgba(220,38,38,0.08)", "#b91c1c");
+    case AssignmentStatus.Closed:
+    default:
+      return badgeStyle("rgba(15,23,42,0.06)", "var(--text-muted)");
+  }
+};
+
 export default function CourseDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  // Đảm bảo courseId là string, nếu không có thì là rỗng
   const courseId = typeof id === "string" ? id : "";
 
-  // Course info
   const { data: course, loading: loadingCourse, error, fetchCourseById } = useGetCourseById();
-
-  // Assignments
   const { listData, loading: loadingAssignments, fetchAssignments } = useAssignments();
 
-  // Guard để không fetch lặp trong Strict Mode của React (Next.js)
   const didFetchRef = useRef(false);
 
   useEffect(() => {
-    // Nếu không có ID hoặc đã fetch rồi thì dừng
     if (!courseId) return;
     if (didFetchRef.current) return;
     didFetchRef.current = true;
 
-    // Fetch dữ liệu
     fetchCourseById(courseId);
     fetchAssignments({
       courseId,
@@ -55,51 +70,30 @@ export default function CourseDetailPage() {
       pageNumber: 1,
       pageSize: 10,
     });
-  }, [courseId, fetchCourseById, fetchAssignments]); // dependency đầy đủ
+  }, [courseId, fetchCourseById, fetchAssignments]);
 
-  // Lấy danh sách assignment và tổng số lượng
   const assignments = listData?.assignments ?? [];
   const totalAssignments = listData?.totalCount ?? 0;
 
-  // Hàm helper để định nghĩa màu sắc cho status badge
-  const statusStyle = (s: AssignmentStatus) => {
-    switch (s) {
-      case AssignmentStatus.Draft:
-        return "bg-slate-100 text-slate-700 border border-slate-200";
-      case AssignmentStatus.Active:
-        return "bg-emerald-50 text-emerald-700 border border-emerald-200";
-      case AssignmentStatus.Extended:
-        return "bg-amber-50 text-amber-700 border border-amber-200";
-      case AssignmentStatus.Overdue:
-        return "bg-red-50 text-red-700 border border-red-200";
-      case AssignmentStatus.Closed:
-        return "bg-gray-100 text-gray-700 border border-gray-200";
-      default:
-        return "bg-slate-100 text-slate-700 border border-slate-200";
-    }
-  };
-
-  // --- RENDERING GUARDS ---
-
   if (!courseId) {
     return (
-      <div className="py-16 text-center text-slate-600">
+      <div className="py-16 text-center" style={{ color: "var(--text-muted)" }}>
         <p>Không tìm thấy <b>courseId</b> trong URL.</p>
-        <Button
-          variant="outline"
-          className="mt-4"
+        <button
+          className="btn mt-4"
+          style={{ background: "var(--card)", color: "var(--brand)", border: "1px solid var(--brand)" }}
           onClick={() => router.push("/student/my-courses")}
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <ArrowLeft className="w-4 h-4" />
           Back to My Courses
-        </Button>
+        </button>
       </div>
     );
   }
 
   if (loadingCourse) {
     return (
-      <div className="flex items-center justify-center h-[60vh] text-green-700">
+      <div className="flex items-center justify-center h-[60vh]" style={{ color: "var(--brand)" }}>
         <BookOpen className="w-6 h-6 mr-2 animate-pulse" />
         <span className="text-sm">Loading course…</span>
       </div>
@@ -108,205 +102,179 @@ export default function CourseDetailPage() {
 
   if (error || !course) {
     return (
-      <div className="text-center py-16 text-slate-500">
-        <BookOpen className="w-10 h-10 mx-auto mb-2 text-slate-400" />
+      <div className="text-center py-16" style={{ color: "var(--text-muted)" }}>
+        <BookOpen className="w-10 h-10 mx-auto mb-2" style={{ color: "var(--muted)" }} />
         <p>{error || "Course not found."}</p>
-        <Button
+        <button
           onClick={() => router.push("/student/my-courses")}
-          className="mt-4"
-          variant="outline"
+          className="btn mt-4"
+          style={{ background: "var(--card)", color: "var(--brand)", border: "1px solid var(--brand)" }}
         >
           <ArrowLeft className="w-4 h-4 mr-1" /> Back to My Courses
-        </Button>
+        </button>
       </div>
     );
   }
-
-  // --- MAIN CONTENT ---
 
   return (
     <motion.div
       className="flex flex-col gap-6 py-6"
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.25 }}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2 text-green-700">
-            <BookOpen className="w-7 h-7 text-green-600" />
-            {course.name}
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-nav">
+            <BookOpen className="w-7 h-7 text-brand" />
+            {course.courseCode} — {course.name}
           </h1>
+          <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
+            {course.term} {course.year} • {course.lecturerName}
+          </p>
         </div>
 
-        <Button
-          variant="outline"
+        <button
           onClick={() => router.push("/student/my-courses")}
-          className="flex items-center gap-2"
+          className="btn"
+          style={{ background: "var(--card)", color: "var(--brand)", border: "1px solid var(--brand)", borderRadius: 10 }}
         >
           <ArrowLeft className="w-4 h-4" />
           Back
-        </Button>
+        </button>
       </div>
 
       {/* GRID 7-3 */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-        {/* LEFT: 7/10 — Assignments */}
+        {/* LEFT: Assignments */}
         <div className="lg:col-span-7 flex flex-col gap-6">
-          <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
+          <Card className="rounded-2xl shadow-sm" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <ListTodo className="w-5 h-5 text-green-600" />
-                Assignments
-                {totalAssignments > 0 && (
-                  <span className="ml-2 text-xs font-medium text-slate-500">
+              <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: "var(--foreground)" }}>
+                <ListTodo className="w-5 h-5 text-brand" />
+                Assignments {totalAssignments > 0 && (
+                  <span className="ml-1 text-xs font-medium" style={{ color: "var(--text-muted)" }}>
                     ({totalAssignments})
                   </span>
                 )}
               </CardTitle>
 
               <div className="flex items-center gap-2">
-                {/* Nút lọc Upcoming */}
-                <Button
-                  variant="secondary"
-                  size="sm"
+                <button
+                  className="btn h-9"
+                  style={{ background: "var(--brand)", color: "var(--white)", borderRadius: 10 }}
                   onClick={() =>
-                    fetchAssignments({
-                      courseId,
-                      sortBy: "DueDate",
-                      sortOrder: "asc",
-                      pageNumber: 1,
-                      pageSize: 10,
-                      isUpcoming: true, // Biến lọc
-                    })
+                    fetchAssignments({ courseId, sortBy: "DueDate", sortOrder: "asc", pageNumber: 1, pageSize: 10, isUpcoming: true })
                   }
+                  title="Upcoming"
                 >
-                  <Clock className="w-4 h-4 mr-1" />
+                  <Clock className="w-4 h-4" />
                   Upcoming
-                </Button>
-                {/* Nút lọc Overdue */}
-                <Button
-                  variant="outline"
-                  size="sm"
+                </button>
+
+                <button
+                  className="btn h-9"
+                  style={{ background: "var(--accent)", color: "var(--white)", borderRadius: 10 }}
                   onClick={() =>
-                    fetchAssignments({
-                      courseId,
-                      sortBy: "DueDate",
-                      sortOrder: "asc",
-                      pageNumber: 1,
-                      pageSize: 10,
-                      isOverdue: true, // Biến lọc
-                    })
+                    fetchAssignments({ courseId, sortBy: "DueDate", sortOrder: "asc", pageNumber: 1, pageSize: 10, isOverdue: true })
                   }
+                  title="Overdue"
                 >
-                  <AlertTriangle className="w-4 h-4 mr-1" />
+                  <AlertTriangle className="w-4 h-4" />
                   Overdue
-                </Button>
-                {/* Nút Reset (load lại ban đầu) */}
-                <Button
-                  variant="outline"
-                  size="sm"
+                </button>
+
+                <button
+                  className="btn h-9"
+                  style={{ background: "var(--card)", color: "var(--brand)", border: "1px solid var(--brand)", borderRadius: 10 }}
                   onClick={() =>
-                    fetchAssignments({
-                      courseId,
-                      sortBy: "DueDate",
-                      sortOrder: "asc",
-                      pageNumber: 1,
-                      pageSize: 10,
-                    })
+                    fetchAssignments({ courseId, sortBy: "DueDate", sortOrder: "asc", pageNumber: 1, pageSize: 10 })
                   }
+                  title="Reset"
                 >
-                  <RefreshCw className="w-4 h-4 mr-1" />
+                  <RefreshCw className="w-4 h-4" />
                   Reset
-                </Button>
+                </button>
               </div>
             </CardHeader>
 
             <CardContent className="pb-4">
               {loadingAssignments ? (
-                <div className="py-10 text-center text-slate-600">Loading assignments…</div>
+                <div className="py-10 text-center" style={{ color: "var(--text-muted)" }}>
+                  Loading assignments…
+                </div>
               ) : assignments.length === 0 ? (
-                <div className="py-10 text-center text-slate-600">
+                <div className="py-10 text-center" style={{ color: "var(--text-muted)" }}>
                   Chưa có assignment nào cho khóa học này.
                 </div>
               ) : (
-                <ul className="divide-y divide-slate-200">
+                <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
                   {assignments.map((a) => {
-                    // Xử lý ngày tháng
                     const due = new Date(a.dueDate);
                     const extended = a.extendedDueDate ? new Date(a.extendedDueDate) : null;
                     const finalDue = extended ?? due;
                     const dueLabel = extended ? "Extended due" : "Due";
-                    
-                    // Đường dẫn chi tiết Assignment (dùng cho cả Title)
-                    const assignmentDetailLink = `/student/courses/${courseId}/assignments/${a.id}`;
+                    const href = `/student/courses/${courseId}/assignments/${a.id}`;
 
                     return (
                       <li key={a.id} className="py-4">
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                          {/* Left section: Title và Meta data */}
+                          {/* Left: Title + meta */}
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              {/* ĐÂY LÀ PHẦN SỬA: Tiêu đề là Link chính */}
                               <Link
-                                href={assignmentDetailLink}
-                                className="font-bold text-lg text-green-700 hover:text-green-800 hover:underline truncate transition-colors"
+                                href={href}
+                                className="font-bold text-lg no-underline hover:underline"
+                                style={{ color: "var(--nav-active)" }}
                               >
                                 {a.title}
                               </Link>
 
-                              {/* Status Badge */}
                               <span
-                                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md ${statusStyle(
-                                  a.status
-                                )}`}
+                                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md"
+                                style={statusBadge(a.status)}
                                 title={a.statusDisplay}
                               >
-                                {a.status === AssignmentStatus.Active && (
-                                  <CheckCircle2 className="w-3 h-3" />
-                                )}
+                                {a.status === AssignmentStatus.Active && <CheckCircle2 className="w-3 h-3" />}
                                 {a.statusDisplay}
                               </span>
 
-                              {/* Group Badge */}
                               {a.isGroupAssignment && (
-                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                <span
+                                  className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md"
+                                  style={badgeStyle("rgba(127,113,244,0.10)", "var(--brand)")}
+                                >
                                   <Users className="w-3 h-3" />
                                   Group
                                 </span>
                               )}
                             </div>
 
-                            {/* Meta chi tiết */}
-                            <div className="mt-1 text-sm text-slate-500 flex items-center gap-4 flex-wrap">
+                            <div className="mt-1 text-sm flex items-center gap-4 flex-wrap" style={{ color: "var(--text-muted)" }}>
                               <span className="flex items-center gap-1">
-                                <CalendarDays className="w-4 h-4 text-green-600" />
-                                {dueLabel}: <b className="text-slate-700">{finalDue.toLocaleString("en-GB")}</b>
+                                <CalendarDays className="w-4 h-4 text-brand" />
+                                {dueLabel}: <b className="ml-1" style={{ color: "var(--foreground)" }}>{finalDue.toLocaleString("en-GB")}</b>
                               </span>
                               {typeof a.maxPoints === "number" && (
-                                <span>Points: <b className="text-slate-700">{a.maxPoints}</b></span>
+                                <span>Points: <b style={{ color: "var(--foreground)" }}>{a.maxPoints}</b></span>
                               )}
                               {typeof a.assignedGroupsCount === "number" && a.isGroupAssignment && (
-                                <span>Groups: <b className="text-slate-700">{a.assignedGroupsCount}</b></span>
+                                <span>Groups: <b style={{ color: "var(--foreground)" }}>{a.assignedGroupsCount}</b></span>
                               )}
                               {a.isOverdue && (
-                                <span className="text-red-600 font-bold flex items-center gap-1">
-                                    <AlertTriangle className="w-4 h-4" /> Overdue
+                                <span className="flex items-center gap-1" style={{ color: "#b91c1c" }}>
+                                  <AlertTriangle className="w-4 h-4" /> Overdue
                                 </span>
                               )}
                               {!a.isOverdue && a.daysUntilDue >= 0 && (
-                                <span className="text-emerald-700 font-medium">
+                                <span className="font-medium" style={{ color: "var(--brand)" }}>
                                   {a.daysUntilDue} day{a.daysUntilDue === 1 ? "" : "s"} left
                                 </span>
                               )}
                             </div>
                           </div>
-
-                          {/* Right actions: Đã xóa nút View */}
-                          {/* <div className="flex items-center gap-2 shrink-0">
-                            // Nút View bị xóa vì đã dùng Title làm link rồi.
-                          </div> */}
+                          {/* Right actions: bỏ nút View, dùng Title làm link */}
                         </div>
                       </li>
                     );
@@ -317,54 +285,56 @@ export default function CourseDetailPage() {
           </Card>
         </div>
 
-        {/* RIGHT: 3/10 — Course Details */}
+        {/* RIGHT: Course Details */}
         <div className="lg:col-span-3 flex flex-col gap-4 lg:sticky lg:top-24">
           {/* Overview */}
-          <Card className="rounded-2xl border border-slate-200 shadow-md bg-white">
+          <Card className="rounded-2xl shadow-md" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
             <CardHeader>
-              <CardTitle className="text-base font-bold">Course Overview</CardTitle>
+              <CardTitle className="text-base font-bold" style={{ color: "var(--foreground)" }}>
+                Course Overview
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-slate-700 space-y-3">
+            <CardContent className="text-sm space-y-3" style={{ color: "var(--foreground)" }}>
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-green-600" />
-                <span>
-                  <b>{course.enrollmentCount}</b> students enrolled
-                </span>
+                <Users className="w-4 h-4 text-brand" />
+                <span><b>{course.enrollmentCount}</b> students enrolled</span>
               </div>
               <div className="flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-green-600" />
-                <span>
-                  <b>Term:</b> {course.term} ({course.year})
-                </span>
+                <CalendarDays className="w-4 h-4 text-brand" />
+                <span><b>Term:</b> {course.term} ({course.year})</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Description */}
-          <Card className="rounded-2xl border border-slate-200 shadow-md bg-white">
+          <Card className="rounded-2xl shadow-md" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
             <CardHeader>
-              <CardTitle className="text-base font-bold">Description</CardTitle>
+              <CardTitle className="text-base font-bold" style={{ color: "var(--foreground)" }}>
+                Description
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-slate-700">
-              <p className="text-slate-600 whitespace-pre-line">
+            <CardContent className="text-sm">
+              <p className="whitespace-pre-line" style={{ color: "var(--text-muted)" }}>
                 {course.description || "No description provided."}
               </p>
             </CardContent>
           </Card>
 
           {/* Meta */}
-          <Card className="rounded-2xl border border-slate-200 shadow-md bg-white">
+          <Card className="rounded-2xl shadow-md" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
             <CardHeader>
-              <CardTitle className="text-base font-bold">Meta</CardTitle>
+              <CardTitle className="text-base font-bold" style={{ color: "var(--foreground)" }}>
+                Meta
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-slate-700 space-y-3">
+            <CardContent className="text-sm space-y-3" style={{ color: "var(--foreground)" }}>
               {course.requiresAccessCode && (
                 <div>
                   <b>Access Code:</b>{" "}
                   {course.isAccessCodeExpired ? (
-                    <span className="text-red-600 font-semibold">Expired</span>
+                    <span className="font-semibold" style={{ color: "#b91c1c" }}>Expired</span>
                   ) : (
-                    <span className="text-green-600 font-semibold">Active</span>
+                    <span className="font-semibold" style={{ color: "var(--brand)" }}>Active</span>
                   )}
                 </div>
               )}
@@ -374,7 +344,8 @@ export default function CourseDetailPage() {
                 </div>
               )}
               <div>
-                <b>Created At:</b> {new Date(course.createdAt).toLocaleString("en-GB")}
+                <b>Created At:</b>{" "}
+                {new Date(course.createdAt).toLocaleString("en-GB")}
               </div>
             </CardContent>
           </Card>

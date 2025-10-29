@@ -110,7 +110,6 @@ export interface GetCourseByIdItems {
   department: string;
 }
 
-
 export interface DeleteCourseResponse {
   success: boolean;
   message: string;
@@ -157,19 +156,25 @@ export interface EnrollmentStatus {
   status: string | null;
 }
 
-/** ✅ Available course item cho student */
+/** ✅ Available course item cho student (khớp API /api/Courses/available) */
 export interface AvailableCourseItem {
   id: string;
   courseCode: string;
+  /** Tên hiển thị (có thể gồm code + hash + giảng viên) */
   name: string;
+  /** Mô tả khoá học (backend trả string) */
+  description: string;
   lecturerId: string;
   lecturerName: string;
   createdAt: string;
   enrollmentCount: number;
   requiresAccessCode: boolean;
   isAccessCodeExpired: boolean;
+  /** Ảnh thumbnail; backend có thể trả null */
+  img: string | null;
   enrollmentStatus: EnrollmentStatus | null;
   canJoin: boolean;
+  /** Link join trực tiếp; có thể null khi không đủ điều kiện */
   joinUrl: string | null;
 }
 
