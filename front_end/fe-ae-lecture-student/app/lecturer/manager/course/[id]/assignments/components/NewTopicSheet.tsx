@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/com
 import { useCreateTopic } from "@/hooks/topic/useCreateTopic";
 import { useGetTopicById } from "@/hooks/topic/useGetTopicById";
 import { useGetTopics } from "@/hooks/topic/useGetTopics";
+import { useUpdateTopic } from "@/hooks/topic/useUpdateTopic";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
     const { createTopic, loading, error: hookError } = useCreateTopic();
     const { data: topicsData, loading: loadingTopics, fetchTopics } = useGetTopics();
     const { data: topicDetails, loading: loadingTopicDetails, fetchTopicById } = useGetTopicById();
+    const { loading: updating, error: updateError, updateTopic } = useUpdateTopic();
 
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -30,13 +32,16 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
 
     const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
+    const [editableTopic, setEditableTopic] = useState<typeof topicDetails | null>(null);
 
+    // Load topics khi mở sheet
     useEffect(() => {
         if (open) {
             fetchTopics({ page: 1, pageSize: 50 });
         }
     }, [open]);
 
+    // Reset form khi đóng sheet
     useEffect(() => {
         if (!open) {
             setName("");
@@ -45,6 +50,13 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
             setError(null);
         }
     }, [open]);
+
+    // Khi topicDetails thay đổi, cập nhật editableTopic
+    useEffect(() => {
+        if (topicDetails) {
+            setEditableTopic(topicDetails);
+        }
+    }, [topicDetails]);
 
     const handleSubmit = async () => {
         if (!name.trim()) {
@@ -83,6 +95,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
 
     return (
         <>
+            {/* CREATE + LIST */}
             <Sheet open={open} onOpenChange={onOpenChange}>
                 <SheetContent className="bg-white w-full border border-slate-200 sm:max-w-xl md:max-w-2xl h-screen flex flex-col">
                     <SheetHeader className="flex-shrink-0">
@@ -151,6 +164,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                 </SheetContent>
             </Sheet>
 
+            {/* DIALOG DETAIL + UPDATE */}
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
                 <DialogContent className="border border-slate-200">
                     <DialogHeader>
@@ -159,32 +173,90 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                     </DialogHeader>
 
                     {loadingTopicDetails && <div>Loading...</div>}
-                    {!loadingTopicDetails && topicDetails && (
-                        <div className="space-y-2">
-                            <div><strong>Name:</strong> {topicDetails.name}</div>
-                            <div><strong>Description:</strong> {topicDetails.description}</div>
-                            <div><strong>Active:</strong> {topicDetails.isActive ? "Yes" : "No"}</div>
-                            <div className="flex items-center gap-2"><strong>Create By:</strong>
-                                {topicDetails.createdBy || <div className="italic text-sm text-slate-500">Chưa cập nhật</div>}
+
+                    {!loadingTopicDetails && editableTopic && (
+                        <div className="space-y-3">
+                            {/* Editable fields */}
+                            <div>
+                                <Label className="text-sm">Name</Label>
+                                <Input
+                                    value={editableTopic.name}
+                                    onChange={(e) =>
+                                        setEditableTopic((prev) => prev ? { ...prev, name: e.target.value } : prev)
+                                    }
+                                    placeholder="Topic name"
+                                />
                             </div>
-                            <div><strong>Created At:</strong> {new Date(topicDetails.createdAt).toLocaleString("vi-VN", {
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: false
-                            })}</div>
-                            {topicDetails.updatedAt && (
-                                <div><strong>Updated At:</strong> {new Date(topicDetails.updatedAt).toLocaleString("vi-VN", {
-                                    year: "numeric",
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: false
+                            <div>
+                                <Label className="text-sm">Description</Label>
+                                <Input
+                                    value={editableTopic.description}
+                                    onChange={(e) =>
+                                        setEditableTopic((prev) => prev ? { ...prev, description: e.target.value } : prev)
+                                    }
+                                    placeholder="Description"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    checked={editableTopic.isActive}
+                                    onCheckedChange={(v) =>
+                                        setEditableTopic((prev) => prev ? { ...prev, isActive: !!v } : prev)
+                                    }
+                                />
+                                <Label className="cursor-pointer">Active</Label>
+                            </div>
+
+                            {/* Info */}
+                            <div className="text-sm space-y-2 mt-5 text-slate-500">
+                                <div className="flex gap-1"><strong>Created By:</strong> {editableTopic.createdBy ||
+                                    <p className="italic">Chưa cập nhật</p>}</div>
+                                <div><strong>Created At:</strong> {new Date(editableTopic.createdAt).toLocaleString("vi-VN", {
+                                    year: "numeric", month: "2-digit", day: "2-digit",
+                                    hour: "2-digit", minute: "2-digit", hour12: false
                                 })}</div>
-                            )}
+                                {editableTopic.updatedAt && (
+                                    <div><strong>Updated At:</strong> {new Date(editableTopic.updatedAt).toLocaleString("vi-VN", {
+                                        year: "numeric", month: "2-digit", day: "2-digit",
+                                        hour: "2-digit", minute: "2-digit", hour12: false
+                                    })}</div>
+                                )}
+                            </div>
+
+                            {/* Update button */}
+                            <div className="flex justify-end gap-2 mt-3">
+                                <Button
+                                    className="btn btn-gradient"
+                                    onClick={async () => {
+                                        if (!editableTopic.name.trim() || !editableTopic.description.trim()) {
+                                            toast.error("Name and description cannot be empty");
+                                            return;
+                                        }
+
+                                        const payload = {
+                                            topicId: editableTopic.id,
+                                            name: editableTopic.name,
+                                            description: editableTopic.description,
+                                            isActive: editableTopic.isActive,
+                                        };
+
+                                        const res = await updateTopic(editableTopic.id, payload);
+
+                                        if (res?.success) {
+                                            toast.success("Topic updated successfully");
+                                            fetchTopics({ page: 1, pageSize: 50 });
+                                            fetchTopicById(editableTopic.id);
+                                        } else {
+                                            toast.error(res?.message || "Failed to update topic");
+                                        }
+                                    }}
+                                    disabled={updating}
+                                >
+                                    {updating ? "Updating..." : "Cập nhật"}
+                                </Button>
+                            </div>
+
+                            {updateError && <div className="text-sm text-red-600">{updateError}</div>}
                         </div>
                     )}
                 </DialogContent>

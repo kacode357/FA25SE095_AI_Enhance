@@ -1,17 +1,20 @@
 export interface CreateTopicPayload {
-    name: string;
-    description: string;
-    isActive: boolean;
+  name: string;
+  description: string;
+  isActive: boolean;
 }
 
 export interface UpdateTopicPayload {
-    topicId: string;
+  topicId: string;
+  name?: string;
+  description?: string;
+  isActive?: boolean;
 }
 
 export interface DeleteTopicPayload {
-    topicId: string;
+  topicId: string;
 }
 
 export interface GetTopicByIdPayload {
-    topicId: string;
+  topicId: string;
 }
