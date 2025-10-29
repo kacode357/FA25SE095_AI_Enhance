@@ -215,8 +215,9 @@ export default function AssignmentsPanel({
                       <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
                       {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      Due: {new Date(a.dueDate).toLocaleString()} • Assigned groups: {a.assignedGroupsCount} •{" "}
+                    <div className="text-xs flex text-slate-500 mt-1">
+                      <div className="mr-1 flex gap-1">Topic: <p className="text-slate-900">{a.topicName}</p></div>
+                      • Due: {new Date(a.dueDate).toLocaleString()} • Assigned groups: {a.assignedGroupsCount} •{" "}
                       {a.isOverdue ? "Overdue" : `D-${a.daysUntilDue}`}
                     </div>
                   </div>

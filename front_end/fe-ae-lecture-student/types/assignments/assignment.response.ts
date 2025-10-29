@@ -78,6 +78,7 @@ export interface GetAssignmentsResponse {
     | "courseId"
     | "courseName"
     | "title"
+    | "topicName"
     | "startDate"
     | "dueDate"
     | "extendedDueDate"
