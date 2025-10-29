@@ -207,7 +207,7 @@ select {
   inset: 0;
   background: #13127d; /* overlay tím đậm */
   z-index: -1;
-  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1); /* chậm hơn */
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1); 
   clip-path: circle(0% at 50% 50%);
 }
 .btn-gradient-slow:hover::after {

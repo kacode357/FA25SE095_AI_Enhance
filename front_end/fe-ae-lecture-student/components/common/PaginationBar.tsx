@@ -1,15 +1,5 @@
 "use client";
 
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-} from "@/components/ui/pagination";
-import { cn } from "@/lib/utils";
-
 interface PaginationBarProps {
   page: number;
   totalPages: number;
@@ -28,61 +18,69 @@ export default function PaginationBar({
   if (totalPages <= 1) return null;
 
   const pagesToShow = 5;
-  const start = Math.max(1, page - 2);
-  const end = Math.min(totalPages, start + pagesToShow - 1);
+  const half = Math.floor(pagesToShow / 2);
+  let start = Math.max(1, page - half);
+  let end = Math.min(totalPages, start + pagesToShow - 1);
+  if (end - start + 1 < pagesToShow) start = Math.max(1, end - pagesToShow + 1);
+
+  const canPrev = page > 1 && !loading;
+  const canNext = page < totalPages && !loading;
 
   return (
-    <div className="w-full flex flex-col items-end border-t border-slate-200 bg-white/80 py-4 px-6">
-      {/* ✅ Pagination container — force justify-end */}
-      <Pagination className="w-full flex justify-end">
-        <PaginationContent className="flex items-center justify-end gap-2 flex-wrap">
-          {/* Prev */}
-          <PaginationItem>
-            <PaginationPrevious
-              className={cn(
-                "cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-green-600 hover:bg-green-50 transition-colors",
-                (page <= 1 || loading) && "opacity-50 pointer-events-none"
-              )}
+    <div className="w-full flex flex-col items-end border-t border-[var(--border)] bg-white/80 py-4 px-6">
+      <nav aria-label="Pagination" className="w-full flex justify-end">
+        <ul className="flex items-center justify-end gap-2 flex-wrap">
+          <li>
+            <button
+              type="button"
+              className={`btn bg-white border border-brand text-nav hover:text-nav-active px-3 py-2 text-sm ${
+                !canPrev ? "opacity-50 pointer-events-none" : ""
+              }`}
               onClick={() => onPageChange(Math.max(1, page - 1))}
-            />
-          </PaginationItem>
+              disabled={!canPrev}
+            >
+              Prev
+            </button>
+          </li>
 
-          {/* Page numbers */}
-          {Array.from({ length: end - start + 1 }, (_, i) => start + i).map(
-            (p) => (
-              <PaginationItem key={p}>
-                <PaginationLink
-                  isActive={p === page}
+          {Array.from({ length: end - start + 1 }, (_, i) => start + i).map((p) => {
+            const active = p === page;
+            return (
+              <li key={p}>
+                <button
+                  type="button"
+                  aria-current={active ? "page" : undefined}
                   onClick={() => !loading && onPageChange(p)}
-                  className={cn(
-                    "px-3 py-2 text-sm rounded-md border transition-colors",
-                    p === page
-                      ? "bg-green-100 text-green-700 border-green-400 font-semibold"
-                      : "hover:bg-slate-100 text-slate-700 border-slate-300"
-                  )}
+                  disabled={loading}
+                  className={`px-3 py-2 text-sm rounded-md border transition-colors ${
+                    active
+                      ? "bg-[var(--brand)] text-white border-brand font-semibold shadow-sm"
+                      : "bg-white text-nav border-[var(--border)] hover:text-nav-active"
+                  } ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
                 >
                   {p}
-                </PaginationLink>
-              </PaginationItem>
-            )
-          )}
+                </button>
+              </li>
+            );
+          })}
 
-          {/* Next */}
-          <PaginationItem>
-            <PaginationNext
-              className={cn(
-                "cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-green-600 hover:bg-green-50 transition-colors",
-                (page >= totalPages || loading) && "opacity-50 pointer-events-none"
-              )}
+          <li>
+            <button
+              type="button"
+              className={`btn bg-white border border-brand text-nav hover:text-nav-active px-3 py-2 text-sm ${
+                !canNext ? "opacity-50 pointer-events-none" : ""
+              }`}
               onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+              disabled={!canNext}
+            >
+              Next
+            </button>
+          </li>
+        </ul>
+      </nav>
 
-      {/* ✅ Info line */}
       {typeof totalCount === "number" && (
-        <p className="text-xs text-slate-500 mt-2 text-right">
+        <p className="text-xs text-[var(--text-muted)] mt-2 text-right">
           Showing page <b>{page}</b> of <b>{totalPages}</b> ({totalCount} total items)
         </p>
       )}

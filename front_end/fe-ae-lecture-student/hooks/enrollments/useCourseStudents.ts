@@ -35,7 +35,7 @@ export function useCourseStudents() {
     },
     []
   );
-
+ 
   // tiện lấy nhanh students & total
   const students: CourseEnrolledStudent[] = data?.students ?? [];
   const totalStudents = data?.totalStudents ?? 0;
@@ -47,6 +47,7 @@ export function useCourseStudents() {
     totalStudents,
     courseId: data?.courseId ?? null,
     courseName: data?.courseName ?? null,
+
     fetchCourseStudents,
   };
 }

@@ -128,21 +128,17 @@ export default function CourseDetailPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2 text-nav">
             <BookOpen className="w-7 h-7 text-brand" />
-            {course.courseCode} — {course.name}
+            {course.courseCode} - {course.lecturerName} - {course.term} {course.year}
           </h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-            {course.term} {course.year} • {course.lecturerName}
-          </p>
         </div>
-
-        <button
+        <Button
+          variant="outline"
           onClick={() => router.push("/student/my-courses")}
-          className="btn"
-          style={{ background: "var(--card)", color: "var(--brand)", border: "1px solid var(--brand)", borderRadius: 10 }}
+          className="border-brand text-brand hover:bg-[color:var(--brand)]/5"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back
-        </button>
+        </Button>
       </div>
 
       {/* GRID 7-3 */}
@@ -206,7 +202,7 @@ export default function CourseDetailPage() {
                 </div>
               ) : assignments.length === 0 ? (
                 <div className="py-10 text-center" style={{ color: "var(--text-muted)" }}>
-                  Chưa có assignment nào cho khóa học này.
+                  There are no assignments for this course yet.
                 </div>
               ) : (
                 <ul className="divide-y" style={{ borderColor: "var(--border)" }}>

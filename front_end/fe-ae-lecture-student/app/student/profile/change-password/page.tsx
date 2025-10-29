@@ -2,9 +2,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useChangePassword } from "@/hooks/auth/useChangePassword";
 import type { ChangePasswordPayload } from "@/types/auth/auth.payload";
+import Button from "@/components/ui/button";
 
 type FormState = {
   currentPassword: string;
@@ -34,8 +35,8 @@ export default function ChangePasswordPage() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
       setForm((s) => ({ ...s, [key]: val }));
-      if (key === "newPassword") setErrors((e) => ({ ...e, new: undefined }));
-      if (key === "confirmPassword") setErrors((e) => ({ ...e, confirm: undefined }));
+      if (key === "newPassword") setErrors((er) => ({ ...er, new: undefined }));
+      if (key === "confirmPassword") setErrors((er) => ({ ...er, confirm: undefined }));
     };
 
   const pwdHint = useMemo(
@@ -76,14 +77,14 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="card p-6" style={{ borderColor: "var(--color-border)" }}>
+    <div className="card p-6">
       <form onSubmit={onSubmit} className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-900 mb-1">Change Password</h2>
+        <h2 className="text-lg font-semibold text-nav mb-1">Change Password</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Current password */}
           <div className="md:col-span-2">
-            <label className="block text-sm text-slate-700 mb-1">Current Password</label>
+            <label className="block text-sm text-nav mb-1">Current Password</label>
             <div className="relative">
               <input
                 type={show.current ? "text" : "password"}
@@ -95,7 +96,7 @@ export default function ChangePasswordPage() {
               />
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
                 onClick={() => setShow((s) => ({ ...s, current: !s.current }))}
                 aria-label={show.current ? "Hide password" : "Show password"}
               >
@@ -106,7 +107,7 @@ export default function ChangePasswordPage() {
 
           {/* New password */}
           <div>
-            <label className="block text-sm text-slate-700 mb-1">New Password</label>
+            <label className="block text-sm text-nav mb-1">New Password</label>
             <div className="relative">
               <input
                 type={show.next ? "text" : "password"}
@@ -118,16 +119,16 @@ export default function ChangePasswordPage() {
               />
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
                 onClick={() => setShow((s) => ({ ...s, next: !s.next }))}
                 aria-label={show.next ? "Hide password" : "Show password"}
               >
                 {show.next ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-xs text-slate-500 mt-1">{pwdHint}</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{pwdHint}</p>
             {!isStrong && form.newPassword.length > 0 && (
-              <p className="text-xs text-red-600 mt-1">
+              <p className="text-xs text-accent mt-1">
                 {errors.new || "Weak password."}
               </p>
             )}
@@ -135,7 +136,7 @@ export default function ChangePasswordPage() {
 
           {/* Confirm password */}
           <div>
-            <label className="block text-sm text-slate-700 mb-1">Confirm New Password</label>
+            <label className="block text-sm text-nav mb-1">Confirm New Password</label>
             <div className="relative">
               <input
                 type={show.confirm ? "text" : "password"}
@@ -147,7 +148,7 @@ export default function ChangePasswordPage() {
               />
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
                 onClick={() => setShow((s) => ({ ...s, confirm: !s.confirm }))}
                 aria-label={show.confirm ? "Hide password" : "Show password"}
               >
@@ -155,7 +156,7 @@ export default function ChangePasswordPage() {
               </button>
             </div>
             {!confirmMatch && form.confirmPassword.length > 0 && (
-              <p className="text-xs text-red-600 mt-1">
+              <p className="text-xs text-accent mt-1">
                 {errors.confirm || "New password and confirmation do not match."}
               </p>
             )}
@@ -163,25 +164,30 @@ export default function ChangePasswordPage() {
         </div>
 
         <div className="flex items-center gap-3 pt-2">
-          <button type="submit" className="btn btn-primary" disabled={isDisabled}>
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Updating...
-              </>
-            ) : (
-              "Update Password"
-            )}
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
+          {/* Update Password — dùng Button component + gradient pill */}
+          <Button
+            // dùng loader trong Button (LogoLoader)
+            loading={loading}
+            // để áp gradient pill chậm theo globals.css
+            variant="gradient"
+            className={`btn-gradient-slow ${isDisabled ? " cursor-not-allowed" : ""}`}
+            disabled={isDisabled}
+            type="submit"
+          >
+            {loading ? "Updating..." : "Update Password"}
+          </Button>
+
+          {/* Reset — outline brand */}
+          <Button
+            className={`bg-white border border-brand text-nav hover:text-nav-active ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
             disabled={loading}
-            onClick={() =>
-              setForm({ currentPassword: "", newPassword: "", confirmPassword: "" })
-            }
+            type="button"
+            onClick={() => setForm({ currentPassword: "", newPassword: "", confirmPassword: "" })}
           >
             Reset
-          </button>
+          </Button>
         </div>
       </form>
     </div>
