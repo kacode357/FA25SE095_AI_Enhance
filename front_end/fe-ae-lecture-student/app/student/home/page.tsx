@@ -10,7 +10,7 @@ import Testimonials from "./components/Testimonials";
 
 export default function StudentHomePage() {
   return (
-    <main className="overflow-hidden">
+  <main className="overflow-visible">
       <HeroSection />
       <FeatureSection />
       <PopularCourses />

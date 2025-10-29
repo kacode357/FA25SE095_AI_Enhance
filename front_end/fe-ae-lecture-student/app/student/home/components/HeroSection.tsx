@@ -43,7 +43,7 @@ export default function HeroSection() {
 
     return (
         <section
-            className="relative text-white overflow-hidden"
+            className="relative text-white overflow-visible"
             style={{
                 paddingTop: "var(--app-header-h)",
                 backgroundImage: "url('https://live.themewild.com/edubo/assets/img/shape/01.png')",
@@ -58,12 +58,12 @@ export default function HeroSection() {
             <div className="relative h-screen container mx-auto px-6 flex flex-col-reverse md:flex-row items-center gap-10 py-20">
                 {/* Left: Text */}
                 <div className="flex-1 text-center md:text-left">
-                    <h1 className="text-4xl text-[#000D83] md:text-6xl font-bold leading-tight mb-4">
-                        AIDS-LMS • AI-Driven DataSync<br />
+                    <h1 className="text-4xl text-[#000D83] md:text-6xl font-bold leading-tight mb-10">
+                        AI-Driven DataSync<br />
                         <span className="text-yellow-300">Digital Marketing</span>
                     </h1>
 
-                    <p className="text-lg text-[#000D83] font-sans mb-6 opacity-90 max-w-md mx-auto md:mx-0">
+                    <p className="text-lg text-[#000D83] font-sans mb-20 opacity-90 max-w-md mx-auto md:mx-0">
                         Empowering education through AI. Collect cleaner data, track insights,
                         and personalize your digital learning experience — all powered by
                         <span className="font-semibold text-yellow-400">
@@ -134,11 +134,11 @@ export default function HeroSection() {
             <div className="absolute top-10 left-10 w-16 h-16 bg-yellow-300 rounded-full opacity-20 blur-xl" />
             <div className="absolute bottom-10 right-10 w-24 h-24 bg-pink-400 rounded-full opacity-20 blur-2xl" />
 
-            <div className="absolute bottom-0 left-0 right-0 translate-y-1/3 z-20 pointer-events-none">
+            <div className="absolute right-0 bottom-[-3.5rem] z-40 pointer-events-none">
                 <div className="container mx-auto px-6 pointer-events-auto">
-                    <div className="bg-white rounded-3xl shadow-xl md:p-6 flex flex-col md:flex-row items-end justify-between gap-4 text-center md:text-left">
+                    <div className="bg-white rounded-3xl shadow-xl md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
                         <div>
-                            <h3 className="text-lg md:text-xl font-bold text-slate-800 flex items-center justify-end md:justify-start gap-2">
+                            <h3 className="text-lg md:text-xl font-bold text-slate-800 flex items-center justify-center md:justify-center gap-2">
                                 <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                 </svg>
