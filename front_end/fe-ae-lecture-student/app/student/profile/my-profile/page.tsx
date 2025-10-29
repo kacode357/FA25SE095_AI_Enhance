@@ -17,7 +17,7 @@ type ProfileForm = {
 };
 
 export default function MyProfilePage() {
-  const { user } = useAuth(); // ⬅️ không còn isReady
+  const { user } = useAuth();
   const { updateProfile, loading } = useUpdateProfile();
 
   const [form, setForm] = useState<ProfileForm>({
@@ -29,7 +29,6 @@ export default function MyProfilePage() {
     institutionAddress: "",
   });
 
-  // Prefill khi có user
   useEffect(() => {
     if (!user) return;
     setForm({
@@ -50,8 +49,8 @@ export default function MyProfilePage() {
 
   const onChange =
     (key: keyof ProfileForm) =>
-      (e: React.ChangeEvent<HTMLInputElement>) =>
-        setForm((s) => ({ ...s, [key]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((s) => ({ ...s, [key]: e.target.value }));
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +65,7 @@ export default function MyProfilePage() {
       ...(form.studentId ? { studentId: form.studentId } : {}),
     };
 
-    await updateProfile(payload); // toast xử lý trong hook
+    await updateProfile(payload);
   };
 
   const quotaPct = useMemo(() => {
@@ -76,39 +75,41 @@ export default function MyProfilePage() {
     return Math.min(100, Math.round((used / limit) * 100));
   }, [user]);
 
-  // Không dùng isReady: nếu chưa có user -> coi như chưa đăng nhập
   if (!user) {
     return (
-      <div className="card p-6" style={{ borderColor: "var(--color-border)" }}>
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">My Profile</h2>
-        <p className="text-sm text-slate-600">You are not signed in.</p>
+      <div className="card p-6">
+        <h2 className="text-lg font-semibold text-nav mb-1">My Profile</h2>
+        <p className="text-sm text-[var(--text-muted)]">You are not signed in.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header + quick facts (compact lines) */}
-      <div className="card p-6" style={{ borderColor: "var(--color-border)" }}>
+      {/* Header */}
+      <div className="card p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-6">
           <div
-            className="h-16 w-16 rounded-xl grid place-items-center text-base font-semibold border"
+            className="h-16 w-16 rounded-xl grid place-items-center text-base font-semibold border border-[var(--border)]"
             style={{
-              borderColor: "var(--color-border)",
-              color: "var(--color-brand-700)",
-              background: "color-mix(in oklab, var(--color-brand) 10%, white)",
+              color: "var(--brand-700)",
+              background: "color-mix(in oklab, var(--brand) 10%, white)",
             }}
+            aria-hidden
           >
             {initials(user.firstName, user.lastName)}
           </div>
 
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold text-slate-900">{fullName || user.email}</h2>
-            <p className="text-sm text-slate-600 mt-0.5">Manage your personal and institution information.</p>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-semibold text-nav break-words">
+              {fullName || user.email}
+            </h2>
+            <p className="text-sm text-[var(--text-muted)] mt-0.5">
+              Manage your personal and institution information.
+            </p>
 
-            {/* Only label: value lines */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-              <StatLine label="Role" value={"Student"} />
+              <StatLine label="Role" value="Student" />
               <StatLine label="Account Status" value={user.status || "—"} />
               <StatLine label="Subscription Plan" value={user.subscriptionTier || "—"} />
             </div>
@@ -117,8 +118,9 @@ export default function MyProfilePage() {
       </div>
 
       {/* Readonly details */}
-      <div className="card p-6" style={{ borderColor: "var(--color-border)" }}>
-        <h3 className="text-sm font-semibold text-slate-900 mb-4">Account Details</h3>
+      <div className="card p-6">
+        <h3 className="text-sm font-semibold text-nav mb-4">Account Details</h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <InfoItem label="Email" value={user.email ?? ""} />
           <InfoItem label="Student ID" value={safeStr(user.studentId) || "-"} />
@@ -126,19 +128,24 @@ export default function MyProfilePage() {
         </div>
 
         <div className="mt-5">
-          <label className="block text-sm text-slate-700 mb-2">Crawl Quota</label>
-          <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
+          <label className="block text-sm text-nav mb-2">Crawl Quota</label>
+
+          <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
             <span>
               Used {user.crawlQuotaUsed ?? 0} / {user.crawlQuotaLimit ?? 0}
             </span>
-            {user.quotaResetDate && <span>Reset: {formatDateTime(user.quotaResetDate, true)}</span>}
+            {user.quotaResetDate && (
+              <span>Reset: {formatDateTime(user.quotaResetDate, true)}</span>
+            )}
           </div>
-          <div className="h-2 rounded-full bg-slate-100 border" style={{ borderColor: "var(--color-border)" }}>
+
+          <div className="h-2 rounded-full bg-slate-100 border border-[var(--border)] overflow-hidden">
             <div
               className="h-2 rounded-full"
               style={{
                 width: `${quotaPct}%`,
-                background: "linear-gradient(90deg, var(--color-brand), var(--color-brand-700))",
+                background:
+                  "linear-gradient(90deg, var(--brand), var(--brand-700))",
               }}
             />
           </div>
@@ -146,51 +153,87 @@ export default function MyProfilePage() {
       </div>
 
       {/* Editable form */}
-      <div className="card p-6" style={{ borderColor: "var(--color-border)" }}>
-        <h3 className="text-sm font-semibold text-slate-900 mb-4">Edit Profile</h3>
+      <div className="card p-6">
+        <h3 className="text-sm font-semibold text-nav mb-4">Edit Profile</h3>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="First Name">
-              <input className="input" placeholder="First name" value={form.firstName} onChange={onChange("firstName")} />
+              <input
+                className="input"
+                placeholder="First name"
+                value={form.firstName}
+                onChange={onChange("firstName")}
+              />
             </Field>
+
             <Field label="Last Name">
-              <input className="input" placeholder="Last name" value={form.lastName} onChange={onChange("lastName")} />
+              <input
+                className="input"
+                placeholder="Last name"
+                value={form.lastName}
+                onChange={onChange("lastName")}
+              />
             </Field>
 
             <Field label="Department" span={2}>
-              <input className="input" placeholder="Digital Marketing" value={form.department} onChange={onChange("department")} />
+              <input
+                className="input"
+                placeholder="Digital Marketing"
+                value={form.department}
+                onChange={onChange("department")}
+              />
             </Field>
 
             <Field label="Student ID" span={2}>
-              <input className="input" placeholder="e.g., STU003" value={form.studentId} onChange={onChange("studentId")} />
+              <input
+                className="input"
+                placeholder="e.g., STU003"
+                value={form.studentId}
+                onChange={onChange("studentId")}
+              />
             </Field>
 
             <Field label="Institution Name" span={2}>
-              <input className="input" placeholder="University / Organization" value={form.institutionName} onChange={onChange("institutionName")} />
+              <input
+                className="input"
+                placeholder="University / Organization"
+                value={form.institutionName}
+                onChange={onChange("institutionName")}
+              />
             </Field>
 
             <Field label="Institution Address" span={2}>
-              <input className="input" placeholder="Address" value={form.institutionAddress} onChange={onChange("institutionAddress")} />
+              <input
+                className="input"
+                placeholder="Address"
+                value={form.institutionAddress}
+                onChange={onChange("institutionAddress")}
+              />
             </Field>
           </div>
 
           <div className="flex items-center gap-3 pt-2">
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className={`btn btn-gradient-slow ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+              disabled={loading}
+            >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
                 </>
               ) : (
                 "Save Changes"
               )}
             </button>
+
             <button
               type="button"
-              className="btn btn-ghost"
+              className={`btn bg-white border border-brand text-nav hover:text-nav-active ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
               disabled={loading}
               onClick={() => {
-                if (!user) return;
                 setForm({
                   firstName: safeStr(user.firstName),
                   lastName: safeStr(user.lastName),
@@ -213,12 +256,9 @@ export default function MyProfilePage() {
 /* ===== UI bits ===== */
 function StatLine({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      className="rounded-lg border bg-white p-3"
-      style={{ borderColor: "var(--color-border)" }}
-    >
-      <div className="text-sm text-slate-900 font-medium">
-        {label}: <span className="font-normal text-slate-700">{value}</span>
+    <div className="rounded-lg border border-[var(--border)] bg-white p-3">
+      <div className="text-sm text-nav font-medium">
+        {label}: <span className="font-normal text-foreground/80">{value}</span>
       </div>
     </div>
   );
@@ -237,18 +277,20 @@ function Field({
 }) {
   return (
     <div className={span === 2 ? "md:col-span-2" : ""}>
-      <label className="block text-sm text-slate-700 mb-1">{label}</label>
+      <label className="block text-sm text-nav mb-1">{label}</label>
       {children}
-      {hint && <p className="text-xs text-slate-500 mt-1">{hint}</p>}
+      {hint && <p className="text-xs text-[var(--text-muted)] mt-1">{hint}</p>}
     </div>
   );
 }
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-white p-3" style={{ borderColor: "var(--color-border)" }}>
-      <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="text-sm text-slate-900 mt-0.5 break-all">{value || "-"}</div>
+    <div className="rounded-lg border border-[var(--border)] bg-white p-3">
+      <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+        {label}
+      </div>
+      <div className="text-sm text-foreground mt-0.5 break-all">{value || "-"}</div>
     </div>
   );
 }
@@ -260,7 +302,7 @@ function safeStr(v: unknown): string {
 function initials(first?: string, last?: string) {
   const f = safeStr(first).trim();
   const l = safeStr(last).trim();
-  return (f[0] || "") + (l[0] || "");
+  return (f[0] || "").toUpperCase() + (l[0] || "").toUpperCase();
 }
 
 function formatDateTime(iso?: string | null, dateOnly = false) {

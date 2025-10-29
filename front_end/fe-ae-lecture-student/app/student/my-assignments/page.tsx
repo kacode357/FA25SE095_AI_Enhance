@@ -7,10 +7,6 @@ import { useRouter } from "next/navigation";
 import { useMyAssignments } from "@/hooks/assignment/useMyAssignments";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
 import {
   ListChecks,
   RefreshCw,
@@ -97,18 +93,18 @@ export default function MyAssignmentsPage() {
     setCourseNameQuery("");
   };
 
-  // UI helpers
+  // UI helpers (dùng đúng palette)
   const statusTone = (s: AssignmentStatus) => {
     switch (s) {
       case AssignmentStatus.Active:
       case AssignmentStatus.Extended:
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        return "bg-[color-mix(in_oklab,var(--brand)_14%,white)] text-nav border-[color-mix(in_oklab,var(--brand)_35%,var(--border))]";
       case AssignmentStatus.Overdue:
-        return "bg-red-50 text-red-700 border-red-200";
+        return "bg-[color-mix(in_oklab,var(--accent)_16%,white)] text-accent border-[color-mix(in_oklab,var(--accent)_40%,var(--border))]";
       case AssignmentStatus.Closed:
-        return "bg-slate-100 text-slate-700 border-slate-200";
+        return "bg-white text-foreground/70 border-[var(--border)]";
       default:
-        return "bg-amber-50 text-amber-700 border-amber-200";
+        return "bg-[color-mix(in_oklab,var(--brand)_10%,white)] text-nav border-[color-mix(in_oklab,var(--brand)_28%,var(--border))]";
     }
   };
 
@@ -116,46 +112,51 @@ export default function MyAssignmentsPage() {
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
-      {/* Header (single Refresh button) */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-green-700 flex items-center gap-2">
-          <ListChecks className="w-6 h-6 text-green-600" />
+        <h1 className="text-2xl font-bold text-nav flex items-center gap-2">
+          <ListChecks className="w-6 h-6 text-nav-active" />
           My Assignments
         </h1>
 
-        <Button variant="secondary" onClick={onRefresh} disabled={loading}>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          className={`btn btn-gradient-slow ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+        >
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
               Refreshing…
             </>
           ) : (
             <>
-              <RefreshCw className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4" />
               Refresh
             </>
           )}
-        </Button>
+        </button>
       </div>
 
       {/* Content 9/3 */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Left: assignments */}
         <div className="md:col-span-9">
-          <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
-            <CardHeader className="pb-2">
+          <div className="card rounded-2xl">
+            <div className="px-4 py-3 border-b border-[var(--border)]">
               <div>
-                <CardTitle className="text-base">Your assignments</CardTitle>
-                <p className="text-xs text-slate-500">
+                <div className="text-base font-semibold text-nav">Your assignments</div>
+                <p className="text-xs text-[var(--text-muted)]">
                   Total: <b>{total}</b> assignment{total > 1 ? "s" : ""}
                 </p>
               </div>
-            </CardHeader>
+            </div>
 
-            <CardContent className="pt-0">
+            <div className="pt-0 p-4">
               {/* Loading */}
               {loading && (
-                <div className="flex justify-center items-center py-10 text-green-700">
+                <div className="flex justify-center items-center py-10 text-nav">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   <span className="text-sm">Loading assignments…</span>
                 </div>
@@ -163,10 +164,10 @@ export default function MyAssignmentsPage() {
 
               {/* Empty */}
               {empty && (
-                <div className="flex flex-col items-center py-10 text-slate-600">
-                  <AlertTriangle className="w-10 h-10 text-slate-400 mb-2" />
+                <div className="flex flex-col items-center py-10 text-[var(--text-muted)]">
+                  <AlertTriangle className="w-10 h-10 text-[var(--muted)] mb-2" />
                   <p className="mb-1 text-sm text-center">You have no assignments.</p>
-                  <p className="text-xs text-slate-500">Please check your courses again.</p>
+                  <p className="text-xs">Please check your courses again.</p>
                 </div>
               )}
 
@@ -178,7 +179,7 @@ export default function MyAssignmentsPage() {
 
                     return (
                       <li key={a.id}>
-                        <div className="rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                        <div className="rounded-xl border border-[var(--border)] bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                           {/* Row 1 */}
                           <div className="px-4 pt-4 grid grid-cols-1 md:grid-cols-12 gap-3">
                             {/* Left */}
@@ -192,27 +193,26 @@ export default function MyAssignmentsPage() {
                               >
                                 {a.statusDisplay}
                               </span>
-                              <h3 className="text-base font-semibold text-slate-900 truncate">
+                              <h3 className="text-base font-semibold text-foreground truncate">
                                 {a.title}
                               </h3>
                             </div>
 
                             {/* Right */}
                             <div className="md:col-span-5 min-w-0 flex items-center justify-start md:justify-end gap-2 flex-wrap">
-                              <span className="text-[11px] px-2 py-0.5 rounded-full border border-slate-200 text-slate-700 inline-flex items-center gap-1 shrink-0">
-                                <Users className="w-3 h-3" />
+                              <span className="text-[11px] px-2 py-0.5 rounded-full border border-[var(--border)] text-foreground/80 inline-flex items-center gap-1 shrink-0">
+                                <Users className="w-3 h-3 text-nav-active" />
                                 {a.isGroupAssignment ? <>Group • {a.assignedGroupsCount}</> : <>Individual</>}
                               </span>
 
-                              <Button
-                                variant="outline"
-                                size="sm"
+                              <button
+                                type="button"
                                 onClick={() => gotoDetail(a.courseId, a.id)}
-                                className="shrink-0"
+                                className="btn bg-white border border-brand text-nav hover:text-nav-active shrink-0"
                               >
-                                <Eye className="w-4 h-4 mr-2" />
+                                <Eye className="w-4 h-4" />
                                 View details
-                              </Button>
+                              </button>
                             </div>
                           </div>
 
@@ -220,36 +220,38 @@ export default function MyAssignmentsPage() {
                           <div className="px-4 pb-4 pt-3 grid grid-cols-1 md:grid-cols-12 gap-3">
                             <div className="md:col-span-12 min-w-0 flex flex-wrap items-center gap-3 text-sm">
                               <span className="inline-flex items-center gap-1">
-                                <CalendarClock className="w-4 h-4 text-green-600" />
+                                <CalendarClock className="w-4 h-4 text-nav-active" />
                                 Start: <b>{fmt(a.startDate)}</b>
                               </span>
                               <span className="inline-flex items-center gap-1">
-                                <CalendarClock className="w-4 h-4 text-green-600" />
+                                <CalendarClock className="w-4 h-4 text-nav-active" />
                                 Due: <b>{fmt(due)}</b>
                               </span>
                               {a.extendedDueDate && (
-                                <span className="text-xs text-slate-500">extended from {fmt(a.dueDate)}</span>
+                                <span className="text-xs text-[var(--text-muted)]">extended from {fmt(a.dueDate)}</span>
                               )}
 
-                              <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5">
-                                <BookOpen className="w-4 h-4" />
+                              <span className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-0.5">
+                                <BookOpen className="w-4 h-4 text-nav-active" />
                                 {a.maxPoints} pts
                               </span>
 
-                              <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5">
-                                <Timer className="w-4 h-4" />
+                              <span className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-0.5">
+                                <Timer className="w-4 h-4 text-nav-active" />
                                 {a.daysUntilDue} days left
                               </span>
 
                               {a.isOverdue && (
-                                <span className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-red-700">
+                                <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-accent"
+                                  style={{ background: "color-mix(in oklab, var(--accent) 16%, var(--white))", border: "1px solid color-mix(in oklab, var(--accent) 40%, var(--border))" } as any}
+                                >
                                   <AlertTriangle className="w-4 h-4" />
                                   Overdue
                                 </span>
                               )}
 
-                              <span className="text-xs text-slate-500">
-                                Course: <b>{a.courseName}</b>
+                              <span className="text-xs text-[var(--text-muted)]">
+                                Course: <b className="text-foreground">{a.courseName}</b>
                               </span>
                             </div>
                           </div>
@@ -263,62 +265,64 @@ export default function MyAssignmentsPage() {
               {/* Pagination */}
               {!loading && data && data.totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between">
-                  <div className="text-sm text-slate-600">
+                  <div className="text-sm text-[var(--text-muted)]">
                     Page <b>{data.pageNumber}</b> / {data.totalPages} • Total: <b>{data.totalCount}</b>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
+                    <button
+                      type="button"
+                      className={`btn bg-white border border-brand text-nav hover:text-nav-active ${pageNumber <= 1 ? "opacity-60 cursor-not-allowed" : ""}`}
                       disabled={pageNumber <= 1}
                       onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
                     >
                       Prev
-                    </Button>
-                    <Button
-                      variant="outline"
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn bg-white border border-brand text-nav hover:text-nav-active ${pageNumber >= data.totalPages ? "opacity-60 cursor-not-allowed" : ""}`}
                       disabled={pageNumber >= data.totalPages}
                       onClick={() => setPageNumber((p) => Math.min(data.totalPages, p + 1))}
                     >
                       Next
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Right: Filter (Course + Course name search via API) */}
         <div className="md:col-span-3">
-          <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Filter</CardTitle>
-            </CardHeader>
+          <div className="card rounded-2xl p-4">
+            <div className="mb-2">
+              <div className="text-base font-semibold text-nav">Filter</div>
+            </div>
 
-            <CardContent className="space-y-4">
+            <div className="space-y-4">
               {/* Course name (server-side search) */}
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-600">Course name</label>
+                <label className="text-xs font-medium text-nav">Course name</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input
-                    className="pl-9"
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                  <input
+                    className="input pl-9"
                     placeholder="Type to search courses…"
                     value={courseNameQuery}
                     onChange={(e) => setCourseNameQuery(e.target.value)}
                   />
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-[var(--text-muted)]">
                   {loadingCourses ? "Searching…" : `${myCourses?.length ?? 0} course(s)`}
                 </p>
               </div>
 
               {/* Course select (results filtered by Course name) */}
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-600">Course</label>
+                <label className="text-xs font-medium text-nav">Course</label>
                 <div className="relative">
                   <select
-                    className="w-full appearance-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="input pr-8 appearance-none"
                     value={courseId}
                     onChange={(e) => setCourseId(e.target.value)}
                   >
@@ -329,7 +333,7 @@ export default function MyAssignmentsPage() {
                       </option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--text-muted)]">
                     ▾
                   </div>
                 </div>
@@ -337,17 +341,21 @@ export default function MyAssignmentsPage() {
 
               {/* Actions */}
               <div className="flex items-center gap-2 pt-1">
-                <Button type="button" variant="outline" onClick={onClearFilters} className="w-full">
-                  <X className="w-4 h-4 mr-2" />
+                <button
+                  type="button"
+                  onClick={onClearFilters}
+                  className="btn bg-white border border-brand text-nav hover:text-nav-active w-full"
+                >
+                  <X className="w-4 h-4" />
                   Clear
-                </Button>
+                </button>
               </div>
 
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-[var(--text-muted)]">
                 Select a course to filter assignments. Type a course name to search from the server.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
