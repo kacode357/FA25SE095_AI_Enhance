@@ -24,6 +24,7 @@ import {
 export const AuthService = {
   login: async (data: LoginPayload): Promise<LoginResponse> => {
     const response = await userAxiosInstance.post<LoginResponse>("/Auth/login", data);
+    console.log("AuthService login response:", response);
     return response.data;
   },
 

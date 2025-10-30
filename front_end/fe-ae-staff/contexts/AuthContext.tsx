@@ -3,9 +3,10 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { UserProfile } from "@/types/user/user.response";
+import type { UserProfile } from "@/types/user/user.response";
 import { UserService } from "@/services/user.services";
 import { mapRole } from "@/config/user-role";
+import type { ApiResponse } from "@/types/auth/auth.response";
 
 type AuthContextType = {
   user: UserProfile | null;
@@ -26,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const authPages = new Set([
+    const authPages = new Set<string>([
       "/login",
       "/register",
       "/verify-email",
@@ -34,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       "/reset-password",
     ]);
 
-    // ⚠️ TRANG AUTH → KHÔNG FETCH PROFILE để tránh 401 interceptor gây refresh loop
+    // Trang auth → không fetch profile để tránh vòng lặp 401 interceptor
     if (authPages.has(pathname)) {
       setUser(null);
       setLoading(false);
@@ -45,14 +46,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        const profile = await UserService.getProfile();
+        // ✅ Lấy đúng payload thật: resp.data (UserProfile)
+        const resp: ApiResponse<UserProfile> = await UserService.getProfile();
         if (!mounted) return;
 
+        const profile = resp.data; // <-- đây mới là UserProfile
         setUser(profile);
         setLoading(false);
 
-        const roleLower = (profile.role || "").toLowerCase();
-        const isStaff = mapRole(profile.role) !== null && roleLower === "staff";
+        // Điều hướng theo role
+        const roleLower = (profile?.role ?? "").toLowerCase();
+        // Nếu mày muốn chắc role hợp lệ theo mapRole thì giữ dòng dưới,
+        // còn không có thể chỉ check roleLower === "staff"
+        const isStaff = mapRole(profile?.role as string) !== null && roleLower === "staff";
         const onStaffRoute = pathname.startsWith("/staff");
 
         if (isStaff && !onStaffRoute) {
@@ -73,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (pathname.startsWith("/staff")) {
           router.replace("/login");
         }
-        // Nếu không phải /staff thì cứ để ở nguyên trang public
+        // Trang public thì giữ nguyên
       }
     })();
 
