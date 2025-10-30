@@ -5,13 +5,13 @@ import { mapRole, UserRole, isAllowedAppRole } from "@/config/classroom-service/
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
 import type { LoginPayload } from "@/types/auth/auth.payload";
-import type { LoginResponse } from "@/types/auth/auth.response";
+import type { LoginResponse, ApiResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
 import Cookies from "js-cookie";
 import { useState } from "react";
 
 type LoginOptions = {
-  remember?: boolean; // true => 7 ngày, false => 10s (test)
+  remember?: boolean;
 };
 
 export type LoginResult = {
@@ -28,7 +28,6 @@ const COMMON_COOKIE_OPTS = {
   path: "/",
 };
 
-/** Tạo Date hết hạn sau N mili-giây */
 const expiresInMs = (ms: number) => new Date(Date.now() + ms);
 
 const broadcast = (reason: "login" | "refresh" | "logout") => {
@@ -47,34 +46,17 @@ const clearTokens = () => {
 export function useLogin() {
   const [loading, setLoading] = useState(false);
 
-  /**
-   * Lưu token:
-   * - remember=true: 7 ngày (access + refresh)
-   * - remember=false: 10 giây (access + refresh, để test)
-   */
   const setSession = (accessToken: string, refreshToken?: string, remember?: boolean) => {
     if (remember) {
-      Cookies.set(ACCESS_TOKEN_KEY, accessToken, {
-        ...COMMON_COOKIE_OPTS,
-        expires: 7,
-      });
+      Cookies.set(ACCESS_TOKEN_KEY, accessToken, { ...COMMON_COOKIE_OPTS, expires: 7 });
       if (refreshToken) {
-        Cookies.set(REFRESH_TOKEN_KEY, refreshToken, {
-          ...COMMON_COOKIE_OPTS,
-          expires: 7,
-        });
+        Cookies.set(REFRESH_TOKEN_KEY, refreshToken, { ...COMMON_COOKIE_OPTS, expires: 7 });
       }
     } else {
       const shortExpire = expiresInMs(30 * 60 * 1000);
-      Cookies.set(ACCESS_TOKEN_KEY, accessToken, {
-        ...COMMON_COOKIE_OPTS,
-        expires: shortExpire,
-      });
+      Cookies.set(ACCESS_TOKEN_KEY, accessToken, { ...COMMON_COOKIE_OPTS, expires: shortExpire });
       if (refreshToken) {
-        Cookies.set(REFRESH_TOKEN_KEY, refreshToken, {
-          ...COMMON_COOKIE_OPTS,
-          expires: shortExpire,
-        });
+        Cookies.set(REFRESH_TOKEN_KEY, refreshToken, { ...COMMON_COOKIE_OPTS, expires: shortExpire });
       }
     }
   };
@@ -87,33 +69,30 @@ export function useLogin() {
     setLoading(true);
 
     try {
-      const res = await AuthService.login(payload);
-      if (!res?.accessToken) {
+      const res: ApiResponse<LoginResponse> = await AuthService.login(payload);
+      const payloadData = res.data;
+
+      if (!payloadData?.accessToken) {
         clearTokens();
         return { ok: false, data: null, role: null };
       }
 
-      // Lưu token theo remember
-      setSession(res.accessToken, res.refreshToken, remember);
+      setSession(payloadData.accessToken, payloadData.refreshToken, remember);
 
-      // Lấy profile để xác thực role
-      const profile: UserProfile = await UserService.getProfile();
-      const rawRole =
-        (profile as any)?.role ??
-        (profile as any)?.roleName ??
-        (profile as any)?.role?.name;
+      const profileRes: ApiResponse<UserProfile> = await UserService.getProfile();
+      const profile = profileRes.data;
+
+      const rawRole = (profile as any)?.role ?? payloadData.role;
 
       const role = mapRole(rawRole);
 
       if (!role || !isAllowedAppRole(role)) {
         clearTokens();
-        return { ok: false, data: res, role: null };
+        return { ok: false, data: payloadData, role: null };
       }
 
-      // Phát broadcast hợp lệ
       broadcast("login");
-
-      return { ok: true, data: res, role };
+      return { ok: true, data: payloadData, role };
     } catch {
       clearTokens();
       return { ok: false, data: null, role: null };

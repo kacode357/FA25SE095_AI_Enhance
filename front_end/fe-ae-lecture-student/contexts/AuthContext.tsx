@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import { UserService } from "@/services/user.services";
 import type { UserProfile } from "@/types/user/user.response";
+import type { ApiResponse } from "@/types/auth/auth.response";
 
 type AuthContextType = {
   user: UserProfile | null;
@@ -44,6 +45,11 @@ function readBroadcastTS(): number {
   }
 }
 
+/** Type guard cho ApiResponse */
+function isApiResponse<T>(v: any): v is ApiResponse<T> {
+  return v && typeof v === "object" && "status" in v && "data" in v;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, _setUser] = useState<UserProfile | null>(null);
   const pathname = usePathname();
@@ -61,7 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const profile = await UserService.getProfile();
+      // Có thể là ApiResponse<UserProfile> HOẶC UserProfile, tùy backend
+      const res = await UserService.getProfile();
+      const profile: UserProfile = isApiResponse<UserProfile>(res) ? res.data : (res as UserProfile);
+
       _setUser(profile);
     } catch {
       clearTokens();
@@ -88,39 +97,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshProfile();
   }, [pathname, refreshProfile]);
 
-  // Theo dõi token đổi: nếu token đổi mà KHÔNG có broadcast mới => coi là sửa tay => logout
+  // Theo dõi token đổi
   useEffect(() => {
     const checkTokenChanged = () => {
       const current = Cookies.get(ACCESS_TOKEN_KEY);
       const tokenChanged = current !== lastAccessRef.current;
       if (!tokenChanged) return;
 
-      // cập nhật snapshot token
       lastAccessRef.current = current;
 
-      // Nếu không còn token → về login
       if (!current) {
         _setUser(null);
         if (!AUTH_PAGES.has(pathname)) goLogin();
         return;
       }
 
-      // Có token mới: kiểm tra broadcast
       const now = Date.now();
       const ts = readBroadcastTS();
-      const hasRecentBroadcast = ts > lastBroadcastRef.current && now - ts <= 3000; // cho phép lệch 3s
-      // lưu lại ts mới nhất để lần sau so sánh
+      const hasRecentBroadcast = ts > lastBroadcastRef.current && now - ts <= 3000;
       lastBroadcastRef.current = Math.max(lastBroadcastRef.current, ts);
 
       if (!hasRecentBroadcast) {
-        // => token bị đổi tay (không do login/refresh chính thống) => coi là gian lận
         clearTokens();
         _setUser(null);
         goLogin();
         return;
       }
 
-      // Có broadcast hợp lệ → fetch lại profile (đổi account/refresh hợp lệ)
       if (!AUTH_PAGES.has(pathname)) {
         hardResetUser();
         refreshProfile();
@@ -134,8 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     document.addEventListener("visibilitychange", onVisibility);
     const timer = window.setInterval(checkTokenChanged, 2000);
 
-    // init lần đầu
-    // đồng bộ các mốc ban đầu
     lastAccessRef.current = Cookies.get(ACCESS_TOKEN_KEY);
     lastBroadcastRef.current = readBroadcastTS();
 
@@ -146,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [pathname, refreshProfile]);
 
-  // Lắng nghe broadcast đa tab (đổi hợp lệ)
+  // Lắng nghe broadcast đa tab
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "auth:broadcast") {
