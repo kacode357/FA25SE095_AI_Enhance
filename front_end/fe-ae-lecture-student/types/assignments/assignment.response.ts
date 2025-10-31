@@ -1,28 +1,29 @@
 // types/assignments/assignment.response.ts
 
+// Server trả status 1-based và "Draft" ứng với 1
 export enum AssignmentStatus {
-  Draft = 0,
-  Active = 1,
-  Extended = 2,
-  Overdue = 3,
-  Closed = 4,
+  Draft = 1,
+  Active = 2,
+  Extended = 3,
+  Overdue = 4,
+  Closed = 5,
 }
 
 export interface GroupItem {
   id: string;
   courseId: string;
-  courseName: string;
+  courseName: string;                 // có thể rỗng ""
   name: string;
   description: string | null;
   maxMembers: number;
   isLocked: boolean;
-  assignmentId: string | null;
+  assignmentId: string | null;        // có thể null khi chưa gán
   assignmentTitle: string | null;
   memberCount: number;
   leaderName: string | null;
   leaderId: string | null;
   createdAt: string;
-  createdBy: string;
+  createdBy: string | null;
 }
 
 export interface AssignmentItem {
@@ -43,10 +44,10 @@ export interface AssignmentItem {
   daysUntilDue: number;
   assignedGroupsCount: number;
   createdAt: string;
-  updatedAt?: string;
-  description?: string;
-  format?: string;
-  gradingCriteria?: string;
+  updatedAt?: string | null;          // server có thể trả null
+  description?: string;               // có thể rỗng ""
+  format?: string;                    // ví dụ "PDF"
+  gradingCriteria?: string;           // có thể rỗng ""
   /** Included for detailed payloads (GET by id, create, update, extend, close) */
   assignedGroups?: GroupItem[];
 }
@@ -72,25 +73,27 @@ export interface DeleteAssignmentResponse {
 export interface GetAssignmentsResponse {
   success: boolean;
   message: string;
-  assignments: Array<Pick<
-    AssignmentItem,
-    | "id"
-    | "courseId"
-    | "courseName"
-    | "title"
-    | "topicName"
-    | "startDate"
-    | "dueDate"
-    | "extendedDueDate"
-    | "status"
-    | "statusDisplay"
-    | "isGroupAssignment"
-    | "maxPoints"
-    | "isOverdue"
-    | "daysUntilDue"
-    | "assignedGroupsCount"
-    | "createdAt"
-  >>;
+  assignments: Array<
+    Pick<
+      AssignmentItem,
+      | "id"
+      | "courseId"
+      | "courseName"
+      | "title"
+      | "topicName"
+      | "startDate"
+      | "dueDate"
+      | "extendedDueDate"
+      | "status"
+      | "statusDisplay"
+      | "isGroupAssignment"
+      | "maxPoints"
+      | "isOverdue"
+      | "daysUntilDue"
+      | "assignedGroupsCount"
+      | "createdAt"
+    >
+  >;
   totalCount: number;
   pageNumber: number;
   pageSize: number;
@@ -108,24 +111,26 @@ export interface CreateAssignmentResponse {
 export interface GetMyAssignmentsResponse {
   success: boolean;
   message: string;
-  assignments: Array<Pick<
-    AssignmentItem,
-    | "id"
-    | "courseId"
-    | "courseName"
-    | "title"
-    | "startDate"
-    | "dueDate"
-    | "extendedDueDate"
-    | "status"
-    | "statusDisplay"
-    | "isGroupAssignment"
-    | "maxPoints"
-    | "isOverdue"
-    | "daysUntilDue"
-    | "assignedGroupsCount"
-    | "createdAt"
-  >>;
+  assignments: Array<
+    Pick<
+      AssignmentItem,
+      | "id"
+      | "courseId"
+      | "courseName"
+      | "title"
+      | "startDate"
+      | "dueDate"
+      | "extendedDueDate"
+      | "status"
+      | "statusDisplay"
+      | "isGroupAssignment"
+      | "maxPoints"
+      | "isOverdue"
+      | "daysUntilDue"
+      | "assignedGroupsCount"
+      | "createdAt"
+    >
+  >;
   totalCount: number;
   pageNumber: number;
   pageSize: number;
