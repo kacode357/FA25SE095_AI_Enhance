@@ -4,8 +4,9 @@ import Cookies from "js-cookie";
 import { toast } from "sonner";
 
 /** ===== ENVs ===== */
-const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;    // vd: http://localhost:5001/api
-const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API!; // vd: http://localhost:5006/api
+const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;    
+const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API!; 
+const CRAWL_BASE_URL = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_API!;
 
 /** ===== Cookie keys ===== */
 const ACCESS_TOKEN_KEY = "accessToken";
@@ -183,3 +184,4 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
 /** ===== Export axios instances ===== */
 export const userAxiosInstance = createAxiosInstance(USER_BASE_URL);
 export const courseAxiosInstance = createAxiosInstance(COURSE_BASE_URL);
+export const crawlAxiosInstance = createAxiosInstance(CRAWL_BASE_URL);

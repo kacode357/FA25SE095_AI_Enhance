@@ -1,3 +1,4 @@
+// app/student/courses/[id]/assignments/[assignmentId]/page.tsx
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
@@ -25,6 +26,7 @@ import Link from "next/link";
 import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { AssignmentStatus, GroupItem } from "@/types/assignments/assignment.response";
 import { cleanIncomingHtml } from "@/utils/html-normalize";
+import { useAllMembers } from "@/hooks/group-member/useAllMembers";
 
 /* ============ helpers ============ */
 const dt = (s: string | null | undefined) => {
@@ -34,17 +36,7 @@ const dt = (s: string | null | undefined) => {
   return d.toLocaleString("en-GB");
 };
 
-const encodeB64 = (s: string) => {
-  try {
-    // safe for UTF-8
-    return typeof window !== "undefined" ? btoa(encodeURIComponent(s)) : "";
-  } catch {
-    return "";
-  }
-};
-
 /* ---------- Group members panel ---------- */
-import { useAllMembers } from "@/hooks/group-member/useAllMembers";
 function GroupMembersPanel({ groupId }: { groupId: string }) {
   const { members, loading, error, fetchAllMembers } = useAllMembers();
   const didFetchRef = useRef(false);
@@ -182,55 +174,6 @@ export default function AssignmentDetailPage() {
   const showOverdueBanner = a.status === AssignmentStatus.Overdue;
   const showDraftInfo = a.status === AssignmentStatus.Draft;
 
-  // ---------- Build preset (to pass to crawler page) ----------
-  type PresetEnvelope = {
-    payload: {
-      userId: string; // fill later on crawler page from AuthContext
-      urls: string[];
-      crawlerType: number;
-      priority: number;
-      assignmentId: string;
-      configuration: {
-        timeoutSeconds: number;
-        followRedirects: boolean;
-        extractImages: boolean;
-        extractLinks: boolean;
-        customConfigJson: string;
-      };
-      userTier: number;
-    };
-    meta: {
-      courseId: string;
-      courseName: string;
-      assignmentTitle: string;
-    };
-  };
-
-  const preset: PresetEnvelope = {
-    payload: {
-      userId: "",
-      urls: [],
-      crawlerType: 0,
-      priority: 0,
-      assignmentId,
-      configuration: {
-        timeoutSeconds: 15,
-        followRedirects: true,
-        extractImages: true,
-        extractLinks: true,
-        customConfigJson: "",
-      },
-      userTier: 0,
-    },
-    meta: {
-      courseId,
-      courseName: a.courseName,
-      assignmentTitle: a.title,
-    },
-  };
-
-  const presetParam = encodeB64(JSON.stringify(preset));
-
   return (
     <motion.div
       className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8"
@@ -268,22 +211,20 @@ export default function AssignmentDetailPage() {
 
         {/* Actions */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
+          <Link
+            href={`/student/courses/${courseId}`}
             className="btn bg-white border border-brand text-nav hover:text-nav-active focus:outline-none focus:ring-4"
-            onClick={() => router.push(`/student/courses/${courseId}`)}
             title="Back to Course"
-            aria-label="Back to Course"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
-          </button>
+          </Link>
 
-          {/* Pass only data, not calling any API */}
+          {/* Open crawler page (no params, no API call here) */}
           <Link
-            href={`/student/crawler?preset=${encodeURIComponent(presetParam)}`}
+            href="/student/crawler"
             className="btn btn-gradient-slow px-4 py-2"
             title="Start with AI Crawler"
-            aria-label="Start with AI Crawler"
           >
             <Rocket className="w-4 h-4" />
             Start with AI Crawler
