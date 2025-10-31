@@ -4,8 +4,8 @@ import Cookies from "js-cookie";
 import { toast } from "sonner";
 
 /** ===== ENVs ===== */
-const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;    
-const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API!; 
+const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;
+const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API!;
 const CRAWL_BASE_URL = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_API!;
 
 /** ===== Cookie keys ===== */
@@ -27,22 +27,22 @@ const clearTokens = () => {
 };
 
 const goLogin = () => {
-  if (typeof window !== "undefined") {
-    window.location.replace("/login");
-  }
+  if (typeof window !== "undefined") window.location.replace("/login");
 };
 
 const goHome = () => {
-  if (typeof window !== "undefined") {
-    window.location.replace("/");
-  }
+  if (typeof window !== "undefined") window.location.replace("/");
 };
 
 /** ===== Factory: create axios instance với refresh queue ===== */
-const createAxiosInstance = (baseURL: string): AxiosInstance => {
+type CreateOpts = { timeout?: number };
+
+const createAxiosInstance = (baseURL: string, opts: CreateOpts = {}): AxiosInstance => {
   const instance = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json; charset=UTF-8" },
+    // Timeout mặc định (nếu không truyền) để tương thích các service khác
+    timeout: opts.timeout ?? 20000, // 20s default
   });
 
   /** ----- Request: gắn Bearer từ cookie ----- */
@@ -67,7 +67,6 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
   /** ----- Response: handle errors ----- */
   instance.interceptors.response.use(
     (response) => response,
-
     async (error: AxiosError<any>) => {
       const status = error.response?.status;
       const originalRequest: any = error.config;
@@ -94,7 +93,6 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
 
       /** 401: Unauthorized -> thử refresh 1 lần */
       if (originalRequest?._retry) {
-        // Đã refresh rồi mà vẫn 401 -> logout cứng
         clearTokens();
         broadcast("logout");
         goLogin();
@@ -102,7 +100,6 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
       }
       originalRequest._retry = true;
 
-      // Nếu đang refresh, xếp request vào hàng chờ
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({
@@ -117,7 +114,6 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
 
       isRefreshing = true;
 
-      // Lấy refreshToken từ cookie
       const refreshToken = Cookies.get(REFRESH_TOKEN_KEY);
       if (!refreshToken) {
         isRefreshing = false;
@@ -128,22 +124,15 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
       }
 
       try {
-        // GỌI VỀ AUTH SERVICE ĐỂ REFRESH
         const res = await axios.post(`${USER_BASE_URL}/Auth/refresh-token`, {
           refreshToken,
-          ipAddress: "", // tuỳ BE
-          userAgent: "", // tuỳ BE
+          ipAddress: "",
+          userAgent: "",
         });
 
         const { accessToken, refreshToken: newRefresh } = res.data || {};
+        if (!accessToken) throw new Error("No accessToken from refresh");
 
-        if (!accessToken) {
-          throw new Error("No accessToken from refresh");
-        }
-
-        // Lưu token mới
-        // Lưu ý: ở luồng refresh, mày có thể muốn giữ chính sách hạn theo lần login đầu.
-        // Simple: accessToken (session cookie), refreshToken 7 ngày.
         Cookies.set(ACCESS_TOKEN_KEY, accessToken, {
           secure: true,
           sameSite: "strict",
@@ -158,15 +147,12 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
           });
         }
 
-        // Broadcast "refresh" để AuthContext coi đây là đổi hợp lệ
         broadcast("refresh");
 
-        // Đánh thức hàng chờ + retry request gốc
         processQueue(null, accessToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return instance(originalRequest);
       } catch (err) {
-        // Refresh fail -> hủy queue và logout
         processQueue(err, null);
         clearTokens();
         broadcast("logout");
@@ -182,6 +168,11 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
 };
 
 /** ===== Export axios instances ===== */
+// giữ mặc định 20s cho user/course
 export const userAxiosInstance = createAxiosInstance(USER_BASE_URL);
 export const courseAxiosInstance = createAxiosInstance(COURSE_BASE_URL);
-export const crawlAxiosInstance = createAxiosInstance(CRAWL_BASE_URL);
+
+// tăng timeout cho crawl (ví dụ 180s)
+export const crawlAxiosInstance = createAxiosInstance(CRAWL_BASE_URL, {
+  timeout: 600_000, // 10 phút cho các request khởi tạo/điều phối crawl
+});

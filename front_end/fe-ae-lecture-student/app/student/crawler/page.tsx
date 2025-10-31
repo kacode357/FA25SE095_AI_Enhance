@@ -1,26 +1,12 @@
-// app/student/crawler/page.tsx
 "use client";
 
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
+import { TAB_REGISTRY, normalizeTab, type TabKey } from "./_tabs";
 
-/** Khai báo key tab hợp lệ (mở rộng ở đây là đủ) */
-type TabKey = "start" | "history";
-
-/** Registry: tab -> dynamic import component */
-const TAB_REGISTRY: Record<
-  TabKey,
-  {
-    load: () => Promise<{ default: React.ComponentType<any> }>;
-  }
-> = {
-  start: { load: () => import("./start-crawl/page") },
-  history: { load: () => import("./history-crawl/page") },
-};
-
-/** Fallback khi tab không hợp lệ */
+/** Fallback khi tab không hợp lệ (gần như không xảy ra vì đã normalize) */
 function UnknownTab() {
   return (
     <div className="card rounded-2xl p-6 text-sm text-[var(--text-muted)]">
@@ -41,24 +27,13 @@ function LoadingPanel() {
 
 export default function CrawlerHubPage() {
   const qs = useSearchParams();
-  const raw = (qs.get("tab") || "start").toLowerCase();
+  const tab: TabKey = normalizeTab(qs.get("tab"));
 
-  // Ép kiểu an toàn
-  const tab: TabKey | "unknown" = (Object.keys(TAB_REGISTRY) as TabKey[]).includes(
-    raw as TabKey
-  )
-    ? (raw as TabKey)
-    : "unknown";
-
-  // Chọn component động theo tab
   const Active = useMemo(() => {
-    if (tab === "unknown") return UnknownTab;
-
-    // mỗi lần đổi tab mới tạo dynamic component tương ứng
-    return dynamic(TAB_REGISTRY[tab].load, {
-      loading: LoadingPanel,
-      ssr: false,
-    });
+    const meta = TAB_REGISTRY[tab];
+    return meta
+      ? dynamic(meta.load, { loading: LoadingPanel, ssr: false })
+      : UnknownTab;
   }, [tab]);
 
   return <Active />;

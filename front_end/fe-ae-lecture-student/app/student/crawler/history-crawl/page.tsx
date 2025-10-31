@@ -1,7 +1,7 @@
 // app/student/crawler/history-crawl/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   History,
   Loader2,
@@ -11,7 +11,9 @@ import {
   CalendarClock,
   Timer,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useSmartCrawlHistory } from "@/hooks/smart-crawler/useSmartCrawlHistory";
+import type { SmartCrawlHistoryItem } from "@/types/smart-crawler/smart-crawler.response";
 
 const dt = (s?: string) => {
   if (!s) return "";
@@ -22,6 +24,15 @@ const dt = (s?: string) => {
 export default function HistoryCrawlPanel() {
   const [limit, setLimit] = useState(50);
   const { loading, data, fetchHistory } = useSmartCrawlHistory();
+  const router = useRouter();
+
+  const goResults = useCallback(
+    (jobId: string) => {
+      if (!jobId) return;
+      router.replace(`/student/crawler/results/${jobId}`);
+    },
+    [router]
+  );
 
   useEffect(() => {
     fetchHistory({ limit });
@@ -73,37 +84,49 @@ export default function HistoryCrawlPanel() {
 
         {!loading && Array.isArray(data) && data.length > 0 && (
           <ul className="divide-y divide-[var(--border)]">
-            {data.map((h) => (
-              <li key={h.id} className="py-3 flex items-start gap-3">
-                <div className="mt-0.5">
-                  {h.success ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-red-600" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-foreground break-words">
-                    {h.promptText || "(no prompt)"}
-                  </div>
-                  <div className="text-[12px] text-[var(--text-muted)] mt-1 flex items-center gap-3 flex-wrap">
-                    <span className="inline-flex items-center gap-1">
-                      <CalendarClock className="w-3.5 h-3.5" />
-                      {dt(h.processedAt)}
-                    </span>
-                    {typeof h.processingTimeMs === "number" && (
-                      <span className="inline-flex items-center gap-1">
-                        <Timer className="w-3.5 h-3.5" />
-                        {h.processingTimeMs} ms
-                      </span>
-                    )}
-                    {h.type && <span>• {h.type}</span>}
-                  </div>
-                  {h.crawlJobId && (
-                    <div className="text-[12px] text-[var(--text-muted)] mt-1">
-                      Job: {h.crawlJobId}
+            {data.map((h: SmartCrawlHistoryItem) => (
+              <li key={h.id} className="py-3">
+                <div className="flex items-start justify-between gap-3">
+                  {/* Left block: status + info */}
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="mt-0.5 shrink-0">
+                      {h.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-600" />
+                      )}
                     </div>
-                  )}
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-foreground break-words">
+                        {h.promptText || "(no prompt)"}
+                      </div>
+                      <div className="text-[12px] text-[var(--text-muted)] mt-1 flex items-center gap-3 flex-wrap">
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarClock className="w-3.5 h-3.5" />
+                          {dt(h.processedAt)}
+                        </span>
+                        {typeof h.processingTimeMs === "number" && (
+                          <span className="inline-flex items-center gap-1">
+                            <Timer className="w-3.5 h-3.5" />
+                            {h.processingTimeMs} ms
+                          </span>
+                        )}
+                        {h.type && <span>• {h.type}</span>}
+                      </div>
+                      {/* BỎ hiển thị Job ID */}
+                    </div>
+                  </div>
+
+                  {/* Right block: button ở góc phải */}
+                  <div className="shrink-0">
+                    <button
+                      type="button"
+                      className="btn px-3 py-1.5 rounded-md border bg-white border-[var(--border)] text-nav hover:text-nav-active"
+                      onClick={() => goResults(h.crawlJobId)}
+                    >
+                      View results
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
