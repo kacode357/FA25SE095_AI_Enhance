@@ -1,5 +1,6 @@
 "use client";
 
+import Footer from "../components/footer";
 import BlogSection from "./components/BlogSection";
 import CategorySection from "./components/CategorySection";
 import CTASection from "./components/CTASection";
@@ -18,6 +19,7 @@ export default function StudentHomePage() {
       <Testimonials />
       <BlogSection />
       <CTASection />
+      <Footer />
     </main>
   );
 }
