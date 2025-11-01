@@ -1,20 +1,19 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 
 export default function CTASection() {
     return (
-        <section className="py-20 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-center">
-            <div className="container mx-auto px-6">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                    Start Learning with Edubo Today
+        <section className="py-20 text-center text-white bg-gradient-to-r from-indigo-600 to-violet-600">
+            <div className="container px-6 mx-auto">
+                <h2 className="mb-4 text-3xl font-bold md:text-4xl">
+                    Start Learning with AIDS-LMS Today
                 </h2>
                 <p className="mb-8 text-lg opacity-90">
-                    Join thousands of learners achieving their dreams. Your next skill is one click away.
+                    Join the course now to get support for standard form and high quality Marketing documents. Your next skill is one click away.
                 </p>
-                <Button className="bg-yellow-400 text-black hover:bg-yellow-500 px-8 py-3 rounded-lg text-lg font-semibold">
-                    Get Started Now
-                </Button>
+                <button className="px-8 font-semibold text-white transition-all rounded-full shadow-lg btn btn-gradient bg-gradient-to-r from-purple-500 to-indigo-500 hover:opacity-90 shadow-purple-200 hover:shadow-purple-300">
+                    Learn More →
+                </button>
             </div>
         </section>
     );

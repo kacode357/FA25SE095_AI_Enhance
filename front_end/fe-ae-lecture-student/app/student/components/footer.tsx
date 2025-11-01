@@ -6,7 +6,7 @@ import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter } from "react-icons/f
 export default function Footer() {
   return (
     <footer className="relative bg-gradient-to-br from-[#fff2e5] via-[#fdf8ff] to-[#e1ebff] text-slate-700">
-      <div className="container px-6 py-16 mx-auto md:px-0 lg:px-2">
+      <div className="container py-16 mx-auto md:px-0 lg:px-0">
         <div className="grid grid-cols-1 gap-25 md:grid-cols-[35%_65%]">
           {/* --- Column 1: Logo & About --- */}
           <div>
@@ -26,7 +26,7 @@ export default function Footer() {
             {/* --- Newsletter --- */}
             <div className="mt-7 md:w-full">
               <h4 className="mb-4 text-lg font-semibold text-indigo-900">Subscribe Newsletter</h4>
-              <div className="flex flex-col gap-3 pb-1 border-b border-[#000D83] sm:flex-row sm:items-center">
+              <div className="flex flex-col gap-3 pb-2 border-b-2 border-[#000D83] sm:flex-row sm:items-center">
                 <div className="relative flex-1">
                   <input
                     type="email"
@@ -112,20 +112,20 @@ export default function Footer() {
 
       {/* --- Bottom bar --- */}
       <div className="border-t border-slate-200">
-        <div className="container flex flex-col items-center justify-between px-6 py-6 mx-auto space-y-4 text-sm text-slate-600 md:flex-row md:space-y-0">
+        <div className="container flex flex-col items-center justify-between py-6 mx-auto space-y-4 text-sm text-slate-600 md:flex-row md:space-y-0">
           <p>© Copyright 2025 <span className="font-semibold text-indigo-600">AIDS-LMS</span> All Rights Reserved.</p>
 
-          <div className="flex gap-4 text-indigo-500">
-            <a href="#" className="p-2 bg-indigo-100 rounded-full hover:bg-indigo-200">
+          <div className="flex gap-4 mr-10 text-indigo-500">
+            <a href="#" className="p-4 bg-indigo-200 rounded-full hover:bg-indigo-300">
               <FaFacebookF />
             </a>
-            <a href="#" className="p-2 bg-indigo-100 rounded-full hover:bg-indigo-200">
+            <a href="#" className="p-4 bg-indigo-200 rounded-full hover:bg-indigo-300">
               <FaTwitter />
             </a>
-            <a href="#" className="p-2 bg-indigo-100 rounded-full hover:bg-indigo-200">
+            <a href="#" className="p-4 bg-indigo-200 rounded-full hover:bg-indigo-300">
               <FaLinkedinIn />
             </a>
-            <a href="#" className="p-2 bg-indigo-100 rounded-full hover:bg-indigo-200">
+            <a href="#" className="p-4 bg-indigo-200 rounded-full hover:bg-indigo-300">
               <FaInstagram />
             </a>
           </div>
