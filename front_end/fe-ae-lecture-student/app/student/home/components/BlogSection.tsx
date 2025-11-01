@@ -2,7 +2,7 @@
 
 export default function OurSkillsSection() {
     return (
-        <section className="relative pt-24 pb-20 overflow-hidden bg-slate-50">
+        <section className="relative overflow-hidden pt-30 pb-25 bg-slate-50">
             <div className="container grid items-center gap-12 px-6 mx-auto md:grid-cols-2">
                 <div className="relative flex justify-center">
                     <div className="absolute -top-6 -left-5 w-[420px] h-[520px] bg-[#fff1eb] rotate-[10deg] rounded-[3rem] shadow-md"></div>
