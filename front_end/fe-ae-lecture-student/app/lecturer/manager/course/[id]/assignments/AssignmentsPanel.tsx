@@ -26,11 +26,12 @@ type Props = {
 };
 
 const statusColor: Record<AssignmentStatus, string> = {
-  0: "bg-slate-200 text-slate-700",
+  // 0: "bg-slate-200 text-slate-700",
   1: "bg-emerald-200 text-emerald-700",
   2: "bg-blue-200 text-blue-700",
   3: "bg-red-200 text-red-700",
   4: "bg-slate-300 text-slate-700",
+  5: "bg-slate-200 text-slate-700",
 };
 
 const defaultFilter: FilterState = {
@@ -141,7 +142,7 @@ export default function AssignmentsPanel({
   // Create view
   if (mode === "create") {
     return (
-      <Card className="border-0 border-slate-100 shadow-none">
+      <Card className="border-0 shadow-none border-slate-100">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-sm md:text-lg">New Assignment</CardTitle>
           <Button variant="outline" onClick={backToList}>
@@ -166,11 +167,11 @@ export default function AssignmentsPanel({
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <CardTitle className="text-xl font-semibold md:text-xl">Assignments</CardTitle>
         <div className="flex items-center gap-2">
-          <div className="flex items-center cursor-pointer gap-2">
-            <Button className="cursor-pointer text-xs" onClick={() => setTopicSheetOpen(true)}>Topic</Button>
+          <div className="flex items-center gap-2 cursor-pointer">
+            <Button className="text-xs cursor-pointer" onClick={() => setTopicSheetOpen(true)}>Topic</Button>
           </div>
-          <div className="flex items-center cursor-pointer gap-2">
-            <Button className="cursor-pointer text-xs" onClick={openCreate}>New Assignment</Button>
+          <div className="flex items-center gap-2 cursor-pointer">
+            <Button className="text-xs cursor-pointer" onClick={openCreate}>New Assignment</Button>
           </div>
         </div>
       </CardHeader>
@@ -187,7 +188,7 @@ export default function AssignmentsPanel({
         />
 
         {/* LIST */}
-        <div className="rounded-xl border border-slate-200 bg-white">
+        <div className="bg-white border rounded-xl border-slate-200">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="text-sm text-slate-600">
               {loading ? "Loading..." : `${assignments.length} items on this page`}
@@ -200,23 +201,23 @@ export default function AssignmentsPanel({
 
           <div className="divide-y">
             {assignments.length === 0 && !loading && (
-              <div className="px-4 py-8 text-center text-sm text-slate-500">
+              <div className="px-4 py-8 text-sm text-center text-slate-500">
                 No assignments found with current filters.
               </div>
             )}
 
             {assignments.map((a) => (
               <div key={a.id} className="px-4 py-3">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   {/* Left */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <div className="truncate font-medium">{a.title}</div>
+                      <div className="font-medium truncate">{a.title}</div>
                       <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
                       {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
                     </div>
-                    <div className="text-xs flex text-slate-500 mt-1">
-                      <div className="mr-1 flex gap-1">Topic: <p className="text-slate-900">{a.topicName}</p></div>
+                    <div className="flex mt-1 text-xs text-slate-500">
+                      <div className="flex gap-1 mr-1">Topic: <p className="text-slate-900">{a.topicName}</p></div>
                       • Due: {new Date(a.dueDate).toLocaleString()} • Assigned groups: {a.assignedGroupsCount} •{" "}
                       {a.isOverdue ? "Overdue" : `D-${a.daysUntilDue}`}
                     </div>

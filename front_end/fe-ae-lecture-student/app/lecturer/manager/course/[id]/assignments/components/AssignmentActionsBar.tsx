@@ -1,11 +1,11 @@
 // app/lecture/manager/course/[id]/assignments/components/AssignmentActionsBar.tsx
 "use client";
 
-import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
+import { useMemo, useState } from "react";
 
 type Props = {
   assignmentId: string;
@@ -36,7 +36,7 @@ export default function AssignmentActionsBar({
 
   const [submitting, setSubmitting] = useState(false);
 
-  const canClose = useMemo(() => status !== 0 /* Draft */, [status]);
+  const canClose = useMemo(() => status !== 1 /* Draft */, [status]);
 
   const handleExtend = async () => {
     if (!extendedAt) return;

@@ -1,22 +1,22 @@
 // app/lecture/manager/course/[id]/assignments/components/AssignmentDetailView.tsx
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { useEffect, useMemo } from "react";
 
 import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
-import { useExtendDueDate } from "@/hooks/assignment/useExtendDueDate";     // ✅ đã có trong project của mày
 import { useCloseAssignment } from "@/hooks/assignment/useCloseAssignment"; // ✅ đã có trong project của mày
+import { useExtendDueDate } from "@/hooks/assignment/useExtendDueDate"; // ✅ đã có trong project của mày
 
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
 
-import GroupAssignControls from "./GroupAssignControls";
 import AssignmentActionsBar from "./AssignmentActionsBar";
+import GroupAssignControls from "./GroupAssignControls";
 
 type Props = {
   id: string;
@@ -24,11 +24,12 @@ type Props = {
 };
 
 const statusColor: Record<AssignmentStatus, string> = {
-  0: "bg-slate-200 text-slate-700",     // Draft
-  1: "bg-emerald-200 text-emerald-700",  // Active
-  2: "bg-blue-200 text-blue-700",        // Extended
-  3: "bg-red-200 text-red-700",          // Overdue
-  4: "bg-slate-300 text-slate-700",      // Closed
+  // 0: "bg-slate-200 text-slate-700",     // Draft
+  1: "bg-emerald-200 text-emerald-700", // Draft
+  2: "bg-blue-200 text-blue-700",         // Active
+  3: "bg-red-200 text-red-700",          // Extended
+  4: "bg-slate-300 text-slate-700",      // Overdue
+  5: "bg-slate-200 text-slate-700",      // Closed
 };
 
 const fmt = (s?: string | null) => (s ? new Date(s).toLocaleString() : "—");
@@ -98,7 +99,7 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
         {!loading && a && (
           <>
             {/* Meta */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
               <div>
                 <div className="text-slate-500">Course</div>
                 <div className="font-medium">{a.courseName}</div>
@@ -131,8 +132,8 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
 
             {/* Description */}
             <div>
-              <div className="text-sm text-slate-500 mb-2">Description</div>
-              <ScrollArea className="max-h-64 rounded border p-3">
+              <div className="mb-2 text-sm text-slate-500">Description</div>
+              <ScrollArea className="p-3 border rounded max-h-64">
                 <div
                   className="rte-view text-[14px] leading-6"
                   dangerouslySetInnerHTML={{ __html: safeDescription }}
@@ -180,16 +181,16 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
 
             {/* Assigned Groups quick view */}
             <div>
-              <div className="text-sm text-slate-500 mb-2">
+              <div className="mb-2 text-sm text-slate-500">
                 Assigned Groups ({a.assignedGroupsCount})
               </div>
 
               {a.assignedGroups && a.assignedGroups.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   {a.assignedGroups.map((g) => (
                     <div
                       key={g.id}
-                      className="rounded-md border bg-slate-50 px-3 py-2 text-sm"
+                      className="px-3 py-2 text-sm border rounded-md bg-slate-50"
                     >
                       <div className="font-medium">{g.name}</div>
                       <div className="text-xs text-slate-500">

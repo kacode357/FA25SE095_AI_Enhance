@@ -121,14 +121,14 @@ export default function CreateGroupSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="bg-white border-l border-slate-200 w-full sm:max-w-xl md:max-w-2xl">
+      <SheetContent className="w-full bg-white border-l border-slate-200 sm:max-w-xl md:max-w-2xl">
         <SheetHeader>
           <SheetTitle>{mode === "edit" ? "Edit Group" : "Create Group"}</SheetTitle>
         </SheetHeader>
 
-        <div className="pb-4 px-4 space-y-3">
+        <div className="px-4 pb-4 space-y-3">
           {error && (
-            <div className="text-sm text-red-600 border border-red-200 bg-red-50 rounded p-2">{error}</div>
+            <div className="p-2 text-sm text-red-600 border border-red-200 rounded bg-red-50">{error}</div>
           )}
           <div>
             <Label htmlFor="groupName" className="py-2">Group Name</Label>
@@ -165,7 +165,7 @@ export default function CreateGroupSheet({
           </div>
         </div>
 
-        <SheetFooter className="flex flex-row gap-5 justify-start">
+        <SheetFooter className="flex flex-row justify-start gap-5">
           <Button onClick={handleSubmit} disabled={!canSubmit || submitting}>
             {submitting ? (mode === "edit" ? "Saving..." : "Creating...") : mode === "edit" ? "Save changes" : "Create"}
           </Button>
