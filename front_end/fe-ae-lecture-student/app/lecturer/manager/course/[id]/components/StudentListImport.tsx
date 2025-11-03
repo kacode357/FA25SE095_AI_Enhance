@@ -53,7 +53,8 @@ export default function StudentList({
     const students = data?.enrollments || [];
 
     return (
-        <div>
+        <div className="-mt-10">
+            <div className="text-sm flex justify-end mb-2 text-slate-500">{students.length} student(s)</div>
             {loading ? (
                 <div className="text-center text-slate-500 py-6">Loading...</div>
             ) : students.length === 0 ? (

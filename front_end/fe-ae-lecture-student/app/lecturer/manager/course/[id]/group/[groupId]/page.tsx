@@ -120,7 +120,7 @@ export default function GroupDetailPage() {
       </Breadcrumb>
 
       {/* Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 border border-slate-200 rounded-md p-4 lg:grid-cols-2 gap-6">
         {/* ==== Left Column ==== */}
         <section className="bg-white">
           <h3 className="text-base font-semibold text-emerald-700 flex items-center gap-2 mb-5">

@@ -1,9 +1,11 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
 import { CourseRequestStatus } from "@/types/course-requests/course-request.response";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import RequestsFilterBar from "./RequestsFilterBar";
 
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export default function CourseRequests({ active = true }: Props) {
+  const router = useRouter();
   const {
     listData: reqs,
     totalCount: reqTotal,
@@ -97,61 +100,96 @@ export default function CourseRequests({ active = true }: Props) {
       </div>
       {loadingReqs && (
         <div className="grid grid-cols-1 gap-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i} className="h-16 animate-pulse bg-slate-50 border-slate-200" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="h-14 animate-pulse bg-slate-50 border-slate-200" />
           ))}
         </div>
       )}
 
       {!loadingReqs && (reqs?.length ?? 0) === 0 && (
         <div className="h-[40vh] grid place-items-center">
-          <div className="text-center text-slate-500">No course requests found.</div>
+          <div className="text-center text-slate-500 text-sm">
+            No course requests found.
+          </div>
         </div>
       )}
 
       {!loadingReqs && (reqs?.length ?? 0) > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <div className="grid grid-cols-1 gap-2">
             {reqs.map((r) => (
-              <Card key={r.id} className="border-slate-200 cursor-default">
-                <div className="px-3 text-sm">
-                  <div className="flex items-start justify-between gap-5">
+              <Card key={r.id} className="border-slate-200/80 hover:border-slate-300 transition cursor-default relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#7f71f4] to-[#f4a23b]" />
+                <div className="px-3 sm:px-3 py-2 text-sm">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="font-medium cursor-text pb-3 text-slate-900 truncate">
-                        {r.courseCode} — {r.courseCodeTitle}
+                      <div className="font-medium cursor-text pb-1 text-slate-900 truncate">
+                        <span className="font-mono text-base text-[#7f71f4] mr-1">[{r.courseCode}]</span>
+                        <span className="align-middle text-base">{r.courseCodeTitle}</span>
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5 flex flex-wrap gap-x-2 gap-y-1">
-                        <span><span className="font-medium cursor-text text-slate-700">{r.term}</span></span>•
-                        <span><span className="font-medium cursor-text text-slate-700">{r.year}</span></span>
+                      <div className="text-xs text-slate-700 mt-0.5 mb-3 flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                          {r.term} • {r.year}
+                        </span>
                         {r.department && (
-                          <span className="cursor-text">Dept: <span className="font-medium cursor-text text-slate-700">{r.department}</span></span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                            Dept: {r.department}
+                          </span>
                         )}
                       </div>
                     </div>
-                    <Badge variant="outline" className={`text-[11px] cursor-text ${statusInfo(r.status).className}`}>
+                    <Badge variant="outline" className={`text-xs h-5 px-2 cursor-text ${statusInfo(r.status).className}`}>
                       {statusInfo(r.status).label}
                     </Badge>
                   </div>
 
                   {r.description && (
-                    <div className="text-xs cursor-text pb-3 text-slate-700 mt-4 line-clamp-2">
+                    <div className="text-[12px] ml-2 cursor-text pb-1 mb-3 text-slate-700 mt-2 line-clamp-1">
                       {r.description}
                     </div>
                   )}
 
-                  <div className="text-[11px] text-slate-500 mt-2 flex flex-wrap gap-x-2 gap-y-1">
-                    <span className="cursor-text">Lecturer: <span className="text-slate-700 cursor-text">{r.lecturerName}</span></span>
-                    <span className="cursor-text">Created: <span className="text-slate-700 cursor-text">{new Date(r.createdAt).toLocaleDateString("en-GB")}</span></span>
-                    {r.requestReason && (
-                      <span className="truncate">Reason: <span className="text-slate-700">{r.requestReason}</span></span>
+                  <div className="text-xs text-slate-600 mt-1 flex flex-wrap justify-between gap-1.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-50">
+                      Lecturer: <span className="ml-1 text-slate-700">{r.lecturerName}</span>
+                    </span>
+                                        {r.requestReason && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-50 max-w-full truncate">
+                        Reason: <span className="ml-1 text-slate-700 truncate">{r.requestReason}</span>
+                      </span>
                     )}
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-50">
+                      Created: <span className="ml-1 text-slate-700">{new Date(r.createdAt).toLocaleDateString("en-GB")}</span>
+                    </span>
                   </div>
                 </div>
               </Card>
             ))}
           </div>
 
-          <div className="text-xs cursor-text flex justify-end px-2 pt-2 text-slate-500">Total: {reqTotal} • Page {reqPage} of {totalPages}</div>
+          {/* Pagination */}
+          <div className="flex items-center justify-between px-1 sm:px-2 pt-1">
+            <div className="text-xs text-slate-500 cursor-text">Total: {reqTotal}</div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="h-8 px-2 text-xs rounded-md"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              <span className="text-xs text-slate-600 cursor-text">Page {page} of {totalPages}</span>
+              <Button
+                variant="outline"
+                className="h-8 px-2 text-xs rounded-md"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   Plus,
   Upload,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
@@ -21,21 +22,21 @@ import { useImportTemplate } from "@/hooks/enrollments/useImportTemplate";
 import { CourseItem } from "@/types/courses/course.response";
 import CourseCard from "./components/CourseCard";
 import CourseRequests from "./components/CourseRequests";
-import CreateDialog from "./components/CreateDialog";
+// CreateDialog replaced by standalone create page
 import EditDialog from "./components/EditDialog";
 import FilterBar from "./components/FilterBar";
-import ImportDialog from "./components/ImportDialog";
+// ImportDialog replaced by standalone import page
 
 export default function CoursesPage() {
+  const router = useRouter();
   const { listData, totalCount, currentPage, loading, fetchMyCourses } =
     useMyCourses();
   const { deleteCourse } = useDeleteCourse();
   const { downloadImportTemplate, loading: downloading } = useImportTemplate();
   const { listData: reqs } = useMyCourseRequests();
+  const requestsCount = (reqs ?? []).length;
 
   // dialogs
-  const [openCreate, setOpenCreate] = useState(false);
-  const [openImportEnrollments, setOpenImportEnrollments] = useState(false);
   const [editCourse, setEditCourse] = useState<CourseItem | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -83,27 +84,40 @@ export default function CoursesPage() {
   };
 
   return (
-    <div className="p-4">
+    <div className="px-4 pb-4 pt-2">
+      {/* Hero header */}
+      <div className="relative overflow-hidden mb-4 rounded-2xl border border-slate-200 shadow-[0_8px_28px_rgba(2,6,23,0.08)]">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b] opacity-90" />
+        <div className="relative px-4 sm:px-5 py-5 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Lecturer • Courses</h1>
+            <p className="text-xs sm:text-sm text-white/90">Manage courses, enrollments, and requests with a polished workflow.</p>
+          </div>
+          {/* Segmented tabs */}
+          <div className="bg-white/10 backdrop-blur px-1 py-1 rounded-xl inline-flex border border-white/20">
+            <button
+              onClick={() => setActiveTab("courses")}
+              className={`${activeTab === "courses" ? "bg-white text-[#7f71f4] shadow" : "text-white/90 hover:text-white"} px-3 py-1.5 rounded-lg text-sm font-semibold transition`}
+            >
+              Courses
+            </button>
+            <button
+              onClick={() => setActiveTab("requests")}
+              className={`${activeTab === "requests" ? "bg-white text-[#7f71f4] shadow" : "text-white/90 hover:text-white"} px-3 py-1.5 rounded-lg text-sm font-semibold transition`}
+            >
+              Requests
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div
-        className={`grid grid-cols-1 ${
-          activeTab === "courses" ? "xl:grid-cols-[minmax(0,1fr)_380px]" : ""
-        } gap-2 h-[calc(100vh-1rem)] overflow-hidden transition-all duration-300`}
+        className={`grid grid-cols-1 ${activeTab === "courses" ? "xl:grid-cols-[minmax(0,1fr)_360px]" : ""} gap-3 h-[calc(100vh-8.5rem)] overflow-hidden transition-all duration-300`}
       >
         {/* ======== Left content ======== */}
-        <div className="flex flex-col overflow-y-auto pr-2 scroll-smooth" style={{ scrollbarGutter: "stable" }}>
+        <div className="flex flex-col overflow-y-auto pr-2 scroll-smooth scrollbar-stable">
           {/* Header */}
-          <div className="sticky top-0 bg-white z-20 pb-2 border-b border-slate-100">
-            <header className="flex flex-col gap-1 mb-2">
-              <h1 className="text-xl font-semibold text-slate-800">
-                {activeTab === "courses" ? "My Courses" : "Course Requests"}
-              </h1>
-              <p className="text-sm text-slate-600">
-                {activeTab === "courses"
-                  ? "View, edit, and manage your courses."
-                  : "View and manage your course registration requests."}
-              </p>
-            </header>
-
+          <div className="sticky top-0 bg-white/70 backdrop-blur z-20 pb-2 border-b border-slate-100">
             {activeTab === "courses" && (
               <FilterBar
                 filterName={filterName}
@@ -114,12 +128,18 @@ export default function CoursesPage() {
                 setCreatedAfter={setCreatedAfter}
                 createdBefore={createdBefore}
                 setCreatedBefore={setCreatedBefore}
+                minEnroll={minEnroll}
+                setMinEnroll={setMinEnroll}
+                maxEnroll={maxEnroll}
+                setMaxEnroll={setMaxEnroll}
                 onApply={() => fetchAll(1, true)}
                 onClear={() => {
                   setFilterName("");
                   setFilterCode("");
                   setCreatedAfter("");
                   setCreatedBefore("");
+                  setMinEnroll("");
+                  setMaxEnroll("");
                   fetchAll(1, true);
                 }}
                 resultCount={filtered.length}
@@ -149,7 +169,7 @@ export default function CoursesPage() {
 
               {loading && (
                 <div className="flex justify-center items-center py-10">
-                  <Loader2 className="animate-spin text-blue-600 size-6" />
+                  <Loader2 className="animate-spin text-brand size-6" />
                 </div>
               )}
 
@@ -164,14 +184,23 @@ export default function CoursesPage() {
           {/* ======== Requests Tab ======== */}
           {activeTab === "requests" && (
             <div className="mt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveTab("courses")}
-                className="flex items-center mb-2 text-slate-700 hover:text-slate-900"
-              >
-                <ArrowLeft className="size-4" /> Back
-              </Button>
+              <div className="flex justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setActiveTab("courses")}
+                  className="flex items-center mb-2 text-sm text-slate-700 hover:text-slate-900"
+                >
+                  <ArrowLeft className="size-4" /> Back
+                </Button>
+                {/* Actions bar */}
+                <div className="mb-2 flex items-center justify-end">
+                  <Button className="btn btn-gradient text-white h-8 px-3 text-sm" onClick={() => router.push("/lecturer/manager/course/requests/create")}>
+                    <Plus className="size-4" />
+                    New Request
+                  </Button>
+                </div>
+              </div>
               <CourseRequests active />
             </div>
           )}
@@ -179,92 +208,89 @@ export default function CoursesPage() {
 
         {/* ======== Right Sidebar ======== */}
         {activeTab === "courses" && (
-          <div className="flex flex-col gap-4 w-full">
-            {/* Import Enrollments */}
-            <Card className="p-4 border-slate-200 shadow-sm">
-              <h2 className="text-base font-semibold text-blue-700">
-                Import Enrollments
-              </h2>
-              <p className="text-sm text-slate-600 mb-3">
-                Upload a file to import students into multiple courses. Download
-                the template to get started.
+          <div className="flex flex-col gap-4 w-full xl:pl-1 sticky top-0 h-[calc(100vh-8.5rem)] overflow-y-auto scroll-smooth scrollbar-stable">
+            {/* Quick actions */}
+            <Card className="p-4 border-slate-200 shadow-sm relative overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
+              <h2 className="text-base font-semibold text-slate-900">Quick actions</h2>
+              <p className="text-sm text-slate-600">
+                Create a course or import students using the template.
               </p>
-
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col justify-end sm:flex-row">
                 <Button
-                  onClick={downloadImportTemplate}
-                  disabled={downloading}
-                  variant="outline"
-                  className="border-blue-500 text-sm text-blue-600 hover:bg-blue-50 rounded-2xl"
+                  onClick={() => router.push("/lecturer/manager/course/create")}
+                  className="text-sm btn btn-gradient-slow text-white w-full sm:w-auto"
                 >
-                  <HardDriveDownload className="size-4 mr-2" />
-                  {downloading ? "Downloading..." : "Download Template"}
+                  <Plus className="size-4" />
+                  Create Course
                 </Button>
-
-                <Dialog
-                  open={openImportEnrollments}
-                  onOpenChange={setOpenImportEnrollments}
-                >
-                  <DialogTrigger asChild>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-sm text-white rounded-2xl">
-                      <Upload className="size-4 mr-2" />
-                      Import Enrollments
-                    </Button>
-                  </DialogTrigger>
-                  <ImportDialog
-                    title="Import Enrollments"
-                    courses={filtered}
-                    onSubmit={async () => {
-                      await fetchAll(currentPage, true);
-                      setOpenImportEnrollments(false);
-                    }}
-                    onCancel={() => setOpenImportEnrollments(false)}
-                  />
-                </Dialog>
               </div>
             </Card>
 
-            {/* Create Course */}
-            <Card className="p-4 border-slate-200 shadow-sm">
-              <h2 className="text-base font-semibold text-emerald-700 mb-2">
-                Create Course
-              </h2>
-              <p className="text-sm text-slate-600 mb-3">
-                Start a new course and manage enrollments instantly.
+            {/* Bulk import enrollments */}
+            <Card className="p-4 border-slate-200 shadow-sm relative overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
+              <h2 className="text-base font-semibold text-brand">Import Enrollments</h2>
+              <p className="text-sm text-slate-600">
+                Add students in two quick steps: download the template and upload the completed file.
               </p>
-              <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-                <DialogTrigger asChild>
-                  <Button className="bg-emerald-600 text-sm hover:bg-emerald-700 text-white rounded-2xl">
-                    <Plus className="size-4 mr-2" />
-                    Create Course
+              <ol className="space-y-2">
+                <li className="flex items-center justify-between gap-2">
+                  <div className="text-xs text-slate-700">
+                    <span className="font-medium">Step 1:</span> Download the template
+                  </div>
+                  <Button
+                    onClick={downloadImportTemplate}
+                    disabled={downloading}
+                    variant="outline"
+                    className="text-sm rounded-2xl border-brand text-brand hover:bg-brand/5"
+                  >
+                    <HardDriveDownload className="size-4" />
+                    {downloading ? "Downloading..." : "Template"}
                   </Button>
-                </DialogTrigger>
-                <CreateDialog
-                  title="Create New Course"
-                  onSubmit={async () => {
-                    await fetchAll(1, true);
-                    setOpenCreate(false);
-                  }}
-                  onCancel={() => setOpenCreate(false)}
-                />
-              </Dialog>
+                </li>
+                <li className="flex items-center justify-between gap-2">
+                  <div className="text-xs text-slate-700">
+                    <span className="font-medium">Step 2:</span> Upload the completed file
+                  </div>
+                  <Button
+                    className="btn btn-gradient-slow text-sm text-white rounded-2xl"
+                    onClick={() => router.push("/lecturer/manager/course/import")}
+                  >
+                    <Upload className="size-4 mr-2" />
+                    Import
+                  </Button>
+                </li>
+              </ol>
             </Card>
 
-            {/* Course Requests */}
-            <Card className="p-4 border-slate-200 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-800">
+            {/* Course requests overview */}
+            <Card className="p-4 border-slate-200 shadow-sm relative overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
+              <h2 className="text-base font-semibold text-brand flex items-center gap-2">
                 Course Requests
+                <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-[#7f71f4]/10 to-[#f4a23b]/10 text-[#7f71f4]">
+                  {requestsCount} pending
+                </span>
               </h2>
-              <p className="text-sm text-slate-600 mb-3">
-                View and send new private course registration requests to staff.
+              <p className="text-sm text-slate-600">
+                View and submit private course opening requests to the admin team.
               </p>
-              <Button
-                variant="outline"
-                className="text-slate-700 border-slate-400 hover:bg-slate-50 rounded-2xl"
-                onClick={() => setActiveTab("requests")}
-              >
-                View Requests
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  className="text-brand text-sm border-brand hover:bg-brand/5 rounded-2xl"
+                  onClick={() => setActiveTab("requests")}
+                >
+                  View Requests
+                </Button>
+                {/* <Button
+                  onClick={() => router.push("/lecturer/manager/course/requests/create")}
+                  className="rounded-2xl btn btn-gradient-slow text-sm text-white"
+                >
+                  New Request
+                </Button> */}
+              </div>
             </Card>
           </div>
         )}

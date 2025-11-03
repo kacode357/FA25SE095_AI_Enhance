@@ -12,6 +12,7 @@ import { useAssignments } from "@/hooks/assignment/useAssignments";
 import type { AssignmentStatusFilter, GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
 import type { AssignmentStatus } from "@/types/assignments/assignment.response";
 
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import AssignmentDetailView from "./components/AssignmentDetailView";
 import AssignmentsFilterBar, { FilterState } from "./components/AssignmentsFilterBar";
@@ -142,10 +143,11 @@ export default function AssignmentsPanel({
   // Create view
   if (mode === "create") {
     return (
-      <Card className="border-0 shadow-none border-slate-100">
+      <Card className="border-0 shadow-none -py-10 -gap-10 border-slate-100">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-sm md:text-lg">New Assignment</CardTitle>
-          <Button variant="outline" onClick={backToList}>
+          <CardTitle className="text-sm text-[#000D83] md:text-lg">Create Assignment</CardTitle>
+          <Button className="text-[#000D83]" variant="outline" onClick={backToList}>
+            <ArrowLeft className="size-4 mr-1" />
             Back
           </Button>
         </CardHeader>
@@ -162,101 +164,149 @@ export default function AssignmentsPanel({
   }
 
   // List view
+  // List view
   return (
-    <Card className="border-0 shadow-none">
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
-        <CardTitle className="text-xl font-semibold md:text-xl">Assignments</CardTitle>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 cursor-pointer">
-            <Button className="text-xs cursor-pointer" onClick={() => setTopicSheetOpen(true)}>Topic</Button>
-          </div>
-          <div className="flex items-center gap-2 cursor-pointer">
-            <Button className="text-xs cursor-pointer" onClick={openCreate}>New Assignment</Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {children && <div>{children}</div>}
-
-        {/* FILTER BAR (tách component) */}
-        <AssignmentsFilterBar
-          value={filter}
-          loading={loading}
-          onChange={patchFilter}
-          onReset={resetFilters}
-        />
-
-        {/* LIST */}
-        <div className="bg-white border rounded-xl border-slate-200">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="text-sm text-slate-600">
-              {loading ? "Loading..." : `${assignments.length} items on this page`}
-            </div>
-            <div className="text-xs text-slate-500">
-              Sorted by {filter.sortBy} ({filter.sortOrder})
-            </div>
-          </div>
-          <Separator />
-
-          <div className="divide-y">
-            {assignments.length === 0 && !loading && (
-              <div className="px-4 py-8 text-sm text-center text-slate-500">
-                No assignments found with current filters.
-              </div>
-            )}
-
-            {assignments.map((a) => (
-              <div key={a.id} className="px-4 py-3">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  {/* Left */}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium truncate">{a.title}</div>
-                      <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
-                      {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
-                    </div>
-                    <div className="flex mt-1 text-xs text-slate-500">
-                      <div className="flex gap-1 mr-1">Topic: <p className="text-slate-900">{a.topicName}</p></div>
-                      • Due: {new Date(a.dueDate).toLocaleString()} • Assigned groups: {a.assignedGroupsCount} •{" "}
-                      {a.isOverdue ? "Overdue" : `D-${a.daysUntilDue}`}
-                    </div>
-                  </div>
-
-                  {/* Right actions */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="outline" onClick={() => openDetail(a.id)}>
-                      Details
-                    </Button>
-                    {a.isGroupAssignment && (
-                      <Button onClick={() => openDetail(a.id)}>
-                        Assign Groups
-                      </Button>
-                    )}
-                  </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-5">
+        {/* Left: Filters (4/10 = 40%) */}
+        <div className="lg:col-span-4 lg:sticky lg:top-2 h-max">
+          <Card className="border border-slate-200 shadow-sm bg-gradient-to-b from-slate-50 to-white">
+            <CardHeader className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base text-[#000D83] font-semibold">Assignments</h3>
+                  <div className="text-xs text-slate-500">{totalCount} assignment(s)</div>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          <PaginationBar
-            page={page}
-            totalPages={totalPages}
-            totalCount={totalCount}
-            loading={loading}
-            onPageChange={(p) => setPage(p)}
-          />
-
-          <NewTopicSheet
-            open={topicSheetOpen}
-            onOpenChange={setTopicSheetOpen}
-            onCreated={() => {
-              toast.success("Topic created!");
-            }}
-          />
+              <CardTitle className="text-sm font-medium text-slate-700">Filters</CardTitle>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="hidden lg:inline-flex text-sm text-slate-500 hover:text-slate-700"
+                onClick={resetFilters}
+              >
+                Reset
+              </Button>
+            </CardHeader>
+            <Separator />
+            <CardContent className=" space-y-3">
+              <AssignmentsFilterBar
+                value={filter}
+                loading={loading}
+                onChange={patchFilter}
+                onReset={resetFilters}
+              />
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Right: Assignment items (6/10 = 60%) */}
+        <div className="lg:col-span-6">
+          <Card className="border-slate-200 shadow-md">
+            <CardHeader className="bg-gradient-to-r from-indigo-50 to-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
+              <div className="text-sm text-slate-600">
+                {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
+              </div>
+              <div className="flex items-center gap-2 sm:justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="lg:hidden text-[#000D83]"
+                  onClick={() => setTopicSheetOpen(true)}
+                >
+                  Manage Topics
+                </Button>
+                <Button size="sm" className="lg:hidden text-[#000D83]" onClick={openCreate}>
+                  New Assignment
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Separator />
+
+              <div className="divide-y divide-slate-100">
+                {assignments.length === 0 && !loading && (
+                  <div className="px-4 py-10 text-sm text-center text-slate-500">
+                    No assignments found with current filters.
+                  </div>
+                )}
+
+                {assignments.map((a) => (
+                  <div
+                    key={a.id}
+                    className="px-4 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      {/* Left info */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium truncate text-slate-800">{a.title}</div>
+                          <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
+                          {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
+                        </div>
+                        <div className="flex flex-wrap mt-1 text-xs text-slate-500">
+                          <div className="flex gap-1 mr-2">
+                            Topic:
+                            <span className="text-slate-900">{a.topicName}</span>
+                          </div>
+                          • Due: {new Date(a.dueDate).toLocaleString()}
+                          • Groups: {a.assignedGroupsCount}
+                          • {a.isOverdue ? (
+                            <span className="text-red-600 ml-1">Overdue</span>
+                          ) : (
+                            <span className="ml-1 text-emerald-600">D-{a.daysUntilDue}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right actions */}
+                      <div className="flex items-center cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-sm cursor-pointer"
+                          onClick={() => openDetail(a.id)}
+                        >
+                          Details
+                        </Button>
+                        {a.isGroupAssignment && (
+                          <Button
+                            size="sm"
+                            className="text-sm cursor-pointer btn btn-gradient-slow bg-indigo-600 text-white hover:bg-indigo-700"
+                            onClick={() => openDetail(a.id)}
+                          >
+                            Assign Groups
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <div className="px-4 pb-4 pt-3">
+                <PaginationBar
+                  page={page}
+                  totalPages={totalPages}
+                  totalCount={totalCount}
+                  loading={loading}
+                  onPageChange={(p) => setPage(p)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <NewTopicSheet
+        open={topicSheetOpen}
+        onOpenChange={setTopicSheetOpen}
+        onCreated={() => {
+          toast.success("Topic created!");
+        }}
+      />
+    </div>
   );
+
 }

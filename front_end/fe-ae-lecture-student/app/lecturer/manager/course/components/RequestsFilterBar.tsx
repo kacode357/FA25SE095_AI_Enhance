@@ -30,9 +30,9 @@ export default function RequestsFilterBar({
   return (
     <div className="border cursor-default border-slate-200 rounded-md p-2 bg-white">
       <div className="flex items-center gap-2 text-slate-600 mb-2">
-        <Filter className="size-4 cursor-default" />
-        <span className="text-sm cursor-text">Filters</span>
-        <span className="ml-auto text-xs cursor-text text-slate-500">
+        <Filter className="size-4 cursor-default text-[#7f71f4]" />
+        <span className="text-sm cursor-text font-medium">Filters</span>
+        <span className="ml-auto text-[11px] cursor-text inline-flex items-center px-2 py-0.5 rounded-full bg-gradient-to-r from-[#7f71f4]/10 to-[#f4a23b]/10 text-[#7f71f4]">
           {loading ? "Loading..." : `${resultCount}/${totalCount} results`}
         </span>
       </div>
@@ -105,10 +105,10 @@ export default function RequestsFilterBar({
       </div>
 
       <div className="flex items-center justify-end gap-2 mt-2">
-        <Button variant="ghost" className="h-8 cursor-pointer px-2 text-[11px] text-slate-600" onClick={onClear}>
+        <Button variant="outline" className="h-8 cursor-pointer px-2 text-[11px] text-brand border-brand hover:bg-brand/5" onClick={onClear}>
           Clear
         </Button>
-        <Button className="h-8 cursor-pointer px-3 text-[11px]" onClick={onApply}>
+        <Button className="h-8 cursor-pointer px-3 text-[11px] btn btn-gradient text-white rounded-md" onClick={onApply}>
           Apply
         </Button>
       </div>

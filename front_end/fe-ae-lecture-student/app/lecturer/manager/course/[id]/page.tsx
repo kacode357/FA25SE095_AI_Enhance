@@ -93,7 +93,7 @@ export default function CourseDetailPage() {
   const isActive = course?.status === CourseStatus.Active;
 
   return (
-    <div className="space-y-6 px-3">
+    <div className="space-y-3 px-3">
       <nav
         className="flex items-center text-sm text-slate-500"
         aria-label="Breadcrumb"
@@ -110,41 +110,71 @@ export default function CourseDetailPage() {
         </span>
       </nav>
 
-      {/* HEADER */}
-      <div className="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-800">
-            {course?.courseCode} - {course?.courseCodeTitle}
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {course?.name || "Untitled Course"}
-          </p>
-        </div>
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-[0_8px_28px_rgba(2,6,23,0.06)]">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b] opacity-90" />
+        <div className="relative px-4 sm:px-5 py-5 text-white flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">
+              {course?.courseCode} - {course?.courseCodeTitle}
+            </h1>
+            <p className="text-xs sm:text-sm text-white/90 mt-0.5">
+              {course?.name || "Untitled Course"}
+            </p>
+          </div>
+          <div className="flex items-center gap-5">
+            <div className="hidden shadow-xl transition-all md:block">{renderStatusBadge(course?.status)}</div>
+            {isActive && activeTab === "students" && (
+              <Button
+                className="h-9 text-sm cursor-pointer border-2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg transition-all duration-200"
+                style={{ borderColor: "rgba(255,255,255,1)" }}
+                onClick={() => setOpenImport(true)}
+              >
+                <FileSpreadsheet className="size-4 mr-1" /> Import Students
+              </Button>
 
-        <div className="flex items-center">{renderStatusBadge(course?.status)}</div>
+            )}
+            {isActive && activeTab === "groups" && (
+              <div className="flex items-center gap-2">
+                <Button
+                  className="h-9 text-sm cursor-pointer border-2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg transition-all duration-200"
+                  style={{ borderColor: "rgba(255,255,255,1)" }}
+                  onClick={() => setOpenRandomize(true)}
+                >
+                  <Shuffle className="size-4 mr-1" /> Randomize
+                </Button>
+                <Button
+                  className="h-9 text-sm cursor-pointer border-2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg transition-all duration-200"
+                  style={{ borderColor: "rgba(255,255,255,1)" }}
+                  onClick={() => setOpenGroup(true)}
+                >
+                  <FolderPlus className="size-4 mr-1" /> Create Group
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* TABS */}
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as any)}
         className="w-full"
       >
-        <TabsList className="border-b border-slate-200 bg-transparent w-full justify-start gap-6 px-1 mb-3">
+        <TabsList className="w-full mt-4 flex items-center justify-start overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1 gap-1">
           <TabsTrigger
-            className="data-[state=active]:border-b-2 pt-3 cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="cursor-pointer rounded-lg px-3 py-2 text-base font-medium text-slate-600 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-indigo-500/30"
             value="students"
           >
             Students
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 pt-3 inactivate cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="cursor-pointer rounded-lg px-3 py-2 text-base font-medium text-slate-600 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-indigo-500/30"
             value="groups"
           >
             Groups
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 pt-3 inactivate cursor-pointer data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 pb-3 text-slate-600 text-sm font-medium"
+            className="cursor-pointer rounded-lg px-3 py-2 text-base font-medium text-slate-600 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-indigo-500/30"
             value="assignments"
           >
             Assignments
@@ -154,20 +184,8 @@ export default function CourseDetailPage() {
         {/* STUDENTS TAB */}
         <TabsContent value="students">
           <Card className="border-slate-100">
-            <CardHeader className="flex items-center justify-between pb-3">
-              <CardTitle className="text-base font-semibold">
-                Student List
-              </CardTitle>
-
-              {isActive && (
-                <Button
-                  className="h-9 text-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
-                  onClick={() => setOpenImport(true)}
-                >
-                  <FileSpreadsheet className="size-4 mr-1" />
-                  Import Students
-                </Button>
-              )}
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="text-lg text-[#000D83] font-semibold">Student List</CardTitle>
             </CardHeader>
             <CardContent>
               <StudentList courseId={id} refreshSignal={studentsRefresh} />
@@ -178,27 +196,8 @@ export default function CourseDetailPage() {
         {/* GROUPS TAB */}
         <TabsContent value="groups">
           <Card className="border-slate-100">
-            <CardHeader className="flex items-center justify-between pb-3">
-              <CardTitle className="text-base font-semibold">Groups</CardTitle>
-
-              {isActive && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    className="h-9 cursor-pointer text-xs bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-1"
-                    onClick={() => setOpenRandomize(true)}
-                  >
-                    <Shuffle className="size-4 mr-1" />
-                    Randomize
-                  </Button>
-                  <Button
-                    className="h-9 text-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
-                    onClick={() => setOpenGroup(true)}
-                  >
-                    <FolderPlus className="size-4 mr-1" />
-                    Create Group
-                  </Button>
-                </div>
-              )}
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="text-lg text-[#000D83] font-semibold">Groups</CardTitle>
             </CardHeader>
 
             <CardContent>

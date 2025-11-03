@@ -114,7 +114,7 @@ export default function CourseCard({
 
   return (
     <Card
-      className="h-full flex flex-col border-slate-200 hover:shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
+      className="h-full flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand"
       onClick={goDetail}
       tabIndex={0}
       role="button"
@@ -135,21 +135,23 @@ export default function CourseCard({
 
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {(course.term || course.year) && (
-            <Badge className="text-xs">
+            <Badge className="text-xs bg-brand/10 text-brand border border-brand/20">
               {course.term || ""}
               {course.term && course.year ? " • " : ""}
               {course.year ?? ""}
             </Badge>
           )}
           {course.department && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs border-brand/20 text-slate-700">
               {course.department}
             </Badge>
           )}
           {hasCodeFeature && (
             <Badge
               className={
-                accessActive ? "bg-emerald-600 text-white hover:bg-emerald-700" : ""
+                accessActive
+                  ? "bg-green-600 text-white"
+                  : "bg-slate-100 text-slate-600"
               }
             >
               {accessActive ? "Access Code Active" : "Access Code Expired"}
@@ -244,9 +246,7 @@ export default function CourseCard({
           <div className="flex-1 text-xs text-slate-500">Created: {fmtDate(course.createdAt)}</div>
 
           <div
-            className="border border-emerald-500 rounded-md text-white px-3 py-1 bg-emerald-500 
-              shadow-2xl text-sm cursor-pointer 
-              hover:bg-emerald-600 hover:shadow-lg transition-all duration-200"
+            className="btn btn-gradient-slow rounded-md text-white px-3 py-1 shadow text-sm cursor-pointer transition-all duration-200"
             onClick={onEditClick}
             aria-label="Edit"
           >

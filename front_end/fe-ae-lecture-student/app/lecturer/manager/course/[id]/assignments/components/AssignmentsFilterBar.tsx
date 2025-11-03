@@ -47,164 +47,178 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
   const { search, statuses, groupType, dueFrom, dueTo, isUpcoming, isOverdue, sortBy, sortOrder, pageSize } = value;
 
   return (
-    <div className="rounded-xl border-slate-200 border p-4 space-y-4 bg-white">
+    <div className="rounded-2xl border -mt-8 border-slate-200 bg-white p-5 space-y-6 shadow-sm">
       {/* Row 1: Search + Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div>
-          <div className="text-xs text-slate-600 mb-1">Search</div>
-          <Input
-            className="placeholder:text-sm"
-            placeholder="Title or description…"
-            value={search}
-            onChange={(e) => onChange({ search: e.target.value })}
-          />
+      <div className="space-y-0">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-slate-700">Search & Status</h4>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-slate-500 hover:text-slate-700"
+            onClick={() => onChange({ statuses: {} })}
+          >
+            Clear
+          </Button>
         </div>
 
-        <div className="lg:col-span-2">
-          <div className="text-xs text-slate-600  mb-1">Status</div>
-          <div className="flex border-slate-300 flex-wrap text-sm gap-3 rounded-md border px-2 pl-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between">
+            <div className="col-span-1">
+              <Input
+                className="text-sm min-w-[240px]"
+                placeholder="Title or description..."
+                value={search}
+                onChange={(e) => onChange({ search: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="text-xs text-slate-600 mb-1">Type</div>
+              <Select
+                value={groupType}
+                onValueChange={(v: string) =>
+                  onChange({ groupType: v as "all" | "group" | "individual" })
+                }
+              >
+                <SelectTrigger className="border-slate-200 w-40 text-sm">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="border-slate-200 bg-white">
+                  <SelectGroup>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="group">Group</SelectItem>
+                    <SelectItem value="individual">Individual</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="md:col-span-2 flex flex-wrap gap-2">
             {ALL_STATUS.map(({ value: st, label }) => (
-              <label key={st} className="flex items-center gap-2">
+              <label
+                key={st}
+                className={`flex items-center gap-1 px-3 py-1 border rounded-full text-xs cursor-pointer transition ${statuses[st]
+                  ? "bg-indigo-50 border-indigo-300 text-indigo-700"
+                  : "border-slate-300 text-slate-600 hover:border-slate-400"
+                  }`}
+              >
                 <Checkbox
-                  className="text-sm"
                   checked={!!statuses[st]}
-                  onCheckedChange={(v) => onChange({ statuses: { ...statuses, [st]: !!v } })}
+                  onCheckedChange={(v) =>
+                    onChange({ statuses: { ...statuses, [st]: !!v } })
+                  }
                 />
-                <span className="text-xs">{label}</span>
+                {label}
               </label>
             ))}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto"
-              onClick={() => onChange({ statuses: {} })}
-            >
-              Clear
-            </Button>
           </div>
         </div>
       </div>
 
-      {/* Row 2: Group type + Dates + Quick toggles */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div>
-          <div className="text-xs border-slate-200 text-slate-600 mb-1">Type</div>
-          <Select
-            value={groupType}
-            onValueChange={(v: string) =>
-              onChange({ groupType: (v as "all" | "group" | "individual") })
-            }
-          >
-            <SelectTrigger className="bg-white w-[210px] border-slate-200">
-              <SelectValue className="border-slate-200 w-[140px]" placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent className="border-slate-200 !bg-white">
-              <SelectGroup>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="group">Group assignments</SelectItem>
-                <SelectItem value="individual">Individual assignments</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+      <Separator />
 
+      {/* Row 2: Type + Date range + Flags */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
         <div>
           <div className="text-xs text-slate-600 mb-1">Due from</div>
           <Input
-            className="text-sm"
             type="date"
+            className="text-sm"
             value={dueFrom}
             onChange={(e) => onChange({ dueFrom: e.target.value })}
           />
         </div>
+
         <div>
           <div className="text-xs text-slate-600 mb-1">Due to</div>
           <Input
-            className="text-sm"
             type="date"
+            className="text-sm"
             value={dueTo}
             onChange={(e) => onChange({ dueTo: e.target.value })}
           />
         </div>
-
-        <div className="flex items-center pt-5 gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={isUpcoming}
-              onCheckedChange={(v) => onChange({ isUpcoming: !!v })}
-            />
-            Upcoming (7 days)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={isOverdue}
-              onCheckedChange={(v) => onChange({ isOverdue: !!v })}
-            />
-            Overdue
-          </label>
-        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2 text-xs">
+          <Checkbox
+            checked={isUpcoming}
+            onCheckedChange={(v) => onChange({ isUpcoming: !!v })}
+          />
+          Upcoming (7 days)
+        </label>
+        <label className="flex items-center gap-2 text-xs">
+          <Checkbox
+            checked={isOverdue}
+            onCheckedChange={(v) => onChange({ isOverdue: !!v })}
+          />
+          Overdue
+        </label>
       </div>
 
+      <Separator />
+
       {/* Row 3: Sort + Page size + Reset */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-600">Sort by</span>
-          <Select
-            value={sortBy ?? "DueDate"}
-            onValueChange={(v: string) =>
-              onChange({ sortBy: (v as NonNullable<GetAssignmentsQuery["sortBy"]>) })
-            }
-          >
-            <SelectTrigger className="w-[140px] border-slate-200 !bg-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="w-[140px] border-slate-200 !bg-white">
-              <SelectItem value="DueDate">DueDate</SelectItem>
-              <SelectItem value="Title">Title</SelectItem>
-              <SelectItem value="CreatedAt">CreatedAt</SelectItem>
-              <SelectItem value="Status">Status</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex flex-row items-center gap-5">
+          <div className="flex flex-col items-start gap-1">
+            <span className="text-xs text-slate-600">Sort by</span>
+            <Select
+              value={sortBy ?? "DueDate"}
+              onValueChange={(v: string) =>
+                onChange({ sortBy: v as NonNullable<GetAssignmentsQuery["sortBy"]> })
+              }
+            >
+              <SelectTrigger className="w-[150px] border-slate-200 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border-slate-200 bg-white">
+                <SelectItem value="DueDate">DueDate</SelectItem>
+                <SelectItem value="Title">Title</SelectItem>
+                <SelectItem value="CreatedAt">CreatedAt</SelectItem>
+                <SelectItem value="Status">Status</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select
-            value={sortOrder ?? "asc"}
-            onValueChange={(v: string) =>
-              onChange({ sortOrder: (v as "asc" | "desc") })
-            }
-          >
-            <SelectTrigger className="w-[128px] border-slate-200 bg-white dark:bg-input/30">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="w-[100px] border-slate-200 !bg-white">
-              <SelectItem value="asc">asc</SelectItem>
-              <SelectItem value="desc">desc</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col items-start gap-1">
+            <span className="text-xs text-slate-600">Order</span>
+            <Select
+              value={sortOrder ?? "asc"}
+              onValueChange={(v: string) => onChange({ sortOrder: v as "asc" | "desc" })}
+            >
+              <SelectTrigger className="w-[130px] border-slate-200 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border-slate-200 bg-white">
+                <SelectItem value="asc">Asc</SelectItem>
+                <SelectItem value="desc">Desc</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col items-start gap-1">
+            <span className="text-xs text-slate-600">Page size</span>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v: string) => onChange({ pageSize: parseInt(v, 10) })}
+            >
+              <SelectTrigger className="w-[130px] border-slate-200 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border-slate-200 bg-white">
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <Separator orientation="vertical" className="h-6" />
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-600">Page size</span>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(v: string) => onChange({ pageSize: parseInt(v, 10) || 10 })}
-          >
-            <SelectTrigger className="w-[128px] border-slate-200 bg-white dark:bg-input/30">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="w-[50px] border-slate-200 !bg-white">
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button variant="outline" size="sm" className="ml-auto" onClick={onReset} disabled={loading}>
+        {/* <Button variant="outline" size="sm" onClick={onReset} disabled={loading}>
           Reset filters
-        </Button>
+        </Button> */}
       </div>
     </div>
   );

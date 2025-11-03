@@ -115,7 +115,7 @@ export default function AddGroupMemberSheet({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="bg-white w-full sm:max-w-xl md:max-w-2xl">
                 <SheetHeader>
-                    <SheetTitle>Add Member</SheetTitle>
+                    <SheetTitle className="text-[#000D83]">Add Member</SheetTitle>
                 </SheetHeader>
 
                 <div className="pb-4 px-4 space-y-3">
@@ -128,10 +128,10 @@ export default function AddGroupMemberSheet({
                         <div className="flex justify-between">
                             <Label className="py-2 cursor-text">Students</Label>
                             <div className="flex gap-1 mb-2">
-                                <Button size="xs" className="cursor-pointer !bg-emerald-50" variant="ghost" onClick={selectAll} disabled={enrollmentsLoading}>
+                                <Button size="xs" className="text-[#000D83] cursor-pointer !bg-emerald-50" variant="ghost" onClick={selectAll} disabled={enrollmentsLoading}>
                                     Select All
                                 </Button>
-                                <Button size="xs" className="cursor-pointer" variant="ghost" onClick={clearAll} disabled={enrollmentsLoading}>
+                                <Button size="xs" className="text-[#000D83] cursor-pointer" variant="ghost" onClick={clearAll} disabled={enrollmentsLoading}>
                                     Clear
                                 </Button>
                             </div>
@@ -210,10 +210,10 @@ export default function AddGroupMemberSheet({
                 </div>
 
                 <SheetFooter className="flex flex-row gap-5 justify-start">
-                    <Button className="cursor-pointer" onClick={handleSubmit} disabled={!canSubmit || submitting}>
+                    <Button className="cursor-pointer btn btn-gradient-slow" onClick={handleSubmit} disabled={!canSubmit || submitting}>
                         {submitting ? "Adding..." : "Add Members"}
                     </Button>
-                    <Button className="cursor-pointer" variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
+                    <Button className="cursor-pointer text-violet-800 hover:text-violet-500" variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancel
                     </Button>
                 </SheetFooter>

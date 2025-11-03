@@ -3,6 +3,7 @@
 
 import LiteRichTextEditor from "@/components/common/LiteRichTextEditor";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -122,160 +123,169 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 p-4 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label className="text-sm">Title *</Label>
-          <Input
-            placeholder="Homework 1"
-            value={form.title}
-            onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm">Max Points</Label>
-          <Input
-            type="number"
-            inputMode="numeric"
-            placeholder="100"
-            value={form.maxPoints}
-            onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value }))}
-          />
-        </div>
-        <div>
-          <Label className="text-sm">Topic</Label>
-          {loadingTopics ? (
-            <div className="text-sm text-slate-500 p-2">Loading topics...</div>
-          ) : (topics?.length ?? 0) === 0 ? (
-            <div className="text-sm text-slate-500 p-2">No topics available.</div>
-          ) : (
-            <select
-              title="Topic"
-              className="w-full border border-slate-200 placeholder:text-xs rounded-lg px-2 py-3"
-              value={form.topicId}
-              onChange={(e) => setForm((p) => ({ ...p, topicId: e.target.value }))}
-            >
-              <option value="">Select a topic</option>
-              {topics?.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-        <div className="flex gap-5 justify-start w-full">
+    <Card className="border-slate-200 shadow-sm">
+      <CardContent className="space-y-4">
+        {/* Basic info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-sm">Start Date *</Label>
+            <Label className="text-sm">Title *</Label>
             <Input
-              type="datetime-local"
-              value={form.startDate}
-              onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
-              className="w-full"
+              placeholder="Homework 1"
+              value={form.title}
+              onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
             />
           </div>
 
           <div>
-            <Label className="text-sm">Due Date *</Label>
+            <Label className="text-sm">Max Points</Label>
             <Input
-              type="datetime-local"
-              value={form.dueDate}
-              onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
-              className="w-full"
+              type="number"
+              inputMode="numeric"
+              placeholder="100"
+              value={form.maxPoints}
+              onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value }))}
             />
           </div>
+
+          <div>
+            <Label className="text-sm">Topic</Label>
+            {loadingTopics ? (
+              <div className="text-sm text-slate-500 p-2">Loading topics...</div>
+            ) : (topics?.length ?? 0) === 0 ? (
+              <div className="text-sm text-slate-500 p-2">No topics available.</div>
+            ) : (
+              <select
+                title="Topic"
+                className="w-full border border-slate-200 placeholder:text-xs rounded-lg px-2 py-3"
+                value={form.topicId}
+                onChange={(e) => setForm((p) => ({ ...p, topicId: e.target.value }))}
+              >
+                <option value="">Select a topic</option>
+                {topics?.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div className="flex gap-3 w-full">
+            <div className="flex-1">
+              <Label className="text-sm">Start Date *</Label>
+              <Input
+                type="datetime-local"
+                value={form.startDate}
+                onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex-1">
+              <Label className="text-sm">Due Date *</Label>
+              <Input
+                type="datetime-local"
+                value={form.dueDate}
+                onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
+              />
+            </div>
+          </div>
         </div>
-        <div className="md:col-span-2">
+
+        {/* Description */}
+        <div>
           <Label className="text-sm block mb-1">Description (rich text)</Label>
           <LiteRichTextEditor
             className="w-full"
             value={form.description}
             onChange={(html) => setForm((p) => ({ ...p, description: html }))}
             placeholder="Mô tả bài tập…"
-          // onImageUpload={uploadImageToServer} // bật nếu editor hỗ trợ
+            // onImageUpload={uploadImageToServer} // bật nếu editor hỗ trợ
           />
         </div>
 
-        <div>
-          <Label className="text-sm">Format</Label>
-          <Input
-            placeholder="PDF, ZIP, ... (optional)"
-            value={form.format}
-            onChange={(e) => setForm((p) => ({ ...p, format: e.target.value }))}
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm">Grading Criteria</Label>
-          <Input
-            placeholder="Rubric note (optional)"
-            value={form.gradingCriteria}
-            onChange={(e) => setForm((p) => ({ ...p, gradingCriteria: e.target.value }))}
-          />
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="isGroup"
-            checked={form.isGroupAssignment}
-            onCheckedChange={(v) =>
-              setForm((p) => ({
-                ...p,
-                isGroupAssignment: !!v,
-                groupIds: !!v ? p.groupIds : [],
-              }))
-            }
-          />
-          <Label htmlFor="isGroup" className="cursor-pointer">
-            This is a group assignment
-          </Label>
-        </div>
-
-        {form.isGroupAssignment && (
-          <div className="rounded-lg border p-3">
-            <div className="mb-2 text-sm font-medium">Select groups in this course</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-auto pr-1">
-              {loadingGroups ? (
-                <div className="text-sm text-slate-500 p-2">Loading groups...</div>
-              ) : (courseGroups?.length ?? 0) === 0 ? (
-                <div className="text-sm text-slate-500 p-2">No groups in this course.</div>
-              ) : (
-                (courseGroups ?? []).map((g) => (
-                  <label key={g.id} className="flex items-center gap-2 rounded-md border px-3 py-2">
-                    <Checkbox
-                      checked={selectedGroupSet.has(g.id)}
-                      onCheckedChange={(v) => toggleGroup(g.id, v)}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{g.name}</div>
-                      <div className="text-xs text-slate-500">
-                        Members: {g.memberCount}
-                        {g.leaderName ? ` • Leader: ${g.leaderName}` : ""}
-                      </div>
-                    </div>
-                  </label>
-                ))
-              )}
-            </div>
+        {/* Settings */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm">Format</Label>
+            <Input
+              placeholder="PDF, ZIP, ... (optional)"
+              value={form.format}
+              onChange={(e) => setForm((p) => ({ ...p, format: e.target.value }))}
+            />
           </div>
-        )}
-      </div>
 
-      <div className="flex items-center justify-end gap-2">
+          <div>
+            <Label className="text-sm">Grading Criteria</Label>
+            <Input
+              placeholder="Rubric note (optional)"
+              value={form.gradingCriteria}
+              onChange={(e) => setForm((p) => ({ ...p, gradingCriteria: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Group assignment */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="isGroup"
+              checked={form.isGroupAssignment}
+              onCheckedChange={(v) =>
+                setForm((p) => ({
+                  ...p,
+                  isGroupAssignment: !!v,
+                  groupIds: !!v ? p.groupIds : [],
+                }))
+              }
+            />
+            <Label htmlFor="isGroup" className="cursor-pointer">
+              This is a group assignment
+            </Label>
+          </div>
+
+          {form.isGroupAssignment && (
+            <div className="rounded-lg border border-slate-300 p-3">
+              <div className="mb-2 text-sm font-medium">Select groups in this course</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-auto pr-1">
+                {loadingGroups ? (
+                  <div className="text-sm text-slate-500 p-2">Loading groups...</div>
+                ) : (courseGroups?.length ?? 0) === 0 ? (
+                  <div className="text-sm text-slate-500 p-2">No groups in this course.</div>
+                ) : (
+                  (courseGroups ?? []).map((g) => (
+                    <label key={g.id} className="flex border-slate-300 items-center gap-2 rounded-md border px-3 py-2">
+                      <Checkbox
+                        checked={selectedGroupSet.has(g.id)}
+                        onCheckedChange={(v) => toggleGroup(g.id, v)}
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">{g.name}</div>
+                        <div className="text-xs text-slate-500">
+                          Members: {g.memberCount}
+                          {g.leaderName ? ` • Leader: ${g.leaderName}` : ""}
+                        </div>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+
+      <CardFooter className="flex items-center justify-end gap-2">
         {onCancel && (
-          <Button variant="outline" onClick={onCancel}>
+          <Button className="text-violet-800 hover:text-violet-500" variant="outline" onClick={onCancel}>
             Back
           </Button>
         )}
-        <Button onClick={onSubmit} disabled={loading}>
+        <Button className="btn btn-gradient-slow" onClick={onSubmit} disabled={loading}>
           Create
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }
