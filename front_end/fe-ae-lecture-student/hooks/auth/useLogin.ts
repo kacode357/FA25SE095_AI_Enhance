@@ -1,105 +1,75 @@
 // hooks/auth/useLogin.ts
 "use client";
 
-import { mapRole, UserRole, isAllowedAppRole } from "@/config/classroom-service/user-role";
+import { useState } from "react";
+import Cookies from "js-cookie";
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
 import type { LoginPayload } from "@/types/auth/auth.payload";
-import type { LoginResponse, ApiResponse } from "@/types/auth/auth.response";
+import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
-import Cookies from "js-cookie";
-import { useState } from "react";
-
-type LoginOptions = {
-  remember?: boolean;
-};
-
-export type LoginResult = {
-  ok: boolean;
-  data: LoginResponse | null;
-  role: UserRole | null;
-};
+import { UserServiceRole, ROLE_STUDENT, ROLE_LECTURER } from "@/config/user-service/user-role";
+import { saveEncodedUser } from "@/utils/secure-user";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
-const COMMON_COOKIE_OPTS = {
-  secure: true,
-  sameSite: "strict" as const,
-  path: "/",
-};
-
-const expiresInMs = (ms: number) => new Date(Date.now() + ms);
-
-const broadcast = (reason: "login" | "refresh" | "logout") => {
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("auth:broadcast", JSON.stringify({ at: Date.now(), reason }));
-    } catch {}
-  }
-};
-
-const clearTokens = () => {
-  Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
-  Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
-};
+const COOKIE_OPTS = { secure: true, sameSite: "strict" as const, path: "/" as const, expires: 7 };
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
 
-  const setSession = (accessToken: string, refreshToken?: string, remember?: boolean) => {
-    if (remember) {
-      Cookies.set(ACCESS_TOKEN_KEY, accessToken, { ...COMMON_COOKIE_OPTS, expires: 7 });
-      if (refreshToken) {
-        Cookies.set(REFRESH_TOKEN_KEY, refreshToken, { ...COMMON_COOKIE_OPTS, expires: 7 });
-      }
-    } else {
-      const shortExpire = expiresInMs(30 * 60 * 1000);
-      Cookies.set(ACCESS_TOKEN_KEY, accessToken, { ...COMMON_COOKIE_OPTS, expires: shortExpire });
-      if (refreshToken) {
-        Cookies.set(REFRESH_TOKEN_KEY, refreshToken, { ...COMMON_COOKIE_OPTS, expires: shortExpire });
-      }
-    }
-  };
-
-  const login = async (
-    payload: LoginPayload,
-    options: LoginOptions = {}
-  ): Promise<LoginResult> => {
-    const { remember = false } = options;
+  const login = async (payload: LoginPayload) => {
     setLoading(true);
-
     try {
       const res: ApiResponse<LoginResponse> = await AuthService.login(payload);
-      const payloadData = res.data;
+      const data = res.data;
 
-      if (!payloadData?.accessToken) {
-        clearTokens();
-        return { ok: false, data: null, role: null };
+      if (data && data.accessToken) {
+        const rememberMe = payload.rememberMe ?? false;
+
+        // Lưu token theo remember
+        if (rememberMe) {
+          Cookies.set(ACCESS_TOKEN_KEY, data.accessToken, COOKIE_OPTS);
+          if (data.refreshToken) Cookies.set(REFRESH_TOKEN_KEY, data.refreshToken, COOKIE_OPTS);
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+            sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+          }
+        } else {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+            if (data.refreshToken) sessionStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+          }
+          Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
+          Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
+        }
+
+        // Lấy profile -> MÃ HOÁ & LƯU theo remember (session/cookie)
+        const profileRes: ApiResponse<UserProfile> = await UserService.getProfile();
+        const profile = profileRes.data;
+        await saveEncodedUser(profile, rememberMe);
+
+        // Điều hướng theo role string (dùng reverse mapping enum để có "Student"/"Lecturer")
+        const isStudent  = profile.role === UserServiceRole[ROLE_STUDENT];   // "Student"
+        const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER];  // "Lecturer"
+
+        let target = "/";
+        if (isStudent) target = "/student/home";
+        else if (isLecturer) target = "/lecturer/manager/course";
+
+        if (typeof window !== "undefined") window.location.href = target;
+
+        return { ok: true, data, role: profile.role } as const;
       }
 
-      setSession(payloadData.accessToken, payloadData.refreshToken, remember);
-
-      const profileRes: ApiResponse<UserProfile> = await UserService.getProfile();
-      const profile = profileRes.data;
-
-      const rawRole = (profile as any)?.role ?? payloadData.role;
-
-      const role = mapRole(rawRole);
-
-      if (!role || !isAllowedAppRole(role)) {
-        clearTokens();
-        return { ok: false, data: payloadData, role: null };
-      }
-
-      broadcast("login");
-      return { ok: true, data: payloadData, role };
-    } catch {
-      clearTokens();
-      return { ok: false, data: null, role: null };
+      return { ok: false, data, role: null } as const;
+    } catch (err) {
+      console.error("[auth] login error:", err);
+      return { ok: false, data: null, role: null } as const;
     } finally {
       setLoading(false);
     }
   };
 
-  return { login, loading, clearTokens };
+  return { login, loading };
 }

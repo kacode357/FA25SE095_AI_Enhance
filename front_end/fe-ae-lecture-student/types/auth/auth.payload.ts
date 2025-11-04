@@ -1,5 +1,4 @@
 // types/auth/auth.payload.ts
-
 export interface RegisterPayload {
   email: string;
   password: string;
@@ -17,6 +16,9 @@ export interface RegisterPayload {
 export interface LoginPayload {
   email: string;
   password: string;
+  rememberMe?: boolean;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export interface ConfirmEmailPayload {
@@ -49,7 +51,6 @@ export interface ChangePasswordPayload {
   newPassword: string;
 }
 
-/** Dùng cho service vì API cần userId */
 export interface ChangePasswordRequest extends ChangePasswordPayload {
   userId: string;
 }

@@ -2,46 +2,69 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Cookies from "js-cookie";
 import { AuthService } from "@/services/auth.services";
 import type { LogoutPayload } from "@/types/auth/auth.payload";
-import type { LogoutResponse } from "@/types/auth/auth.response";
-import { useAuth } from "@/contexts/AuthContext";
+import type { ApiResponse, LogoutResponse } from "@/types/auth/auth.response";
+import { clearEncodedUser } from "@/utils/secure-user";
 
-const broadcast = (reason: "logout") => {
+const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+
+function clearTokens() {
+  Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
+  Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
   if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("auth:broadcast", JSON.stringify({ at: Date.now(), reason }));
-    } catch {}
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
   }
-};
+  console.log("[auth] tokens cleared (cookies + sessionStorage)");
+}
 
 export function useLogout() {
   const [loading, setLoading] = useState(false);
-  const { logout: ctxLogout } = useAuth();
 
   const logout = useCallback(
     async (payload?: LogoutPayload): Promise<LogoutResponse | null> => {
       setLoading(true);
       try {
-        const res = await (AuthService.logout?.(payload as LogoutPayload) ?? Promise.resolve(null))
-          .catch(() => null);
+        let data: LogoutResponse | null = null;
 
-        // Clear + redirect qua AuthContext
-        ctxLogout();
+        if (typeof AuthService.logout === "function") {
+          const res = (await AuthService.logout(payload as LogoutPayload)) as unknown;
 
-        // Broadcast đa tab (và là dấu vết hợp lệ)
-        broadcast("logout");
+          if (
+            res &&
+            typeof res === "object" &&
+            "data" in (res as Record<string, unknown>) &&
+            "status" in (res as Record<string, unknown>)
+          ) {
+            const env = res as ApiResponse<LogoutResponse>;
+            console.log("[auth] logout:", env.status, env.message);
+            data = env.data;
+          } else {
+            data = (res as LogoutResponse) ?? null;
+          }
+        }
 
-        return res;
-      } catch {
-        try { ctxLogout(); } catch {}
-        broadcast("logout");
+        // Clear token + clear encrypted user (a:u) rồi điều hướng
+        clearTokens();
+        clearEncodedUser();
+
+        if (typeof window !== "undefined") window.location.href = "/login";
+
+        return data;
+      } catch (err) {
+        console.error("[auth] logout error:", err);
+        clearTokens();
+        clearEncodedUser();
+        if (typeof window !== "undefined") window.location.href = "/login";
         return null;
       } finally {
         setLoading(false);
       }
     },
-    [ctxLogout]
+    []
   );
 
   return { logout, loading };

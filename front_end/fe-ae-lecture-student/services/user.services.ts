@@ -13,7 +13,7 @@ export const UserService = {
   /** GET /User/profile */
   getProfile: async (): Promise<ApiResponse<UserProfile>> => {
     const res = await userAxiosInstance.get<ApiResponse<UserProfile>>("/User/profile");
-    return res.data; // { status, message, data }
+    return res.data; 
   },
 
   /** PUT /User/profile */

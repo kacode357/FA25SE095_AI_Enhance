@@ -4,14 +4,10 @@
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mapRole, ROLE_HOME } from "@/config/classroom-service/user-role";
-import { useAuth } from "@/contexts/AuthContext";
 import { useLogin } from "@/hooks/auth/useLogin";
 import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function LoginPage() {
   const { login, loading } = useLogin();
@@ -20,32 +16,9 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const { user } = useAuth();
-  const router = useRouter();
-
-  // Nếu đã đăng nhập thì vào thẳng HOME theo role
-  useEffect(() => {
-    if (!user) return;
-    const rawRole =
-      (user as any)?.role ??
-      (user as any)?.roleName ??
-      (user as any)?.role?.name;
-    const role = mapRole(rawRole);
-    const target = role ? ROLE_HOME[role] : "/";
-    router.replace(target);
-  }, [user, router]);
-
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const result = await login(
-      { email: email.trim(), password: password.trim() },
-      { remember: rememberMe }
-    );
-    if (result.ok && result.role !== null) {
-      router.replace(ROLE_HOME[result.role]);
-    } else {
-      // TODO: toast lỗi nếu cần
-    }
+    await login({ email: email.trim(), password: password.trim(), rememberMe });
   };
 
   const handleGoogleLogin = async () => {
@@ -57,18 +30,15 @@ export default function LoginPage() {
     }
   };
 
-  // Nếu đã có user thì đang redirect, đừng render gì
-  if (user) return null;
-
   return (
     <AuthShell
       title="Welcome back!"
       subtitle={
         <span>
           New here?{" "}
-          <Link className="underline" href="/register">
+          <a className="underline" href="/register" rel="nofollow">
             Create an account
-          </Link>
+          </a>
         </span>
       }
     >
@@ -100,12 +70,11 @@ export default function LoginPage() {
             />
             Remember me
           </label>
-          <Link href="/forgot-password" className="underline">
+          <a href="/forgot-password" className="underline" rel="nofollow">
             Forgot password?
-          </Link>
+          </a>
         </div>
 
-        {/* ✅ Nút Gradient tím hồng (CTA) từ globals.css */}
         <button
           type="submit"
           className="btn btn-gradient w-full"
@@ -117,13 +86,11 @@ export default function LoginPage() {
 
         <div className="relative my-4">
           <div className="border-t border-slate-200" />
-          {/* fix var: --color-card -> --card */}
           <span className="bg-[--card] absolute -top-2 left-1/2 -translate-x-1/2 px-2 text-[11px] tracking-wide text-slate-500">
             Or continue with
           </span>
         </div>
 
-        {/* Giữ nút Google như cũ */}
         <Button
           type="button"
           variant="ghost"
@@ -143,11 +110,11 @@ export default function LoginPage() {
           className="text-center text-xs text-slate-500"
         >
           By continuing, you agree to our{" "}
-          <a href="#" className="text-green-600">
+          <a href="#" className="text-green-600" rel="nofollow">
             Terms
           </a>{" "}
           and{" "}
-          <a href="#" className="text-green-600">
+          <a href="#" className="text-green-600" rel="nofollow">
             Privacy Policy
           </a>
           .

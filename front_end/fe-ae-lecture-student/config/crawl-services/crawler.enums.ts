@@ -1,6 +1,5 @@
 
 
-/** Map đúng BE */
 export enum CrawlerType {
   HttpClient = 0,
   Selenium = 1,

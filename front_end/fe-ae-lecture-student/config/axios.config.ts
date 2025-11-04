@@ -8,159 +8,110 @@ const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;
 const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API!;
 const CRAWL_BASE_URL = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_API!;
 
-/** ===== Cookie keys ===== */
+/** ===== Token keys ===== */
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 
-/** ===== Helpers ===== */
-const broadcast = (reason: "login" | "refresh" | "logout") => {
+/** Đọc accessToken: ưu tiên cookie, fallback sessionStorage */
+function readAccessToken(): string | undefined {
+  const fromCookie = Cookies.get(ACCESS_TOKEN_KEY);
+  if (fromCookie) return fromCookie;
   if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("auth:broadcast", JSON.stringify({ at: Date.now(), reason }));
-    } catch {}
+    const fromSession = window.sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    return fromSession || undefined;
   }
-};
+  return undefined;
+}
 
-const clearTokens = () => {
-  Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
-  Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
-};
+/** Decode role từ JWT payload (để chặn API theo route/role nếu cần) */
+function readRoleFromToken(token?: string): string | undefined {
+  if (!token) return undefined;
+  const parts = token.split(".");
+  if (parts.length < 2) return undefined;
+  try {
+    const payload = JSON.parse(atob(parts[1]));
+    return (
+      payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+      payload["role"] ||
+      payload["Role"] ||
+      undefined
+    );
+  } catch {
+    return undefined;
+  }
+}
 
-const goLogin = () => {
-  if (typeof window !== "undefined") window.location.replace("/login");
-};
+/** Rút thông điệp lỗi từ payload đa dạng của BE */
+function pickErrorMessage(data: any, fallback: string): string {
+  if (!data) return fallback;
+  if (typeof data === "string") return data;
+  return (
+    data.message ||
+    data.error ||
+    data.title ||
+    (Array.isArray(data.details) && data.details[0]) ||
+    fallback
+  );
+}
 
-const goHome = () => {
-  if (typeof window !== "undefined") window.location.replace("/");
-};
-
-/** ===== Factory: create axios instance với refresh queue ===== */
+/** ===== Factory: axios instance với interceptors ===== */
 type CreateOpts = { timeout?: number };
 
 const createAxiosInstance = (baseURL: string, opts: CreateOpts = {}): AxiosInstance => {
   const instance = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json; charset=UTF-8" },
-    // Timeout mặc định (nếu không truyền) để tương thích các service khác
-    timeout: opts.timeout ?? 20000, // 20s default
+    timeout: opts.timeout ?? 20000,
+    // KHÔNG throw cho HTTP 4xx/5xx → mình tự xử lý & toast
+    validateStatus: () => true,
   });
 
-  /** ----- Request: gắn Bearer từ cookie ----- */
+  // ----- Request: chặn theo role (tuỳ chọn) + gắn Bearer -----
   instance.interceptors.request.use((config) => {
-    const token = Cookies.get(ACCESS_TOKEN_KEY);
-    if (token) {
-      config.headers = config.headers ?? {};
-      (config.headers as any).Authorization = `Bearer ${token}`;
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      const isStudentRoute = path.startsWith("/student");
+      const isLecturerRoute = path.startsWith("/lecturer");
+
+      const token = readAccessToken();
+      const role = readRoleFromToken(token); // "Student" | "Lecturer" | ...
+
+      // Nếu route bảo vệ mà role không khớp → huỷ request, không gọi API
+      if (isStudentRoute && role !== "Student") {
+        return Promise.reject(new axios.Cancel("role-mismatch: student route"));
+      }
+      if (isLecturerRoute && role !== "Lecturer") {
+        return Promise.reject(new axios.Cancel("role-mismatch: lecturer route"));
+      }
+
+      if (token) {
+        config.headers = config.headers ?? {};
+        (config.headers as any).Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   });
 
-  /** ----- Refresh queue state ----- */
-  let isRefreshing = false;
-  let failedQueue: Array<{ resolve: (t: string) => void; reject: (e: any) => void }> = [];
-
-  const processQueue = (error: any, token: string | null = null) => {
-    failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
-    failedQueue = [];
-  };
-
-  /** ----- Response: handle errors ----- */
+  // ----- Response:
+  //  - 4xx/5xx: vẫn đi vào "success" do validateStatus=true → tự toast BE message
+  //  - Network/timeout/cancel: vào "error" → im lặng cho cancel, toast cho network
   instance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      const { status, data } = response;
+      if (status >= 400) {
+        const msg = pickErrorMessage(data, response.statusText || `HTTP ${status}`);
+        toast.error(`${msg}`);
+      }
+      return response;
+    },
     async (error: AxiosError<any>) => {
-      const status = error.response?.status;
-      const originalRequest: any = error.config;
-
-      // Network/timeout -> báo lỗi chung
-      if (status == null) {
-        toast.error(error.message || "Không thể kết nối máy chủ");
+      if (axios.isCancel(error)) {
+        // role-mismatch / user cancel → không toast
         return Promise.reject(error);
       }
-
-      /** 403: Sai quyền -> về "/" cho guard xử lý */
-      if (status === 403) {
-        goHome();
-        return Promise.reject(error);
-      }
-
-      /** Khác 401/403 -> show toast */
-      if (status !== 401) {
-        const data = error.response?.data as { message?: string };
-        const message = data?.message || error.message || "Đã có lỗi xảy ra";
-        toast.error(message);
-        return Promise.reject(error);
-      }
-
-      /** 401: Unauthorized -> thử refresh 1 lần */
-      if (originalRequest?._retry) {
-        clearTokens();
-        broadcast("logout");
-        goLogin();
-        return Promise.reject(error);
-      }
-      originalRequest._retry = true;
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (newToken: string) => {
-              originalRequest.headers.Authorization = `Bearer ${newToken}`;
-              resolve(instance(originalRequest));
-            },
-            reject,
-          });
-        });
-      }
-
-      isRefreshing = true;
-
-      const refreshToken = Cookies.get(REFRESH_TOKEN_KEY);
-      if (!refreshToken) {
-        isRefreshing = false;
-        clearTokens();
-        broadcast("logout");
-        goLogin();
-        return Promise.reject(error);
-      }
-
-      try {
-        const res = await axios.post(`${USER_BASE_URL}/Auth/refresh-token`, {
-          refreshToken,
-          ipAddress: "",
-          userAgent: "",
-        });
-
-        const { accessToken, refreshToken: newRefresh } = res.data || {};
-        if (!accessToken) throw new Error("No accessToken from refresh");
-
-        Cookies.set(ACCESS_TOKEN_KEY, accessToken, {
-          secure: true,
-          sameSite: "strict",
-          path: "/",
-        });
-        if (newRefresh) {
-          Cookies.set(REFRESH_TOKEN_KEY, newRefresh, {
-            secure: true,
-            sameSite: "strict",
-            path: "/",
-            expires: 7,
-          });
-        }
-
-        broadcast("refresh");
-
-        processQueue(null, accessToken);
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        return instance(originalRequest);
-      } catch (err) {
-        processQueue(err, null);
-        clearTokens();
-        broadcast("logout");
-        goLogin();
-        return Promise.reject(err);
-      } finally {
-        isRefreshing = false;
-      }
+      // network/timeout mới toast
+      toast.error(error.message || "Không thể kết nối máy chủ");
+      return Promise.reject(error);
     }
   );
 
@@ -168,11 +119,6 @@ const createAxiosInstance = (baseURL: string, opts: CreateOpts = {}): AxiosInsta
 };
 
 /** ===== Export axios instances ===== */
-// giữ mặc định 20s cho user/course
 export const userAxiosInstance = createAxiosInstance(USER_BASE_URL);
 export const courseAxiosInstance = createAxiosInstance(COURSE_BASE_URL);
-
-// tăng timeout cho crawl (ví dụ 180s)
-export const crawlAxiosInstance = createAxiosInstance(CRAWL_BASE_URL, {
-  timeout: 600_000, // 10 phút cho các request khởi tạo/điều phối crawl
-});
+export const crawlAxiosInstance = createAxiosInstance(CRAWL_BASE_URL, { timeout: 600_000 });
