@@ -114,8 +114,8 @@ export default function CourseCard({
 
   return (
     <Card
-      className="h-full flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand"
-      onClick={goDetail}
+      className="h-full flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] focus:outline-none focus:ring-2 focus:ring-brand"
+      // onClick={goDetail}
       tabIndex={0}
       role="button"
       onKeyDown={onKeyEnter}

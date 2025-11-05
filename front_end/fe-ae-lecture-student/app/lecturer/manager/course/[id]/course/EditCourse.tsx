@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +12,8 @@ import { useUpdateCourse } from "@/hooks/course/useUpdateCourse";
 import { useTerms } from "@/hooks/term/useTerms";
 import { CourseStatus } from "@/types/courses/course.response";
 import { AnimatePresence, motion } from "framer-motion";
-import { Eye, EyeOff, FolderLock, Loader2, SquarePen, X } from "lucide-react";
+import { Bookmark, BookOpen, Eye, EyeOff, FolderLock, Loader2, SquarePen, X } from "lucide-react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import InactivateCourseDialog from "./components/InactivateCourseDialog";
@@ -132,7 +132,7 @@ export default function EditCourse() {
     }
 
     return (
-        <div className="h-screen flex flex-col px-6 py-5 overflow-hidden bg-slate-50">
+        <div className="h-screen flex flex-col px-6 overflow-hidden bg-slate-50">
             <InactivateCourseDialog
                 open={inactivateOpen}
                 onOpenChange={setInactivateOpen}
@@ -144,30 +144,25 @@ export default function EditCourse() {
                 }}
             />
             {/* Breadcrumb */}
-            <nav className="flex flex-row justify-between items-center text-sm mb-5 gap-2" aria-label="Breadcrumb">
-                <div className="flex flex-row justify-between items-center text-sm gap-2">
+            <nav className="flex flex-row justify-between py-2 items-center text-sm gap-2" aria-label="Breadcrumb">
+                <div className="flex flex-row justify-between items-center text-sm gap-1">
+                    <BookOpen className="size-4 cursor-pointer" color="#c490d1" />
                     <a
                         href="/lecturer/manager/course"
                         className="text-emerald-500 hover:underline cursor-pointer"
                     >
                         Courses
                     </a>
-                    <span className="text-slate-400">/</span>
-                    <span className="text-emerald-800 font-semibold">{course.name}</span>
+                    <span className="text-slate-400 px-1">/</span>
+                    <span className="text-violet-800 flex flex-row gap-1 items-center font-semibold"><Bookmark className="size-4 cursor-pointer" color="#8b5cf6" />{course.courseCode} - {course.courseCodeTitle}</span>
                 </div>
-                {course?.status === CourseStatus.Active && (
-                    <div>
-                        <button
-                            title="Lock"
-                            onClick={() => setInactivateOpen(true)}
-                            className="bg-amber-700 text-white flex gap-2 cursor-pointer items-center px-4 py-2 rounded-md text-sm font-medium
-               hover:bg-amber-800 hover:shadow-md active:scale-95
-               transition-all duration-200 ease-in-out"
-                        >
-                            <FolderLock className="size-4" /> Inactivate Course
-                        </button>
-                    </div>
-                )}
+                <div className="flex items-center gap-2">
+                    <Link href={id ? `/lecturer/manager/course/${id}` : "#"} aria-label="Go to Course Detail Page" className={id ? "" : "pointer-events-none opacity-60"}>
+                        <Button size="sm" variant="outline" className="cursor-pointer btn btn-gradient-slow text-violet-800 hover:text-violet-600">
+                            Manager Course
+                        </Button>
+                    </Link>
+                </div>
             </nav>
 
             {/* Main Content */}
@@ -175,27 +170,45 @@ export default function EditCourse() {
                 {/* LEFT */}
                 <Card className="flex-[0.65] flex flex-col p-6 border-slate-200 shadow-sm overflow-auto">
                     <div className="flex justify-between items-center mb-5">
-                        <h3 className="text-base font-semibold text-slate-700">
-                            General Information
-                        </h3>
-                        {!editMode ? (
-                            course?.status === CourseStatus.Active ? (
-                                <SquarePen
-                                    role="button"
-                                    aria-label="Edit course"
-                                    className="size-5 cursor-pointer text-emerald-600 hover:text-emerald-700 transition"
-                                    onClick={() => setEditMode(true)}
-                                />
-                            ) : null
-                        ) : (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setEditMode(false)}
+                        <div className="flex items-center gap-3">
+                            <h3 className="text-base font-semibold text-slate-700">General Information</h3>
+                            {/* Status chip shown to the right of the General Information title */}
+                            <span
+                                className={`px-2.5 py-1 text-xs rounded-full leading-none ${getStatusColor(course.status)}`}
                             >
-                                <X className="w-4 h-4 text-slate-500" />
-                            </Button>
-                        )}
+                                {getStatusLabel(course.status)}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {!editMode ? (
+                                course?.status === CourseStatus.Active ? (
+                                    <>
+                                        {/* Inactivate button sits next to the Edit icon */}
+                                        <button
+                                            title="Inactivate Course"
+                                            onClick={() => setInactivateOpen(true)}
+                                            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 hover:shadow-sm active:scale-95 transition-all duration-200 ease-in-out"
+                                        >
+                                            <FolderLock className="size-4" /> Inactivate
+                                        </button>
+                                        <SquarePen
+                                            role="button"
+                                            aria-label="Edit course"
+                                            className="size-5 cursor-pointer text-emerald-600 hover:text-emerald-700 transition"
+                                            onClick={() => setEditMode(true)}
+                                        />
+                                    </>
+                                ) : null
+                            ) : (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setEditMode(false)}
+                                >
+                                    <X className="w-4 h-4 text-slate-500" />
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
                     <AnimatePresence mode="wait">
@@ -304,16 +317,6 @@ export default function EditCourse() {
                         )}
                     </AnimatePresence>
 
-                    <div className="mt-7 flex items-center justify-between">
-                        <span className="text-slate-500 text-sm">Status</span>
-                        <Badge
-                            className={`${getStatusColor(
-                                course.status
-                            )} px-3 py-1 rounded-full font-medium text-xs`}
-                        >
-                            {getStatusLabel(course.status)}
-                        </Badge>
-                    </div>
 
                     {editMode && (
                         <div className="mt-4 border-t pb-5 border-slate-200 flex justify-end gap-2">
@@ -338,11 +341,12 @@ export default function EditCourse() {
                 <div className="flex-[0.35] flex flex-col gap-5 overflow-auto">
                     <Card className="p-5 border-slate-200 shadow-sm">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-slate-700 mb-3">Access Code</h3>
+                            <h3 className="text-sm font-semibold text-[#000D83]">Access Code</h3>
                             {id && (
                                 <Button
                                     size="sm"
                                     variant={access?.requiresAccessCode ? "destructive" : "outline"}
+                                    className="-m-3 text-violet-800 hover:text-violet-500"
                                     onClick={async () => {
                                         if (!id) return;
                                         const enable = !(access?.requiresAccessCode ?? course.requiresAccessCode);
@@ -411,7 +415,7 @@ export default function EditCourse() {
                     </Card>
 
                     <Card className="p-5 border-slate-200 shadow-sm">
-                        <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                        <h3 className="text-sm font-semibold text-[#000D83]">
                             Approval Details
                         </h3>
                         <div className="flex flex-col gap-2 text-sm">

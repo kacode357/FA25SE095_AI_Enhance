@@ -77,7 +77,7 @@ export default function ImportEnrollmentsPage() {
                     </div>
                     <Button
                         variant="ghost"
-                        className="text-white/90 hover:text-white"
+                        className="text-white/90 hover:text-white shadow-xl"
                         onClick={() => router.push("/lecturer/manager/course")}
                     >
                         <ArrowLeft className="size-4 mr-1" /> Back

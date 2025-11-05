@@ -9,6 +9,7 @@ import {
   HardDriveDownload,
   Loader2,
   Plus,
+  Sparkles,
   Upload,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -86,38 +87,76 @@ export default function CoursesPage() {
   return (
     <div className="px-4 pb-4 pt-2">
       {/* Hero header */}
-      <div className="relative overflow-hidden mb-4 rounded-2xl border border-slate-200 shadow-[0_8px_28px_rgba(2,6,23,0.08)]">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b] opacity-90" />
-        <div className="relative px-4 sm:px-5 py-5 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Lecturer • Courses</h1>
-            <p className="text-xs sm:text-sm text-white/90">Manage courses, enrollments, and requests with a polished workflow.</p>
-          </div>
-          {/* Segmented tabs */}
-          <div className="bg-white/10 backdrop-blur px-1 py-1 rounded-xl inline-flex border border-white/20">
-            <button
-              onClick={() => setActiveTab("courses")}
-              className={`${activeTab === "courses" ? "bg-white text-[#7f71f4] shadow" : "text-white/90 hover:text-white"} px-3 py-1.5 rounded-lg text-sm font-semibold transition`}
-            >
-              Courses
-            </button>
-            <button
-              onClick={() => setActiveTab("requests")}
-              className={`${activeTab === "requests" ? "bg-white text-[#7f71f4] shadow" : "text-white/90 hover:text-white"} px-3 py-1.5 rounded-lg text-sm font-semibold transition`}
-            >
-              Requests
-            </button>
+      <div className="sticky top-0 z-30 mb-4 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-[0_8px_28px_rgba(2,6,23,0.08)]">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b] opacity-90" />
+          <div className="relative px-4 sm:px-5 py-5 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Lecturer • Courses</h1>
+              <p className="text-xs sm:text-sm text-white/90">Manage courses, enrollments, and requests with a polished workflow.</p>
+            </div>
+            {/* Segmented tabs */}
+            <div className="bg-white/10 backdrop-blur px-1 py-1 shadow-xl rounded-xl inline-flex border border-white/20">
+              <button
+                onClick={() => setActiveTab("courses")}
+                className={`${activeTab === "courses" ? "bg-white text-[#7f71f4] shadow" : "text-white/90 hover:text-white"} px-3 py-1.5 rounded-lg text-sm font-semibold transition`}
+              >
+                Courses
+              </button>
+              <button
+                onClick={() => setActiveTab("requests")}
+                className={`${activeTab === "requests" ? "bg-white text-[#7f71f4] shadow-xl" : "text-white/90 hover:text-white"} px-3 py-1.5 rounded-lg text-sm font-semibold transition`}
+              >
+                Requests
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div
-        className={`grid grid-cols-1 ${activeTab === "courses" ? "xl:grid-cols-[minmax(0,1fr)_360px]" : ""} gap-3 h-[calc(100vh-8.5rem)] overflow-hidden transition-all duration-300`}
+        className={`grid grid-cols-1 ${activeTab === "courses" ? "xl:grid-cols-[320px_minmax(0,1fr)_300px]" : ""} gap-3 h-[calc(100vh-8.5rem)] overflow-hidden transition-all duration-300`}
       >
-        {/* ======== Left content ======== */}
-        <div className="flex flex-col overflow-y-auto pr-2 scroll-smooth scrollbar-stable">
-          {/* Header */}
-          <div className="sticky top-0 bg-white/70 backdrop-blur z-20 pb-2 border-b border-slate-100">
+        {/* ======== Left Filter (Sidebar) ======== */}
+        {activeTab === "courses" && (
+          <div className="hidden xl:block pr-1 self-start sticky top-0">
+            <Card className="p-3 border-slate-200 shadow-sm">
+              <FilterBar
+                filterName={filterName}
+                setFilterName={setFilterName}
+                filterCode={filterCode}
+                setFilterCode={setFilterCode}
+                createdAfter={createdAfter}
+                setCreatedAfter={setCreatedAfter}
+                createdBefore={createdBefore}
+                setCreatedBefore={setCreatedBefore}
+                minEnroll={minEnroll}
+                setMinEnroll={setMinEnroll}
+                maxEnroll={maxEnroll}
+                setMaxEnroll={setMaxEnroll}
+                onApply={() => fetchAll(1, true)}
+                onClear={() => {
+                  setFilterName("");
+                  setFilterCode("");
+                  setCreatedAfter("");
+                  setCreatedBefore("");
+                  setMinEnroll("");
+                  setMaxEnroll("");
+                  fetchAll(1, true);
+                }}
+                resultCount={filtered.length}
+                totalCount={totalCount}
+                loading={loading}
+                stacked
+              />
+            </Card>
+          </div>
+        )}
+
+        {/* ======== Center content ======== */}
+        <div className="flex flex-col overflow-y-auto scroll-smooth scrollbar-stable">
+          {/* Mobile/Tablet Filter (hidden on xl) */}
+          <div className="sticky top-0 bg-white/70 backdrop-blur z-20 pb-2 border-b border-slate-100 xl:hidden">
             {activeTab === "courses" && (
               <FilterBar
                 filterName={filterName}
@@ -153,7 +192,8 @@ export default function CoursesPage() {
           {activeTab === "courses" && (
             <>
               {!loading && filtered.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 mt-2">
+                <div
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
                   {filtered.map((c) => (
                     <motion.div key={c.id}>
                       <CourseCard
@@ -183,13 +223,13 @@ export default function CoursesPage() {
 
           {/* ======== Requests Tab ======== */}
           {activeTab === "requests" && (
-            <div className="mt-2">
-              <div className="flex justify-between">
+              <div className="h-[calc(100vh-8.5rem)] overflow-hidden -mt-1 flex flex-col">
+                <div className="flex justify-between shrink-0">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setActiveTab("courses")}
-                  className="flex items-center mb-2 text-sm text-slate-700 hover:text-slate-900"
+                  className="flex items-center mb-2 text-sm text-[#000D83] hover:text-slate-900"
                 >
                   <ArrowLeft className="size-4" /> Back
                 </Button>
@@ -201,18 +241,23 @@ export default function CoursesPage() {
                   </Button>
                 </div>
               </div>
-              <CourseRequests active />
+                <div className="flex-1 overflow-y-auto">
+                  <CourseRequests active />
+                </div>
             </div>
           )}
         </div>
 
         {/* ======== Right Sidebar ======== */}
         {activeTab === "courses" && (
-          <div className="flex flex-col gap-4 w-full xl:pl-1 sticky top-0 h-[calc(100vh-8.5rem)] overflow-y-auto scroll-smooth scrollbar-stable">
-            {/* Quick actions */}
-            <Card className="p-4 border-slate-200 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col gap-4 w-full self-start sticky top-0 p-3 bg-slate-50 border-slate-200 shadow-lg rounded-lg">
+            {/* Quick actions (Sidebar variant) */}
+            <Card className="p-4 relative overflow-hidden rounded-2xl border-violet-100 bg-gradient-to-br from-white to-violet-50/30 shadow-[0_10px_30px_rgba(139,92,246,0.12)]">
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
-              <h2 className="text-base font-semibold text-slate-900">Quick actions</h2>
+              <div className="flex items-center gap-2 mb-1 text-violet-900">
+                <Sparkles className="size-4" />
+                <h2 className="text-base font-semibold">Quick actions</h2>
+              </div>
               <p className="text-sm text-slate-600">
                 Create a course or import students using the template.
               </p>
@@ -227,10 +272,12 @@ export default function CoursesPage() {
               </div>
             </Card>
 
-            {/* Bulk import enrollments */}
-            <Card className="p-4 border-slate-200 shadow-sm relative overflow-hidden">
+            {/* Bulk import enrollments (Sidebar variant) */}
+            <Card className="p-4 relative overflow-hidden rounded-2xl border-amber-100 bg-gradient-to-br from-white to-amber-50/30 shadow-[0_10px_30px_rgba(244,162,59,0.12)]">
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
-              <h2 className="text-base font-semibold text-brand">Import Enrollments</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-base font-semibold text-brand">Import Enrollments</h2>
+              </div>
               <p className="text-sm text-slate-600">
                 Add students in two quick steps: download the template and upload the completed file.
               </p>
@@ -243,7 +290,7 @@ export default function CoursesPage() {
                     onClick={downloadImportTemplate}
                     disabled={downloading}
                     variant="outline"
-                    className="text-sm rounded-2xl border-brand text-brand hover:bg-brand/5"
+                    className="text-sm rounded-2xl -mx-1.5 border-brand text-brand hover:bg-brand/5"
                   >
                     <HardDriveDownload className="size-4" />
                     {downloading ? "Downloading..." : "Template"}
@@ -251,46 +298,19 @@ export default function CoursesPage() {
                 </li>
                 <li className="flex items-center justify-between gap-2">
                   <div className="text-xs text-slate-700">
-                    <span className="font-medium">Step 2:</span> Upload the completed file
+                    <span className="font-medium">Step 2:</span> Upload the
+                    <br />
+                    completed file
                   </div>
                   <Button
                     className="btn btn-gradient-slow text-sm text-white rounded-2xl"
                     onClick={() => router.push("/lecturer/manager/course/import")}
                   >
-                    <Upload className="size-4 mr-2" />
+                    <Upload className="size-4" />
                     Import
                   </Button>
                 </li>
               </ol>
-            </Card>
-
-            {/* Course requests overview */}
-            <Card className="p-4 border-slate-200 shadow-sm relative overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
-              <h2 className="text-base font-semibold text-brand flex items-center gap-2">
-                Course Requests
-                <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-[#7f71f4]/10 to-[#f4a23b]/10 text-[#7f71f4]">
-                  {requestsCount} pending
-                </span>
-              </h2>
-              <p className="text-sm text-slate-600">
-                View and submit private course opening requests to the admin team.
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  className="text-brand text-sm border-brand hover:bg-brand/5 rounded-2xl"
-                  onClick={() => setActiveTab("requests")}
-                >
-                  View Requests
-                </Button>
-                {/* <Button
-                  onClick={() => router.push("/lecturer/manager/course/requests/create")}
-                  className="rounded-2xl btn btn-gradient-slow text-sm text-white"
-                >
-                  New Request
-                </Button> */}
-              </div>
             </Card>
           </div>
         )}

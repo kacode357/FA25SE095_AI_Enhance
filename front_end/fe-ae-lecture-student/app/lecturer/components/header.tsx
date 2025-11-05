@@ -32,8 +32,8 @@ export default function ManagerHeader({ onMenuClick }: Props) {
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
-      <div className="h-16 px-4 sm:px-3 flex items-center justify-between">
+    <header className="bg-[#fcfdf2] backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
+      <div className="h-24 px-4 sm:px-3 pt-2 flex items-center justify-between">
         <Link
           href="/"
           className="inline-flex items-center gap-3 group transition-transform hover:scale-105"
@@ -41,10 +41,10 @@ export default function ManagerHeader({ onMenuClick }: Props) {
         >
           <div className="relative ml-2">
             <Image
-              src="/ai-enhance-logo.svg"
+              src="/logo_aids.png"
               alt="AI Enhance"
-              width={32}
-              height={32}
+              width={100}
+              height={100}
               className="drop-shadow-sm"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-md group-hover:blur-lg transition-all"></div>

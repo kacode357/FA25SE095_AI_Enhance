@@ -40,7 +40,7 @@ export default function EditDialog({
     year: 2024,
   };
   const mockCourseCodeOptions = [
-      { id: '1', displayName: 'CS101 - Intro' }, 
+      { id: '1', displayName: 'CS101 - Intro' },
       { id: '2', displayName: 'MA201 - Advanced' }
   ];
 

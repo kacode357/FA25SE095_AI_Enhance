@@ -105,7 +105,7 @@ export default function CreateCourseRequestPage() {
                     </div>
                     <Button
                         variant="ghost"
-                        className="text-white/90 hover:text-white"
+                        className="text-white/90 shadow-xl hover:text-white"
                         onClick={() => router.push("/lecturer/manager/course")}
                     >
                         <ArrowLeft className="size-4 mr-1" /> Back
@@ -175,7 +175,7 @@ export default function CreateCourseRequestPage() {
                                 <Textarea
                                     value={form.description}
                                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                                    className="mt-1 min-h-24 border-slate-200"
+                                    className="mt-1 min-h-24 placeholder:text-slate-400 border-slate-200"
                                     placeholder="Describe the request.."
                                 />
                             </div>
@@ -186,7 +186,7 @@ export default function CreateCourseRequestPage() {
                                 <Input
                                     value={form.requestReason ?? ""}
                                     onChange={(e) => setForm((f) => ({ ...f, requestReason: e.target.value }))}
-                                    className="mt-1 h-9"
+                                    className="mt-1 h-9 placeholder:text-sm placeholder:text-slate-400"
                                     placeholder="e.g., private class for department"
                                 />
                             </div>
