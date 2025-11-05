@@ -10,6 +10,7 @@ import { useLogout } from "@/hooks/auth/useLogout";
 import Logo from "@/components/logo/Logo";
 import NotificationsMenu from "@/components/notifications/NotificationsMenu";
 import UserMenu from "@/components/user/UserMenu";
+import { ROLE_LECTURER, UserServiceRole } from "@/config/user-service/user-role";
 import { useStudentNav } from "./nav-items";
 
 export default function Header() {
@@ -20,6 +21,7 @@ export default function Header() {
   const { logout } = useLogout();
 
   const navs = useStudentNav();
+  const isLecturer = user?.role === UserServiceRole[ROLE_LECTURER];
 
   const handleLogout = () => {
     setDropdownOpen(false);
@@ -47,27 +49,29 @@ export default function Header() {
         <div className="flex items-center gap-8 min-w-0">
           <Logo />
 
-          <nav className="hidden md:flex items-center gap-8">
-            {navs.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="no-underline"
-                aria-current={item.isActive ? "page" : undefined}
-              >
-                <span
-                  className={
-                    "text-base font-semibold leading-none transition-colors visited:text-nav " +
-                    (item.isActive
-                      ? "text-nav-active"
-                      : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active")
-                  }
+          {!isLecturer && (
+            <nav className="hidden md:flex items-center gap-8">
+              {navs.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="no-underline"
+                  aria-current={item.isActive ? "page" : undefined}
                 >
-                  {item.label}
-                </span>
-              </Link>
-            ))}
-          </nav>
+                  <span
+                    className={
+                      "text-base font-semibold leading-none transition-colors visited:text-nav " +
+                      (item.isActive
+                        ? "text-nav-active"
+                        : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active")
+                    }
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              ))}
+            </nav>
+          )}
         </div>
 
         {/* Right: push to far right */}

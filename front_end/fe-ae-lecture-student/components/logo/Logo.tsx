@@ -14,7 +14,7 @@ type LogoProps = {
 
 export default function Logo({
   href = "/student/home",
-  imgSrc = "/ai-enhance-logo.svg",
+  imgSrc = "/aids-logo.png",
   imgAlt = "AI Enhance",
   title = "AI Enhance",
   subtitle = "Student Portal",
@@ -30,20 +30,20 @@ export default function Logo({
         <Image
           src={imgSrc}
           alt={imgAlt}
-          width={50}
-          height={50}
+          width={110}
+          height={110}
           className="drop-shadow-sm"
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-md group-hover:blur-lg transition-all" />
       </div>
 
-      <div className="flex flex-col">
+      {/* <div className="flex flex-col">
         <span className="font-bold text-nav-active font-sans text-lg tracking-tight">
           {title}
         </span>
         <span className="text-xs text-nav-active font-sans  font-medium">{subtitle}</span>
-      </div>
+      </div> */}
     </Link>
   );
 }

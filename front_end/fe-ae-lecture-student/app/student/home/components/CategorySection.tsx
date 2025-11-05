@@ -98,7 +98,7 @@ export default function CategorySection() {
                   muted
                   playsInline
                   className="object-cover w-full h-full"
-                  poster="/poster.jpg"
+                  // poster="/poster.jpg"
                 />
               </div>
             </div>

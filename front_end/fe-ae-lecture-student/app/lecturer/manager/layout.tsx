@@ -1,12 +1,12 @@
 "use client";
 
+import Header from "@/app/student/components/header";
 import { motion } from "framer-motion";
-import ManagerHeader from "../components/header";
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <ManagerHeader />
+      <Header />
       <main className="flex-1 overflow-y-auto bg-white">
         <motion.div
           initial={{ opacity: 0, y: 10 }}

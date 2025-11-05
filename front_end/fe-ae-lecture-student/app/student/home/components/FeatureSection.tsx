@@ -4,7 +4,7 @@ import { ArrowRight, Bot, Brain, Headphones } from "lucide-react";
 
 export default function DashboardSection() {
     return (
-        <section className="pt-24 pb-16 overflow-visible bg-slate-50">
+        <section className="pt-30 pb-16 overflow-visible bg-slate-50">
             <div className="container px-6 mx-auto max-w-7xl">
                 <div className="grid items-center gap-10 lg:grid-cols-2">
                     {/* Left: Images + Experience Badge – OVAL SHAPE */}
