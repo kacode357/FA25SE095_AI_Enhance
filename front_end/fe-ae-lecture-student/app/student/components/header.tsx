@@ -34,21 +34,21 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 w-full backdrop-blur-sm"
+      // dùng fixed để ổn định khi chuyển route
+      className="fixed top-0 z-40 w-full h-16 backdrop-blur-sm"
       style={{
         background: "rgba(255,255,255,0.72)",
         borderBottom: "1px solid var(--border)",
       }}
     >
-      {/* Container full-width, padding 2 bên nhỏ để sát phải hơn */}
+      {/* Container full-width */}
       <div
-        className="mx-auto flex h-16 w-full items-center gap-6"
+        className="mx-auto flex h-full w-full items-center gap-6"
         style={{ maxWidth: 1400, paddingLeft: "2rem", paddingRight: "1rem" }}
       >
         {/* Left: logo + nav */}
         <div className="flex items-center gap-8 min-w-0">
           <Logo />
-
           {!isLecturer && (
             <nav className="hidden md:flex items-center gap-8">
               {navs.map((item) => (
@@ -60,7 +60,7 @@ export default function Header() {
                 >
                   <span
                     className={
-                      "text-base font-semibold leading-none transition-colors visited:text-nav " +
+                      "text-base font-medium leading-none transition-colors visited:text-nav " +
                       (item.isActive
                         ? "text-nav-active"
                         : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active")
@@ -74,7 +74,7 @@ export default function Header() {
           )}
         </div>
 
-        {/* Right: push to far right */}
+        {/* Right */}
         <div className="ml-auto flex items-center gap-2">
           <NotificationsMenu
             open={notificationOpen}
@@ -84,7 +84,6 @@ export default function Header() {
             }}
             badgeCount={3}
           />
-
           <UserMenu
             open={dropdownOpen}
             onOpenChange={(v) => {
