@@ -32,12 +32,20 @@ function clearTokens() {
   }
 }
 
+// ⬇️ helper: xác định trang home theo role
+function homeByRole(role?: string) {
+  const STUDENT = UserServiceRole[ROLE_STUDENT];   // "Student"
+  const LECTURER = UserServiceRole[ROLE_LECTURER]; // "Lecturer"
+  if (role === STUDENT) return "/student/all-courses";
+  if (role === LECTURER) return "/lecturer/manager/course";
+  return "/";
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loaded, setLoaded] = useState(false);
   const pathname = usePathname();
 
-  // Load user (a:u) trước khi render app
   useEffect(() => {
     (async () => {
       const cached = await loadDecodedUser();
@@ -46,34 +54,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  // Tính quyền truy cập: route bảo vệ yêu cầu có user + đúng role
   const allow = useMemo(() => {
-    if (!loaded) return false; // chờ xong mới quyết
+    if (!loaded) return false;
     const isStudentRoute = pathname.startsWith("/student");
     const isLecturerRoute = pathname.startsWith("/lecturer");
-
-    // các route không bảo vệ -> cho qua
-    if (!isStudentRoute && !isLecturerRoute) return true;
-
-    // route bảo vệ: phải có user
+    if (!isStudentRoute && !isLecturerRoute) return true; // /login không bảo vệ
     if (!user) return false;
-
-    const STUDENT = UserServiceRole[ROLE_STUDENT];   // "Student"
-    const LECTURER = UserServiceRole[ROLE_LECTURER]; // "Lecturer"
+    const STUDENT = UserServiceRole[ROLE_STUDENT];
+    const LECTURER = UserServiceRole[ROLE_LECTURER];
     if (isStudentRoute)  return user.role === STUDENT;
     if (isLecturerRoute) return user.role === LECTURER;
     return true;
   }, [loaded, user, pathname]);
 
-  // Nếu không được phép: clear + redirect ngay (trước khi paint)
   useLayoutEffect(() => {
     if (!loaded) return;
-    if (allow) return;
-    clearTokens();
-    clearEncodedUser();
-    setUser(null);
-    if (typeof window !== "undefined") window.location.replace("/login");
-  }, [allow, loaded]);
+
+    // ✅ MỚI: đang ở /login mà đã có user -> redirect theo role
+    if (user && pathname === "/login") {
+      if (typeof window !== "undefined") window.location.replace(homeByRole(user.role));
+      return; // chặn các xử lý bên dưới
+    }
+
+    // Không được phép vào route bảo vệ -> clear + về /login
+    if (!allow) {
+      clearTokens();
+      clearEncodedUser();
+      setUser(null);
+      if (typeof window !== "undefined") window.location.replace("/login");
+    }
+  }, [allow, loaded, user, pathname]);
 
   const refreshProfile = useCallback(async () => {
     const cached = await loadDecodedUser();
@@ -87,7 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") window.location.replace("/login");
   }, []);
 
-  // Không render cho tới khi check xong và hợp lệ
   if (!loaded || !allow) return null;
 
   return (

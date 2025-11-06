@@ -13,7 +13,7 @@ type LogoProps = {
 };
 
 export default function Logo({
-  href = "/student/home",
+  href = "/",
   imgSrc = "/aids-logo.png",
   imgAlt = "AI Enhance",
   title = "AI Enhance",

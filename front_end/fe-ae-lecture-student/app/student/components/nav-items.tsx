@@ -8,7 +8,6 @@ export type NavItem = {
 };
 
 const RAW_NAVS: NavItem[] = [
-  { label: "Home",          href: "/home" },
   { label: "All Courses",   href: "/all-courses" },
   { label: "My Courses",    href: "/my-courses" },
   { label: "My Assignments",href: "/my-assignments" },

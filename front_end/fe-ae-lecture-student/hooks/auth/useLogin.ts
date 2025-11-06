@@ -54,7 +54,7 @@ export function useLogin() {
         const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER];  // "Lecturer"
 
         let target = "/";
-        if (isStudent) target = "/student/home";
+        if (isStudent) target = "/student/all-courses";
         else if (isLecturer) target = "/lecturer/manager/course";
 
         if (typeof window !== "undefined") window.location.href = target;
