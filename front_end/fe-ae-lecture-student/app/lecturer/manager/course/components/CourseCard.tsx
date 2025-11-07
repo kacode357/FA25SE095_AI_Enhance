@@ -77,7 +77,7 @@ export default function CourseCard({
 
   return (
     <Card
-      className="relative overflow-hidden h-full pt-5 pb-3 flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] focus:outline-none focus:ring-2 focus:ring-brand"
+      className="relative overflow-hidden h-full p-0 flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] focus:outline-none focus:ring-2 focus:ring-brand"
       // onClick={goDetail}
       tabIndex={0}
       role="button"
@@ -87,7 +87,7 @@ export default function CourseCard({
         aria-hidden="true"
         className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#7f71f4] via-[#a786f9] to-[#f4a23b]"
       />
-      <CardHeader className="pb-2 px-3.5">
+      <CardHeader className="pb-2 px-4 pt-4">
         <div className="flex items-center justify-between text-xs text-slate-500">
           <div className="flex bg-orange-100 rounded-xs items-center gap-1">
             <Users className="size-4" />
@@ -121,7 +121,7 @@ export default function CourseCard({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 px-3.5 flex flex-col">
+      <CardContent className="flex-1 px-4 pb-4 flex flex-col">
         {/* spacer ensures footer sticks to bottom */}
         <div className="flex-1" />
 
