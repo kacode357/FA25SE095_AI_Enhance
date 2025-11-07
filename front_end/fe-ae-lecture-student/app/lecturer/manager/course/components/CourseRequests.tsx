@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
 import { CourseRequestStatus } from "@/types/course-requests/course-request.response";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import RequestsFilterBar from "./RequestsFilterBar";
@@ -67,10 +68,10 @@ export default function CourseRequests({ active = true }: Props) {
   };
 
   return (
-    <div className="h-full w-full grid grid-cols-1 xl:grid-cols-10 gap-3 overflow-hidden">
-      {/* Left: Filter (fixed) */}
-      <div className="hidden xl:block xl:col-span-3 pr-1 self-start">
-        <Card className="p-3 border-slate-200 shadow-sm">
+    <div className="h-full w-full flex flex-col overflow-hidden">
+      {/* Top filter bar (same position as courses) */}
+      <div className="mb-2 sticky top-0 bg-slate-50 backdrop-blur z-10">
+        <Card className="p-0 border-none shadow-none rounded-none">
           <RequestsFilterBar
             filterName={filterName}
             setFilterName={setFilterName}
@@ -97,43 +98,20 @@ export default function CourseRequests({ active = true }: Props) {
             resultCount={reqs.length}
             totalCount={reqTotal}
             loading={loadingReqs}
-            stacked
           />
         </Card>
       </div>
-
-      {/* Right: Scrollable list */}
-      <div className="xl:col-span-7 overflow-y-auto scroll-smooth scrollbar-stable">
-        {/* Mobile/Tablet Filter (hidden on xl) */}
-        <div className="xl:hidden mb-2 sticky top-0 bg-white/80 backdrop-blur z-10">
-          <RequestsFilterBar
-            filterName={filterName}
-            setFilterName={setFilterName}
-            filterCode={filterCode}
-            setFilterCode={setFilterCode}
-            lecturerName={lecturerName}
-            setLecturerName={setLecturerName}
-            createdAfter={createdAfter}
-            setCreatedAfter={setCreatedAfter}
-            createdBefore={createdBefore}
-            setCreatedBefore={setCreatedBefore}
-            status={status}
-            setStatus={setStatus}
-            onApply={() => setPage(1)}
-            onClear={() => {
-              setFilterName("");
-              setFilterCode("");
-              setLecturerName("");
-              setCreatedAfter("");
-              setCreatedBefore("");
-              setStatus("");
-              setPage(1);
-            }}
-            resultCount={reqs.length}
-            totalCount={reqTotal}
-            loading={loadingReqs}
-          />
-        </div>
+      <div className="mb-2 mt-2 flex items-center justify-end">
+        <Button
+          className="btn btn-gradient text-white h-8 px-3 text-xs"
+          onClick={() => router.push("/lecturer/manager/course/requests/create")}
+        >
+          <Plus className="size-4" />
+          New Request
+        </Button>
+      </div>
+      {/* Scrollable list */}
+      <div className="flex-1 overflow-y-auto scroll-smooth scrollbar-stable">
 
         {loadingReqs && (
           <div className="grid grid-cols-1 gap-2">
@@ -153,55 +131,74 @@ export default function CourseRequests({ active = true }: Props) {
 
         {!loadingReqs && (reqs?.length ?? 0) > 0 && (
           <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-5">
-              {reqs.map((r) => (
-                <Card key={r.id} className="border-slate-200/80 hover:border-slate-300 transition cursor-default relative overflow-hidden">
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#7f71f4] to-[#f4a23b]" />
-                  <div className="px-3 sm:px-3 py-2 text-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-medium cursor-text pb-1 text-slate-900 truncate">
-                          <span className="font-mono text-base text-[#7f71f4] mr-1">[{r.courseCode}]</span>
-                          <span className="align-middle text-base">{r.courseCodeTitle}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {reqs.map((r) => {
+                const s = statusInfo(r.status);
+                return (
+                  <Card key={r.id} className="relative overflow-hidden h-full py-3 flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] hover:border-slate-300 focus:outline-none">
+                    {/* Left gradient accent */}
+                    <div aria-hidden="true" className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#7f71f4] via-[#a786f9] to-[#f4a23b]" />
+
+                    {/* Header */}
+                    <div className="px-3.5 pb-1">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <div className="flex items-center gap-1 truncate max-w-[65%]">
+                          <span className="font-medium text-slate-600 truncate">{r.lecturerName}</span>
                         </div>
-                        <div className="text-xs text-slate-700 mt-0.5 mb-3 flex flex-wrap gap-1.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                            {r.term} • {r.year}
-                          </span>
-                          {r.department && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                              Dept: {r.department}
-                            </span>
-                          )}
-                        </div>
+                        <Badge variant="outline" className={`text-[11px] ${s.className}`}>{s.label}</Badge>
                       </div>
-                      <Badge variant="outline" className={`text-xs h-5 px-2 cursor-text ${statusInfo(r.status).className}`}>
-                        {statusInfo(r.status).label}
-                      </Badge>
+                      <div className="mt-2 flex items-start justify-between gap-3 min-w-0">
+                        <div className="text-sm text-slate-800 flex-1 min-w-0 overflow-hidden flex items-baseline gap-1">
+                          <span className="font-mono text-sm text-[#7f71f4]">[{r.courseCode}]</span>
+                          <span className="text-slate-700 font-bold truncate">{r.courseCodeTitle}</span>
+                        </div>
+                        {r.department && (
+                          <Badge variant="outline" className="text-[11px] border-slate-300 text-slate-700 whitespace-nowrap">{r.department}</Badge>
+                        )}
+                      </div>
+                      {/* Description */}
+                      {r.description && (
+                        <div className="mt-2 text-[13px] text-slate-600 line-clamp-2 overflow-hidden">
+                          {r.description}
+                        </div>
+                      )}
                     </div>
 
-                    {r.description && (
-                      <div className="text-[12px] ml-2 cursor-text pb-1 mb-3 text-slate-700 mt-2 line-clamp-1">
-                        {r.description}
+                    {/* Spacer */}
+                    <div className="flex-1" />
+
+                    {/* Reason badge (if any) above footer */}
+                    {r.requestReason && (
+                      <div className="px-3.5">
+                        <Badge className="bg-slate-100 text-slate-700 max-w-full truncate" title={r.requestReason}>
+                          Reason: {r.requestReason}
+                        </Badge>
                       </div>
                     )}
 
-                    <div className="text-xs text-slate-600 mt-1 flex flex-wrap justify-between gap-1.5">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-50">
-                        Lecturer: <span className="ml-1 text-slate-700">{r.lecturerName}</span>
-                      </span>
-                      {r.requestReason && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-50 max-w-full truncate">
-                          Reason: <span className="ml-1 text-slate-700 truncate">{r.requestReason}</span>
-                        </span>
-                      )}
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-50">
-                        Created: <span className="ml-1 text-slate-700">{new Date(r.createdAt).toLocaleDateString("en-GB")}</span>
-                      </span>
+                    {/* Footer pinned */}
+                    <div className="px-3.5 pt-2 mt-auto gap-2">
+                      <div className="flex flex-row items-center justify-between gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className="text-xs bg-brand/10 text-brand border border-brand/20">
+                            {r.term} • {r.year}
+                          </Badge>
+                        </div>
+                        <div className="text-[11px] text-slate-500">Created: {new Date(r.createdAt).toLocaleDateString("en-GB")}</div>
+                      </div>
+                      {/* <Button
+                        size="sm"
+                        variant="ghost"
+                        className="btn btn-gradient-slow rounded-md text-white px-3 py-1 shadow text-xs cursor-pointer"
+                        onClick={() => router.push(`/lecturer/manager/course/request/${r.id}`)}
+                        aria-label="Request details"
+                      >
+                        Details
+                      </Button> */}
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
 
             {/* Pagination */}

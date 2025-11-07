@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGetAccessCodes } from "@/hooks/access-code/useGetAccessCodes";
@@ -12,10 +13,11 @@ import { useUpdateCourse } from "@/hooks/course/useUpdateCourse";
 import { useTerms } from "@/hooks/term/useTerms";
 import { CourseStatus } from "@/types/courses/course.response";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bookmark, BookOpen, Eye, EyeOff, FolderLock, Loader2, SquarePen, X } from "lucide-react";
+import { Bookmark, BookOpen, ClipboardCopy, Eye, EyeOff, FolderLock, Loader2, RefreshCw, SquarePen, X } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import AccessCodeDialog from "../../components/AccessCodeDialog";
 import InactivateCourseDialog from "./components/InactivateCourseDialog";
 
 export default function EditCourse() {
@@ -33,6 +35,14 @@ export default function EditCourse() {
     const { updateAccessCode, loading: updatingAccess, error: updateAccessError } = useUpdateAccessCode();
     const [inactivateOpen, setInactivateOpen] = useState(false);
     const [showAccessCode, setShowAccessCode] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [openUpdate, setOpenUpdate] = useState(false);
+
+    // Normalize possibly Date|string|null into string|null for AccessCodeDialog
+    const normalizeDateishToString = (v: any): string | null => {
+        if (!v) return null;
+        return typeof v === "string" ? v : v instanceof Date ? v.toISOString() : String(v);
+    };
 
     useEffect(() => {
         if (id) fetchCourseById(id);
@@ -368,8 +378,9 @@ export default function EditCourse() {
                                     )}
                                 </Button>
                             )}
+                            
                         </div>
-                        <div className="flex flex-col gap-2 text-sm">
+                        <div className="flex flex-col gap-5 text-sm">
                             {accessLoading ? (
                                 <p className="text-slate-500">Loading access code...</p>
                             ) : accessError ? (
@@ -379,7 +390,7 @@ export default function EditCourse() {
                                     <Info label="Requires Code" value={access.requiresAccessCode ? "Yes" : "No"} />
                                     <div className="flex justify-between items-center">
                                         <span className="text-slate-500">Access Code:</span>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-5">
                                             <span
                                                 className={`font-medium font-mono tracking-tight ${showAccessCode ? "text-slate-800" : "text-slate-400"
                                                     }`}
@@ -395,6 +406,47 @@ export default function EditCourse() {
                                                 >
                                                     {showAccessCode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
+                                            )}
+                                            {access.accessCode && (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await navigator.clipboard.writeText(access.accessCode!);
+                                                            setCopied(true);
+                                                            setTimeout(() => setCopied(false), 1200);
+                                                        } catch {}
+                                                    }}
+                                                    className="text-slate-500 hover:text-slate-700 transition"
+                                                    title={copied ? "Copied!" : "Copy code"}
+                                                >
+                                                    <ClipboardCopy className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {(access.requiresAccessCode ?? course.requiresAccessCode) && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setOpenUpdate(true)}
+                                                        className="text-slate-600 hover:text-slate-800 transition"
+                                                        title="Regenerate / update access code"
+                                                    >
+                                                        <RefreshCw className="w-4 h-4" />
+                                                    </button>
+                                                    <Dialog open={openUpdate} onOpenChange={setOpenUpdate}>
+                                                        <AccessCodeDialog
+                                                            courseId={id!}
+                                                            defaultType={undefined}
+                                                            defaultCustom={(access?.accessCode ?? course.accessCode) || undefined}
+                                                            defaultExpiresAt={normalizeDateishToString(access?.accessCodeExpiresAt ?? course.accessCodeExpiresAt)}
+                                                            open={openUpdate}
+                                                            onOpenChange={setOpenUpdate}
+                                                            onUpdated={async () => {
+                                                                await refetch(id);
+                                                            }}
+                                                        />
+                                                    </Dialog>
+                                                </>
                                             )}
                                         </div>
                                     </div>
@@ -418,7 +470,7 @@ export default function EditCourse() {
                         <h3 className="text-sm font-semibold text-[#000D83]">
                             Approval Details
                         </h3>
-                        <div className="flex flex-col gap-2 text-sm">
+                        <div className="flex flex-col gap-5 text-sm">
                             <Info label="Approved By" value={course.approvedByName || "—"} />
                             <Info
                                 label="Approved At"
