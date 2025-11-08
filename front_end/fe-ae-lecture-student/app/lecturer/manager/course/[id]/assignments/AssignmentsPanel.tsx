@@ -143,170 +143,179 @@ export default function AssignmentsPanel({
   // Create view
   if (mode === "create") {
     return (
-      <Card className="border-0 shadow-none -py-10 -gap-10 border-slate-100">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-sm text-[#000D83] md:text-lg">Create Assignment</CardTitle>
+      <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
+        <div className="flex items-center justify-between px-4 py-0 mr-3.5 border-b border-slate-200 bg-white sticky top-0 z-10">
+          <h2 className="text-sm text-[#000D83] font-semibold">Create Assignment</h2>
           <Button className="text-[#000D83]" variant="outline" onClick={backToList}>
-            <ArrowLeft className="size-4 mr-1" />
+            <ArrowLeft className="size-4" />
             Back
           </Button>
-        </CardHeader>
-        <CardContent>
-          <NewAssignmentForm courseId={courseId} onCreated={backToList} onCancel={backToList} />
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex-1 overflow-auto p-4 mr-3.5 bg-slate-50">
+          <div className="max-w-5xl mx-auto">
+            <NewAssignmentForm courseId={courseId} onCreated={backToList} onCancel={backToList} />
+          </div>
+        </div>
+      </div>
     );
   }
 
   // Detail view
   if (mode === "detail" && detailId) {
-    return <AssignmentDetailView id={detailId} onBack={backToList} />;
+    return (
+      <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
+        <div className="flex-1 overflow-auto">
+          <AssignmentDetailView id={detailId} onBack={backToList} />
+        </div>
+      </div>
+    );
   }
 
-  // List view
-  // List view
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-10 gap-5">
-        {/* Left: Filters (4/10 = 40%) */}
-        <div className="lg:col-span-4 lg:sticky lg:top-2 h-max">
-          <Card className="border border-slate-200 shadow-sm bg-gradient-to-b from-slate-50 to-white">
-            <CardHeader className="flex items-center justify-between">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base text-[#000D83] font-semibold">Assignments</h3>
-                  <div className="text-xs text-slate-500">{totalCount} assignment(s)</div>
+    <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
+      <div className="flex-1 overflow-auto space-y-4 pr-1 pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-5">
+          {/* Left: Filters (4/10 = 40%) */}
+          <div className="lg:col-span-4 lg:sticky lg:top-2 h-max">
+            <Card className="border py-4 gap-2 border-slate-200 shadow-sm bg-gradient-to-b from-slate-50 to-white">
+              <CardHeader className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base text-[#000D83] font-semibold">Assignments</h3>
+                    <div className="text-xs text-slate-500">{totalCount} assignment(s)</div>
+                  </div>
                 </div>
-              </div>
-              <CardTitle className="text-sm font-medium text-slate-700">Filters</CardTitle>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="hidden lg:inline-flex text-sm text-slate-500 hover:text-slate-700"
-                onClick={resetFilters}
-              >
-                Reset
-              </Button>
-            </CardHeader>
-            <Separator />
-            <CardContent className=" space-y-3">
-              <AssignmentsFilterBar
-                value={filter}
-                loading={loading}
-                onChange={patchFilter}
-                onReset={resetFilters}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right: Assignment items (6/10 = 60%) */}
-        <div className="lg:col-span-6">
-          <Card className="border-slate-200 shadow-md">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
-              <div className="text-sm text-slate-600">
-                {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
-              </div>
-              <div className="flex items-center gap-2 sm:justify-end">
+                <CardTitle className="text-sm font-medium text-slate-700">Filters</CardTitle>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="lg:hidden text-[#000D83]"
-                  onClick={() => setTopicSheetOpen(true)}
+                  variant="ghost"
+                  className="hidden lg:inline-flex text-sm text-slate-500 hover:text-slate-700"
+                  onClick={resetFilters}
                 >
-                  Manage Topics
+                  Reset
                 </Button>
-                <Button size="sm" className="lg:hidden text-[#000D83]" onClick={openCreate}>
-                  New Assignment
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
+              </CardHeader>
               <Separator />
+              <CardContent className="space-y-3">
+                <AssignmentsFilterBar
+                  value={filter}
+                  loading={loading}
+                  onChange={patchFilter}
+                  onReset={resetFilters}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-              <div className="divide-y divide-slate-100">
-                {assignments.length === 0 && !loading && (
-                  <div className="px-4 py-10 text-sm text-center text-slate-500">
-                    No assignments found with current filters.
-                  </div>
-                )}
-
-                {assignments.map((a) => (
-                  <div
-                    key={a.id}
-                    className="px-4 hover:bg-slate-50 transition-colors"
+          {/* Right: Assignment items (6/10 = 60%) */}
+          <div className="lg:col-span-6">
+            <Card className="border-slate-200 shadow-md">
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
+                <div className="text-sm text-slate-600">
+                  {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
+                </div>
+                <div className="flex items-center gap-2 sm:justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="lg:hidden text-[#000D83]"
+                    onClick={() => setTopicSheetOpen(true)}
                   >
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      {/* Left info */}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium truncate text-slate-800">{a.title}</div>
-                          <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
-                          {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
-                        </div>
-                        <div className="flex flex-wrap mt-1 text-xs text-slate-500">
-                          <div className="flex gap-1 mr-2">
-                            Topic:
-                            <span className="text-slate-900">{a.topicName}</span>
+                    Manage Topics
+                  </Button>
+                  <Button size="sm" className="lg:hidden text-[#000D83]" onClick={openCreate}>
+                    New Assignment
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Separator />
+
+                <div className="divide-y divide-slate-100">
+                  {assignments.length === 0 && !loading && (
+                    <div className="px-4 py-10 text-sm text-center text-slate-500">
+                      No assignments found with current filters.
+                    </div>
+                  )}
+
+                  {assignments.map((a) => (
+                    <div
+                      key={a.id}
+                      className="px-4 border-b border-slate-200 hover:bg-slate-50 mb-5 pb-3 transition-colors"
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        {/* Left info */}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium truncate text-slate-800">{a.title}</div>
+                            <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
+                            {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
                           </div>
-                          • Due: {new Date(a.dueDate).toLocaleString()}
-                          • Groups: {a.assignedGroupsCount}
-                          • {a.isOverdue ? (
-                            <span className="text-red-600 ml-1">Overdue</span>
-                          ) : (
-                            <span className="ml-1 text-emerald-600">D-{a.daysUntilDue}</span>
+                          <div className="flex flex-col mt-2 gap-2 text-xs text-slate-500">
+                            <div className="flex gap-1 mr-2">
+                              Topic:
+                              <span className="text-slate-900">{a.topicName}</span>
+                              &nbsp;&nbsp;•&nbsp;&nbsp; Groups: {a.assignedGroupsCount}
+
+                            </div>
+                            <div className="flex gap-1 mr-2">
+                              Due: {new Date(a.dueDate).toLocaleString()}
+                              &nbsp;&nbsp;&nbsp;•&nbsp; {a.isOverdue ? (
+                                <span className="text-red-600 ml-1">Overdue</span>
+                              ) : (
+                                <span className="flex gap-2 ml-1">Days until Due &nbsp; - <p className="text-violet-800">{a.daysUntilDue}</p></span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right actions */}
+                        <div className="flex items-center cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs btn btn-gradient-slow cursor-pointer"
+                            onClick={() => openDetail(a.id)}
+                          >
+                            Details
+                          </Button>
+                          {a.isGroupAssignment && (
+                            <Button
+                              size="sm"
+                              className="text-xs cursor-pointer btn btn-gradient-slow bg-indigo-600 text-white hover:bg-indigo-700"
+                              onClick={() => openDetail(a.id)}
+                            >
+                              Assign Groups
+                            </Button>
                           )}
                         </div>
                       </div>
-
-                      {/* Right actions */}
-                      <div className="flex items-center cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-sm cursor-pointer"
-                          onClick={() => openDetail(a.id)}
-                        >
-                          Details
-                        </Button>
-                        {a.isGroupAssignment && (
-                          <Button
-                            size="sm"
-                            className="text-sm cursor-pointer btn btn-gradient-slow bg-indigo-600 text-white hover:bg-indigo-700"
-                            onClick={() => openDetail(a.id)}
-                          >
-                            Assign Groups
-                          </Button>
-                        )}
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* Pagination */}
-              <div className="px-4 pb-4 pt-3">
-                <PaginationBar
-                  page={page}
-                  totalPages={totalPages}
-                  totalCount={totalCount}
-                  loading={loading}
-                  onPageChange={(p) => setPage(p)}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                {/* Pagination */}
+                <div className="px-4 pb-4 pt-3">
+                  <PaginationBar
+                    page={page}
+                    totalPages={totalPages}
+                    totalCount={totalCount}
+                    loading={loading}
+                    onPageChange={(p) => setPage(p)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <NewTopicSheet
+            open={topicSheetOpen}
+            onOpenChange={setTopicSheetOpen}
+            onCreated={() => {
+              toast.success("Topic created!");
+            }}
+          />
         </div>
       </div>
-
-      <NewTopicSheet
-        open={topicSheetOpen}
-        onOpenChange={setTopicSheetOpen}
-        onCreated={() => {
-          toast.success("Topic created!");
-        }}
-      />
     </div>
   );
-
 }

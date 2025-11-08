@@ -6,6 +6,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import {
+  Bookmark,
+  BookOpen,
   ChevronRight,
   FileSpreadsheet,
   FolderPlus,
@@ -16,11 +18,11 @@ import { useEffect, useState } from "react";
 
 import { CourseStatus } from "@/types/courses/course.response";
 import AssignmentsPanel from "./assignments/AssignmentsPanel";
-import CreateGroupSheet from "./components/CreateGroupSheet";
 import GroupsPanel from "./components/GroupsPanel";
-import ImportStudentsDialog from "./components/ImportStudentsDialog";
+import ImportStudentsSpecificCoursePage from "./components/ImportStudentsSpecificCoursePage";
 import StudentList from "./components/StudentListImport";
 import RandomizeGroupDialog from "./group/[groupId]/components/RandomizeGroupDialog";
+import GroupDetailPage from "./group/[groupId]/page";
 
 function renderStatusBadge(status?: CourseStatus) {
   switch (status) {
@@ -69,17 +71,20 @@ export default function CourseDetailPage() {
   const [openRandomize, setOpenRandomize] = useState(false);
   const [groupsRefresh, setGroupsRefresh] = useState(0);
   const [studentsRefresh, setStudentsRefresh] = useState(0);
-  const [openImport, setOpenImport] = useState(false);
+  const [openImport, setOpenImport] = useState(false); // legacy dialog state
+  const [showInlineImport, setShowInlineImport] = useState(false); // inline page state
   const [openAssign, setOpenAssign] = useState(false);
   const [activeTab, setActiveTab] =
     useState<"students" | "groups" | "assignments">("students");
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) fetchCourseById(id);
   }, [id, fetchCourseById]);
 
   useEffect(() => {
-    setOpenImport(action === "import");
+  setOpenImport(action === "import");
+  setShowInlineImport(action === "importCourse");
     setOpenGroup(action === "createGroup");
     setOpenAssign(action === "createAssign");
   }, [action]);
@@ -95,9 +100,10 @@ export default function CourseDetailPage() {
   return (
     <div className="space-y-3 px-3">
       <nav
-        className="flex items-center text-sm text-slate-500"
+        className="flex items-center text-sm mt-1.5 text-slate-500"
         aria-label="Breadcrumb"
       >
+        <BookOpen className="size-4 mr-2 cursor-pointer" color="#c490d1" />
         <a
           href="/lecturer/manager/course"
           className="text-emerald-600 hover:underline font-medium"
@@ -105,76 +111,38 @@ export default function CourseDetailPage() {
           Courses
         </a>
         <ChevronRight className="h-4 w-4 mx-2 text-slate-400" />
-        <span className="text-slate-700 font-semibold">
-          {course?.name || "Course Detail"}
+        <span className="text-violet-800 flex flex-row gap-1 items-center font-semibold">
+          <Bookmark className="size-4 cursor-pointer" color="#8b5cf6" />
+          {course?.courseCode
+            ? `${course.courseCode} — ${course.courseCodeTitle}`
+            : "Course Detail"}
         </span>
+
       </nav>
 
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-[0_8px_28px_rgba(2,6,23,0.06)]">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b] opacity-90" />
-        <div className="relative px-4 sm:px-5 py-5 text-white flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">
-              {course?.courseCode} - {course?.courseCodeTitle}
-            </h1>
-            <p className="text-xs sm:text-sm text-white/90 mt-0.5">
-              {course?.name || "Untitled Course"}
-            </p>
-          </div>
-          <div className="flex items-center gap-5">
-            <div className="hidden shadow-xl transition-all md:block">{renderStatusBadge(course?.status)}</div>
-            {isActive && activeTab === "students" && (
-              <Button
-                className="h-9 text-sm cursor-pointer border-2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg transition-all duration-200"
-                style={{ borderColor: "rgba(255,255,255,1)" }}
-                onClick={() => setOpenImport(true)}
-              >
-                <FileSpreadsheet className="size-4 mr-1" /> Import Students
-              </Button>
-
-            )}
-            {isActive && activeTab === "groups" && (
-              <div className="flex items-center gap-2">
-                <Button
-                  className="h-9 text-sm cursor-pointer border-2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg transition-all duration-200"
-                  style={{ borderColor: "rgba(255,255,255,1)" }}
-                  onClick={() => setOpenRandomize(true)}
-                >
-                  <Shuffle className="size-4 mr-1" /> Randomize
-                </Button>
-                <Button
-                  className="h-9 text-sm cursor-pointer border-2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md shadow-lg transition-all duration-200"
-                  style={{ borderColor: "rgba(255,255,255,1)" }}
-                  onClick={() => setOpenGroup(true)}
-                >
-                  <FolderPlus className="size-4 mr-1" /> Create Group
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Gradient header removed as requested */}
 
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as any)}
         className="w-full"
       >
-        <TabsList className="w-full mt-4 flex items-center justify-start overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1 gap-1">
+        {/* Underline style tabs */}
+        <TabsList className="mt-2 mb-1 inline-flex items-center gap-5 bg-transparent px-0 self-start">
           <TabsTrigger
-            className="cursor-pointer rounded-lg px-3 py-2 text-base font-medium text-slate-600 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-indigo-500/30"
+            className="relative -mb-px pb-2 text-sm font-medium tracking-wide text-slate-600 hover:text-indigo-600 transition-colors focus-visible:outline-none focus:ring-0 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-[1px] data-[state=active]:after:h-[2px] data-[state=active]:after:bg-indigo-600 data-[state=active]:after:rounded-sm data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:ring-0"
             value="students"
           >
             Students
           </TabsTrigger>
           <TabsTrigger
-            className="cursor-pointer rounded-lg px-3 py-2 text-base font-medium text-slate-600 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-indigo-500/30"
+            className="relative -mb-px pb-2 text-sm font-medium tracking-wide text-slate-600 hover:text-indigo-600 transition-colors focus-visible:outline-none focus:ring-0 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-[1px] data-[state=active]:after:h-[2px] data-[state=active]:after:bg-indigo-600 data-[state=active]:after:rounded-sm data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:ring-0"
             value="groups"
           >
             Groups
           </TabsTrigger>
           <TabsTrigger
-            className="cursor-pointer rounded-lg px-3 py-2 text-base font-medium text-slate-600 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-indigo-500/30"
+            className="relative -mb-px pb-2 text-sm font-medium tracking-wide text-slate-600 hover:text-indigo-600 transition-colors focus-visible:outline-none focus:ring-0 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-[1px] data-[state=active]:after:h-[2px] data-[state=active]:after:bg-indigo-600 data-[state=active]:after:rounded-sm data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:ring-0"
             value="assignments"
           >
             Assignments
@@ -183,25 +151,81 @@ export default function CourseDetailPage() {
 
         {/* STUDENTS TAB */}
         <TabsContent value="students">
-          <Card className="border-slate-100">
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="text-lg text-[#000D83] font-semibold">Student List</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StudentList courseId={id} refreshSignal={studentsRefresh} />
-            </CardContent>
-          </Card>
+          {showInlineImport ? (
+            <ImportStudentsSpecificCoursePage
+              courseId={id}
+              onDone={() => {
+                setShowInlineImport(false);
+                setStudentsRefresh((v) => v + 1);
+              }}
+            />
+          ) : (
+            <Card className="border-slate-200 p-0 mr-3.5">
+              <CardHeader className="flex items-center px-4 pt-4 justify-between">
+                <CardTitle className="text-base flex flex-col text-[#000D83] font-semibold">
+                  Student List
+                  <p className="text-xs mt-1 text-slate-500 italic font-normal">Manage Current Students in this Course.</p>
+                </CardTitle>
+                {isActive && (
+                  <Button
+                    className="btn btn-gradient-slow text-xs text-white"
+                    onClick={() => setShowInlineImport(true)}
+                  >
+                    <FileSpreadsheet className="size-4" /> Import Students
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="p-4">
+                <StudentList courseId={id} refreshSignal={studentsRefresh} />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
-        {/* GROUPS TAB */}
         <TabsContent value="groups">
-          <Card className="border-slate-100">
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="text-lg text-[#000D83] font-semibold">Groups</CardTitle>
-            </CardHeader>
+          <Card className="border-slate-200 p-0 mr-3.5">
+            {/* Hide the header and action buttons when showing a selected group's details inline */}
+            {!selectedGroupId && (
+              <CardHeader className="flex items-center justify-between px-4 pt-4">
+                <CardTitle className="text-base flex flex-col self-start text-[#000D83] font-semibold">
+                  Groups
+                  <p className="text-xs mt-1 text-slate-500 italic font-normal">Manage Current Groups in this Course.</p>
+                </CardTitle>
+                {isActive && (
+                  <div className="flex items-center gap-4">
+                    <Button
+                      className="btn btn-gradient-slow text-xs text-white"
+                      onClick={() => setOpenRandomize(true)}
+                    >
+                      <Shuffle className="size-4 mr-2" /> Randomize
+                    </Button>
+                    <Button
+                      className="btn btn-gradient-slow text-xs text-white"
+                      onClick={() => setOpenGroup(true)}
+                    >
+                      <FolderPlus className="size-4 mr-2" /> Create Group
+                    </Button>
+                  </div>
+                )}
+              </CardHeader>
+            )}
 
-            <CardContent>
-              <GroupsPanel courseId={id} refreshSignal={groupsRefresh} />
+            <CardContent className="pb-4">
+              {selectedGroupId ? (
+                <div className="pb-4 max-h-[calc(100vh-200px)]">
+                  <GroupDetailPage
+                    groupId={selectedGroupId}
+                    courseId={id}
+                    onDone={() => setSelectedGroupId(null)}
+                  />
+                </div>
+              ) : (
+                <GroupsPanel
+                  courseId={id}
+                  refreshSignal={groupsRefresh}
+                  onViewDetails={(gid) => setSelectedGroupId(gid)}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -214,28 +238,8 @@ export default function CourseDetailPage() {
             refreshSignal={0}
           />
         </TabsContent>
+
       </Tabs>
-
-      {/* DIALOGS */}
-      <ImportStudentsDialog
-        open={openImport}
-        onOpenChange={(v) => {
-          setOpenImport(v);
-          if (!v) clearAction();
-        }}
-        courseId={id}
-        onImported={() => setStudentsRefresh((v) => v + 1)}
-      />
-
-      <CreateGroupSheet
-        open={openGroup}
-        onOpenChange={(v) => {
-          setOpenGroup(v);
-          if (!v) clearAction();
-        }}
-        courseId={id}
-        onCreated={() => setGroupsRefresh((v) => v + 1)}
-      />
 
       <Dialog open={openRandomize} onOpenChange={setOpenRandomize}>
         <DialogContent className="sm:max-w-lg">

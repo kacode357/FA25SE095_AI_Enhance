@@ -86,11 +86,11 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
   };
 
   return (
-    <div className="rounded-md border border-slate-300 p-4 space-y-4">
+    <div className="rounded-md border border-slate-200 p-4 space-y-2">
       <div className="flex items-center justify-between">
         <div className="font-medium text-[#000D83]">Manage Groups</div>
         <div className="flex gap-2">
-          <Button className="btn btn-gradient-slow" size="sm" variant="secondary" onClick={refreshUnassigned} disabled={loading}>
+          <Button className="text-violet-800 hover:text-violet-500" size="sm" variant="secondary" onClick={refreshUnassigned} disabled={loading}>
             Reload
           </Button>
         </div>
@@ -98,7 +98,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Unassigned column */}
-        <div className="rounded-lg border border-slate-300 p-3">
+        <div className="rounded-lg border border-slate-200 p-3">
           <div className="mb-2 text-sm font-medium">Unassigned in course</div>
           <div className="max-h-64 overflow-auto pr-1 space-y-2">
             {loading ? (
@@ -107,7 +107,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
               <div className="text-sm text-slate-500 p-2">No unassigned groups.</div>
             ) : (
               unassigned.map((g) => (
-                <label key={g.id} className="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm">
+                <label key={g.id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
                   <Checkbox
                     checked={!!pickUnassigned[g.id]}
                     onCheckedChange={(v) =>
@@ -138,7 +138,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
         </div>
 
         {/* Assigned column */}
-        <div className="rounded-lg border border-slate-300 p-3">
+        <div className="rounded-lg border border-slate-200 p-3">
           <div className="mb-2 text-sm font-medium">
             Assigned to this assignment ({assignment.assignedGroupsCount})
           </div>
@@ -147,7 +147,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
               <div className="text-sm text-slate-500 p-2">No groups assigned.</div>
             ) : (
               assignedList.map((g) => (
-                <label key={g.id} className="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm">
+                <label key={g.id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
                   <Checkbox
                     checked={!!pickAssigned[g.id]}
                     onCheckedChange={(v) =>
@@ -182,7 +182,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
       <Separator />
 
       <div className="flex justify-end gap-2">
-        <Button className="text-violet-800 text-base hover:text-violet-500" variant="outline" onClick={clearSelection}>
+        <Button className="text-violet-800 text-sm btn btn-gradient-slow hover:text-violet-500" variant="outline" onClick={clearSelection}>
           Clear selection
         </Button>
       </div>

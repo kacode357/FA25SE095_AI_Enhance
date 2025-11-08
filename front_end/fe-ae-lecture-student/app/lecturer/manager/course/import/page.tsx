@@ -86,7 +86,7 @@ export default function ImportEnrollmentsPage() {
             </div>
 
             <div className="rounded-2xl border border-slate-200 shadow-sm p-4">
-                <div className="grid grid-cols-1 md:grid-cols-[75%_25%] gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-[70%_30%] gap-4">
                     {/* Upload & Import */}
                     <Card className="p-5 border-slate-200 shadow-sm">
                         <h2 className="text-base font-semibold text-slate-900 mb-3">Upload & Import</h2>

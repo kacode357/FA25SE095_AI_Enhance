@@ -59,16 +59,16 @@ export default function InactivateCourseDialog({
                     </div>
 
                     <div>
-                        <Label className="mb-2 cursor-text">Reason (required)</Label>
+                        <Label className="mb-2 mt-5 cursor-text">Reason (required)</Label>
                         <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why do you want to inactivate this course?" />
                     </div>
                 </div>
 
                 <DialogFooter className="flex justify-end gap-2 mt-4">
-                    <Button className="cursor-pointer" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
+                    <Button className="cursor-pointer text-violet-800 hover:text-violet-500" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
                         Cancel
                     </Button>
-                    <Button className="cursor-pointer" onClick={handleConfirm} disabled={loading || !reason.trim()}>
+                    <Button className="cursor-pointer btn btn-gradient-slow" onClick={handleConfirm} disabled={loading || !reason.trim()}>
                         {loading ? "Processing..." : "Confirm"}
                     </Button>
                 </DialogFooter>

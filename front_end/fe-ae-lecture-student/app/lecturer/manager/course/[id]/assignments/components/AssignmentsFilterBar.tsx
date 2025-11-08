@@ -47,7 +47,7 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
   const { search, statuses, groupType, dueFrom, dueTo, isUpcoming, isOverdue, sortBy, sortOrder, pageSize } = value;
 
   return (
-    <div className="rounded-2xl border -mt-8 border-slate-200 bg-white p-5 space-y-6 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm">
       {/* Row 1: Search + Status */}
       <div className="space-y-0">
         <div className="flex items-center justify-between">
@@ -62,8 +62,8 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
           </Button>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between">
+        <div className="flex flex-col gap-7">
+          <div className="flex flex-col justify-between">
             <div className="col-span-1">
               <Input
                 className="text-sm min-w-[240px]"
@@ -71,26 +71,6 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
                 value={search}
                 onChange={(e) => onChange({ search: e.target.value })}
               />
-            </div>
-            <div className="flex gap-2 items-center">
-              <div className="text-xs text-slate-600 mb-1">Type</div>
-              <Select
-                value={groupType}
-                onValueChange={(v: string) =>
-                  onChange({ groupType: v as "all" | "group" | "individual" })
-                }
-              >
-                <SelectTrigger className="border-slate-200 w-40 text-sm">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent className="border-slate-200 bg-white">
-                  <SelectGroup>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="group">Group</SelectItem>
-                    <SelectItem value="individual">Individual</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           <div className="md:col-span-2 flex flex-wrap gap-2">
@@ -111,6 +91,26 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
                 {label}
               </label>
             ))}
+          </div>
+          <div className="flex gap-2 items-center">
+            <div className="text-xs text-slate-600 mb-1">Type</div>
+            <Select
+              value={groupType}
+              onValueChange={(v: string) =>
+                onChange({ groupType: v as "all" | "group" | "individual" })
+              }
+            >
+              <SelectTrigger className="border-slate-200 w-40 text-sm">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent className="border-slate-200 bg-white">
+                <SelectGroup>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="group">Group</SelectItem>
+                  <SelectItem value="individual">Individual</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -159,44 +159,44 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
       <Separator />
 
       {/* Row 3: Sort + Page size + Reset */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex flex-row items-center gap-5">
-          <div className="flex flex-col items-start gap-1">
-            <span className="text-xs text-slate-600">Sort by</span>
-            <Select
-              value={sortBy ?? "DueDate"}
-              onValueChange={(v: string) =>
-                onChange({ sortBy: v as NonNullable<GetAssignmentsQuery["sortBy"]> })
-              }
-            >
-              <SelectTrigger className="w-[150px] border-slate-200 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-slate-200 bg-white">
-                <SelectItem value="DueDate">DueDate</SelectItem>
-                <SelectItem value="Title">Title</SelectItem>
-                <SelectItem value="CreatedAt">CreatedAt</SelectItem>
-                <SelectItem value="Status">Status</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="flex flex-col md:flex-col md:items-start md:justify-between gap-3">
+          <div className="flex justify-between gap-3">
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-xs text-slate-600">Sort by</span>
+              <Select
+                value={sortBy ?? "DueDate"}
+                onValueChange={(v: string) =>
+                  onChange({ sortBy: v as NonNullable<GetAssignmentsQuery["sortBy"]> })
+                }
+              >
+                <SelectTrigger className="w-[150px] border-slate-200 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-slate-200 bg-white">
+                  <SelectItem value="DueDate">DueDate</SelectItem>
+                  <SelectItem value="Title">Title</SelectItem>
+                  <SelectItem value="CreatedAt">CreatedAt</SelectItem>
+                  <SelectItem value="Status">Status</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex flex-col items-start gap-1">
-            <span className="text-xs text-slate-600">Order</span>
-            <Select
-              value={sortOrder ?? "asc"}
-              onValueChange={(v: string) => onChange({ sortOrder: v as "asc" | "desc" })}
-            >
-              <SelectTrigger className="w-[130px] border-slate-200 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-slate-200 bg-white">
-                <SelectItem value="asc">Asc</SelectItem>
-                <SelectItem value="desc">Desc</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-xs text-slate-600">Order</span>
+              <Select
+                value={sortOrder ?? "asc"}
+                onValueChange={(v: string) => onChange({ sortOrder: v as "asc" | "desc" })}
+              >
+                <SelectTrigger className="w-[130px] border-slate-200 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-slate-200 bg-white">
+                  <SelectItem value="asc">Asc</SelectItem>
+                  <SelectItem value="desc">Desc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-
           <div className="flex flex-col items-start gap-1">
             <span className="text-xs text-slate-600">Page size</span>
             <Select
@@ -220,6 +220,5 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
           Reset filters
         </Button> */}
       </div>
-    </div>
   );
 }

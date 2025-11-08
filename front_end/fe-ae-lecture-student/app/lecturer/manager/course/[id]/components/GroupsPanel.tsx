@@ -14,7 +14,7 @@ import { useDeleteGroup } from "@/hooks/group/useDeleteGroup";
 // Chắc chắn rằng useGroupsByCourseId không còn trả về error nữa
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
 import { GroupDetail } from "@/types/group/group.response";
-import { PencilLine, Trash2 } from "lucide-react";
+import { Lock, PencilLine, Trash2, Unlock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -23,9 +23,11 @@ import CreateGroupSheet from "./CreateGroupSheet";
 export default function GroupsPanel({
     courseId,
     refreshSignal = 0,
+    onViewDetails,
 }: {
     courseId: string;
     refreshSignal?: number;
+    onViewDetails?: (groupId: string) => void;
 }) {
     // Xoá error khỏi destructuring
     const { listData: groups, loading, fetchByCourseId } =
@@ -50,7 +52,11 @@ export default function GroupsPanel({
     };
 
     const handleOpenDetails = (id: string) => {
-        // navigate to group details page
+        // if parent passed a callback, use it to render inline details. Otherwise navigate.
+        if (onViewDetails) {
+            onViewDetails(id);
+            return;
+        }
         router.push(`/lecturer/manager/course/${courseId}/group/${id}`);
     };
 
@@ -85,13 +91,13 @@ export default function GroupsPanel({
             )}
             <div className="text-sm flex justify-start ml-0.5 mb-2 text-slate-500">{groupsList} group(s)</div>
             {!loading && groups.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 pb-4 gap-5">
                     {groups.map((g) => (
                         <Card
                             key={g.id}
-                            className="h-full border-slate-200 hover:shadow-sm transition cursor-default"
+                            className="h-full py-4 border-slate-200 hover:shadow-sm transition cursor-default"
                         >
-                            <CardHeader className="pb-2">
+                            <CardHeader className="pb-2 px-4">
                                 <div className="flex justify-between items-start">
                                     <div
                                         onClick={() => handleOpenDetails(g.id)}
@@ -104,10 +110,10 @@ export default function GroupsPanel({
                                             <div className="text-xs text-slate-500">{g.description}</div>
                                         )}
                                     </div>
-                                    <div className="flex items-center ">
+                                    <div className="flex items-center gap-1">
                                         <Button
                                             variant="ghost"
-                                            className="h-7 px-0 cursor-pointer text-blue-600 hover:bg-emerald-50"
+                                            className="h-7 px-0 cursor-pointer text-blue-600 bg-blue-50 hover:bg-emerald-50"
                                             title="Edit group"
                                             onClick={() => handleEdit(g.id)}
                                         >
@@ -115,7 +121,7 @@ export default function GroupsPanel({
                                         </Button>
                                         <Button
                                             variant="ghost"
-                                            className="h-7 px-0 cursor-pointer !text-red-600 hover:bg-red-50"
+                                            className="h-7 px-0 cursor-pointer text-red-600 bg-red-50 hover:bg-red-50"
                                             title="Delete group"
                                             onClick={() => handleDeleteClick(g)}
                                             disabled={deleting}
@@ -126,8 +132,9 @@ export default function GroupsPanel({
                                 </div>
                             </CardHeader>
 
-                            <CardContent className="pt-0">
-                                <div className="grid grid-cols-2 gap-5 text-xs text-slate-600">
+                            <CardContent className="pt-0 px-4">
+                                <div className="text-xs space-y-5 text-slate-600">
+                                    <div className="flex justify-between">
                                     <div className="cursor-text">
                                         <span className="text-slate-500 cursor-text">Members:</span>{" "}
                                         {g.memberCount}/{g.maxMembers}
@@ -136,16 +143,26 @@ export default function GroupsPanel({
                                         <span className="text-slate-500 cursor-text">Leader:</span>{" "}
                                         {g.leaderName || "—"}
                                     </div>
+                                    </div>
                                     <div className="col-span-2 cursor-text">
                                         <span className="text-slate-500 cursor-text">Assignment:</span>{" "}
                                         {g.assignmentTitle || "—"}
                                     </div>
-                                    <div className="cursor-text">
+                                    {/* <div className="cursor-text">
                                         <span className="text-slate-500 cursor-text">By:</span> {g.createdBy}
-                                    </div>
-                                    <div className="cursor-text flex gap-1">
-                                        <span className="text-slate-500 cursor-text">Locked:</span>{" "}
-                                        {g.isLocked ? "Yes" : "No"}
+                                    </div> */}
+                                    <div className="flex items-center gap-1">
+                                        {g.isLocked ? (
+                                            <>
+                                                <Lock className="text-red-500 w-4 h-4" />
+                                                <span className="text-red-500 text-xs font-medium">Locked</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Unlock className="text-emerald-500 w-4 h-4" />
+                                                <span className="text-emerald-500 text-xs font-medium">Unlocked</span>
+                                            </>
+                                        )}
                                     </div>
                                     <div className="col-span-2 text-right text-[10px] cursor-text text-slate-400">
                                         Created: {new Date(g.createdAt).toLocaleString()}
@@ -159,7 +176,7 @@ export default function GroupsPanel({
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md border-slate-200">
                     <DialogHeader>
                         <DialogTitle>Delete Group</DialogTitle>
                         <DialogDescription>
@@ -169,6 +186,7 @@ export default function GroupsPanel({
                     </DialogHeader>
                     <DialogFooter className="mt-4 flex justify-end gap-2">
                         <Button
+                            className="text-violet-800 hover:text-violet-500"
                             variant="ghost"
                             onClick={() => setOpenDeleteDialog(false)}
                             disabled={deleting}
@@ -179,6 +197,7 @@ export default function GroupsPanel({
                             variant="ghost"
                             onClick={confirmDelete}
                             disabled={deleting}
+                            className="btn btn-gradient-slow"
                         >
                             {deleting ? "Deleting..." : "Delete"}
                         </Button>

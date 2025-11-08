@@ -123,6 +123,7 @@ export default function ImportStudentsDialog({
         <DialogFooter className="flex justify-end gap-2">
           <Button
             variant="ghost"
+            className="text-violet-800 hover:text-violet-500"
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
@@ -130,14 +131,14 @@ export default function ImportStudentsDialog({
           </Button>
 
           {!failedImport ? (
-            <Button onClick={() => handleImport()} disabled={!file || loading}>
+            <Button className="btn btn-gradient-slow" onClick={() => handleImport()} disabled={!file || loading}>
               {loading ? "Importing..." : "Confirm Import"}
             </Button>
           ) : (
             <Button
               onClick={() => handleImport(true)}
               disabled={!file || !createAccountChecked || loading}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="btn btn-gradient-slow"
             >
               {loading ? "Creating..." : "Create Accounts & Import"}
             </Button>

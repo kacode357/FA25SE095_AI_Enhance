@@ -63,8 +63,6 @@ export default function CourseCard({
     e.stopPropagation();
   };
 
-  // Reveal/copy/update handlers removed from card
-
   const onEditClick = (e: React.MouseEvent) => {
     stop(e);
     router.push(`/lecturer/manager/course/${course.id}/course`);
@@ -77,7 +75,7 @@ export default function CourseCard({
 
   return (
     <Card
-      className="relative overflow-hidden h-full p-0 flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] focus:outline-none focus:ring-2 focus:ring-brand"
+      className="relative overflow-hidden h-full p-0 flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] focus:outline-none focus:ring-0 focus:border-slate-200 focus-visible:shadow-[0_0_0_2px_rgba(127,113,244,0.35)]"
       // onClick={goDetail}
       tabIndex={0}
       role="button"
@@ -152,7 +150,7 @@ export default function CourseCard({
           <div
             className="btn btn-gradient-slow rounded-md text-white px-3 py-1 shadow text-xs cursor-pointer transition-all duration-200"
             onClick={onEditClick}
-            aria-label="Edit"
+            aria-label="Course Details"
           >
             Details
           </div>

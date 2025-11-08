@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { CourseService } from "@/services/course.services";
 import { GetMyCoursesQuery } from "@/types/courses/course.payload";
 import { CourseItem, GetMyCoursesResponse } from "@/types/courses/course.response";
+import { useCallback, useState } from "react";
 
 const cache = new Map<string, GetMyCoursesResponse>();
 
@@ -42,4 +42,9 @@ export function useMyCourses() {
   const refetch = (params: GetMyCoursesQuery) => fetchMyCourses(params, true);
 
   return { listData, totalCount, currentPage, pageSize, loading, fetchMyCourses, refetch };
+}
+
+// Allow external callers to invalidate all cached course lists
+export function invalidateMyCoursesCache() {
+  cache.clear();
 }

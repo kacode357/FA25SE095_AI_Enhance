@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ChevronRight, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -19,12 +19,53 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { AccessCodeType } from "@/config/access-code-type";
+import { invalidateMyCoursesCache } from "@/hooks/course/useMyCourses";
 import { CourseCodeService } from "@/services/course-codes.services";
 import { CourseService } from "@/services/course.services";
 import { TermService } from "@/services/term.services";
 import { CourseCodeOption } from "@/types/course-codes/course-codes.response";
 import { CreateCoursePayload } from "@/types/courses/course.payload";
 import { TermResponse } from "@/types/term/term.response";
+
+function BreadcrumbCreate({ router }: { router: ReturnType<typeof useRouter> }) {
+    return (
+        <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden">
+            <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
+                <li>
+                    <button
+                        onClick={() => router.push("/")}
+                        className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-slate-500 hover:text-brand transition shrink-0"
+                    >
+                        <Home className="size-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:inline">Home</span>
+                    </button>
+                </li>
+                <ChevronRight className="size-3 text-slate-400" />
+                <li>
+                    <button
+                        onClick={() => router.push("/lecturer/manager/course")}
+                        className="px-1 py-0.5 rounded hover:text-brand transition max-w-[110px] truncate"
+                    >
+                        Lecturer
+                    </button>
+                </li>
+                <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
+                <li className="hidden sm:inline">
+                    <button
+                        onClick={() => router.push("/lecturer/manager/course")}
+                        className="px-1 py-0.5 rounded hover:text-brand transition max-w-[130px] truncate"
+                    >
+                        Manager Courses
+                    </button>
+                </li>
+                <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
+                <li className="font-medium text-slate-900 max-w-[150px] truncate">
+                    Create Course
+                </li>
+            </ol>
+        </nav>
+    );
+}
 
 export default function CreateCoursePage() {
     const router = useRouter();
@@ -93,6 +134,8 @@ export default function CreateCoursePage() {
             };
             const res = await CourseService.createCourse(payload);
             if (res?.success) {
+                // Invalidate cached course lists so CoursesPage fetches fresh data
+                try { invalidateMyCoursesCache(); } catch { }
                 router.push("/lecturer/manager/course");
             }
         } finally {
@@ -101,23 +144,11 @@ export default function CreateCoursePage() {
     };
 
     return (
-        <div className="p-4">
-            {/* Hero */}
-            <div className="relative overflow-hidden mb-3 rounded-2xl border border-slate-200 shadow-[0_8px_28px_rgba(2,6,23,0.08)]">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b] opacity-90" />
-                <div className="relative px-4 sm:px-6 py-5 text-white flex items-center justify-between gap-3">
-                    <div>
-                        <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Create Course</h1>
-                        <p className="text-xs sm:text-sm text-white/90">Set up course details and optional access code.</p>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        className="text-white/90 shadow-xl hover:text-white"
-                        onClick={() => router.push("/lecturer/manager/course")}
-                    >
-                        <ArrowLeft className="size-4 mr-1" /> Back
-                    </Button>
-                </div>
+        <div className="p-3">
+            {/* Top bar header to match CoursesPage */}
+            <div className="sticky top-0 z-30 backdrop-blur w-full pr-6.5 pb-3 flex items-center justify-between">
+                <h1 className="text-sm font-semibold uppercase tracking-wide whitespace-nowrap mr-4">Create Course</h1>
+                <BreadcrumbCreate router={router} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -136,7 +167,7 @@ export default function CreateCoursePage() {
                                         <SelectContent>
                                             {codes.map((c) => (
                                                 <SelectItem key={c.id} value={c.id}>
-                                                    <div className="flex flex-col">
+                                                    <div className="flex items-start flex-col">
                                                         <span className="text-sm font-medium">{c.code} — {c.title}</span>
                                                         <span className="text-[11px] text-slate-500">{c.department}</span>
                                                     </div>
@@ -152,7 +183,7 @@ export default function CreateCoursePage() {
                                 <Label className="text-lg mb-2">Term</Label>
                                 <div className="mt-1">
                                     <Select value={form.termId} onValueChange={(v) => setForm((f) => ({ ...f, termId: v }))}>
-                                        <SelectTrigger className="w-full border-slate-200">
+                                        <SelectTrigger className="w-full bg-white border-slate-200">
                                             <SelectValue placeholder={loadingOptions ? "Loading..." : "Select term"} />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -193,10 +224,10 @@ export default function CreateCoursePage() {
 
                     <Card className="p-4 border-slate-200 shadow-sm relative overflow-hidden">
                         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-row items-center justify-between">
                             <div>
                                 <h2 className="text-base font-semibold text-slate-900">Access Code (optional)</h2>
-                                <p className="text-sm text-slate-600">Require a code for students to enroll.</p>
+                                <p className="text-sm mt-1 text-slate-600">Require a code for students to enroll.</p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Checkbox
@@ -209,50 +240,52 @@ export default function CreateCoursePage() {
                         </div>
 
                         {form.requiresAccessCode && (
-                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <Label className="text-lg mb-2">Code Type</Label>
-                                    <div className="mt-1">
-                                        <Select
-                                            value={String(form.accessCodeType ?? "")}
-                                            onValueChange={(v) => setForm((f) => ({ ...f, accessCodeType: Number(v) }))}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value={String(AccessCodeType.Numeric)}>Numeric</SelectItem>
-                                                <SelectItem value={String(AccessCodeType.AlphaNumeric)}>Alphanumeric</SelectItem>
-                                                <SelectItem value={String(AccessCodeType.Words)}>Words</SelectItem>
-                                                <SelectItem value={String(AccessCodeType.Custom)}>Custom</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                            <div className="flex flex-wrap gap-3">
+                                {/* Code Type */}
+                                <div className="flex-1 min-w-[150px]">
+                                    <Label className="text-sm mb-1">Code Type</Label>
+                                    <Select
+                                        value={String(form.accessCodeType ?? "")}
+                                        onValueChange={(v) => setForm((f) => ({ ...f, accessCodeType: Number(v) }))}
+                                    >
+                                        <SelectTrigger className="w-full border bg-white border-slate-200">
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={String(AccessCodeType.Numeric)}>Numeric</SelectItem>
+                                            <SelectItem value={String(AccessCodeType.AlphaNumeric)}>Alphanumeric</SelectItem>
+                                            <SelectItem value={String(AccessCodeType.Words)}>Words</SelectItem>
+                                            <SelectItem value={String(AccessCodeType.Custom)}>Custom</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
+                                {/* Custom Code (chỉ hiển thị khi chọn Custom) */}
                                 {form.accessCodeType === AccessCodeType.Custom && (
-                                    <div>
-                                        <Label className="text-sm">Custom Code</Label>
+                                    <div className="flex-1 min-w-[150px]">
+                                        <Label className="text-sm mb-1">Custom Code</Label>
                                         <Input
                                             value={form.customAccessCode ?? ""}
                                             onChange={(e) => setForm((f) => ({ ...f, customAccessCode: e.target.value }))}
-                                            className="mt-1 h-9"
                                             placeholder="Enter custom access code"
+                                            className="h-9 placeholder:text-sm"
                                         />
                                     </div>
                                 )}
 
-                                <div className="sm:col-span-2">
-                                    <Label className="text-sm">Expires At</Label>
+                                {/* Expires At */}
+                                <div className="flex-1 min-w-[200px]">
+                                    <Label className="text-sm mb-1">Expires At</Label>
                                     <Input
                                         type="datetime-local"
                                         value={form.accessCodeExpiresAt ?? ""}
                                         onChange={(e) => setForm((f) => ({ ...f, accessCodeExpiresAt: e.target.value }))}
-                                        className="mt-1 h-9"
+                                        className="h-9"
                                     />
                                 </div>
                             </div>
                         )}
+
                     </Card>
                 </div>
 

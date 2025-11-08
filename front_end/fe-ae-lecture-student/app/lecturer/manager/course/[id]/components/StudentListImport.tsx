@@ -54,7 +54,7 @@ export default function StudentList({
 
     return (
         <div className="-mt-10">
-            <div className="text-sm flex justify-end mb-2 text-slate-500">{students.length} student(s)</div>
+            <div className="text-sm flex justify-end mb-2 mt-3 text-slate-500">{students.length} student(s)</div>
             {loading ? (
                 <div className="text-center text-slate-500 py-6">Loading...</div>
             ) : students.length === 0 ? (
@@ -65,21 +65,16 @@ export default function StudentList({
                 <div className="overflow-x-auto rounded-md border border-slate-200">
                     <Table>
                         <TableHeader className="bg-slate-50">
-                            <TableRow>
+                            <TableRow className="border-b-slate-300">
                                 <TableHead className="text-center w-14">NO</TableHead>
-                                <TableHead
-                                    className="text-center min-w-[90px] max-w-[120px] truncate"
-                                >
-                                    Student ID
-                                </TableHead>
                                 <TableHead className="text-center min-w-[140px]">
                                     Student Name
                                 </TableHead>
-                                <TableHead className="text-center w-[110px]">Status</TableHead>
                                 <TableHead className="text-center w-[150px]">Joined At</TableHead>
                                 <TableHead className="text-center w-[150px]">
                                     Unenrolled At
                                 </TableHead>
+                                <TableHead className="text-center w-[110px]">Status</TableHead>
                                 <TableHead className="text-center min-w-[120px]">Reason</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -90,23 +85,17 @@ export default function StudentList({
                                     <TableCell className="text-center text-slate-500">
                                         {i + 1}
                                     </TableCell>
-                                    <TableCell
-                                        className="text-center text-slate-600 truncate max-w-[120px]"
-                                        title={s.studentId}
-                                    >
-                                        {s.studentId}
-                                    </TableCell>
                                     <TableCell className="font-medium text-slate-800">
                                         {s.studentName}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        {getStatusBadge(s.status)}
                                     </TableCell>
                                     <TableCell className="text-center text-slate-600">
                                         {formatDate(s.joinedAt)}
                                     </TableCell>
                                     <TableCell className="text-center text-slate-600">
                                         {formatDate(s.unenrolledAt)}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        {getStatusBadge(s.status)}
                                     </TableCell>
                                     <TableCell className="text-slate-500 text-sm">
                                         {s.unenrollmentReason || "-"}

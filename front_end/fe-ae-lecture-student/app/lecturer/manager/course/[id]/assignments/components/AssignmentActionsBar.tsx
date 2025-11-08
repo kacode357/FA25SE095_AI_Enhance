@@ -87,12 +87,12 @@ export default function AssignmentActionsBar({
           />
           <div className="mt-1 mb-3 text-[11px] text-slate-500">Time is in your local timezone</div>
         </div>
-        <div className="flex gap-2 md:justify-center">
-          <Button className="btn btn-gradient-slow" onClick={handleExtend} disabled={submitting || !extendedAt}>
+        <div className="flex gap-2 md:justify-between">
+          <Button className="btn text-sm btn-gradient-slow" onClick={handleExtend} disabled={submitting || !extendedAt}>
             Extend Due Date
           </Button>
           <Button
-          className="text-red-400"
+            className="text-red-400 text-sm"
             variant="destructive"
             onClick={handleClose}
             disabled={submitting || !canClose}
@@ -107,6 +107,7 @@ export default function AssignmentActionsBar({
       <p className="text-xs text-slate-500">
         • You can extend due date for any non-Closed assignment. • Closing is disabled for Draft status.
       </p>
+
     </div>
   );
 }

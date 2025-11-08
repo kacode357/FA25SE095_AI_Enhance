@@ -67,11 +67,11 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
   };
 
   return (
-    <Card className="border-0 py-0 -gap-2 shadow-none">
+    <Card className="border border-slate-200 py-0 px-2 -gap-2 mr-3.5 shadow-none">
       {/* Header */}
-      <CardHeader className="flex items-start justify-between gap-3">
+      <CardHeader className="flex items-start justify-between -mx-3 gap-3">
         <div className="min-w-0">
-          <CardTitle className="flex mt-3 items-center gap-2 text-xl md:text-2xl">
+          <CardTitle className="flex mt-3 items-center gap-2 text-lg md:text-xl">
             {a ? (
               <>
                 <span className="truncate text-[#000D83]">{a.title}</span>
@@ -105,7 +105,7 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
 
       <Separator />
 
-      <CardContent className="p-6">
+  <CardContent className="p-3 min-h-0">
         {loading && (
           <div className="text-sm text-slate-500">Loading assignment...</div>
         )}
@@ -116,13 +116,13 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
 
         {!loading && a && (
           <>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:h-[calc(100vh-220px)] min-h-0 overflow-auto">
             {/* Left column: Description and lists */}
-            <div className="lg:col-span-8 space-y-6">
+            <div className="lg:col-span-8 min-h-0 grid grid-rows-[1fr,auto,auto] gap-6">
               {/* Description */}
-              <section>
+              <section className="min-h-0 h-full flex flex-col">
                 <div className="mb-2 text-sm text-slate-500">Description</div>
-                <ScrollArea className="border border-slate-300 rounded-md bg-white/50 max-h-[90vh] overflow-y-auto">
+                <ScrollArea className="border border-slate-300 rounded-md bg-white/50 flex-1 min-h-0 h-full w-full overflow-y-auto">
                   <div className="p-4">
                     <div
                       className="rte-view text-[14px] leading-6"
@@ -166,7 +166,22 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
                 )}
               </section>
 
-              {/* Manage groups moved below as full-width */}
+              {/* Manage Groups controls directly under Assigned Groups */}
+              {a.isGroupAssignment && (
+                <section className="mt-0">
+                  <GroupAssignControls
+                    courseId={a.courseId}
+                    assignment={{
+                      id: a.id,
+                      assignedGroupsCount: a.assignedGroupsCount,
+                      assignedGroups: a.assignedGroups,
+                    }}
+                    onChanged={refetchDetail}
+                  />
+                </section>
+              )}
+
+              {/* End manage groups */}
             </div>
 
             {/* Right column: Overview + Actions */}
@@ -228,22 +243,7 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
               </section>
             </div>
           </div>
-          {a.isGroupAssignment && (
-            <>
-              <Separator className="mt-4 lg:col-span-12" />
-              <section className="w-full bg-white min-h-25vh]">
-                <GroupAssignControls
-                  courseId={a.courseId}
-                  assignment={{
-                    id: a.id,
-                    assignedGroupsCount: a.assignedGroupsCount,
-                    assignedGroups: a.assignedGroups,
-                  }}
-                  onChanged={refetchDetail}
-                />
-              </section>
-            </>
-          )}
+          {/* Group assignment controls are displayed under Assigned Groups in the left column */}
           </>
         )}
       </CardContent>

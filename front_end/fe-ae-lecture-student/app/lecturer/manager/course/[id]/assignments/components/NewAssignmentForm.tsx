@@ -123,32 +123,34 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
   };
 
   return (
-    <Card className="border-slate-200 shadow-sm">
+    <Card className="border-slate-200 py-0 pt-4 shadow-sm">
       <CardContent className="space-y-4">
         {/* Basic info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-sm">Title *</Label>
+            <Label className="text-sm mb-1">Title *</Label>
             <Input
               placeholder="Homework 1"
               value={form.title}
               onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+              className="text-xs"
             />
           </div>
 
           <div>
-            <Label className="text-sm">Max Points</Label>
+            <Label className="text-sm mb-1">Max Points</Label>
             <Input
               type="number"
               inputMode="numeric"
               placeholder="100"
               value={form.maxPoints}
+              className="text-xs"
               onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value }))}
             />
           </div>
 
           <div>
-            <Label className="text-sm">Topic</Label>
+            <Label className="text-sm mb-1">Topic</Label>
             {loadingTopics ? (
               <div className="text-sm text-slate-500 p-2">Loading topics...</div>
             ) : (topics?.length ?? 0) === 0 ? (
@@ -156,7 +158,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             ) : (
               <select
                 title="Topic"
-                className="w-full border border-slate-200 placeholder:text-xs rounded-lg px-2 py-3"
+                className="w-full border text-xs border-slate-200 placeholder:text-xs rounded-lg px-2 py-3"
                 value={form.topicId}
                 onChange={(e) => setForm((p) => ({ ...p, topicId: e.target.value }))}
               >
@@ -172,18 +174,20 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
           <div className="flex gap-3 w-full">
             <div className="flex-1">
-              <Label className="text-sm">Start Date *</Label>
+              <Label className="text-sm mb-1">Start Date *</Label>
               <Input
                 type="datetime-local"
                 value={form.startDate}
+                className="text-xs"
                 onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
               />
             </div>
 
             <div className="flex-1">
-              <Label className="text-sm">Due Date *</Label>
+              <Label className="text-sm mb-1">Due Date *</Label>
               <Input
                 type="datetime-local"
+                className="text-xs"
                 value={form.dueDate}
                 onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
               />
@@ -198,27 +202,29 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             className="w-full"
             value={form.description}
             onChange={(html) => setForm((p) => ({ ...p, description: html }))}
-            placeholder="Mô tả bài tập…"
-            // onImageUpload={uploadImageToServer} // bật nếu editor hỗ trợ
+            placeholder="Exercise description…"
+          // onImageUpload={uploadImageToServer} // bật nếu editor hỗ trợ
           />
         </div>
 
         {/* Settings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-sm">Format</Label>
+            <Label className="text-sm mb-1">Format</Label>
             <Input
               placeholder="PDF, ZIP, ... (optional)"
               value={form.format}
+              className="text-xs"
               onChange={(e) => setForm((p) => ({ ...p, format: e.target.value }))}
             />
           </div>
 
           <div>
-            <Label className="text-sm">Grading Criteria</Label>
+            <Label className="text-sm mb-1">Grading Criteria</Label>
             <Input
               placeholder="Rubric note (optional)"
               value={form.gradingCriteria}
+              className="text-xs"
               onChange={(e) => setForm((p) => ({ ...p, gradingCriteria: e.target.value }))}
             />
           </div>
@@ -276,7 +282,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
         </div>
       </CardContent>
 
-      <CardFooter className="flex items-center justify-end gap-2">
+      <CardFooter className="flex items-center rounded-xl justify-end gap-2 bg-white py-3">
         {onCancel && (
           <Button className="text-violet-800 hover:text-violet-500" variant="outline" onClick={onCancel}>
             Back

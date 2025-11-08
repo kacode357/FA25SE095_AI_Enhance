@@ -89,7 +89,7 @@ export default function CreateGroupSheet({
           maxMembers: payload.maxMembers,
           isLocked: payload.isLocked,
         };
-        
+
         const res = await GroupService.updateGroup(initialData.id, updatePayload);
         if (res?.success) {
           // Prefer group on response if available; otherwise pass through current values
@@ -151,25 +151,32 @@ export default function CreateGroupSheet({
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              id="isLocked"
-              type="checkbox"
-              checked={isLocked}
-              onChange={(e) => setIsLocked(e.target.checked)}
-              aria-label="Lock group"
-              title="Lock group"
+          <div className="flex items-center justify-start py-2 gap-3">
+            <button
+              title="button"
+              type="button"
+              onClick={() => !submitting && setIsLocked(!isLocked)}
               disabled={submitting}
-            />
-            <Label htmlFor="isLocked">Lock group (prevent changes)</Label>
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${isLocked ? "bg-red-500" : "bg-emerald-400"
+                } ${submitting ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              <span
+                className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform duration-200 ${isLocked ? "translate-x-5" : "translate-x-0"
+                  }`}
+              />
+            </button>
+            <Label htmlFor="isLocked" className="text-sm font-medium text-slate-700">
+              Lock group (prevent changes)
+            </Label>
           </div>
+
         </div>
 
         <SheetFooter className="flex flex-row justify-start gap-5">
-          <Button onClick={handleSubmit} disabled={!canSubmit || submitting}>
+          <Button className="btn btn-gradient-slow" onClick={handleSubmit} disabled={!canSubmit || submitting}>
             {submitting ? (mode === "edit" ? "Saving..." : "Creating...") : mode === "edit" ? "Save changes" : "Create"}
           </Button>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button className="text-violet-800 hover:text-violet-500" variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>

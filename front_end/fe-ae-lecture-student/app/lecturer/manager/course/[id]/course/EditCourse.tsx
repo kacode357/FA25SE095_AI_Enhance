@@ -154,7 +154,7 @@ export default function EditCourse() {
                 }}
             />
             {/* Breadcrumb */}
-            <nav className="flex flex-row justify-between py-2 items-center text-sm gap-2" aria-label="Breadcrumb">
+            <nav className="flex flex-row justify-between py-2 mr-3 items-center text-sm gap-2" aria-label="Breadcrumb">
                 <div className="flex flex-row justify-between items-center text-sm gap-1">
                     <BookOpen className="size-4 cursor-pointer" color="#c490d1" />
                     <a
@@ -176,9 +176,9 @@ export default function EditCourse() {
             </nav>
 
             {/* Main Content */}
-            <div className="flex flex-1 flex-col md:flex-row gap-6 overflow-hidden">
+            <div className="flex flex-1 flex-col md:flex-row gap-6 mr-3 overflow-hidden">
                 {/* LEFT */}
-                <Card className="flex-[0.65] flex flex-col p-6 border-slate-200 shadow-sm overflow-auto">
+                <Card className="flex-[0.65] flex flex-col p-6 mb-6 border-slate-200 shadow-sm overflow-auto">
                     <div className="flex justify-between items-center mb-5">
                         <div className="flex items-center gap-3">
                             <h3 className="text-base font-semibold text-slate-700">General Information</h3>
@@ -197,14 +197,14 @@ export default function EditCourse() {
                                         <button
                                             title="Inactivate Course"
                                             onClick={() => setInactivateOpen(true)}
-                                            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 hover:shadow-sm active:scale-95 transition-all duration-200 ease-in-out"
+                                            className="flex items-center gap-2 px-3 mr-4 py-1.5 rounded-md text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 hover:shadow-sm active:scale-95 transition-all duration-200 ease-in-out"
                                         >
                                             <FolderLock className="size-4" /> Inactivate
                                         </button>
                                         <SquarePen
                                             role="button"
                                             aria-label="Edit course"
-                                            className="size-5 cursor-pointer text-emerald-600 hover:text-emerald-700 transition"
+                                            className="size-5 cursor-pointer text-violet-600 hover:text-violet-800 transition"
                                             onClick={() => setEditMode(true)}
                                         />
                                     </>
@@ -230,7 +230,7 @@ export default function EditCourse() {
                                 exit={{ opacity: 0 }}
                                 className="space-y-5"
                             >
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-7 text-sm">
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-10 text-sm">
                                     <InfoV2 label="Course Code" value={course.courseCode} />
                                     <InfoV2 label="Course Code Title" value={course.courseCodeTitle} />
                                     <InfoV2 label="Name" value={course.name} />
@@ -270,7 +270,7 @@ export default function EditCourse() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm mt-1"
+                                className="grid grid-cols-2 gap-x-6 gap-y-10 text-sm mt-1"
                             >
                                 <div className="flex flex-col">
                                     <label className="text-slate-500 text-xs cursor-text uppercase mb-1">
@@ -331,7 +331,7 @@ export default function EditCourse() {
                     {editMode && (
                         <div className="mt-4 border-t pb-5 border-slate-200 flex justify-end gap-2">
                             <Button
-                                className="bg-emerald-600 mt-5 hover:bg-emerald-700 cursor-pointer text-white"
+                                className="mt-5 btn btn-gradient-slow cursor-pointer text-white"
                                 onClick={handleSave}
                                 disabled={updating}
                             >
