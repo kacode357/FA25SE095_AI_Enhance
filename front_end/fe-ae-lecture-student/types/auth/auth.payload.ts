@@ -54,3 +54,10 @@ export interface ChangePasswordPayload {
 export interface ChangePasswordRequest extends ChangePasswordPayload {
   userId: string;
 }
+
+export interface GoogleLoginPayload {
+  googleIdToken: string;
+  rememberMe?: boolean;
+  ipAddress?: string;
+  userAgent?: string;
+}

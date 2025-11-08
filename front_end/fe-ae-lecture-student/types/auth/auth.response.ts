@@ -67,3 +67,5 @@ export interface ChangePasswordResponse {
   success: boolean;
   message: string;
 }
+
+export type GoogleLoginResponse = LoginResponse;

@@ -9,6 +9,7 @@ import {
   RegisterPayload,
   ResetPasswordPayload,
   ChangePasswordRequest,
+  GoogleLoginPayload,
 } from "@/types/auth/auth.payload";
 import type {
   ApiResponse,           // <-- dùng khung response chuẩn
@@ -20,6 +21,7 @@ import type {
   RegisterResponse,
   ResetPasswordResponse,
   ChangePasswordResponse,
+  GoogleLoginResponse,
 } from "@/types/auth/auth.response";
 
 /**
@@ -71,6 +73,15 @@ export const AuthService = {
 
   logout: async (data: LogoutPayload): Promise<LogoutResponse> => {
     const response = await userAxiosInstance.post<LogoutResponse>("/Auth/logout", data);
+    return response.data;
+  },
+  googleLogin: async (
+    data: GoogleLoginPayload
+  ): Promise<ApiResponse<GoogleLoginResponse>> => {
+    const response = await userAxiosInstance.post<ApiResponse<GoogleLoginResponse>>(
+      "/Auth/google-login",
+      data
+    );
     return response.data;
   },
 };

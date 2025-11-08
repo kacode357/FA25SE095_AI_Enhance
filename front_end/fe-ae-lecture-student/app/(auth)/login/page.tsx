@@ -5,26 +5,96 @@ import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLogin } from "@/hooks/auth/useLogin";
+import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin"; // <-- thêm
 import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
+const GOOGLE_CLIENT_ID =
+  "829205393964-nmd7o7sjjtbotd0nfdv9morsqo5n7v5n.apps.googleusercontent.com";
 
 export default function LoginPage() {
   const { login, loading } = useLogin();
+  const { googleLogin, loading: googleAuthLoading } = useGoogleLogin(); // <-- thêm
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const gisReadyRef = useRef(false);
+
+  // Load GIS script 1 lần và initialize callback -> nhận ID token
+  useEffect(() => {
+    const SCRIPT_ID = "google-identity-services";
+    const init = () => {
+      try {
+        window.google?.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          // callback nhận ID token -> call BE google-login
+          callback: async (resp: { credential?: string }) => {
+            const credential = resp?.credential;
+            if (!credential) return;
+
+            await googleLogin({
+              googleIdToken: credential,
+              rememberMe,
+              ipAddress: "", // optional
+              userAgent:
+                typeof navigator !== "undefined" ? navigator.userAgent : "",
+            });
+          },
+          auto_select: false,
+          ux_mode: "popup",
+          use_fedcm_for_prompt: true,
+        });
+        gisReadyRef.current = true;
+      } catch (e) {
+        console.error("[auth] init google id error:", e);
+      }
+    };
+
+    const existed = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (existed) {
+      if (window.google?.accounts?.id) init();
+      return;
+    }
+
+    const s = document.createElement("script");
+    s.id = SCRIPT_ID;
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true;
+    s.defer = true;
+    s.onload = init;
+    document.head.appendChild(s);
+  }, [googleLogin, rememberMe]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     await login({ email: email.trim(), password: password.trim(), rememberMe });
   };
 
+  // Nhấn nút Google -> bật One Tap/Popup của GIS, callback ở trên sẽ xử lý
   const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
     try {
-      setGoogleLoading(true);
-      await new Promise((r) => setTimeout(r, 900));
+      if (!gisReadyRef.current || !window.google?.accounts?.id) {
+        throw new Error("Google SDK not ready");
+      }
+      // Hiển thị One Tap / popup. Khi user chọn account, callback sẽ bắn về.
+      await new Promise<void>((resolve) => {
+        window.google.accounts.id.prompt((notification: any) => {
+          // Nếu không hiển thị được One Tap (bị chặn), vẫn resolve để tắt loading
+          // Callback sign-in thành công vẫn chạy riêng (không qua nhánh này)
+          resolve();
+        });
+      });
+    } catch (e) {
+      console.error("[auth] google prompt error:", e);
     } finally {
       setGoogleLoading(false);
     }
@@ -96,12 +166,15 @@ export default function LoginPage() {
           variant="ghost"
           className="w-full border border-slate-200 hover:border-slate-300"
           onClick={handleGoogleLogin}
-          loading={googleLoading}
+          loading={googleLoading || googleAuthLoading}
           aria-label="Đăng nhập với Google"
         >
           <Chrome size={18} />
           Đăng nhập với Google
         </Button>
+
+        {/* Container ẩn nếu sau này muốn render Google button gốc (không bắt buộc) */}
+        <div id="g-btn-container" className="hidden" />
 
         <motion.div
           initial={{ opacity: 0 }}
