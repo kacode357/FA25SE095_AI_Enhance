@@ -17,7 +17,7 @@ declare global {
 }
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
+console.log("GOOGLE_CLIENT_ID:", GOOGLE_CLIENT_ID);
 export default function LoginPage() {
   const { login, loading } = useLogin();
   const { googleLogin, loading: googleAuthLoading } = useGoogleLogin(); 
