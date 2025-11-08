@@ -5,7 +5,7 @@ import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLogin } from "@/hooks/auth/useLogin";
-import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin"; // <-- thêm
+import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin"; 
 import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -16,12 +16,11 @@ declare global {
   }
 }
 
-const GOOGLE_CLIENT_ID =
-  "829205393964-nmd7o7sjjtbotd0nfdv9morsqo5n7v5n.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 export default function LoginPage() {
   const { login, loading } = useLogin();
-  const { googleLogin, loading: googleAuthLoading } = useGoogleLogin(); // <-- thêm
+  const { googleLogin, loading: googleAuthLoading } = useGoogleLogin(); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
