@@ -204,6 +204,7 @@ select {
 .btn-gradient-slow::after {
   content: "";
   position: absolute;
+
   inset: 0;
   background: #13127d; /* overlay tím đậm */
   z-index: -1;

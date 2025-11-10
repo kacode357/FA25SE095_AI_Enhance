@@ -1,4 +1,3 @@
-// app/student/my-assignments/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -16,7 +15,6 @@ import {
   BookOpen,
   Users,
   Timer,
-  Eye,
   X,
   Search,
 } from "lucide-react";
@@ -179,7 +177,11 @@ export default function MyAssignmentsPage() {
 
                     return (
                       <li key={a.id}>
-                        <div className="rounded-xl border border-[var(--border)] bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                        {/* === SỬA Ở ĐÂY: Thêm onClick và cursor-pointer vào div này === */}
+                        <div
+                          onClick={() => gotoDetail(a.courseId, a.id)}
+                          className="cursor-pointer rounded-xl border border-[var(--border)] bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                        >
                           {/* Row 1 */}
                           <div className="px-4 pt-4 grid grid-cols-1 md:grid-cols-12 gap-3">
                             {/* Left */}
@@ -204,15 +206,7 @@ export default function MyAssignmentsPage() {
                                 <Users className="w-3 h-3 text-nav-active" />
                                 {a.isGroupAssignment ? <>Group • {a.assignedGroupsCount}</> : <>Individual</>}
                               </span>
-
-                              <button
-                                type="button"
-                                onClick={() => gotoDetail(a.courseId, a.id)}
-                                className="btn bg-white border border-brand text-nav hover:text-nav-active shrink-0"
-                              >
-                                <Eye className="w-4 h-4" />
-                                View details
-                              </button>
+                              {/* === ĐÃ XÓA NÚT VIEW DETAILS Ở ĐÂY === */}
                             </div>
                           </div>
 
@@ -302,17 +296,17 @@ export default function MyAssignmentsPage() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-nav">Course name</label>
-              <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-              <input
-                className="input pl-10" 
-                placeholder="Type to search courses…"
-                value={courseNameQuery}
-                onChange={(e) => setCourseNameQuery(e.target.value)}
-                style={{ paddingLeft: '2.5rem' }} 
-           
-              />
-            </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                  <input
+                    className="input pl-10"
+                    placeholder="Type to search courses…"
+                    value={courseNameQuery}
+                    onChange={(e) => setCourseNameQuery(e.target.value)}
+                    style={{ paddingLeft: '2.5rem' }}
+
+                  />
+                </div>
                 <p className="text-[11px] text-[var(--text-muted)]">
                   {loadingCourses ? "Searching…" : `${myCourses?.length ?? 0} course(s)`}
                 </p>

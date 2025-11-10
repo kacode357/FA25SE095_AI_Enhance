@@ -14,7 +14,7 @@ import {
  * - Trả về: data (full response), students (array), totalStudents, course info
  * - Dùng: const { loading, students, fetchCourseStudents } = useCourseStudents();
  */
-export function useCourseStudents() {
+export function useCourseStudents(courseId: string) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<GetCourseEnrolledStudentsResponse | null>(null);
 

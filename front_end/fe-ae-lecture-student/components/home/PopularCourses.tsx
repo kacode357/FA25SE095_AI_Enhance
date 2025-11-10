@@ -65,7 +65,7 @@ export default function AvailableCoursesSection({
                             >
                                 {/* Thumbnail */}
                                 <div className="relative px-5 pt-6">
-                                    <Image
+                                    {/* <Image
                                         src={
                                             course.img ??
                                             "https://vinuni.edu.vn/wp-content/uploads/2024/11/marketing-courses-chon-khoa-hoc-phu-hop-de-dot-pha-trong-nganh-marketing.jpg"
@@ -74,7 +74,7 @@ export default function AvailableCoursesSection({
                                         width={400}
                                         height={250}
                                         className="object-cover w-full border-2 h-52 rounded-2xl border-violet-300"
-                                    />
+                                    /> */}
 
                                     {/* Access Code badge */}
                                     <span

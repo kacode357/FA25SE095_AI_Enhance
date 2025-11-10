@@ -54,13 +54,7 @@ const StatusChip = ({ status }: { status?: string | null }) => {
 
 /** Lấy ảnh từ nhiều field; thiếu thì dùng fallback */
 const getImageUrl = (c: any): string => {
-  const url =
-    c?.imageUrl ||
-    c?.thumbnailUrl ||
-    c?.coverImageUrl ||
-    c?.bannerUrl ||
-    c?.image ||
-    "";
+  const url = c?.img ?? "";
   return typeof url === "string" && url.trim() ? url : DEFAULT_IMAGE_URL;
 };
 
