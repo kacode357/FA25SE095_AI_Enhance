@@ -2,7 +2,7 @@
 "use client";
 
 import { Editor } from "@tinymce/tinymce-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
   value: string;
@@ -23,7 +23,6 @@ export default function LiteRichTextEditor({
 }: Props) {
   const lastHtmlRef = useRef<string>(value || "");
   const debounceTimer = useRef<number | null>(null);
-  const [pasteAvailable, setPasteAvailable] = useState<boolean | null>(null);
 
   const emit = (html: string) => {
     if (debounceTimer.current) window.clearTimeout(debounceTimer.current);
@@ -41,44 +40,6 @@ export default function LiteRichTextEditor({
       lastHtmlRef.current = value;
     }
   }, [value]);
-
-  // Probe plugin URL availability once at runtime to avoid TinyMCE trying to load a 404 plugin
-  useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key";
-    const pluginUrl = `https://cdn.tiny.cloud/1/${key}/tinymce/6/plugins/paste/plugin.min.js`;
-    // Try HEAD first (some CDNs disallow HEAD; fallback to GET)
-    let mounted = true;
-    fetch(pluginUrl, { method: "HEAD" })
-      .then((res) => {
-        if (!mounted) return;
-        setPasteAvailable(res.ok);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        // fallback to GET
-        fetch(pluginUrl, { method: "GET" })
-          .then((r) => {
-            if (!mounted) return;
-            setPasteAvailable(r.ok);
-          })
-          .catch(() => {
-            if (!mounted) return;
-            setPasteAvailable(false);
-          });
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Avoid mounting the Editor until we know whether paste plugin is reachable.
-  if (pasteAvailable === null) {
-    return (
-      <div className={`lite-rte ${className}`}>
-        <div className="min-h-[260px] rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Loading editor…</div>
-      </div>
-    );
-  }
 
   return (
     <div className={`lite-rte ${className}`}> 
@@ -104,20 +65,6 @@ export default function LiteRichTextEditor({
             "image",
             "preview",
             "code",
-            ...(pasteAvailable === false ? [] : ["paste"]),
-          ],
-          /* Ensure TinyMCE knows where to load plugins/skins from when using CDN */
-          base_url: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6`,
-          baseURL: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6`,
-          plugins: [
-            "link",
-            "lists",
-            "autolink",
-            "codesample",
-            "table",
-            "image",
-            "preview",
-            "code",
             "paste"
           ],
           toolbar:
@@ -125,9 +72,8 @@ export default function LiteRichTextEditor({
           branding: false,
           statusbar: false,
           paste_data_images: true,
-          /* explicitly point paste plugin (fixes some loader issues under turboweb/turbopack)
-             Only add external plugin entry if probe determined it is available. */
-          external_plugins: pasteAvailable === false ? undefined : {
+          /* explicitly point paste plugin (fixes some loader issues under turboweb/turbopack) */
+          external_plugins: {
             paste: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6/plugins/paste/plugin.min.js`,
           },
           skin_url: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6/skins/ui/oxide`,

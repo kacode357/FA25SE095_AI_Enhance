@@ -1,7 +1,7 @@
 // app/lecture/manager/course/[id]/assignments/components/NewAssignmentForm.tsx
 "use client";
 
-import LiteRichTextEditor from "@/components/common/LiteRichTextEditor";
+import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
