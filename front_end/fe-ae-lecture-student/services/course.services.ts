@@ -8,6 +8,7 @@ import {
   InactivateCoursePayload,
   UpdateAccessCodeRequest,
   UpdateCoursePayload,
+  UploadCourseImageRequest,
 } from "@/types/courses/course.payload";
 import {
   CreateCourseResponse,
@@ -19,6 +20,7 @@ import {
   InactivateCourseResponse,
   UpdateAccessCodeResponse,
   UpdateCourseResponse,
+  UploadCourseImageResponse,
 } from "@/types/courses/course.response";
 
 export const CourseService = {
@@ -94,4 +96,23 @@ inactivateCourse: async (
   );
   return res.data;
 },
+
+/** 🆕 POST /api/Courses/{courseId}/upload-image (Lecturer only) */
+  uploadCourseImage: async ({
+    courseId,
+    image,
+  }: UploadCourseImageRequest): Promise<UploadCourseImageResponse> => {
+    const formData = new FormData();
+    formData.append("image", image);
+
+    const res = await courseAxiosInstance.post<UploadCourseImageResponse>(
+      `/Courses/${courseId}/upload-image`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+    return res.data;
+  },
+
 };

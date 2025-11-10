@@ -196,3 +196,9 @@ export interface InactivateCourseResponse {
   message: string;
   courseId: string;
 }
+
+export interface UploadCourseImageResponse {
+  success: boolean;
+  message: string;
+  imageUrl: string;
+}

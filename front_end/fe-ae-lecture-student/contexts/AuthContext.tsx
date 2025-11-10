@@ -1,12 +1,12 @@
 // contexts/AuthContext.tsx
 "use client";
 
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useCallback } from "react";
-import { usePathname } from "next/navigation";
-import Cookies from "js-cookie";
+import { ROLE_LECTURER, ROLE_STUDENT, UserServiceRole } from "@/config/user-service/user-role";
 import type { UserProfile } from "@/types/user/user.response";
-import { loadDecodedUser, clearEncodedUser } from "@/utils/secure-user";
-import { UserServiceRole, ROLE_STUDENT, ROLE_LECTURER } from "@/config/user-service/user-role";
+import { clearEncodedUser, loadDecodedUser } from "@/utils/secure-user";
+import Cookies from "js-cookie";
+import { usePathname } from "next/navigation";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 type AuthContextType = {
   user: UserProfile | null;
@@ -37,7 +37,7 @@ function homeByRole(role?: string) {
   const STUDENT = UserServiceRole[ROLE_STUDENT];   // "Student"
   const LECTURER = UserServiceRole[ROLE_LECTURER]; // "Lecturer"
   if (role === STUDENT) return "/student/all-courses";
-  if (role === LECTURER) return "/lecturer/manager/course";
+  if (role === LECTURER) return "/lecturer/course";
   return "/";
 }
 

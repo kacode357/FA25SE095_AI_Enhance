@@ -1,15 +1,15 @@
 // hooks/auth/useLogin.ts
 "use client";
 
-import { useState } from "react";
-import Cookies from "js-cookie";
+import { ROLE_LECTURER, ROLE_STUDENT, UserServiceRole } from "@/config/user-service/user-role";
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
 import type { LoginPayload } from "@/types/auth/auth.payload";
 import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
-import { UserServiceRole, ROLE_STUDENT, ROLE_LECTURER } from "@/config/user-service/user-role";
 import { saveEncodedUser } from "@/utils/secure-user";
+import Cookies from "js-cookie";
+import { useState } from "react";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
@@ -55,7 +55,7 @@ export function useLogin() {
 
         let target = "/";
         if (isStudent) target = "/student/all-courses";
-        else if (isLecturer) target = "/lecturer/manager/course";
+        else if (isLecturer) target = "/lecturer/course";
 
         if (typeof window !== "undefined") window.location.href = target;
 

@@ -75,7 +75,7 @@ export default function Header() {
         </div>
 
         {/* Right */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex bg-slate-100 p-0 rounded-xl shadow-lg items-center gap-2">
           <NotificationsMenu
             open={notificationOpen}
             onOpenChange={(v) => {
@@ -84,15 +84,17 @@ export default function Header() {
             }}
             badgeCount={3}
           />
-          <UserMenu
-            open={dropdownOpen}
-            onOpenChange={(v) => {
-              setDropdownOpen(v);
-              if (v) setNotificationOpen(false);
-            }}
-            user={user ?? null}
-            onLogout={handleLogout}
-          />
+          {!isLecturer && (
+            <UserMenu
+              open={dropdownOpen}
+              onOpenChange={(v) => {
+                setDropdownOpen(v);
+                if (v) setNotificationOpen(false);
+              }}
+              user={user ?? null}
+              onLogout={handleLogout}
+            />
+          )}
         </div>
       </div>
     </header>

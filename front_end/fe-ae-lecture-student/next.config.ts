@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "vinuni.edu.vn",
       },
+      {
+        protocol: "https",
+        hostname: "ebridgebucket.s3.amazonaws.com",
+      },
     ],
   },
 };

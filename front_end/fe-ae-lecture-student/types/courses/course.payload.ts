@@ -69,3 +69,8 @@ export interface InactivateCoursePayload {
   lecturerId: string;
   reason: string;
 }
+
+export interface UploadCourseImageRequest {
+  courseId: string;
+  image: File;
+}
