@@ -106,32 +106,25 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
         className={`relative h-52 w-full bg-cover bg-center flex items-center justify-center group transition-all duration-300`}
         style={{ backgroundImage: `url(${backgroundImage})` }}
       >
-  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} aria-label="Upload course image" />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} aria-label="Upload course image" />
         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-all duration-300" />
-
-        {!course.img && (
-          <>
-            <span
-              className="relative z-10 cursor-pointer text-white text-sm font-medium group-hover:opacity-0 transition-opacity duration-300"
-              onClick={onImageClick}
-            >
-              No image
-            </span>
-
-            <div
-              className="absolute inset-0 cursor-pointer flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              onClick={onImageClick}
-            >
-              <ImageUp className="cursor-pointer" size={36} />
-              <span className="text-xs mt-1 cursor-pointer">Upload image</span>
-            </div>
-          </>
+        {!course.img && !uploading && (
+          <span className="relative z-10 text-white text-sm font-medium transition-opacity duration-300 opacity-100 group-hover:opacity-0 pointer-events-none">
+            No image
+          </span>
         )}
 
-        {/* allow changing existing image by clicking anywhere on the image */}
-        {course.img && (
-          <div className="absolute inset-0" onClick={onImageClick} role="button" aria-label="Change course image" />
-        )}
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          onClick={onImageClick}
+          role="button"
+          aria-label={course.img ? "Change course image" : "Upload course image"}
+        >
+          <div className="flex flex-col items-center justify-center">
+            <ImageUp className="cursor-pointer" size={36} />
+            <span className="text-xs mt-1 cursor-pointer">Upload image</span>
+          </div>
+        </div>
 
         {uploading && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -139,7 +132,7 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
           </div>
         )}
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent">
           <CardTitle className="text-sm font-semibold text-white truncate">
             [{course.courseCode}] {course.courseCodeTitle}
           </CardTitle>

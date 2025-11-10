@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import { useMyAssignments } from "@/hooks/assignment/useMyAssignments";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 
 import {
-  ListChecks,
-  RefreshCw,
-  Loader2,
   AlertTriangle,
-  CalendarClock,
   BookOpen,
-  Users,
-  Timer,
-  X,
+  CalendarClock,
+  ListChecks,
+  Loader2,
+  RefreshCw,
   Search,
+  Timer,
+  Users,
+  X,
 } from "lucide-react";
 
 import type { MyAssignmentsQuery } from "@/types/assignments/assignment.payload";
@@ -91,16 +91,22 @@ export default function MyAssignmentsPage() {
     setCourseNameQuery("");
   };
 
-  // UI helpers (dùng đúng palette)
   const statusTone = (s: AssignmentStatus) => {
     switch (s) {
+      case AssignmentStatus.Draft:
+        return "bg-[color-mix(in_oklab,#64748b_10%,white)] text-slate-700 border-[color-mix(in_oklab,#64748b_30%,var(--border))]";
+      case AssignmentStatus.Scheduled:
+        return "bg-[color-mix(in_oklab,#10b981_10%,white)] text-emerald-700 border-[color-mix(in_oklab,#10b981_30%,var(--border))]";
       case AssignmentStatus.Active:
-      case AssignmentStatus.Extended:
         return "bg-[color-mix(in_oklab,var(--brand)_14%,white)] text-nav border-[color-mix(in_oklab,var(--brand)_35%,var(--border))]";
+      case AssignmentStatus.Extended:
+        return "bg-[color-mix(in_oklab,#f59e0b_12%,white)] text-amber-700 border-[color-mix(in_oklab,#f59e0b_35%,var(--border))]";
       case AssignmentStatus.Overdue:
         return "bg-[color-mix(in_oklab,var(--accent)_16%,white)] text-accent border-[color-mix(in_oklab,var(--accent)_40%,var(--border))]";
       case AssignmentStatus.Closed:
         return "bg-white text-foreground/70 border-[var(--border)]";
+      case AssignmentStatus.Graded:
+        return "bg-[color-mix(in_oklab,#8b5cf6_12%,white)] text-purple-700 border-[color-mix(in_oklab,#8b5cf6_35%,var(--border))]";
       default:
         return "bg-[color-mix(in_oklab,var(--brand)_10%,white)] text-nav border-[color-mix(in_oklab,var(--brand)_28%,var(--border))]";
     }
@@ -317,6 +323,7 @@ export default function MyAssignmentsPage() {
                 <label className="text-xs font-medium text-nav">Course</label>
                 <div className="relative">
                   <select
+                    title="Select"
                     className="input pr-8 appearance-none"
                     value={courseId}
                     onChange={(e) => setCourseId(e.target.value)}

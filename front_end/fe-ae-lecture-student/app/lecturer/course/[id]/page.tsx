@@ -5,16 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import {
-  ArrowLeft,
-  Book,
-  ChevronRight,
-  FileSpreadsheet,
-  FolderPlus,
-  Shuffle
-} from "lucide-react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Book, ChevronRight, FileSpreadsheet, FolderPlus, Shuffle } from "lucide-react";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import CreateGroupSheet from "./components/CreateGroupSheet";
 
 import { CourseStatus } from "@/types/courses/course.response";
 import AssignmentsPanel from "./assignments/AssignmentsPanel";
@@ -97,9 +91,14 @@ export default function CourseDetailPage() {
 
   const isActive = course?.status === CourseStatus.Active;
 
+  const pathname = usePathname();
+
+  const isEditRoute = pathname?.includes(`/lecturer/course/${id}/course`);
+  const isDetailRoute = !isEditRoute && pathname?.includes(`/lecturer/course/${id}`);
+
   return (
     <div className="space-y-0 px-3">
-      <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden -mt-1.5 mr-3">
+      <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mt-1.5 mr-3">
         <div className="flex items-center justify-between">
           <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
             <li className="flex flex-row gap-0 hover:text-violet-800 items-center">
@@ -114,22 +113,31 @@ export default function CourseDetailPage() {
 
             <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
 
-            <li className="font-medium cursor-text text-slate-900 max-w-[150px] truncate">
-              <span className="flex items-center gap-2">
-                {course?.courseCode ? `${course.courseCode} — ${course.courseCodeTitle}` : "Course Detail"}
-              </span>
-            </li>
+              <li className={isEditRoute ? "font-medium cursor-text text-slate-900 max-w-[150px] truncate" : "text-slate-500 max-w-[150px] truncate"}>
+                <span className="flex items-center gap-2">
+                  {course?.courseCode ? (
+                    <button
+                      onClick={() => router.push(id ? `/lecturer/course/${id}/course` : "/lecturer/course")}
+                      className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition max-w-[220px] truncate text-left"
+                      title={course?.courseCodeTitle}
+                    >
+                      {`${course.courseCode} — ${course.courseCodeTitle}`}
+                    </button>
+                  ) : (
+                    "Course Detail"
+                  )}
+                </span>
+              </li>
+              {id && (
+                <>
+                  <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
+                  <li className={isDetailRoute ? "font-medium text-slate-900 max-w-[120px] truncate" : "text-slate-500 max-w-[120px] truncate"}>{id}</li>
+                </>
+              )}
           </ol>
 
           <div className="flex text-sm items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => router.back()}
-              aria-label="Go back"
-              className="cursor-pointer text-violet-800 hover:text-violet-500"
-            >
-              <ArrowLeft className="size-4" />Back
-            </Button>
+              {/* When clicked, course title (below) will navigate to EditCourse page. Back button removed as requested. */}
           </div>
         </div>
       </nav>
@@ -140,7 +148,7 @@ export default function CourseDetailPage() {
         className="w-full"
       >
         {/* Underline style tabs */}
-        <TabsList className="mt-2 mb-1 inline-flex items-center gap-5 bg-transparent px-0 self-start">
+        <TabsList className="mt-4 mb-1 inline-flex items-center gap-5 bg-transparent px-0 self-start">
           <TabsTrigger
             className="relative -mb-px pb-2 text-sm font-medium tracking-wide text-slate-600 hover:text-indigo-600 transition-colors focus-visible:outline-none focus:ring-0 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-[1px] data-[state=active]:after:h-[2px] data-[state=active]:after:bg-indigo-600 data-[state=active]:after:rounded-sm data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:ring-0"
             value="students"
@@ -209,13 +217,13 @@ export default function CourseDetailPage() {
                       className="btn btn-gradient-slow text-xs text-white"
                       onClick={() => setOpenRandomize(true)}
                     >
-                      <Shuffle className="size-4 mr-2" /> Randomize
+                      <Shuffle className="size-4 mr-1" /> Randomize
                     </Button>
                     <Button
                       className="btn btn-gradient-slow text-xs text-white"
                       onClick={() => setOpenGroup(true)}
                     >
-                      <FolderPlus className="size-4 mr-2" /> Create Group
+                      <FolderPlus className="size-4 mr-1" /> Create Group
                     </Button>
                   </div>
                 )}
@@ -262,6 +270,13 @@ export default function CourseDetailPage() {
           />
         </DialogContent>
       </Dialog>
+      {/* Global Create Group sheet opened from the header button */}
+      <CreateGroupSheet
+        open={openGroup}
+        onOpenChange={setOpenGroup}
+        courseId={id}
+        onCreated={() => setGroupsRefresh((v) => v + 1)}
+      />
     </div>
   );
 }

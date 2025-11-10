@@ -121,7 +121,7 @@ export default function CreateGroupSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full bg-white border-l border-slate-200 sm:max-w-xl md:max-w-2xl">
+      <SheetContent className="w-full bg-white border-l border-slate-200 sm:max-w-xl md:max-w-xl">
         <SheetHeader>
           <SheetTitle>{mode === "edit" ? "Edit Group" : "Create Group"}</SheetTitle>
         </SheetHeader>

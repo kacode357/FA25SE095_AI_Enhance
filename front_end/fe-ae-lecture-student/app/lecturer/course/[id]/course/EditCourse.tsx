@@ -15,7 +15,7 @@ import { CourseStatus } from "@/types/courses/course.response";
 import { AnimatePresence, motion } from "framer-motion";
 import { Book, ChevronRight, ClipboardCopy, Eye, EyeOff, FolderLock, Loader2, RefreshCw, SquarePen, X } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AccessCodeDialog from "../../components/AccessCodeDialog";
 import InactivateCourseDialog from "./components/InactivateCourseDialog";
@@ -31,6 +31,8 @@ export default function EditCourse() {
     const { updateCourse, loading: updating } = useUpdateCourse();
     const { id } = useParams<{ id: string }>();
     const { data: course, loading, error, fetchCourseById, refetch } = useGetCourseById();
+    const pathname = usePathname();
+    const isEditRoute = pathname?.includes(`/lecturer/course/${id}/course`);
     const { data: access, loading: accessLoading, error: accessError } = useGetAccessCodes(id || undefined);
     const { updateAccessCode, loading: updatingAccess, error: updateAccessError } = useUpdateAccessCode();
     const [inactivateOpen, setInactivateOpen] = useState(false);
@@ -154,7 +156,7 @@ export default function EditCourse() {
                 }}
             />
             {/* Breadcrumb (styled like CreateCoursePage) */}
-            <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden py-2 mr-3">
+            <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden py-3 mr-3">
                 <div className="flex items-center justify-between">
                     <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
                         <li className="flex flex-row gap-0 hover:text-violet-800 items-center">
@@ -167,18 +169,21 @@ export default function EditCourse() {
                             </button>
                         </li>
                         <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
-                        <li className="font-medium cursor-text text-slate-900 max-w-[150px] truncate">
+                        <li className={isEditRoute ? "font-medium cursor-text text-slate-900 max-w-[150px] truncate" : "text-slate-500 max-w-[150px] truncate"}>
                             {course.courseCode} — {course.courseCodeTitle}
                         </li>
                     </ol>
 
-                    <div className="flex items-center gap-2">
-                        <Link href={id ? `/lecturer/course/${id}` : "#"} aria-label="Go to Course Detail Page" className={id ? "" : "pointer-events-none opacity-60"}>
-                            <Button size="sm" variant="outline" className="cursor-pointer btn btn-gradient-slow text-violet-800 hover:text-violet-600">
-                                View Students
-                            </Button>
-                        </Link>
-                    </div>
+                    {/* Hide View Students button when course is pending approval */}
+                    {course.status !== CourseStatus.PendingApproval && (
+                        <div className="flex items-center gap-2">
+                            <Link href={id ? `/lecturer/course/${id}` : "#"} aria-label="Go to Course Detail Page" className={id ? "" : "pointer-events-none opacity-60"}>
+                                <Button size="sm" variant="outline" className="cursor-pointer btn btn-gradient-slow text-violet-800 hover:text-violet-600">
+                                    View Students
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </nav>
 

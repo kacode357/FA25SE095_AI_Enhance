@@ -3,10 +3,12 @@
 // Server trả status 1-based và "Draft" ứng với 1
 export enum AssignmentStatus {
   Draft = 1,
-  Active = 2,
-  Extended = 3,
-  Overdue = 4,
-  Closed = 5,
+  Scheduled = 2,
+  Active = 3,
+  Extended = 4,
+  Overdue = 5,
+  Closed = 6,
+  Graded = 7,
 }
 
 export interface GroupItem {
@@ -209,4 +211,53 @@ export interface GetCourseAssignmentStatsResponse {
   earliestDueDate: string | null;
   latestDueDate: string | null;
   averageDaysUntilDue: number;
+}
+
+export interface ScheduleAssignmentResponse {
+  success: boolean;
+  message: string;
+  assignment: Assignment;
+}
+
+export interface Assignment {
+  id: string;
+  courseId: string;
+  courseName: string;
+  topicId: string;
+  topicName: string;
+  title: string;
+  startDate: string;          // ISO datetime
+  dueDate: string;
+  extendedDueDate: string;
+  status: number;
+  statusDisplay: string;
+  isGroupAssignment: boolean;
+  maxPoints: number;
+  groupIds: string[];
+  isOverdue: boolean;
+  daysUntilDue: number;
+  assignedGroupsCount: number;
+  createdAt: string;
+  updatedAt: string;
+  description: string;
+  format: string;
+  gradingCriteria: string;
+  assignedGroups: AssignedGroup[];
+}
+
+export interface AssignedGroup {
+  id: string;
+  courseId: string;
+  courseName: string;
+  name: string;
+  description: string;
+  maxMembers: number;
+  isLocked: boolean;
+  assignmentId: string;
+  assignmentTitle: string;
+  memberCount: number;
+  leaderName: string;
+  leaderId: string;
+  createdAt: string;
+  createdBy: string;
 }

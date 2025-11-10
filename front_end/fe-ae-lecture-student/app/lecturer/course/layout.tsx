@@ -1,10 +1,16 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
-import { CircleArrowOutUpRight, GitPullRequest, LayoutGrid, PanelLeftOpen, PanelRightOpen, Settings, Sparkles, Upload, User } from "lucide-react";
+import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, PanelLeftOpen, PanelRightOpen, Settings, Sparkles, Upload, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -17,7 +23,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
     // counts for requests badge
     const { listData: reqs } = useMyCourseRequests();
     const requestsCount = useMemo(() => (reqs ?? []).length, [reqs]);
-    const { logout, loading: logoutLoading } = useLogout();
+    const { logout } = useLogout();
 
     const isImport = pathname?.includes("/lecturer/course/import");
     const isRequests = pathname?.includes("/lecturer/course/requests");
@@ -107,7 +113,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
 
                     {/* Lecturer profile */}
                     <Card className="px-3 py-3 border-none shadow-none mt-auto bg-white/95">
-                        <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
+                        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                             <div className={`${collapsed ? "mx-auto" : ""} relative`}>
                                 <div className="h-12 w-12 rounded-full ring-2 ring-white shadow-md bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white grid place-items-center font-semibold text-sm">
                                     {(() => {
@@ -135,39 +141,36 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                     </div>
 
                                     <div className="flex items-center gap-1 ml-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => router.push('/lecturer/profile')}
-                                            className="p-1 rounded-md hover:bg-slate-100 text-slate-600"
-                                            title="View profile"
-                                        >
-                                            <User className="size-4" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => router.push('/lecturer/settings')}
-                                            className="p-1 rounded-md hover:bg-slate-100 text-slate-600"
-                                            title="Settings"
-                                        >
-                                            <Settings className="size-4" />
-                                        </button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    aria-label="Open user menu"
+                                                    className="p-1 rounded-md hover:bg-slate-100 text-slate-600"
+                                                >
+                                                    <EllipsisVertical className="size-4" />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="z-50 border-slate-200">
+                                                <DropdownMenuItem onClick={() => router.push('/lecturer/profile')}>
+                                                    <User className="size-4 mr-2" />
+                                                    Profile
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => router.push('/lecturer/settings')}>
+                                                    <Settings className="size-4 mr-2" />
+                                                    Settings
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => logout()}>
+                                                    <CircleArrowOutUpRight className="size-3.5 mr-2" />
+                                                    Logout
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Logout button under profile */}
-                        <div className="mt-3 -mx-1 text-center pb-2">
-                            <button
-                                type="button"
-                                onClick={() => logout()}
-                                disabled={logoutLoading}
-                                className={`group w-full rounded-md px-2.5 py-2 bg-gradient-to-r from-slate-200 to-slate-100 text-sm flex items-center justify-center gap-2 transition text-slate-700 hover:from-slate-200 disabled:opacity-60 disabled:cursor-wait`}
-                            >
-                                <CircleArrowOutUpRight className="size-4 transition-colors text-slate-500 group-hover:text-slate-700" />
-                                <span className={`${collapsed ? 'hidden' : 'ml-1'}`}>Logout</span>
-                            </button>
-                        </div>
+                        
                     </Card>
                 </div>
             </aside>

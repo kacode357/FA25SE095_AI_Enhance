@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { useCloseAssignment } from "@/hooks/assignment/useCloseAssignment"; // ✅ đã có trong project của mày
@@ -15,7 +15,7 @@ import { useExtendDueDate } from "@/hooks/assignment/useExtendDueDate"; // ✅ �
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
 
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Info, Pencil } from "lucide-react";
 import AssignmentActionsBar from "./AssignmentActionsBar";
 import GroupAssignControls from "./GroupAssignControls";
 
@@ -26,12 +26,13 @@ type Props = {
 };
 
 const statusColor: Record<AssignmentStatus, string> = {
-  // 0: "bg-slate-200 text-slate-700",     // Draft
-  1: "bg-emerald-200 text-emerald-700", // Draft
-  2: "bg-blue-200 text-blue-700",         // Active
-  3: "bg-red-200 text-red-700",          // Extended
-  4: "bg-slate-300 text-slate-700",      // Overdue
-  5: "bg-slate-200 text-slate-700",      // Closed
+  1: "bg-slate-200 text-slate-800",
+  2: "bg-emerald-200 text-emerald-800",
+  3: "bg-blue-200 text-blue-800",
+  4: "bg-amber-200 text-amber-800",
+  5: "bg-red-200 text-red-800",
+  6: "bg-slate-500 text-white",
+  7: "bg-purple-200 text-purple-800",
 };
 
 const fmt = (s?: string | null) => (s ? new Date(s).toLocaleString() : "—");
@@ -40,6 +41,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
   const { data, loading, fetchAssignment } = useAssignmentById();
   const { extendDueDate, loading: loadingExtend } = useExtendDueDate();
   const { closeAssignment, loading: loadingClose } = useCloseAssignment();
+  const [openOverview, setOpenOverview] = useState(false);
 
   useEffect(() => {
     if (id) fetchAssignment(id);
@@ -105,7 +107,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
             <Button
               size="sm"
               variant="outline"
-              className="text-xs flex items-center gap-1"
+              className="text-xs flex btn btn-gradient-slow items-center gap-1"
               onClick={() => onEdit && onEdit(a.id)}
               disabled={a.status === 5}
               title={a.status === 5 ? "Closed assignments cannot be edited" : "Edit"}
@@ -113,7 +115,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
               <Pencil className="h-3.5 w-3.5" /> Edit
             </Button>
           )}
-          <Button className="text-[#000D83]" variant="outline" onClick={onBack}><ArrowLeft className="size-4 mr-1" />Back</Button>
+          <Button className="text-[#000D83]" variant="outline" onClick={onBack}><ArrowLeft className="size-4" />Back</Button>
         </div>
       </CardHeader>
 
@@ -132,7 +134,24 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
           <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:h-[calc(100vh-220px)] min-h-0 overflow-auto">
             {/* Left column: Description and lists */}
-            <div className="lg:col-span-8 min-h-0 grid grid-rows-[1fr,auto,auto] gap-6">
+            <div className={`${openOverview ? 'lg:col-span-8' : 'lg:col-span-12'} min-h-0 grid grid-rows-[1fr,auto,auto] gap-6 relative`}>
+              {/* Overview toggle button when collapsed positioned top-right inside left column */}
+              {!openOverview && (
+                <div className="absolute top-0 right-0 -mt-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-[11px] h-8 px-2"
+                    onClick={() => setOpenOverview(true)}
+                  >
+                    <span className="flex items-center gap-1 text-[#000D83]">
+                      <Info className="size-4" />
+                      <ChevronRight className="size-4" />
+                      Overview
+                    </span>
+                  </Button>
+                </div>
+              )}
               {/* Description */}
               <section className="min-h-0 h-full flex flex-col">
                 <div className="mb-2 text-sm text-slate-500">Description</div>
@@ -198,64 +217,76 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
               {/* End manage groups */}
             </div>
 
-            {/* Right column: Overview + Actions */}
-            <div className="lg:col-span-4 space-y-5">
-              {/* Overview */}
-              <section className="rounded-md border mt-6.5 border-slate-200 bg-white">
-                <div className="px-4 py-3 border-b border-slate-300 text-sm text-[#000D83] font-medium">Overview</div>
-                <div className="px-4 py-3 text-sm grid grid-cols-1 gap-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-slate-500">Course</span>
-                    <span className="font-medium text-right">{a.courseName}</span>
+            {/* Right column appears only when overview is open */}
+            {openOverview && (
+              <div className="lg:col-span-4 space-y-5">
+                <section className="rounded-md border mt-6.5 border-slate-200 bg-white">
+                  <div className="px-4 py-3 border-b border-slate-300 flex items-center justify-between">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-[11px] h-8 px-2"
+                      onClick={() => setOpenOverview(false)}
+                    >
+                      <span className="flex items-center gap-1 text-[#000D83]">
+                        <Info className="size-4" />
+                        <ChevronDown className="size-4" />
+                        Overview
+                      </span>
+                    </Button>
                   </div>
-                  {a.topicName && (
+                  <div className="px-4 py-3 text-sm grid grid-cols-1 gap-5">
                     <div className="flex items-start justify-between gap-3">
-                      <span className="text-slate-500">Topic</span>
-                      <span className="font-medium text-right">{a.topicName}</span>
+                      <span className="text-slate-500">Course</span>
+                      <span className="font-medium text-right">{a.courseName}</span>
                     </div>
-                  )}
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Type</span>
-                    <span className="font-medium">{a.isGroupAssignment ? "Group" : "Individual"}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Max Points</span>
-                    <span className="font-medium">{a.maxPoints ?? 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Start</span>
-                    <span className="font-medium">{fmt(a.startDate)}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Due</span>
-                    <span className="font-medium">{fmt(a.dueDate)}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Extended Due</span>
-                    <span className="font-medium">{fmt(a.extendedDueDate)}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Created</span>
-                    <span className="font-medium">{fmt(a.createdAt)}</span>
-                  </div>
-                </div>
-              </section>
+                    {a.topicName && (
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-slate-500">Topic</span>
+                        <span className="font-medium text-right">{a.topicName}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Type</span>
+                      <span className="font-medium">{a.isGroupAssignment ? "Group" : "Individual"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Max Points</span>
+                      <span className="font-medium">{a.maxPoints ?? 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Start</span>
+                      <span className="font-medium">{fmt(a.startDate)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Due</span>
+                      <span className="font-medium">{fmt(a.dueDate)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Extended Due</span>
+                      <span className="font-medium">{fmt(a.extendedDueDate)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Created</span>
+                      <span className="font-medium">{fmt(a.createdAt)}</span>
+                    </div>
 
-              {/* Actions */}
-              <section className="rounded-md border border-slate-200 bg-white">
-                <div className="px-4 py-3 border-b border-slate-300 text-sm text-[#000D83] font-medium">Due Date</div>
-                <div className="px-4 py-3">
-                  <AssignmentActionsBar
-                    assignmentId={a.id}
-                    status={a.status}
-                    currentDue={a.dueDate}
-                    currentExtendedDue={a.extendedDueDate}
-                    onExtend={handleExtend}
-                    onClose={handleClose}
-                  />
-                </div>
-              </section>
-            </div>
+                    {/* Due Date actions inside Overview */}
+                    <div className="mt-2">
+                      <AssignmentActionsBar
+                        assignmentId={a.id}
+                        status={a.status}
+                        currentDue={a.dueDate}
+                        currentExtendedDue={a.extendedDueDate}
+                        onExtend={handleExtend}
+                        onClose={handleClose}
+                        defaultOpen
+                      />
+                    </div>
+                  </div>
+                </section>
+              </div>
+            )}
           </div>
           {/* Group assignment controls are displayed under Assigned Groups in the left column */}
           </>

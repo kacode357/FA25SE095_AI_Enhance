@@ -54,7 +54,7 @@ export default function StudentList({
 
     return (
         <div className="-mt-10">
-            <div className="text-sm flex justify-end mb-2 mt-3 mr-1 text-slate-500">{students.length} student(s)</div>
+            <div className="text-sm flex justify-end mb-2 mt-6 mr-1 text-slate-500">{students.length} student(s)</div>
             {loading ? (
                 <div className="text-center text-slate-500 py-6">Loading...</div>
             ) : students.length === 0 ? (

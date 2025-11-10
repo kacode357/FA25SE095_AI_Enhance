@@ -1,29 +1,31 @@
 // services/assignment.services.ts
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
+  AssignGroupsPayload,
   CreateAssignmentPayload,
-  UpdateAssignmentPayload,
+  ExtendDueDatePayload,
   GetAssignmentsQuery,
   MyAssignmentsQuery,
-  AssignGroupsPayload,
+  ScheduleAssignmentRequest,
   UnassignGroupsPayload,
-  ExtendDueDatePayload,
+  UpdateAssignmentPayload,
 } from "@/types/assignments/assignment.payload";
 import {
-  GetAssignmentByIdResponse,
-  UpdateAssignmentResponse,
-  DeleteAssignmentResponse,
-  GetAssignmentsResponse,
-  CreateAssignmentResponse,
-  GetMyAssignmentsResponse,
-  ExtendDueDateResponse,
-  CloseAssignmentResponse,
   AssignGroupsResponse,
-  UnassignGroupsResponse,
+  CloseAssignmentResponse,
+  CreateAssignmentResponse,
+  DeleteAssignmentResponse,
+  ExtendDueDateResponse,
+  GetAssignmentByIdResponse,
   GetAssignmentGroupsResponse,
-  GetUnassignedGroupsResponse,
-  GetGroupAssignmentLookupResponse,
+  GetAssignmentsResponse,
   GetCourseAssignmentStatsResponse,
+  GetGroupAssignmentLookupResponse,
+  GetMyAssignmentsResponse,
+  GetUnassignedGroupsResponse,
+  ScheduleAssignmentResponse,
+  UnassignGroupsResponse,
+  UpdateAssignmentResponse,
 } from "@/types/assignments/assignment.response";
 
 export const AssignmentService = {
@@ -110,6 +112,18 @@ export const AssignmentService = {
   /** GET /api/Assignments/groups/{groupId}/assignment */
   getAssignmentByGroupId: async (groupId: string): Promise<GetGroupAssignmentLookupResponse> => {
     const res = await courseAxiosInstance.get<GetGroupAssignmentLookupResponse>(`/Assignments/groups/${groupId}/assignment`);
+    return res.data;
+  },
+
+  /** POST /api/Assignments/{id}/schedule */
+  scheduleAssignment: async (
+    id: string,
+    payload: ScheduleAssignmentRequest
+  ): Promise<ScheduleAssignmentResponse> => {
+    const res = await courseAxiosInstance.post<ScheduleAssignmentResponse>(
+      `/Assignments/${id}/schedule`,
+      payload
+    );
     return res.data;
   },
 };

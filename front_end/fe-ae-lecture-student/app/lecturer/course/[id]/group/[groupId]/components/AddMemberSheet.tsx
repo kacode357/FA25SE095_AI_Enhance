@@ -113,7 +113,7 @@ export default function AddGroupMemberSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="bg-white w-full sm:max-w-xl md:max-w-2xl">
+            <SheetContent className="bg-white w-full sm:max-w-xl md:max-w-xl">
                 <SheetHeader>
                     <SheetTitle className="text-[#000D83]">Add Member</SheetTitle>
                 </SheetHeader>

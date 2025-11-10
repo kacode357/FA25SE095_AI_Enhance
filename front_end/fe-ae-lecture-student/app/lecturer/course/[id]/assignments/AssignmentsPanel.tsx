@@ -4,7 +4,7 @@
 import PaginationBar from "@/components/common/PaginationBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useEffect, useMemo, useState } from "react";
 
@@ -12,11 +12,13 @@ import { useAssignments } from "@/hooks/assignment/useAssignments";
 import type { AssignmentStatusFilter, GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
 
 import { useDeleteAssignment } from "@/hooks/assignment/useDeleteAssignment";
+import type { AssignmentItem } from "@/types/assignments/assignment.response";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import AssignmentDetailView from "./components/AssignmentDetailView";
 import AssignmentsFilterBar, { FilterState } from "./components/AssignmentsFilterBar";
+import ConfirmDeleteAssignmentDialog from "./components/ConfirmDeleteAssignmentDialog";
 import EditAssignmentForm from "./components/EditAssignmentForm";
 import NewAssignmentForm from "./components/NewAssignmentForm";
 import NewTopicSheet from "./components/NewTopicSheet";
@@ -29,12 +31,13 @@ type Props = {
 };
 
 const statusColor: Record<AssignmentStatus, string> = {
-  // 0: "bg-slate-200 text-slate-700",
-  1: "bg-emerald-200 text-emerald-700",
-  2: "bg-blue-200 text-blue-700",
-  3: "bg-red-200 text-red-700",
-  4: "bg-slate-300 text-slate-700",
-  5: "bg-slate-200 text-slate-700",
+  1: "bg-slate-200 text-slate-800",
+  2: "bg-emerald-200 text-emerald-800",
+  3: "bg-blue-200 text-blue-800",
+  4: "bg-amber-200 text-amber-800",
+  5: "bg-red-200 text-red-800",
+  6: "bg-slate-500 text-white",
+  7: "bg-purple-200 text-purple-800",
 };
 
 const defaultFilter: FilterState = {
@@ -66,6 +69,9 @@ export default function AssignmentsPanel({
   const [editId, setEditId] = useState<string | null>(null);
   const [topicSheetOpen, setTopicSheetOpen] = useState(false);
   const { deleteAssignment, loading: deleting } = useDeleteAssignment();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  // assignments list returns trimmed items; accept Partial so types align
+  const [toDelete, setToDelete] = useState<Partial<AssignmentItem> | null>(null);
 
   // paging (page tách riêng để giữ PaginationBar đơn giản)
   const [page, setPage] = useState<number>(1);
@@ -160,7 +166,7 @@ export default function AssignmentsPanel({
           </Button>
         </div>
         <div className="flex-1 overflow-auto p-4 mr-3.5 bg-slate-50">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-full mx-auto">
             <NewAssignmentForm courseId={courseId} onCreated={backToList} onCancel={backToList} />
           </div>
         </div>
@@ -191,7 +197,7 @@ export default function AssignmentsPanel({
           </Button>
         </div>
         <div className="flex-1 overflow-auto p-4 mr-3.5 bg-slate-50">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-full mx-auto">
             <EditAssignmentForm id={editId} onUpdated={backToList} onCancel={backToList} />
           </div>
         </div>
@@ -201,168 +207,165 @@ export default function AssignmentsPanel({
 
   return (
     <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
-      <div className="flex-1 overflow-auto space-y-4 pr-1 pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-3">
-          {/* Left: Filters (4/10 = 40%) */}
-          <div className="lg:col-span-4 lg:sticky lg:top-2 h-max">
-            <Card className="border py-4 gap-2 border-slate-200 shadow-sm bg-gradient-to-b from-slate-50 to-white">
-              <CardHeader className="flex items-center justify-between">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base text-[#000D83] font-semibold">Assignments</h3>
-                    <div className="text-xs text-slate-500">{totalCount} assignment(s)</div>
-                  </div>
+      <div className="flex-1 overflow-auto border border-slate-200 rounded-sm space-y-3 px-3 pb-10">
+        {/* Top: Full-width filter bar styled like Courses FilterBar and sticky */}
+        <div className="sticky top-0 z-20">
+          <Card className="p-0 rounded-t-sm rounded-b-none -mx-3 border-none border-b bg-slate-50 border-slate-200 shadow-sm">
+            <AssignmentsFilterBar
+              value={filter}
+              loading={loading}
+              onChange={patchFilter}
+              onReset={resetFilters}
+              resultCount={assignments.length}
+              totalCount={totalCount}
+            />
+          </Card>
+        </div>
+
+        {/* Assignment items list */}
+        <Card className="border-slate-200 rounded-sm shadow-md">
+          <CardHeader className="bg-gradient-to-r from-indigo-50 to-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
+            <div className="text-sm text-slate-600">
+              {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
+            </div>
+            <div className="flex items-center gap-2 sm:justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-[#000D83]"
+                onClick={() => setTopicSheetOpen(true)}
+              >
+                Manage Topics
+              </Button>
+              <Button size="sm" className="text-[#000D83]" onClick={openCreate}>
+                New Assignment
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Separator />
+
+            <div className="divide-y divide-slate-100">
+              {assignments.length === 0 && !loading && (
+                <div className="px-4 py-10 text-sm text-center text-slate-500">
+                  No assignments found with current filters.
                 </div>
-                <CardTitle className="text-sm font-medium text-slate-700">Filters</CardTitle>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="hidden lg:inline-flex text-sm text-slate-500 hover:text-slate-700"
-                  onClick={resetFilters}
+              )}
+
+              {assignments.map((a) => (
+                <div
+                  key={a.id}
+                  className="px-4 border-b border-slate-200 hover:bg-slate-50 mb-5 pb-3 transition-colors"
                 >
-                  Reset
-                </Button>
-              </CardHeader>
-              <Separator />
-              <CardContent className="space-y-3">
-                <AssignmentsFilterBar
-                  value={filter}
-                  loading={loading}
-                  onChange={patchFilter}
-                  onReset={resetFilters}
-                />
-              </CardContent>
-            </Card>
-          </div>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    {/* Left info */}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium truncate text-slate-800">{a.title ?? "Untitled"}</div>
+                        <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
+                        {a.isGroupAssignment ? (
+                          <Badge variant="outline">Group</Badge>
+                        ) : (
+                          <Badge variant="outline">Individual</Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-col mt-2 gap-2 text-xs text-slate-500">
+                        <div className="flex gap-1 mr-2">
+                          Topic:
+                          <span className="text-slate-900">{a.topicName}</span>
+                          &nbsp;&nbsp;•&nbsp;&nbsp; Groups: {a.assignedGroupsCount}
 
-          {/* Right: Assignment items (6/10 = 60%) */}
-          <div className="lg:col-span-6">
-            <Card className="border-slate-200 shadow-md">
-              <CardHeader className="bg-gradient-to-r from-indigo-50 to-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
-                <div className="text-sm text-slate-600">
-                  {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
-                </div>
-                <div className="flex items-center gap-2 sm:justify-end">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="lg:hidden text-[#000D83]"
-                    onClick={() => setTopicSheetOpen(true)}
-                  >
-                    Manage Topics
-                  </Button>
-                  <Button size="sm" className="lg:hidden text-[#000D83]" onClick={openCreate}>
-                    New Assignment
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Separator />
-
-                <div className="divide-y divide-slate-100">
-                  {assignments.length === 0 && !loading && (
-                    <div className="px-4 py-10 text-sm text-center text-slate-500">
-                      No assignments found with current filters.
-                    </div>
-                  )}
-
-                  {assignments.map((a) => (
-                    <div
-                      key={a.id}
-                      className="px-4 border-b border-slate-200 hover:bg-slate-50 mb-5 pb-3 transition-colors"
-                    >
-                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        {/* Left info */}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <div className="font-medium truncate text-slate-800">{a.title}</div>
-                            <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
-                            {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
-                          </div>
-                          <div className="flex flex-col mt-2 gap-2 text-xs text-slate-500">
-                            <div className="flex gap-1 mr-2">
-                              Topic:
-                              <span className="text-slate-900">{a.topicName}</span>
-                              &nbsp;&nbsp;•&nbsp;&nbsp; Groups: {a.assignedGroupsCount}
-
-                            </div>
-                            <div className="flex gap-1 mr-2">
-                              Due: {new Date(a.dueDate).toLocaleString()}
-                              &nbsp;&nbsp;&nbsp;•&nbsp; {a.isOverdue ? (
-                                <span className="text-red-600 ml-1">Overdue</span>
-                              ) : (
-                                <span className="flex gap-2 ml-1">Days until Due &nbsp; - <p className="text-violet-800">{a.daysUntilDue}</p></span>
-                              )}
-                            </div>
-                          </div>
                         </div>
-
-                        {/* Right actions */}
-                        <div className="flex items-center cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs btn btn-gradient-slow cursor-pointer"
-                            onClick={() => openDetail(a.id)}
-                          >
-                            Details
-                          </Button>
-                          {/* Edit moved into detail view header */}
-                          {a.status === (AssignmentStatus.Draft as number) && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="text-xs cursor-pointer flex items-center gap-1"
-                              disabled={deleting}
-                              onClick={async () => {
-                                if (!confirm("Delete this draft assignment? This cannot be undone.")) return;
-                                const res = await deleteAssignment(a.id, a.status as AssignmentStatus);
-                                if (res?.success) {
-                                  toast.success(res.message || "Deleted");
-                                  fetchAssignments(query);
-                                }
-                              }}
-                              title="Delete (Draft only)"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" /> Delete
-                            </Button>
+                        <div className="flex gap-1 mr-2">
+                          Due: {new Date(a.dueDate).toLocaleString()}
+                          &nbsp;&nbsp;&nbsp;•&nbsp; {a.isOverdue ? (
+                            <span className="text-red-600 ml-1">Overdue</span>
+                          ) : (
+                            <span className="flex gap-2 ml-1">Days until Due &nbsp; - <p className="text-violet-800">{a.daysUntilDue}</p></span>
                           )}
-                          {/* {a.isGroupAssignment && (
-                            <Button
-                              size="sm"
-                              className="text-xs cursor-pointer btn btn-gradient-slow bg-indigo-600 text-white hover:bg-indigo-700"
-                              onClick={() => openDetail(a.id)}
-                            >
-                              Assign Groups
-                            </Button>
-                          )} */}
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
 
-                {/* Pagination */}
-                <div className="px-4 pb-4 pt-3">
-                  <PaginationBar
-                    page={page}
-                    totalPages={totalPages}
-                    totalCount={totalCount}
-                    loading={loading}
-                    onPageChange={(p) => setPage(p)}
-                  />
+                    {/* Right actions */}
+                    <div className="flex flex-col items-end cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
+                      {/* Edit moved into detail view header */}
+                      {a.status === (AssignmentStatus.Draft as number) && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="text-xs cursor-pointer justify-end -mr-2 flex items-end"
+                            disabled={deleting}
+                            onClick={() => {
+                              // open confirmation dialog with assignment info
+                              setToDelete(a);
+                              setConfirmOpen(true);
+                            }}
+                            title="Delete (Draft only)"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </Button>
+
+                          <ConfirmDeleteAssignmentDialog
+                            open={confirmOpen}
+                            onOpenChange={(v) => {
+                              setConfirmOpen(v);
+                              if (!v) setToDelete(null);
+                            }}
+                            assignment={toDelete}
+                            loading={deleting}
+                            onConfirm={async () => {
+                              const id = toDelete?.id;
+                              if (!id) {
+                                setConfirmOpen(false);
+                                setToDelete(null);
+                                return;
+                              }
+                              const res = await deleteAssignment(id, toDelete?.status as AssignmentStatus | undefined);
+                              if (res?.success) {
+                                fetchAssignments(query);
+                              }
+                              setConfirmOpen(false);
+                              setToDelete(null);
+                            }}
+                          />
+                        </>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs btn btn-gradient-slow cursor-pointer"
+                        onClick={() => openDetail(a.id)}
+                      >
+                        Details
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          <NewTopicSheet
-            open={topicSheetOpen}
-            onOpenChange={setTopicSheetOpen}
-            onCreated={() => {
-              toast.success("Topic created!");
-            }}
-          />
-        </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="px-4 pb-4 pt-3">
+              <PaginationBar
+                page={page}
+                totalPages={totalPages}
+                totalCount={totalCount}
+                loading={loading}
+                onPageChange={(p) => setPage(p)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <NewTopicSheet
+          open={topicSheetOpen}
+          onOpenChange={setTopicSheetOpen}
+          onCreated={() => {
+            toast.success("Topic created!");
+          }}
+        />
       </div>
     </div>
   );

@@ -78,7 +78,7 @@ export default function GroupsPanel({
         setSelectedGroup(null);
     };
 
-    const groupsList = groups?.length || [];
+    const groupsCount = groups?.length ?? 0;
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
     const toggleExpand = (id: string) => {
@@ -86,15 +86,16 @@ export default function GroupsPanel({
     };
 
     return (
-        <div className="-mt-3">
+        <div className="-mt-3 pb-3">
             {loading && <div className="text-sm text-slate-500">Loading groups...</div>}
+
+            <div className="text-sm flex justify-end mb-2 mt-3 mr-1 text-slate-500">{groupsCount} group(s)</div>
 
             {!loading && groups.length === 0 && (
                 <div className="text-sm text-slate-500">
                     No groups yet. Click <b>Create Group</b> to make one. This action is only available when the course is active.
                 </div>
             )}
-            <div className="text-sm flex justify-end mr-1 mb-2 text-slate-500">{groupsList} group(s)</div>
             {!loading && groups.length > 0 && (
                 <div className="divide-y divide-slate-200 bg-white rounded-md border border-slate-200 overflow-hidden">
                     {groups.map((g) => {
@@ -106,7 +107,7 @@ export default function GroupsPanel({
                                         <button
                                             type="button"
                                             onClick={() => toggleExpand(g.id)}
-                                            aria-expanded={isOpen}
+                                            aria-expanded={isOpen ? "true" : "false"}
                                             className="p-1 rounded-md hover:bg-slate-100"
                                         >
                                             {isOpen ? <ChevronUp className="size-4 text-slate-500" /> : <ChevronDown className="size-4 text-slate-500" />}
@@ -118,6 +119,7 @@ export default function GroupsPanel({
                                     </div>
 
                                     <div className="flex items-center gap-2">
+                                        <p className="text-sm text-slate-500">Member:</p>
                                         <div className="text-sm bg-orange-50 text-slate-600 mr-4 hidden sm:block">
                                             {g.memberCount}/{g.maxMembers}
                                         </div>

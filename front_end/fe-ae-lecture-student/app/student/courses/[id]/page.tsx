@@ -1,27 +1,27 @@
 // app/student/courses/[id]/page.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
+  AlertTriangle,
+  ArrowLeft,
   BookOpen,
   CalendarDays,
-  Users,
-  ArrowLeft,
-  RefreshCw,
-  Clock,
-  AlertTriangle,
   CheckCircle2,
+  Clock,
   ListTodo,
+  RefreshCw,
+  Users,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // Button của shadcn để lại, nhưng tao style theo globals.css ở className
 import { Button } from "@/components/ui/button";
 
-import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useAssignments } from "@/hooks/assignment/useAssignments";
+import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 import Link from "next/link";
 
@@ -35,6 +35,8 @@ const statusBadge = (s: AssignmentStatus) => {
   switch (s) {
     case AssignmentStatus.Draft:
       return badgeStyle("rgba(148,163,184,0.10)", "var(--foreground)");
+    case AssignmentStatus.Scheduled:
+      return badgeStyle("rgba(16,185,129,0.10)", "#059669");
     case AssignmentStatus.Active:
       return badgeStyle("rgba(127,113,244,0.10)", "var(--brand)");
     case AssignmentStatus.Extended:
@@ -42,6 +44,9 @@ const statusBadge = (s: AssignmentStatus) => {
     case AssignmentStatus.Overdue:
       return badgeStyle("rgba(220,38,38,0.08)", "#b91c1c");
     case AssignmentStatus.Closed:
+      return badgeStyle("rgba(15,23,42,0.06)", "var(--text-muted)");
+    case AssignmentStatus.Graded:
+      return badgeStyle("rgba(192,132,252,0.10)", "#9333ea");
     default:
       return badgeStyle("rgba(15,23,42,0.06)", "var(--text-muted)");
   }

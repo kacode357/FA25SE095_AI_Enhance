@@ -97,7 +97,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
         <>
             {/* CREATE + LIST */}
             <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent className="bg-white w-full border border-slate-200 sm:max-w-xl md:max-w-2xl h-screen flex flex-col">
+                <SheetContent className="bg-white w-full border border-slate-200 sm:max-w-xl md:max-w-xl h-screen flex flex-col">
                     <SheetHeader className="flex-shrink-0">
                         <SheetTitle>New Topic</SheetTitle>
                     </SheetHeader>
@@ -108,12 +108,12 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
 
                         <div>
                             <Label className="text-sm mb-1">Topic Name *</Label>
-                            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter topic name" />
+                            <Input className="text-sm placeholder:text-sm" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter topic name" />
                         </div>
 
                         <div>
                             <Label className="text-sm mb-1">Description *</Label>
-                            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
+                            <Input className="text-sm placeholder:text-sm" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
                         </div>
 
                         <div className="flex items-center gap-2 mt-3">
@@ -142,7 +142,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                                         onClick={() => handleTopicClick(t.id)}
                                     >
                                         <div>
-                                            <div className="font-medium">{t.name}</div>
+                                            <div className="text-sm font-medium">{t.name}</div>
                                             <div className="text-xs text-slate-500">{t.description}</div>
                                         </div>
                                         <div>
@@ -154,7 +154,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                     </div>
 
                     <SheetFooter className="flex flex-row justify-start gap-2 flex-shrink-0">
-                        <Button className="btn btn-gradient" onClick={handleSubmit} disabled={loading}>
+                        <Button className="btn text-sm btn-gradient" onClick={handleSubmit} disabled={loading}>
                             {loading ? "Creating..." : "Create Topic"}
                         </Button>
                         <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>

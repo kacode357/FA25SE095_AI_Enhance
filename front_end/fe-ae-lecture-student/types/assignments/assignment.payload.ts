@@ -1,7 +1,6 @@
 // types/assignments/assignment.payload.ts
 
-/** Status filter enum: 0=Draft, 1=Active, 2=Extended, 3=Overdue, 4=Closed */
-export type AssignmentStatusFilter = 0 | 1 | 2 | 3 | 4;
+export type AssignmentStatusFilter = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface CreateAssignmentPayload {
   courseId: string;                 // uuid
@@ -74,4 +73,8 @@ export interface UnassignGroupsPayload {
 
 export interface ExtendDueDatePayload {
   extendedDueDate: string; // ISO
+}
+
+export interface ScheduleAssignmentRequest {
+  schedule: boolean;
 }

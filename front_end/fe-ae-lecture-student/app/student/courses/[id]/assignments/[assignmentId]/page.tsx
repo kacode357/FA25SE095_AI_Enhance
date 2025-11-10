@@ -1,31 +1,31 @@
 // app/student/courses/[id]/assignments/[assignmentId]/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
+  AlertTriangle,
   ArrowLeft,
   BookOpen,
   CalendarDays,
   CheckCircle2,
   Clock,
-  ListTodo,
-  Users,
-  Mail,
-  Shield,
-  Loader2,
-  AlertTriangle,
-  Info,
-  Tag,
   FileText,
+  Info,
+  ListTodo,
+  Loader2,
+  Mail,
   Rocket,
+  Shield,
+  Tag,
+  Users,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
+import { useAllMembers } from "@/hooks/group-member/useAllMembers";
 import { AssignmentStatus, GroupItem } from "@/types/assignments/assignment.response";
 import { cleanIncomingHtml } from "@/utils/html-normalize";
-import { useAllMembers } from "@/hooks/group-member/useAllMembers";
 
 import CreateReportButton from "../components/createReportButton";
 
@@ -128,22 +128,26 @@ export default function AssignmentDetailPage() {
     setSelectedGroupId(firstId);
   }, [a?.isGroupAssignment, a?.assignedGroups]);
 
-  const statusClass = useMemo(() => {
-    switch (a?.status) {
-      case AssignmentStatus.Draft:
-        return "bg-slate-100 text-slate-700 border border-slate-200";
-      case AssignmentStatus.Active:
-        return "bg-[color-mix(in_oklab,var(--brand)_14%,#fff)] text-nav border border-brand";
-      case AssignmentStatus.Extended:
-        return "bg-amber-50 text-amber-700 border border-amber-200";
-      case AssignmentStatus.Overdue:
-        return "bg-red-50 text-red-700 border-red-200";
-      case AssignmentStatus.Closed:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-      default:
-        return "bg-slate-100 text-slate-700 border border-slate-200";
-    }
-  }, [a?.status]);
+const statusClass = useMemo(() => {
+  switch (a?.status) {
+    case AssignmentStatus.Draft:
+      return "bg-slate-100 text-slate-700 border border-slate-200";
+    case AssignmentStatus.Scheduled:
+      return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+    case AssignmentStatus.Active:
+      return "bg-[color-mix(in_oklab,var(--brand)_14%,#fff)] text-nav border border-brand";
+    case AssignmentStatus.Extended:
+      return "bg-amber-50 text-amber-700 border border-amber-200";
+    case AssignmentStatus.Overdue:
+      return "bg-red-50 text-red-700 border border-red-200";
+    case AssignmentStatus.Closed:
+      return "bg-gray-100 text-gray-700 border border-gray-200";
+    case AssignmentStatus.Graded:
+      return "bg-purple-50 text-purple-700 border border-purple-200";
+    default:
+      return "bg-slate-100 text-slate-700 border border-slate-200";
+  }
+}, [a?.status]);
 
   const safeDescription = a?.description ? cleanIncomingHtml(a.description) : "";
 

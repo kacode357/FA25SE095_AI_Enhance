@@ -222,7 +222,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
             <CardFooter className="flex items-center rounded-xl justify-end gap-2 bg-white py-3">
                 {onCancel && (
                     <Button variant="outline" className="text-violet-800 hover:text-violet-500" onClick={onCancel}>
-                        Back
+                        Cancel
                     </Button>
                 )}
                 <Button className="btn text-sm btn-gradient-slow" onClick={onSubmit} disabled={updating}>

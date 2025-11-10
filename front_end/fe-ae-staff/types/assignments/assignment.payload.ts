@@ -3,7 +3,7 @@
 export type AssignmentSortBy = "DueDate" | "Title" | "CreatedAt" | "Status";
 export type SortOrder = "asc" | "desc";
 /** 0=Draft, 1=Active, 2=Extended, 3=Overdue, 4=Closed */
-export type AssignmentStatus = 0 | 1 | 2 | 3 | 4;
+export type AssignmentStatus = 1 | 2 | 3 | 4 | 5 | 6 | 7 ;
 
 export interface GetAssignmentsQuery {
   courseId: string;

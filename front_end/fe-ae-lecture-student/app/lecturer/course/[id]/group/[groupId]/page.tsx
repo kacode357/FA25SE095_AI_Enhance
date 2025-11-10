@@ -169,7 +169,7 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
                     <th className="px-3 text-xs py-2 text-left">Email</th>
                     <th className="px-3 text-xs py-2 text-center">Role</th>
                     <th
-                      className="px-2 text-xs cursor-pointer py-2 flex gap-1 text-center"
+                      className="px-3 text-xs cursor-pointer py-2 flex gap-1 text-center"
                       onClick={openLeaderModal}
                     >
                       Leader <UserRoundPen color="#059669" className="size-4" />
@@ -194,7 +194,12 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
                           "No"
                         )}
                       </td>
-                      <td className="px-3 py-2 text-center">{new Date(m.joinedAt).toLocaleString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td>
+                      <td className="px-3 py-2 text-center">
+                        <div className="flex flex-col">
+                          <span className="leading-tight">{new Date(m.joinedAt).toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
+                          <span className="text-[10px] sm:text-xs text-slate-500 whitespace-nowrap">{new Date(m.joinedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                        </div>
+                      </td>
                       <td className="px-3 py-2 text-center flex justify-center gap-2">
                         <button
                           title="Delete"
