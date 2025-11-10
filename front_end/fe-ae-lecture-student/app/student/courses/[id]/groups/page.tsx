@@ -27,18 +27,19 @@ export default function CourseGroupsPage() {
   // Groups
   const { listData, loading, fetchByCourseId, refetch } = useGroupsByCourseId();
 
-  // Students (sidebar)
+  // ✅ Students (sidebar) — TRUYỀN courseId vào hook
   const {
     loading: loadingStudents,
     students,
     totalStudents,
     courseName,
     fetchCourseStudents,
-  } = useCourseStudents();
+  } = useCourseStudents(courseId);
 
   useEffect(() => {
     if (!courseId) return;
     fetchByCourseId(courseId);
+    // nếu hook chưa tự fetch, gọi thủ công:
     fetchCourseStudents(courseId);
   }, [courseId, fetchByCourseId, fetchCourseStudents]);
 
@@ -67,7 +68,6 @@ export default function CourseGroupsPage() {
     );
   }
 
-  // Prioritize groups loading
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[50vh] text-brand">
