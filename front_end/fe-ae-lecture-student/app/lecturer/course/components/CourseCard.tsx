@@ -2,11 +2,12 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUploadCourseImage } from "@/hooks/course/useUploadCourseImage";
 import { CourseItem, CourseStatus } from "@/types/courses/course.response";
-import { Users } from "lucide-react";
+import { ImageUp, Loader2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
-// Access code controls were moved to EditCourse; keep CourseCard minimal.
+import { useMemo, useRef } from "react";
+import { toast } from "sonner";
 
 const fmtDate = (v?: string | null) =>
   v ? new Date(v).toLocaleDateString("en-GB") : "-";
@@ -18,22 +19,19 @@ type Props = {
   onUpdated: () => void;
 };
 
-export default function CourseCard({
-  course,
-  onEdit,
-  onDelete,
-  onUpdated,
-}: Props) {
+export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Props) {
   const router = useRouter();
 
-  // Access code UI moved to EditCourse
+  const { uploadCourseImage, loading: uploading } = useUploadCourseImage();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const hasCodeFeature = !!course.requiresAccessCode;
   const accessActive = hasCodeFeature && !course.isAccessCodeExpired;
 
   const statusInfo = useMemo(() => {
     const s = course.status;
-    if (s === undefined || s === null) return { label: undefined, className: "" };
+    if (s === undefined || s === null)
+      return { label: undefined, className: "" };
     switch (s) {
       case CourseStatus.PendingApproval:
         return { label: "Pending Approval", className: "bg-amber-50 text-amber-700 border-amber-200" };
@@ -48,8 +46,6 @@ export default function CourseCard({
     }
   }, [course.status]);
 
-  // Controls removed here
-
   const goDetail = () => router.push(`/lecturer/course/${course.id}`);
   const onKeyEnter = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -63,20 +59,40 @@ export default function CourseCard({
     e.stopPropagation();
   };
 
+  const onImageClick = (e: React.MouseEvent) => {
+    stop(e);
+    if (uploading) return;
+    fileInputRef.current?.click();
+  };
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const res = await uploadCourseImage({ courseId: course.id, image: f });
+      if (res?.success) {
+        toast.success(res.message || "Course image uploaded");
+        onUpdated();
+      } else {
+        toast.error(res?.message || "Failed to upload image");
+      }
+    } catch (err) {
+      toast.error("Upload failed");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const onEditClick = (e: React.MouseEvent) => {
     stop(e);
     router.push(`/lecturer/course/${course.id}/course`);
-  }
-
-  const onDeleteClick = (e: React.MouseEvent) => {
-    stop(e);
-    onDelete();
   };
+
+  const backgroundImage = course.img || "https://st4.depositphotos.com/41116220/41454/v/450/depositphotos_414548128-stock-illustration-online-course-icon-simple-line.jpg";
 
   return (
     <Card
-      className="relative overflow-hidden h-full p-0 flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] focus:outline-none focus:ring-0 focus:border-slate-200 focus-visible:shadow-[0_0_0_2px_rgba(127,113,244,0.35)]"
-      // onClick={goDetail}
+      className="relative overflow-hidden h-full -py-6 gap-1 flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] focus:outline-none focus:ring-0"
       tabIndex={0}
       role="button"
       onKeyDown={onKeyEnter}
@@ -85,9 +101,62 @@ export default function CourseCard({
         aria-hidden="true"
         className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#7f71f4] via-[#a786f9] to-[#f4a23b]"
       />
-      <CardHeader className="pb-2 px-4 pt-4">
+
+      <div
+        className={`relative h-52 w-full bg-cover bg-center flex items-center justify-center group transition-all duration-300`}
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      >
+  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} aria-label="Upload course image" />
+        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-all duration-300" />
+
+        {!course.img && (
+          <>
+            <span
+              className="relative z-10 cursor-pointer text-white text-sm font-medium group-hover:opacity-0 transition-opacity duration-300"
+              onClick={onImageClick}
+            >
+              No image
+            </span>
+
+            <div
+              className="absolute inset-0 cursor-pointer flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              onClick={onImageClick}
+            >
+              <ImageUp className="cursor-pointer" size={36} />
+              <span className="text-xs mt-1 cursor-pointer">Upload image</span>
+            </div>
+          </>
+        )}
+
+        {/* allow changing existing image by clicking anywhere on the image */}
+        {course.img && (
+          <div className="absolute inset-0" onClick={onImageClick} role="button" aria-label="Change course image" />
+        )}
+
+        {uploading && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <Loader2 className="size-6 animate-spin text-white" />
+          </div>
+        )}
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+          <CardTitle className="text-sm font-semibold text-white truncate">
+            [{course.courseCode}] {course.courseCodeTitle}
+          </CardTitle>
+          {course.department && (
+            <Badge
+              variant="outline"
+              className="mt-2 text-[11px] bg-white/20 text-white border-white/30"
+            >
+              {course.department}
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      <CardHeader className="pb-2 px-4 pt-4 bg-white">
         <div className="flex items-center justify-between text-xs text-slate-500">
-          <div className="flex bg-orange-100 rounded-xs items-center gap-1">
+          <div className="flex bg-orange-100 rounded-xs items-center gap-1 px-2 py-1">
             <Users className="size-4" />
             <span>{course.enrollmentCount} enrollments</span>
           </div>
@@ -98,32 +167,13 @@ export default function CourseCard({
           )}
         </div>
 
-        <div className="mt-2 flex items-start justify-between gap-3 min-w-0">
-          <CardTitle className="text-sm font-normal text-slate-800 flex-1 min-w-0 overflow-hidden flex items-baseline gap-1">
-            <span className="font-mono text-sm text-[#7f71f4]">[{course.courseCode}]</span>
-            <span className="text-slate-700 font-bold truncate">{course.courseCodeTitle}</span>
-          </CardTitle>
-          {course.department && (
-            <Badge
-              variant="outline"
-              className="text-[11px] border-slate-300 text-slate-700 whitespace-nowrap"
-            >
-              {course.department}
-            </Badge>
-          )}
-        </div>
-
-        {/* Description (truncate when long) */}
-        <div className="flex-1 mt-3 text-sm text-slate-600 line-clamp-2 overflow-hidden">
+        <div className="mt-3 text-sm leading-6 text-slate-600 line-clamp-2 overflow-hidden h-[3rem]">
           {course.description || "-"}
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 px-4 pb-4 flex flex-col">
-        {/* spacer ensures footer sticks to bottom */}
+      <CardContent className="flex-1 px-4 pb-4 flex flex-col bg-white">
         <div className="flex-1" />
-
-        {/* Access code state just above footer */}
         {hasCodeFeature && (
           <div className="flex gap-2 mt-3 mb-2">
             <Badge className={accessActive ? "bg-green-600 text-white" : "bg-slate-100 text-slate-600"}>
@@ -132,10 +182,8 @@ export default function CourseCard({
           </div>
         )}
 
-        {/* Actions row pinned to bottom */}
         <div className="flex items-center justify-between gap-1 mt-auto pt-2">
           <div className="flex flex-col gap-1">
-            {/* Created */}
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {(course.term || course.year) && (
                 <Badge className="text-xs bg-brand/10 text-brand border border-brand/20">
@@ -145,7 +193,9 @@ export default function CourseCard({
                 </Badge>
               )}
             </div>
-            <div className="flex-1 text-xs text-slate-500">Created: {fmtDate(course.createdAt)}</div>
+            <div className="flex-1 text-xs text-slate-500">
+              Created: {fmtDate(course.createdAt)}
+            </div>
           </div>
           <div
             className="btn btn-gradient-slow rounded-md text-white px-3 py-1 shadow text-xs cursor-pointer transition-all duration-200"

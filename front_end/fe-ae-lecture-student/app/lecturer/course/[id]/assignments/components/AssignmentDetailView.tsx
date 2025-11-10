@@ -15,13 +15,14 @@ import { useExtendDueDate } from "@/hooks/assignment/useExtendDueDate"; // ✅ �
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import AssignmentActionsBar from "./AssignmentActionsBar";
 import GroupAssignControls from "./GroupAssignControls";
 
 type Props = {
   id: string;
   onBack: () => void;
+  onEdit?: (id: string) => void; // optional callback to open edit mode
 };
 
 const statusColor: Record<AssignmentStatus, string> = {
@@ -35,7 +36,7 @@ const statusColor: Record<AssignmentStatus, string> = {
 
 const fmt = (s?: string | null) => (s ? new Date(s).toLocaleString() : "—");
 
-export default function AssignmentDetailView({ id, onBack }: Props) {
+export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
   const { data, loading, fetchAssignment } = useAssignmentById();
   const { extendDueDate, loading: loadingExtend } = useExtendDueDate();
   const { closeAssignment, loading: loadingClose } = useCloseAssignment();
@@ -99,6 +100,19 @@ export default function AssignmentDetailView({ id, onBack }: Props) {
         </div>
 
         <div className="flex mt-3 items-center gap-2 shrink-0">
+          {/* Edit button moved inside detail view (disabled if Closed) */}
+          {a && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs flex items-center gap-1"
+              onClick={() => onEdit && onEdit(a.id)}
+              disabled={a.status === 5}
+              title={a.status === 5 ? "Closed assignments cannot be edited" : "Edit"}
+            >
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </Button>
+          )}
           <Button className="text-[#000D83]" variant="outline" onClick={onBack}><ArrowLeft className="size-4 mr-1" />Back</Button>
         </div>
       </CardHeader>

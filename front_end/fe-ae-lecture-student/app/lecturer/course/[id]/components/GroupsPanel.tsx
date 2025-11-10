@@ -106,7 +106,7 @@ export default function GroupsPanel({
                                         <button
                                             type="button"
                                             onClick={() => toggleExpand(g.id)}
-                                            aria-expanded={isOpen ? "true" : "false"}
+                                            aria-expanded={isOpen}
                                             className="p-1 rounded-md hover:bg-slate-100"
                                         >
                                             {isOpen ? <ChevronUp className="size-4 text-slate-500" /> : <ChevronDown className="size-4 text-slate-500" />}

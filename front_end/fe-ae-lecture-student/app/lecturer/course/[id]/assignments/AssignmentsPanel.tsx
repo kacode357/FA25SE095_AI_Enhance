@@ -10,12 +10,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import type { AssignmentStatusFilter, GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
-import type { AssignmentStatus } from "@/types/assignments/assignment.response";
 
-import { ArrowLeft } from "lucide-react";
+import { useDeleteAssignment } from "@/hooks/assignment/useDeleteAssignment";
+import { AssignmentStatus } from "@/types/assignments/assignment.response";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import AssignmentDetailView from "./components/AssignmentDetailView";
 import AssignmentsFilterBar, { FilterState } from "./components/AssignmentsFilterBar";
+import EditAssignmentForm from "./components/EditAssignmentForm";
 import NewAssignmentForm from "./components/NewAssignmentForm";
 import NewTopicSheet from "./components/NewTopicSheet";
 
@@ -59,9 +61,11 @@ export default function AssignmentsPanel({
   const totalPages = listData?.totalPages ?? 1;
   const totalCount = listData?.totalCount ?? 0;
 
-  const [mode, setMode] = useState<"list" | "create" | "detail">("list");
+  const [mode, setMode] = useState<"list" | "create" | "detail" | "edit">("list");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [topicSheetOpen, setTopicSheetOpen] = useState(false);
+  const { deleteAssignment, loading: deleting } = useDeleteAssignment();
 
   // paging (page tách riêng để giữ PaginationBar đơn giản)
   const [page, setPage] = useState<number>(1);
@@ -139,6 +143,10 @@ export default function AssignmentsPanel({
     setDetailId(id);
     setMode("detail");
   };
+  const openEdit = (id: string) => {
+    setEditId(id);
+    setMode("edit");
+  };
 
   // Create view
   if (mode === "create") {
@@ -165,7 +173,27 @@ export default function AssignmentsPanel({
     return (
       <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
         <div className="flex-1 overflow-auto">
-          <AssignmentDetailView id={detailId} onBack={backToList} />
+          <AssignmentDetailView id={detailId} onBack={backToList} onEdit={(id) => openEdit(id)} />
+        </div>
+      </div>
+    );
+  }
+
+  // Edit view
+  if (mode === "edit" && editId) {
+    return (
+      <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
+        <div className="flex items-center justify-between px-4 py-0 mr-3.5 border-b border-slate-200 bg-white sticky top-0 z-10">
+          <h2 className="text-sm text-[#000D83] font-semibold">Edit Assignment</h2>
+          <Button className="text-[#000D83]" variant="outline" onClick={backToList}>
+            <ArrowLeft className="size-4" />
+            Back
+          </Button>
+        </div>
+        <div className="flex-1 overflow-auto p-4 mr-3.5 bg-slate-50">
+          <div className="max-w-5xl mx-auto">
+            <EditAssignmentForm id={editId} onUpdated={backToList} onCancel={backToList} />
+          </div>
         </div>
       </div>
     );
@@ -279,7 +307,27 @@ export default function AssignmentsPanel({
                           >
                             Details
                           </Button>
-                          {a.isGroupAssignment && (
+                          {/* Edit moved into detail view header */}
+                          {a.status === (AssignmentStatus.Draft as number) && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs cursor-pointer flex items-center gap-1"
+                              disabled={deleting}
+                              onClick={async () => {
+                                if (!confirm("Delete this draft assignment? This cannot be undone.")) return;
+                                const res = await deleteAssignment(a.id, a.status as AssignmentStatus);
+                                if (res?.success) {
+                                  toast.success(res.message || "Deleted");
+                                  fetchAssignments(query);
+                                }
+                              }}
+                              title="Delete (Draft only)"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
+                            </Button>
+                          )}
+                          {/* {a.isGroupAssignment && (
                             <Button
                               size="sm"
                               className="text-xs cursor-pointer btn btn-gradient-slow bg-indigo-600 text-white hover:bg-indigo-700"
@@ -287,7 +335,7 @@ export default function AssignmentsPanel({
                             >
                               Assign Groups
                             </Button>
-                          )}
+                          )} */}
                         </div>
                       </div>
                     </div>

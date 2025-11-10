@@ -23,6 +23,7 @@ export interface CourseItem {
   accessCodeExpiresAt: string | null;
   isAccessCodeExpired: boolean;
   department: string;
+  img: string;
   /** Course status per backend enum */
   status?: CourseStatus;
 }
