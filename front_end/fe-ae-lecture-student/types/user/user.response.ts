@@ -18,6 +18,7 @@ export interface UserProfile {
   subscriptionEndDate: string;
   institutionName?: string;
   institutionAddress?: string;
+  profilePictureUrl: string;
   studentId?: string;
   department?: string;
   createdAt: string;

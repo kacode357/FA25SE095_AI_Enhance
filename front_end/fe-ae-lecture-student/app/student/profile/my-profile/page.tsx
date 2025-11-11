@@ -1,11 +1,11 @@
 // app/student/profile/my-profile/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import type { UpdateProfilePayload } from "@/types/user/user.payload";
 import { useUpdateProfile } from "@/hooks/user/useUpdateProfile";
+import type { UpdateProfilePayload } from "@/types/user/user.payload";
+import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 type ProfileForm = {
   firstName: string;
@@ -257,7 +257,7 @@ export default function MyProfilePage() {
 function StatLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-[var(--border)] bg-white p-3">
-      <div className="text-sm text-nav font-medium">
+      <div className="text-sm flex items-center text-nav font-medium">
         {label}: <span className="font-normal text-foreground/80">{value}</span>
       </div>
     </div>

@@ -10,7 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
-import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, PanelLeftOpen, PanelRightOpen, Settings, Sparkles, Upload, User } from "lucide-react";
+import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, PanelLeftOpen, PanelRightOpen, Sparkles, Upload, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -152,13 +152,9 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                                 </button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="z-50 border-slate-200">
-                                                <DropdownMenuItem onClick={() => router.push('/lecturer/profile')}>
-                                                    <User className="size-4 mr-2" />
+                                                <DropdownMenuItem onClick={() => router.push('/lecturer/profile/my-profile')}>
+                                                    <User className="size-4 mr-1.5" />
                                                     Profile
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => router.push('/lecturer/settings')}>
-                                                    <Settings className="size-4 mr-2" />
-                                                    Settings
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => logout()}>
                                                     <CircleArrowOutUpRight className="size-3.5 mr-2" />

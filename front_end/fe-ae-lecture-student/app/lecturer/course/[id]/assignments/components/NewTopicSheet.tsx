@@ -210,7 +210,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                             {/* Info */}
                             <div className="text-sm space-y-2 mt-5 text-slate-500">
                                 <div className="flex gap-1"><strong>Created By:</strong> {editableTopic.createdBy ||
-                                    <p className="italic">Chưa cập nhật</p>}</div>
+                                    <p className="italic">Not updated yet</p>}</div>
                                 <div><strong>Created At:</strong> {new Date(editableTopic.createdAt).toLocaleString("vi-VN", {
                                     year: "numeric", month: "2-digit", day: "2-digit",
                                     hour: "2-digit", minute: "2-digit", hour12: false
