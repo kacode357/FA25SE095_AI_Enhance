@@ -1,8 +1,9 @@
-// TinyMCE editor using official React wrapper
+// components/common/LiteRichTextEditor.tsx
+// TinyMCE editor (React wrapper) – safe for read-only & editable
 "use client";
 
 import { Editor } from "@tinymce/tinymce-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
   value: string;
@@ -11,19 +12,21 @@ type Props = {
   className?: string;
   readOnly?: boolean;
   debounceMs?: number;
+  /** optional: lấy Tiny instance (phục vụ live-collab, caret, ...) */
+  onInit?: (editor: any) => void;
 };
 
 export default function LiteRichTextEditor({
   value,
   onChange,
-  placeholder = "Type description...",
+  placeholder = "Type here...",
   className = "",
   readOnly = false,
   debounceMs = 150,
+  onInit,
 }: Props) {
   const lastHtmlRef = useRef<string>(value || "");
   const debounceTimer = useRef<number | null>(null);
-  const [pasteAvailable, setPasteAvailable] = useState<boolean | null>(null);
 
   const emit = (html: string) => {
     if (debounceTimer.current) window.clearTimeout(debounceTimer.current);
@@ -35,102 +38,47 @@ export default function LiteRichTextEditor({
     }, debounceMs) as unknown as number;
   };
 
-  // Sync external updates (e.g., form reset). The Editor component will handle value prop;
+  // Sync external value
   useEffect(() => {
     if (value !== lastHtmlRef.current) {
       lastHtmlRef.current = value;
     }
   }, [value]);
 
-  // Probe plugin URL availability once at runtime to avoid TinyMCE trying to load a 404 plugin
-  useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key";
-    const pluginUrl = `https://cdn.tiny.cloud/1/${key}/tinymce/6/plugins/paste/plugin.min.js`;
-    // Try HEAD first (some CDNs disallow HEAD; fallback to GET)
-    let mounted = true;
-    fetch(pluginUrl, { method: "HEAD" })
-      .then((res) => {
-        if (!mounted) return;
-        setPasteAvailable(res.ok);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        // fallback to GET
-        fetch(pluginUrl, { method: "GET" })
-          .then((r) => {
-            if (!mounted) return;
-            setPasteAvailable(r.ok);
-          })
-          .catch(() => {
-            if (!mounted) return;
-            setPasteAvailable(false);
-          });
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const apiKey = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key";
+  const cdnBase = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/6`;
 
-  // Avoid mounting the Editor until we know whether paste plugin is reachable.
-  if (pasteAvailable === null) {
-    return (
-      <div className={`lite-rte ${className}`}>
-        <div className="min-h-[260px] rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Loading editor…</div>
-      </div>
-    );
-  }
+  // Khi readOnly: không cần load paste/image/table... để giảm rủi ro load plugin
+  const plugins = readOnly
+    ? ["autolink", "link", "preview", "code"]
+    : ["autolink", "link", "lists", "codesample", "table", "image", "preview", "code", "paste"];
 
   return (
-    <div className={`lite-rte ${className}`}> 
+    <div className={`lite-rte ${className}`}>
       <Editor
+        key={readOnly ? "tiny-ro" : "tiny-rw"} // đảm bảo remount khi toggle chế độ
         value={value}
-        apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-        tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6/tinymce.min.js`}
+        apiKey={apiKey}
+        tinymceScriptSrc={`${cdnBase}/tinymce.min.js`}
+        // Tiny hỗ trợ cả disabled và readonly trong init; disabled ở đây là đủ cho UI
         disabled={readOnly}
+        onInit={(_evt, editor) => onInit?.(editor)}
         onEditorChange={(content) => emit(content)}
         init={{
           menubar: false,
-          height: 300,
+          height: readOnly ? 360 : 420,
           placeholder,
-          /* Ensure TinyMCE knows where to load plugins/skins from when using CDN */
-          base_url: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6`,
-          baseURL: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6`,
-          plugins: [
-            "link",
-            "lists",
-            "autolink",
-            "codesample",
-            "table",
-            "image",
-            "preview",
-            "code",
-            ...(pasteAvailable === false ? [] : ["paste"]),
-          ],
-          /* Ensure TinyMCE knows where to load plugins/skins from when using CDN */
-          base_url: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6`,
-          baseURL: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6`,
-          plugins: [
-            "link",
-            "lists",
-            "autolink",
-            "codesample",
-            "table",
-            "image",
-            "preview",
-            "code",
-            "paste"
-          ],
-          toolbar:
-            "undo redo | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | link image table | code preview",
+          base_url: cdnBase, // chỉ 1 key, không dùng baseURL nữa
+          plugins,
+          toolbar: readOnly
+            ? false
+            : "undo redo | bold italic underline forecolor backcolor | bullist numlist | " +
+              "alignleft aligncenter alignright | link image table | codesample code preview",
           branding: false,
           statusbar: false,
+          // Không dùng external_plugins => tránh lỗi Failed to load plugin
           paste_data_images: true,
-          /* explicitly point paste plugin (fixes some loader issues under turboweb/turbopack)
-             Only add external plugin entry if probe determined it is available. */
-          external_plugins: pasteAvailable === false ? undefined : {
-            paste: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6/plugins/paste/plugin.min.js`,
-          },
-          skin_url: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6/skins/ui/oxide`,
+          skin_url: `${cdnBase}/skins/ui/oxide`,
           convert_urls: false,
           default_link_target: "_blank",
           rel_list: [{ title: "No Referrer", value: "noopener noreferrer" }],
@@ -147,19 +95,18 @@ export default function LiteRichTextEditor({
             li { margin:0.125rem 0; }
             img { max-width:100%; height:auto; border-radius:0.5rem; display:inline-block; }
           `,
+          
         }}
       />
+
       <style jsx global>{`
-        /* Replace TinyMCE blue focus with slate tone for our editor instance */
         .lite-rte .tox:focus-within,
         .lite-rte .tox .tox-editor-container:focus-within,
         .lite-rte .tox .tox-editor-container:focus {
-          box-shadow: 0 0 0 1px #cbd5e1 !important; /* slate-300 */
+          box-shadow: 0 0 0 1px #cbd5e1 !important;
           outline: none !important;
           border-radius: 0.5rem !important;
         }
-
-        /* remove default blue ring on toolbar focus */
         .lite-rte .tox .tox-toolbar__primary:focus-within,
         .lite-rte .tox .tox-toolbar:focus-within {
           box-shadow: none !important;

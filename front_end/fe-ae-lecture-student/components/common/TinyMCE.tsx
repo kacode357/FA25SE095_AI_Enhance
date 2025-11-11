@@ -1,4 +1,4 @@
-// TinyMCE editor using official React wrapper
+// components/common/LiteRichTextEditor.tsx
 "use client";
 
 import { Editor } from "@tinymce/tinymce-react";
@@ -11,15 +11,18 @@ type Props = {
   className?: string;
   readOnly?: boolean;
   debounceMs?: number;
+  /** Dùng để nhận Tiny editor instance (phục vụ collab, caret, v.v.) */
+  onInit?: (editor: any) => void;
 };
 
 export default function LiteRichTextEditor({
   value,
   onChange,
-  placeholder = "Type description...",
+  placeholder = "Type here...",
   className = "",
   readOnly = false,
   debounceMs = 150,
+  onInit,
 }: Props) {
   const lastHtmlRef = useRef<string>(value || "");
   const debounceTimer = useRef<number | null>(null);
@@ -34,28 +37,33 @@ export default function LiteRichTextEditor({
     }, debounceMs) as unknown as number;
   };
 
-  // Sync external updates (e.g., form reset). The Editor component will handle value prop;
+  // Sync external value changes
   useEffect(() => {
     if (value !== lastHtmlRef.current) {
       lastHtmlRef.current = value;
     }
   }, [value]);
 
+  const apiKey = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key";
+  const cdnBase = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/6`;
+
   return (
-    <div className={`lite-rte ${className}`}> 
+    <div className={`lite-rte ${className}`}>
       <Editor
         value={value}
-        apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-        tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6/tinymce.min.js`}
+        apiKey={apiKey}
+        tinymceScriptSrc={`${cdnBase}/tinymce.min.js`}
         disabled={readOnly}
+        onInit={(_evt, editor) => {
+          onInit?.(editor);
+        }}
         onEditorChange={(content) => emit(content)}
         init={{
           menubar: false,
-          height: 300,
+          height: 420,
           placeholder,
-          /* Ensure TinyMCE knows where to load plugins/skins from when using CDN */
-          base_url: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6`,
-          baseURL: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6`,
+          // ✅ CHỈ 1 KEY base_url (không có baseURL để tránh trùng)
+          base_url: cdnBase,
           plugins: [
             "link",
             "lists",
@@ -65,18 +73,18 @@ export default function LiteRichTextEditor({
             "image",
             "preview",
             "code",
-            "paste"
+            "paste",
           ],
-          toolbar:
-            "undo redo | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | link image table | code preview",
+          toolbar: readOnly
+            ? false
+            : "undo redo | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | link image table | code preview",
           branding: false,
           statusbar: false,
           paste_data_images: true,
-          /* explicitly point paste plugin (fixes some loader issues under turboweb/turbopack) */
           external_plugins: {
-            paste: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6/plugins/paste/plugin.min.js`,
+            paste: `${cdnBase}/plugins/paste/plugin.min.js`,
           },
-          skin_url: `https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key"}/tinymce/6/skins/ui/oxide`,
+          skin_url: `${cdnBase}/skins/ui/oxide`,
           convert_urls: false,
           default_link_target: "_blank",
           rel_list: [{ title: "No Referrer", value: "noopener noreferrer" }],
@@ -96,16 +104,14 @@ export default function LiteRichTextEditor({
         }}
       />
       <style jsx global>{`
-        /* Replace TinyMCE blue focus with slate tone for our editor instance */
+        /* Focus ring tinh tế cho Tiny */
         .lite-rte .tox:focus-within,
         .lite-rte .tox .tox-editor-container:focus-within,
         .lite-rte .tox .tox-editor-container:focus {
-          box-shadow: 0 0 0 1px #cbd5e1 !important; /* slate-300 */
+          box-shadow: 0 0 0 1px #cbd5e1 !important;
           outline: none !important;
           border-radius: 0.5rem !important;
         }
-
-        /* remove default blue ring on toolbar focus */
         .lite-rte .tox .tox-toolbar__primary:focus-within,
         .lite-rte .tox .tox-toolbar:focus-within {
           box-shadow: none !important;

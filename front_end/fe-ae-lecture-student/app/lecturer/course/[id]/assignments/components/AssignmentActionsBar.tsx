@@ -1,12 +1,14 @@
-// app/lecture/manager/course/[id]/assignments/components/AssignmentActionsBar.tsx
+// app/lecturer/course/[id]/assignments/components/AssignmentActionsBar.tsx
 "use client";
+
+import { useMemo, useState } from "react";
+import { CalendarClock, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
-import { CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+
 import ConfirmCloseAssignmentDialog from "./ConfirmCloseAssignmentDialog";
 import ConfirmExtendDueDateDialog from "./ConfirmExtendDueDateDialog";
 
@@ -19,6 +21,10 @@ type Props = {
   onClose: () => Promise<void>;
   /** If true, expand the internal actions panel by default */
   defaultOpen?: boolean;
+
+  /** ✅ Thêm để khớp chỗ gọi */
+  loadingExtend?: boolean; // external loading from hook
+  loadingClose?: boolean;  // external loading from hook
 };
 
 export default function AssignmentActionsBar({
@@ -29,6 +35,8 @@ export default function AssignmentActionsBar({
   onExtend,
   onClose,
   defaultOpen,
+  loadingExtend = false,
+  loadingClose = false,
 }: Props) {
   // collapsed/expanded
   const [open, setOpen] = useState(!!defaultOpen);
@@ -46,6 +54,9 @@ export default function AssignmentActionsBar({
   const [submitting, setSubmitting] = useState(false);
 
   const canClose = useMemo(() => status !== 1 /* Draft */, [status]);
+
+  // ✅ gom trạng thái bận cho UI
+  const isBusy = submitting || loadingExtend || loadingClose;
 
   // Dialog state
   const [openExtendDialog, setOpenExtendDialog] = useState(false);
@@ -114,24 +125,31 @@ export default function AssignmentActionsBar({
                 type="datetime-local"
                 value={extendedAt}
                 onChange={(e) => setExtendedAt(e.target.value)}
+                disabled={isBusy}
               />
-              <div className="mt-1 mb-2 text-[11px] text-slate-500">Time is in your local timezone</div>
+              <div className="mt-1 mb-2 text-[11px] text-slate-500">
+                Time is in your local timezone
+              </div>
             </div>
             <div className="flex gap-2 md:justify-between">
               <Button
                 className="btn text-sm btn-gradient-slow"
                 onClick={() => extendedAt && setOpenExtendDialog(true)}
-                disabled={submitting || !extendedAt}
+                disabled={isBusy || !extendedAt}
+                aria-busy={isBusy}
               >
+                {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Extend Due Date
               </Button>
               <Button
                 className="text-red-400 text-sm"
                 variant="destructive"
                 onClick={() => canClose && setOpenCloseDialog(true)}
-                disabled={submitting || !canClose}
+                disabled={isBusy || !canClose}
                 title={canClose ? "" : "Cannot close Draft"}
+                aria-busy={isBusy}
               >
+                {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Close Assignment
               </Button>
             </div>
@@ -151,13 +169,13 @@ export default function AssignmentActionsBar({
         currentDue={currentDue}
         currentExtendedDue={currentExtendedDue}
         newExtendedISO={extendedAt ? new Date(extendedAt).toISOString() : ""}
-        submitting={submitting}
+        submitting={isBusy}
         onConfirm={(iso) => confirmExtend(iso)}
       />
       <ConfirmCloseAssignmentDialog
         open={openCloseDialog}
         onOpenChange={setOpenCloseDialog}
-        submitting={submitting}
+        submitting={isBusy}
         info={{
           title: undefined,
           due: currentDue || null,
@@ -166,7 +184,6 @@ export default function AssignmentActionsBar({
         }}
         onConfirm={confirmClose}
       />
-
     </div>
   );
 }

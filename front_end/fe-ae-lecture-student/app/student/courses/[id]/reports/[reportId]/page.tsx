@@ -11,10 +11,9 @@ import {
 import Cookies from "js-cookie";
 
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
-import { cleanIncomingHtml } from "@/utils/html-normalize";
 import ReportCollabClient from "@/app/student/courses/[id]/reports/components/ReportCollabClient";
+import LiteRichTextEditor from "@/components/common/TinyMCE";
 
-// ✅ import type rõ ràng để state không bị lỗi
 import type { ReportDetail } from "@/types/reports/reports.response";
 
 /** ============ utils ============ */
@@ -24,7 +23,7 @@ const dt = (s?: string | null) => {
   if (Number.isNaN(d.getTime())) return s;
   return d.toLocaleString("en-GB");
 };
-const normalizeHtml = (html: string) => cleanIncomingHtml(html ?? "").trim();
+const normalizeHtml = (html: string) => (html ?? "").trim();
 
 const ACCESS_TOKEN_KEY = "accessToken";
 async function getAccessToken(): Promise<string> {
@@ -45,14 +44,15 @@ export default function ReportDetailPage() {
 
   const { getReportById, loading } = useGetReportById();
 
-  // editor state
-  const editorRef = useRef<HTMLDivElement>(null);
+  // Tiny + collab
+  const editorBodyRef = useRef<HTMLDivElement | null>(null); // body của Tiny (contenteditable)
+  const tinyInstanceRef = useRef<any>(null);
+
   const [initialHtml, setInitialHtml] = useState<string>("");
   const [html, setHtml] = useState<string>("");
   const [saving, setSaving] = useState<boolean>(false);
   const [saveMsg, setSaveMsg] = useState<string>("");
 
-  // ✅ dùng kiểu tường minh
   const [report, setReport] = useState<ReportDetail | null>(null);
   const didFetchRef = useRef(false);
 
@@ -63,14 +63,17 @@ export default function ReportDetailPage() {
     didFetchRef.current = true;
 
     (async () => {
-      const res = await getReportById(reportId); // GetReportResponse | null
+      const res = await getReportById(reportId);
       const r = res?.report ?? null;
       setReport(r);
 
       const safe = normalizeHtml(r?.submission || "");
       setInitialHtml(safe);
       setHtml(safe);
-      if (editorRef.current) editorRef.current.innerHTML = safe;
+
+      if (tinyInstanceRef.current) {
+        tinyInstanceRef.current.setContent(safe, { format: "raw" });
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportId]);
@@ -235,11 +238,10 @@ export default function ReportDetailPage() {
                     <BookOpen className="w-4 h-4 text-nav-active mt-0.5" />
                     <div className="flex-1">
                       <b>Description</b>
+                      {/* render thẳng HTML, dùng prose tailwind, KHÔNG style jsx riêng */}
                       <div
                         className="prose prose-sm max-w-none text-foreground/80"
-                        dangerouslySetInnerHTML={{
-                          __html: cleanIncomingHtml(report.assignmentDescription),
-                        }}
+                        dangerouslySetInnerHTML={{ __html: report.assignmentDescription }}
                       />
                     </div>
                   </div>
@@ -250,7 +252,21 @@ export default function ReportDetailPage() {
         </AnimatePresence>
       </div>
 
-      {/* Submission editor */}
+      {/* Live collaboration bar (trên editor) */}
+      <ReportCollabClient
+        reportId={reportId}
+        getAccessToken={getAccessToken}
+        editorRef={editorBodyRef}
+        onRemoteHtml={(newHtml) => {
+          const v = normalizeHtml(newHtml);
+          setHtml(v);
+          if (tinyInstanceRef.current) {
+            tinyInstanceRef.current.setContent(v, { format: "raw" });
+          }
+        }}
+      />
+
+      {/* Submission editor — TinyMCE editable */}
       <div className="flex flex-col gap-4">
         <div className="card rounded-2xl p-0 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2 border-b">
@@ -278,37 +294,27 @@ export default function ReportDetailPage() {
             </div>
           </div>
 
-          <div
-            ref={editorRef}
-            className="min-h-[320px] max-h-[70vh] overflow-auto prose prose-sm max-w-none px-4 py-3 outline-none"
-            contentEditable
-            suppressContentEditableWarning
-            onInput={(e) => setHtml((e.target as HTMLDivElement).innerHTML)}
-            onPaste={() => {
-              setTimeout(() => {
-                const el = editorRef.current;
-                if (el) {
-                  const v = normalizeHtml(el.innerHTML);
-                  el.innerHTML = v;
-                  setHtml(v);
-                }
-              }, 0);
-            }}
-          />
+          <div className="px-4 py-3">
+            <LiteRichTextEditor
+              value={html}
+              onChange={(content) => setHtml(content)}
+              readOnly={false}
+              debounceMs={200}
+              placeholder="Write your submission here…"
+              className="rounded-md"
+              onInit={(editor) => {
+                tinyInstanceRef.current = editor;
+                const body = editor?.getBody?.();
+                if (body) editorBodyRef.current = body as HTMLDivElement;
+              }}
+            />
+          </div>
         </div>
-
-        {/* Live collaboration bar */}
-        <ReportCollabClient
-          reportId={reportId}
-          getAccessToken={getAccessToken}
-          editorRef={editorRef}
-          onRemoteHtml={(newHtml) => setHtml(newHtml)}
-        />
 
         <div className="rounded-xl p-3 border border-slate-200 bg-slate-50 text-slate-700 flex items-start gap-2">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="text-xs">
-            Edit <b>Submission</b> directly and press <b>Save</b> to persist. Changes sync live with collaborators.
+            Edit <b>Submission</b> and press <b>Save</b>. Changes sync live with collaborators.
           </div>
         </div>
       </div>
