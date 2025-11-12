@@ -1,19 +1,28 @@
-// components/common/LiteRichTextEditor.tsx
+// components/common/TinyMCE.tsx
 "use client";
 
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useRef } from "react";
 
 type Props = {
+  /** HTML ban đầu khi mount editor (không dùng để control từng keystroke) */
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
   readOnly?: boolean;
   debounceMs?: number;
-  /** Dùng để nhận Tiny editor instance (phục vụ collab, caret, v.v.) */
+  /** Nhận Tiny editor instance (cho collab/caret) */
   onInit?: (editor: any) => void;
+  /**
+   * Khi có HTML mới từ remote/collab, gọi hàm này (truyền qua onInit)
+   * để setContent an toàn mà không bị mất caret khi đang gõ.
+   */
 };
+
+function normalize(html: string) {
+  return (html ?? "").trim();
+}
 
 export default function LiteRichTextEditor({
   value,
@@ -24,46 +33,69 @@ export default function LiteRichTextEditor({
   debounceMs = 150,
   onInit,
 }: Props) {
-  const lastHtmlRef = useRef<string>(value || "");
+  const editorRef = useRef<any>(null);
+  const lastEmittedRef = useRef<string>(normalize(value || ""));
   const debounceTimer = useRef<number | null>(null);
 
+  // Emit change có debounce (ra ngoài)
   const emit = (html: string) => {
     if (debounceTimer.current) window.clearTimeout(debounceTimer.current);
     debounceTimer.current = window.setTimeout(() => {
-      if (html !== lastHtmlRef.current) {
-        lastHtmlRef.current = html;
-        onChange(html);
+      const v = normalize(html);
+      if (v !== lastEmittedRef.current) {
+        lastEmittedRef.current = v;
+        onChange(v);
       }
     }, debounceMs) as unknown as number;
   };
 
-  // Sync external value changes
-  useEffect(() => {
-    if (value !== lastHtmlRef.current) {
-      lastHtmlRef.current = value;
+  // Hàm cho parent có thể "đẩy" HTML mới vào editor nhưng KHÔNG đè khi đang gõ
+  const pushContentFromOutside = (newHtml: string) => {
+    const ed = editorRef.current;
+    if (!ed) return;
+    const v = normalize(newHtml);
+    const cur = normalize(ed.getContent({ format: "raw" }) || "");
+    // Nếu editor đang focus (user đang gõ) thì thôi không push để khỏi nhảy caret
+    if (ed.hasFocus?.()) return;
+    if (v !== cur) {
+      ed.setContent(v, { format: "raw" });
+      // đồng bộ ref để onChange không bắn lại
+      lastEmittedRef.current = v;
     }
-  }, [value]);
+  };
 
+  // Lần đầu mount, Tiny sẽ lấy initialValue; KHÔNG truyền props.value để tránh “giật”
   const apiKey = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key";
   const cdnBase = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/6`;
+  const tinymceScriptSrc = `${cdnBase}/tinymce.min.js`;
+
+  // Khi prop value đổi (ví dụ sau khi fetch xong), nếu editor chưa focus thì push vào
+  useEffect(() => {
+    pushContentFromOutside(value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   return (
     <div className={`lite-rte ${className}`}>
       <Editor
-        value={value}
+        // CHỈ dùng initialValue để tránh controlled wipe
+        initialValue={value}
         apiKey={apiKey}
-        tinymceScriptSrc={`${cdnBase}/tinymce.min.js`}
+        tinymceScriptSrc={tinymceScriptSrc}
         disabled={readOnly}
         onInit={(_evt, editor) => {
-          onInit?.(editor);
+          editorRef.current = editor;
+          // expose cho parent nếu cần
+          onInit?.({
+            ...editor,
+            pushContentFromOutside, // parent có thể gọi editor.pushContentFromOutside(html)
+          });
         }}
         onEditorChange={(content) => emit(content)}
         init={{
           menubar: false,
           height: 420,
           placeholder,
-          // ✅ CHỈ 1 KEY base_url (không có baseURL để tránh trùng)
-          base_url: cdnBase,
           plugins: [
             "link",
             "lists",
@@ -73,22 +105,19 @@ export default function LiteRichTextEditor({
             "image",
             "preview",
             "code",
-            "paste",
           ],
           toolbar: readOnly
             ? false
             : "undo redo | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | link image table | code preview",
           branding: false,
           statusbar: false,
-          paste_data_images: true,
-          external_plugins: {
-            paste: `${cdnBase}/plugins/paste/plugin.min.js`,
-          },
-          skin_url: `${cdnBase}/skins/ui/oxide`,
           convert_urls: false,
           default_link_target: "_blank",
           rel_list: [{ title: "No Referrer", value: "noopener noreferrer" }],
           forced_root_block: "p",
+          // Làm “1 khung”: bỏ border nền của Tiny để hòa vào card ngoài
+          skin: "oxide",
+          content_css: "default",
           content_style: `
             body { font-family: Inter, system-ui, sans-serif; font-size:14px; line-height:1.6; }
             h1 { font-size:1.75rem; line-height:2.25rem; font-weight:700; margin:0.5rem 0 0.25rem; }
@@ -103,17 +132,22 @@ export default function LiteRichTextEditor({
           `,
         }}
       />
+
       <style jsx global>{`
-        /* Focus ring tinh tế cho Tiny */
-        .lite-rte .tox:focus-within,
-        .lite-rte .tox .tox-editor-container:focus-within,
-        .lite-rte .tox .tox-editor-container:focus {
-          box-shadow: 0 0 0 1px #cbd5e1 !important;
-          outline: none !important;
-          border-radius: 0.5rem !important;
+        /* Hoà toolbar + editor vào card ngoài để nhìn như 1 khung */
+        .lite-rte .tox .tox-toolbar__primary {
+          border: none !important;
+          background: transparent !important;
         }
-        .lite-rte .tox .tox-toolbar__primary:focus-within,
-        .lite-rte .tox .tox-toolbar:focus-within {
+        .lite-rte .tox .tox-editor-header {
+          border-bottom: 1px solid #e5e7eb !important; /* mảnh, trùng card */
+          background: transparent !important;
+        }
+        .lite-rte .tox .tox-edit-area__iframe {
+          background: #fff !important;
+        }
+        .lite-rte .tox-tinymce {
+          border: none !important;
           box-shadow: none !important;
         }
       `}</style>
