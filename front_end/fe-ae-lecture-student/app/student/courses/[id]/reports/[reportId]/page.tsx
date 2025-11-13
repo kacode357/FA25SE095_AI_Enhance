@@ -5,14 +5,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowLeft, BookOpen, CalendarDays, Clock, FileText, Info,
-  Loader2, Save, Tag, ChevronDown,
+  ArrowLeft,
+  BookOpen,
+  CalendarDays,
+  Clock,
+  FileText,
+  Info,
+  Loader2,
+  Save,
+  Tag,
+  ChevronDown,
 } from "lucide-react";
 import Cookies from "js-cookie";
 
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
 import { cleanIncomingHtml } from "@/utils/html-normalize";
 import ReportCollabClient from "@/app/student/courses/[id]/reports/components/ReportCollabClient";
+import LiteRichTextEditor from "@/components/common/TinyMCE";
 
 // ✅ import type rõ ràng để state không bị lỗi
 import type { ReportDetail } from "@/types/reports/reports.response";
@@ -45,10 +54,12 @@ export default function ReportDetailPage() {
 
   const { getReportById, loading } = useGetReportById();
 
-  // editor state
-  const editorRef = useRef<HTMLDivElement>(null);
+  // ✅ Phân tách state:
+  // `initialHtml`: Chỉ set 1 lần khi fetch, dùng cho `initialValue` của Tiny
   const [initialHtml, setInitialHtml] = useState<string>("");
+  // `html`: State "live" khi gõ, dùng để save và gửi collab
   const [html, setHtml] = useState<string>("");
+
   const [saving, setSaving] = useState<boolean>(false);
   const [saveMsg, setSaveMsg] = useState<string>("");
 
@@ -57,6 +68,9 @@ export default function ReportDetailPage() {
   const didFetchRef = useRef(false);
 
   const [infoOpen, setInfoOpen] = useState(false);
+
+  // ref giữ TinyMCE editor API để collab client dùng tính caret
+  const tinyEditorRef = useRef<any>(null);
 
   useEffect(() => {
     if (!reportId || didFetchRef.current) return;
@@ -68,9 +82,11 @@ export default function ReportDetailPage() {
       setReport(r);
 
       const safe = normalizeHtml(r?.submission || "");
-      setInitialHtml(safe);
-      setHtml(safe);
-      if (editorRef.current) editorRef.current.innerHTML = safe;
+      setInitialHtml(safe); // ✅ Set initialHtml (cho initialValue)
+      setHtml(safe); // ✅ Set html live
+
+      // ✅ FIX (1): Chủ động PUSH data vào editor khi fetch xong
+      tinyEditorRef.current?.pushContentFromOutside?.(safe);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportId]);
@@ -80,6 +96,7 @@ export default function ReportDetailPage() {
     setSaving(true);
     setSaveMsg("");
     try {
+      // ✅ Dùng state `html` (live) để save
       const payload = { submission: html };
       const res = await fetch(`/api/reports/${reportId}/submission`, {
         method: "PUT",
@@ -87,6 +104,8 @@ export default function ReportDetailPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error((await res.text()) || "Failed to save");
+      
+      // ✅ Sau khi save, cập nhật `initialHtml` thành state hiện tại
       setInitialHtml(html);
       setSaveMsg("Saved");
     } catch (err: any) {
@@ -98,11 +117,13 @@ export default function ReportDetailPage() {
   };
 
   const isDirty = useMemo(
+    // ✅ So sánh state `html` (live) với `initialHtml` (lần cuối save/load)
     () => normalizeHtml(html) !== normalizeHtml(initialHtml),
     [html, initialHtml]
   );
 
   if (!reportId) {
+    // ... (return như cũ)
     return (
       <div className="py-16 text-center">
         <p className="text-[var(--text-muted)]">
@@ -120,6 +141,7 @@ export default function ReportDetailPage() {
   }
 
   if (loading && !report) {
+    // ... (return như cũ)
     return (
       <div className="flex items-center justify-center h-[60vh] text-nav">
         <Loader2 className="w-6 h-6 mr-2 animate-spin text-nav-active" />
@@ -129,6 +151,7 @@ export default function ReportDetailPage() {
   }
 
   if (!report) {
+    // ... (return như cũ)
     return (
       <div className="py-16 text-center">
         <p className="text-[var(--text-muted)]">Report not found.</p>
@@ -151,6 +174,7 @@ export default function ReportDetailPage() {
       transition={{ duration: 0.25 }}
     >
       {/* Header */}
+      {/* ... (Header như cũ) */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-bold text-nav flex items-center gap-2">
@@ -189,6 +213,7 @@ export default function ReportDetailPage() {
       </div>
 
       {/* Assignment Info */}
+      {/* ... (Assignment Info như cũ) */}
       <div className="card rounded-2xl p-4">
         <button
           type="button"
@@ -200,7 +225,9 @@ export default function ReportDetailPage() {
             <span className="text-base font-bold text-nav">Assignment Info</span>
           </span>
           <ChevronDown
-            className={`w-5 h-5 text-slate-500 transition-transform ${infoOpen ? "rotate-180" : ""}`}
+            className={`w-5 h-5 text-slate-500 transition-transform ${
+              infoOpen ? "rotate-180" : ""
+            }`}
           />
         </button>
 
@@ -250,7 +277,7 @@ export default function ReportDetailPage() {
         </AnimatePresence>
       </div>
 
-      {/* Submission editor */}
+      {/* Submission editor (TinyMCE) */}
       <div className="flex flex-col gap-4">
         <div className="card rounded-2xl p-0 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2 border-b">
@@ -259,7 +286,9 @@ export default function ReportDetailPage() {
               <button
                 disabled={saving || !isDirty}
                 onClick={handleSave}
-                className={`btn px-3 py-1.5 ${saving || !isDirty ? "opacity-60 cursor-not-allowed" : "btn-gradient"}`}
+                className={`btn px-3 py-1.5 ${
+                  saving || !isDirty ? "opacity-60 cursor-not-allowed" : "btn-gradient"
+                }`}
                 title="Save changes"
               >
                 {saving ? (
@@ -274,41 +303,56 @@ export default function ReportDetailPage() {
                   </>
                 )}
               </button>
-              {saveMsg && <span className="text-xs text-[var(--text-muted)]">{saveMsg}</span>}
+              {saveMsg && (
+                <span className="text-xs text-[var(--text-muted)]">{saveMsg}</span>
+              )}
             </div>
           </div>
 
-          <div
-            ref={editorRef}
-            className="min-h-[320px] max-h-[70vh] overflow-auto prose prose-sm max-w-none px-4 py-3 outline-none"
-            contentEditable
-            suppressContentEditableWarning
-            onInput={(e) => setHtml((e.target as HTMLDivElement).innerHTML)}
-            onPaste={() => {
-              setTimeout(() => {
-                const el = editorRef.current;
-                if (el) {
-                  const v = normalizeHtml(el.innerHTML);
-                  el.innerHTML = v;
-                  setHtml(v);
+          <div className="px-4 py-3">
+            <LiteRichTextEditor
+              // ✅ Dùng `initialHtml` cho `value` (chỉ load 1 lần)
+              value={initialHtml}
+              // ✅ `onChange` cập nhật state `html` (live)
+              onChange={(v) => setHtml(v)}
+              placeholder="Write your report here..."
+              className="w-full"
+              onInit={(api) => {
+                // api = Tiny editor + pushContentFromOutside
+                tinyEditorRef.current = api;
+                
+                // ✅ FIX (2): Xử lý race-condition: Nếu fetch xong TRƯỚC khi
+                // editor init xong, thì `initialHtml` đã có giá trị.
+                // Push nó vào editor ngay khi init.
+                if (initialHtml) {
+                  api.pushContentFromOutside?.(initialHtml);
                 }
-              }, 0);
-            }}
-          />
+              }}
+            />
+          </div>
         </div>
 
-        {/* Live collaboration bar */}
+        {/* Live collaboration bar + remote caret */}
         <ReportCollabClient
           reportId={reportId}
           getAccessToken={getAccessToken}
-          editorRef={editorRef}
-          onRemoteHtml={(newHtml) => setHtml(newHtml)}
+          // ✅ Vẫn gửi `html` (state live) đi cho client khác
+          html={html}
+          onRemoteHtml={(newHtml) => {
+            // ✅ FIX (3): Khi có data từ Collab
+            // 1. Cập nhật state `html` (live)
+            setHtml(newHtml);
+            // 2. Chủ động PUSH data đó vào editor
+            tinyEditorRef.current?.pushContentFromOutside?.(newHtml);
+          }}
+          getEditorRoot={() => tinyEditorRef.current?.getRoot?.() ?? null}
         />
 
         <div className="rounded-xl p-3 border border-slate-200 bg-slate-50 text-slate-700 flex items-start gap-2">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="text-xs">
-            Edit <b>Submission</b> directly and press <b>Save</b> to persist. Changes sync live with collaborators.
+            Edit <b>Submission</b> trực tiếp ở trên và nhấn <b>Save</b> để lưu. Thay đổi
+            sẽ sync realtime với cộng tác viên khác.
           </div>
         </div>
       </div>

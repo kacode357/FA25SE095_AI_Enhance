@@ -1,19 +1,19 @@
 // app/student/courses/[id]/reports/components/ReportCollabClient.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useReportCollabHub } from "@/hooks/hubcollab/useReportCollabHub";
 import type {
-  CursorPositionDto,
   Guid,
   ReportChangeDto,
-  TextSelectionDto,
   CollaboratorPresenceDto,
+  CursorPositionDto,
 } from "@/hooks/hubcollab/useReportCollabHub";
 import { Users, Wifi, WifiOff, Activity } from "lucide-react";
 
-/** ===== Utils ===== */
+/** ============ Utils ============ */
+
 function initials(name?: string) {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
@@ -21,84 +21,118 @@ function initials(name?: string) {
   const two = parts.length > 1 ? parts[parts.length - 1][0] ?? "" : "";
   return (one + two).toUpperCase();
 }
-function getCaretIndex(root: HTMLElement): number {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return 0;
-  const range = sel.getRangeAt(0).cloneRange();
-  const preRange = document.createRange();
-  preRange.selectNodeContents(root);
-  preRange.setEnd(range.endContainer, range.endOffset);
-  return preRange.toString().length;
-}
-function setCaretIndex(root: HTMLElement, index: number) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let current = walker.nextNode();
-  let remain = index;
-  while (current) {
-    const len = current.textContent?.length ?? 0;
-    if (remain <= len) {
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.setStart(current, Math.max(0, remain));
-      range.collapse(true);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-      return;
-    }
-    remain -= len;
-    current = walker.nextNode();
-  }
-  const range = document.createRange();
-  const sel = window.getSelection();
-  range.selectNodeContents(root);
-  range.collapse(false);
-  sel?.removeAllRanges();
-  sel?.addRange(range);
-}
+
 function htmlDifferent(a?: string | null, b?: string | null) {
   return (a ?? "").trim() !== (b ?? "").trim();
 }
 
-/** Convert text index -> client rect (viewport based) */
-function caretRectAt(root: HTMLElement, index: number): DOMRect | null {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+/** Lấy caret index (tính theo text) trong root (Tiny body) */
+function getCaretIndexInRoot(root: HTMLElement): number {
+  const doc = root.ownerDocument;
+  const sel = doc.getSelection();
+  if (!sel || sel.rangeCount === 0) return 0;
+
+  const range = sel.getRangeAt(0).cloneRange();
+  const preRange = doc.createRange();
+  preRange.selectNodeContents(root);
+  try {
+    // Kẹp vị trí setEnd để tránh lỗi nếu range.endContainer không nằm trong preRange
+    if (preRange.comparePoint(range.endContainer, range.endOffset) < 0) {
+      preRange.setEnd(preRange.endContainer, preRange.endOffset);
+    } else {
+      preRange.setEnd(range.endContainer, range.endOffset);
+    }
+  } catch {
+    return 0;
+  }
+  return preRange.toString().length;
+}
+
+/**
+ * Tính rect caret (viewport) từ index trong Tiny body + iframe offset
+ * - Khi index nằm trong text → dùng Range.getBoundingClientRect()
+ * - Khi editor rỗng → dùng root.getBoundingClientRect() + padding (tránh lệch do margin mặc định của body/iframe)
+ */
+function caretRectAt(
+  root: HTMLElement,
+  index: number
+): { left: number; top: number; height: number } | null {
+  const doc = root.ownerDocument;
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let current = walker.nextNode() as Text | null;
   let remain = index;
 
   while (current) {
     const len = current.textContent?.length ?? 0;
     if (remain <= len) {
-      const r = document.createRange();
-      r.setStart(current, Math.max(0, Math.min(remain, len)));
-      r.collapse(true);
-      const rect = r.getBoundingClientRect();
-      return rect;
+      const range = doc.createRange();
+      range.setStart(current, Math.max(0, Math.min(remain, len)));
+      range.collapse(true);
+
+      const caretRect = range.getBoundingClientRect();
+      const iframeEl = doc.defaultView?.frameElement as HTMLElement | null;
+
+      if (iframeEl) {
+        const iframeRect = iframeEl.getBoundingClientRect();
+        return {
+          left: iframeRect.left + caretRect.left,
+          top: iframeRect.top + caretRect.top,
+          height: caretRect.height || 16,
+        };
+      }
+
+      return {
+        left: caretRect.left,
+        top: caretRect.top,
+        height: caretRect.height || 16,
+      };
     }
+
     remain -= len;
     current = walker.nextNode() as Text | null;
   }
-  // end of content
-  const r = document.createRange();
-  r.selectNodeContents(root);
-  r.collapse(false);
-  return r.getBoundingClientRect();
+
+  /** ===== Fallback: editor rỗng / không tìm được node text ===== */
+  const baseRect = root.getBoundingClientRect();
+  const win = doc.defaultView!;
+  const cs = win.getComputedStyle(root);
+
+  // Range rỗng không “nhìn thấy” padding, nên ta cộng bù padding thay vì margin
+  const padLeft = parseFloat(cs.paddingLeft || "0") || 0;
+  const padTop = parseFloat(cs.paddingTop || "0") || 0;
+
+  // Chiều cao fallback: ưu tiên line-height của body, nếu không có thì dùng 16
+  let lineHeight = parseFloat(cs.lineHeight || "0");
+  if (!lineHeight || Number.isNaN(lineHeight)) lineHeight = 16;
+
+  const iframeEl = win.frameElement as HTMLElement | null;
+  if (iframeEl) {
+    const iframeRect = iframeEl.getBoundingClientRect();
+    return {
+      left: iframeRect.left + baseRect.left + padLeft,
+      top: iframeRect.top + baseRect.top + padTop,
+      height: Math.max(14, Math.floor(lineHeight || 16)),
+    };
+  }
+
+  return {
+    left: baseRect.left + padLeft,
+    top: baseRect.top + padTop,
+    height: Math.max(14, Math.floor(lineHeight || 16)),
+  };
 }
 
-/** ===== Remote caret marker (fixed to viewport) ===== */
-function RemoteCaret({
-  left,
-  top,
-  height,
-  color,
-  name,
-}: {
+/** Định nghĩa props rõ ràng bằng `type` */
+type RemoteCaretProps = {
   left: number;
   top: number;
   height: number;
   color: string;
   name: string;
-}) {
-  // tooltip on hover only
+};
+
+/** Remote caret marker (Google Docs style – hover mới hiện tên) */
+function RemoteCaret({ left, top, height, color, name }: RemoteCaretProps) {
   return createPortal(
     <div
       className="group pointer-events-auto"
@@ -118,7 +152,7 @@ function RemoteCaret({
           borderRadius: 1,
         }}
       />
-      {/* small dot to make target easier for hover */}
+      {/* dot để dễ hover */}
       <div
         style={{
           width: 6,
@@ -126,10 +160,10 @@ function RemoteCaret({
           background: color,
           borderRadius: 9999,
           marginTop: 2,
-          marginLeft: -2, // center dot to line
+          marginLeft: -2,
         }}
       />
-      {/* tooltip */}
+      {/* tooltip tên khi hover */}
       <div
         className="invisible group-hover:visible transition-opacity duration-100"
         style={{
@@ -137,7 +171,7 @@ function RemoteCaret({
           left: 10,
           top: -8,
           background: "rgba(255,255,255,0.95)",
-          border: "1px solid rgba(226,232,240,1)", // slate-200
+          border: "1px solid rgba(226,232,240,1)",
           borderRadius: 6,
           padding: "2px 6px",
           fontSize: 11,
@@ -154,50 +188,93 @@ function RemoteCaret({
   );
 }
 
-const COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#ef4444", "#9333ea", "#0ea5e9", "#d946ef"];
+const COLORS = [
+  "#2563eb",
+  "#16a34a",
+  "#f59e0b",
+  "#ef4444",
+  "#9333ea",
+  "#0ea5e9",
+  "#d946ef",
+];
 
-/** ===== Props ===== */
+/** ============ Props ============ */
 type Props = {
   reportId: Guid;
   getAccessToken: () => Promise<string> | string;
-  editorRef: React.RefObject<HTMLDivElement | null>;
+  html: string;
   onRemoteHtml?: (html: string) => void;
   hidePresenceBar?: boolean;
+  getEditorRoot?: () => HTMLElement | null;
 };
 
 export default function ReportCollabClient({
   reportId,
   getAccessToken,
-  editorRef,
+  html,
   onRemoteHtml,
   hidePresenceBar,
+  getEditorRoot,
 }: Props) {
   const [collabs, setCollabs] = useState<CollaboratorPresenceDto[]>([]);
-  const [editorEl, setEditorEl] = useState<HTMLDivElement | null>(null);
+  const lastSentHtmlRef = useRef<string>("");
 
-  // remote cursors map: uid -> {pos, name, color}
   const [remoteCursors, setRemoteCursors] = useState<
     Record<string, { pos: number; name: string; color: string }>
   >({});
-  // computed viewport coords: uid -> {left, top, height}
   const [cursorCoords, setCursorCoords] = useState<
     Record<string, { left: number; top: number; height: number }>
   >({});
 
-  // chống vòng lặp
-  const lastSentHtmlRef = useRef<string>("");
-  const applyingRemoteRef = useRef(false);
-  const rafRef = useRef<number | null>(null);
-
-  // color per user stable
+  const recalcTimerRef = useRef<NodeJS.Timeout | null>(null);
   const colorRef = useRef<Record<string, string>>({});
-  function colorFor(userId: string) {
+
+  const colorFor = (userId: string) => {
     if (!colorRef.current[userId]) {
       const idx = Object.keys(colorRef.current).length % COLORS.length;
       colorRef.current[userId] = COLORS[idx];
     }
     return colorRef.current[userId];
-  }
+  };
+
+  /** Logic "kẹp" (clamp) vị trí con trỏ */
+  const recalcAllCursorCoords = useCallback(() => {
+    const root = getEditorRoot?.();
+    if (!root) return;
+
+    // 1. Lấy độ dài tối đa của DOM hiện tại
+    const range = root.ownerDocument.createRange();
+    range.selectNodeContents(root);
+    const rootLen = range.toString().length;
+
+    const next: Record<string, { left: number; top: number; height: number }> =
+      {};
+    for (const [uid, info] of Object.entries(remoteCursors)) {
+      // 2. "Kẹp" vị trí: Lấy vị trí nhỏ hơn giữa (vị trí remote) và (độ dài DOM)
+      const safePos = Math.min(info.pos, rootLen);
+
+      // 3. Tính toán với vị trí đã được "kẹp" an toàn
+      const rect = caretRectAt(root, safePos);
+      if (!rect) continue;
+      next[uid] = rect;
+    }
+    setCursorCoords(next);
+  }, [getEditorRoot, remoteCursors]);
+
+  /** Sử dụng `setTimeout(0)` để chạy vào "next tick" (sau khi state/DOM update) */
+  const queueRecalc = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    if (recalcTimerRef.current) {
+      clearTimeout(recalcTimerRef.current);
+    }
+
+    // Chờ 0ms (next tick)
+    recalcTimerRef.current = setTimeout(() => {
+      recalcAllCursorCoords();
+      recalcTimerRef.current = null;
+    }, 0);
+  }, [recalcAllCursorCoords]);
 
   const {
     connected,
@@ -210,29 +287,25 @@ export default function ReportCollabClient({
     getActiveCollaborators,
     broadcastChangeDebounced,
     sendCursorPosition,
-    sendTextSelection,
   } = useReportCollabHub({
     getAccessToken,
-    onSessionJoined: (p) => {
-      if (p.currentContent && editorRef.current) {
-        const el = editorRef.current;
-        if (htmlDifferent(el.innerHTML, p.currentContent)) {
-          applyingRemoteRef.current = true;
-          el.innerHTML = p.currentContent;
-          onRemoteHtml?.(p.currentContent);
-          applyingRemoteRef.current = false;
-          lastSentHtmlRef.current = p.currentContent;
-        }
-      }
+    onSessionJoined: async (p) => {
       setCollabs(p.activeUsers ?? []);
+      if (typeof p.currentContent === "string") {
+        lastSentHtmlRef.current = p.currentContent;
+        onRemoteHtml?.(p.currentContent);
+        queueRecalc(); // OK
+      }
     },
     onUserJoined: async () => {
-      try {
-        const list = await getActiveCollaborators(reportId);
-        setCollabs(list);
-      } catch {}
+      const list = await getActiveCollaborators(reportId).catch(() => []);
+      setCollabs(list);
     },
     onUserLeft: async (u) => {
+      const list = await getActiveCollaborators(reportId).catch(() => []);
+      setCollabs(list);
+
+      // Xóa caret của user rời đi
       setRemoteCursors((prev) => {
         const n = { ...prev };
         delete n[u.userId];
@@ -243,36 +316,30 @@ export default function ReportCollabClient({
         delete n[u.userId];
         return n;
       });
-      try {
-        const list = await getActiveCollaborators(reportId);
-        setCollabs(list);
-      } catch {}
+      queueRecalc(); // OK
     },
     onReceiveChange: (change) => {
-      // BE: content-based sync
-      if (change.changeType === "content" && typeof change.content === "string" && editorRef.current) {
-        const el = editorRef.current;
-        if (htmlDifferent(el.innerHTML, change.content)) {
-          const oldCaret = getCaretIndex(el);
-          applyingRemoteRef.current = true;
-          el.innerHTML = change.content;
-          onRemoteHtml?.(change.content);
-          applyingRemoteRef.current = false;
-          lastSentHtmlRef.current = change.content;
-          try {
-            setCaretIndex(el, Math.min(oldCaret, el.innerText.length));
-          } catch {}
-        }
+      if (
+        change.changeType === "content" &&
+        typeof change.content === "string"
+      ) {
+        lastSentHtmlRef.current = change.content;
+        onRemoteHtml?.(change.content);
+        // Bỏ queueRecalc() - `MutationObserver` sẽ lo việc này
       }
     },
     onCursorMoved: (cursor) => {
-      if (!cursor?.userId) return;
+      if (!cursor?.userId || cursor.position == null) return;
       const uid = cursor.userId;
       setRemoteCursors((prev) => ({
         ...prev,
-        [uid]: { pos: cursor.position, name: cursor.userName ?? "User", color: colorFor(uid) },
+        [uid]: {
+          pos: cursor.position,
+          name: cursor.userName ?? "User",
+          color: colorFor(uid),
+        },
       }));
-      queueRecalc();
+      // Bỏ queueRecalc() - `MutationObserver` sẽ lo việc này
     },
     onSelectionChanged: () => {},
     onError: () => {},
@@ -289,7 +356,9 @@ export default function ReportCollabClient({
         const list = await getActiveCollaborators(reportId);
         if (!mounted) return;
         setCollabs(list);
-      } catch {}
+      } catch {
+        // ignore
+      }
     })();
     return () => {
       mounted = false;
@@ -304,131 +373,115 @@ export default function ReportCollabClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportId]);
 
-  /** detect editor node swaps */
-  useLayoutEffect(() => {
-    const node = editorRef.current ?? null;
-    setEditorEl(node);
-    const parent = node?.parentElement;
-    if (!parent) return;
-    const obs = new MutationObserver(() => {
-      if (editorRef.current !== node) {
-        setEditorEl(editorRef.current ?? null);
-      }
-    });
-    obs.observe(parent, { childList: true, subtree: true });
-    return () => obs.disconnect();
-  }, [editorRef]);
-
-  /** Local -> Remote listeners (no typing) */
+  /** Local HTML (TinyMCE) -> broadcast */
   useEffect(() => {
-    const el = editorEl;
-    if (!el) return;
+    if (!connected || !joined) return;
+    if (!htmlDifferent(html, lastSentHtmlRef.current)) return;
 
-    const handleInput = () => {
-      if (!connected || !joined) return;
-      if (applyingRemoteRef.current) return;
-      const html = el.innerHTML;
-
-      if (htmlDifferent(html, lastSentHtmlRef.current)) {
-        lastSentHtmlRef.current = html;
-        const caret = getCaretIndex(el);
-        const change: ReportChangeDto = {
-          reportId,
-          content: html,
-          cursorPosition: caret,
-          changeType: "content",
-        };
-        broadcastChangeDebounced(change);
-      }
+    lastSentHtmlRef.current = html;
+    const change: ReportChangeDto = {
+      reportId,
+      content: html,
+      changeType: "content",
     };
+    broadcastChangeDebounced(change);
+  }, [html, connected, joined, reportId, broadcastChangeDebounced]);
 
-    const handleSelection = () => {
+  /** Gửi cursorPosition khi selection thay đổi */
+  useEffect(() => {
+    if (!getEditorRoot) return;
+    const root = getEditorRoot();
+    if (!root) return;
+
+    const doc = root.ownerDocument;
+    const handleSelectionChange = () => {
       if (!connected || !joined) return;
       try {
-        const caret = getCaretIndex(el);
-        const payload: CursorPositionDto = { reportId, position: caret };
+        const pos = getCaretIndexInRoot(root);
+        const payload: CursorPositionDto = { reportId, position: pos };
         sendCursorPosition(payload).catch(() => {});
-        queueRecalc();
-      } catch {}
+      } catch {
+        // ignore
+      }
     };
 
-    el.addEventListener("input", handleInput);
-    document.addEventListener("selectionchange", handleSelection);
-
+    doc.addEventListener("selectionchange", handleSelectionChange);
     return () => {
-      el.removeEventListener("input", handleInput);
-      document.removeEventListener("selectionchange", handleSelection);
+      doc.removeEventListener("selectionchange", handleSelectionChange);
     };
-  }, [editorEl, connected, joined, reportId, broadcastChangeDebounced, sendCursorPosition]);
+  }, [getEditorRoot, connected, joined, reportId, sendCursorPosition]);
 
-  /** Re-calc viewport coords for all remote cursors with rAF (đỡ giật, fix lệch) */
-  const recalcAllCursorCoords = () => {
-    const el = editorRef.current;
-    if (!el) return;
-    const next: Record<string, { left: number; top: number; height: number }> = {};
-    for (const [uid, info] of Object.entries(remoteCursors)) {
-      const rect = caretRectAt(el, info.pos);
-      if (!rect) continue;
-      // rect is viewport-based → vị trí fixed theo viewport khớp tuyệt đối
-      next[uid] = { left: rect.left, top: rect.top, height: rect.height || 16 };
-    }
-    setCursorCoords(next);
-  };
-  const queueRecalc = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
-      recalcAllCursorCoords();
-      rafRef.current = null;
-    });
-  };
-
-  // recalc khi cursor map đổi
+  /** Recalc khi scroll / resize (Vẫn cần) */
   useEffect(() => {
-    queueRecalc();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remoteCursors, editorEl]);
+    const handler = () => queueRecalc(); // Gọi queueRecalc (đã có delay)
 
-  // recalc on scroll/resize/mutation của editor
-  useEffect(() => {
-    const handler = () => queueRecalc();
+    if (typeof window === "undefined") return;
+
     window.addEventListener("scroll", handler, true);
     window.addEventListener("resize", handler);
-    const mo = new MutationObserver(handler);
-    if (editorRef.current) {
-      mo.observe(editorRef.current, { childList: true, characterData: true, subtree: true });
+
+    let iframeWin: Window | null = null;
+    const root = getEditorRoot?.();
+    const doc = root?.ownerDocument;
+    if (doc && doc.defaultView && doc.defaultView !== window) {
+      iframeWin = doc.defaultView;
+      iframeWin.addEventListener("scroll", handler);
     }
+
     return () => {
       window.removeEventListener("scroll", handler, true);
       window.removeEventListener("resize", handler);
-      mo.disconnect();
+      iframeWin?.removeEventListener("scroll", handler);
     };
-  }, [editorRef]);
+  }, [getEditorRoot, queueRecalc]);
+
+  /**
+   * Recalc khi DOM Tiny body mutate (remote apply, v.v.)
+   * Đây là trình xử lý quan trọng nhất
+   */
+  useEffect(() => {
+    const root = getEditorRoot?.();
+    if (!root || typeof MutationObserver === "undefined") return;
+
+    const mo = new MutationObserver(() => {
+      queueRecalc(); // Gọi queueRecalc (đã có delay)
+    });
+    mo.observe(root, { childList: true, subtree: true, characterData: true });
+    return () => mo.disconnect();
+  }, [getEditorRoot, queueRecalc]);
+
+  /** Clear timer khi unmount */
+  useEffect(() => {
+    const timerRef = recalcTimerRef; // capture ref
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  const caretOverlays = Object.entries(cursorCoords).map(([uid, p]) => {
+    const info = remoteCursors[uid];
+    if (!info) return null;
+    return (
+      <RemoteCaret
+        key={uid}
+        left={p.left}
+        top={p.top}
+        height={p.height}
+        color={info.color}
+        name={info.name}
+      />
+    );
+  });
 
   if (hidePresenceBar) {
-    // vẫn render caret overlay khi ẩn bar
-    return (
-      <>
-        {Object.entries(cursorCoords).map(([uid, p]) => {
-          const info = remoteCursors[uid];
-          if (!info) return null;
-          return (
-            <RemoteCaret
-              key={uid}
-              left={p.left}
-              top={p.top}
-              height={p.height}
-              color={info.color}
-              name={info.name}
-            />
-          );
-        })}
-      </>
-    );
+    return <>{caretOverlays}</>;
   }
 
   return (
     <>
-      {/* Live collaboration bar — đặt component này lên trên khung Submit như mày muốn */}
+      {/* Live collaboration bar */}
       <div className="mb-2 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
         <div className="flex items-center gap-2 text-slate-700">
           {connected ? (
@@ -439,8 +492,16 @@ export default function ReportCollabClient({
             <WifiOff className="w-4 h-4 text-rose-600" />
           )}
           <span className="text-sm">
-            {connected ? (joined ? "Live collaboration" : "Connected (not joined)") : connecting ? "Connecting…" : "Offline"}
-            {lastError ? <span className="ml-2 text-xs text-rose-600">({lastError})</span> : null}
+            {connected
+              ? joined
+                ? "Live collaboration"
+                : "Connected (not joined)"
+              : connecting
+              ? "Connecting…"
+              : "Offline"}
+            {lastError ? (
+              <span className="ml-2 text-xs text-rose-600">({lastError})</span>
+            ) : null}
           </span>
         </div>
 
@@ -468,21 +529,8 @@ export default function ReportCollabClient({
         </div>
       </div>
 
-      {/* Remote caret overlays */}
-      {Object.entries(cursorCoords).map(([uid, p]) => {
-        const info = remoteCursors[uid];
-        if (!info) return null;
-        return (
-          <RemoteCaret
-            key={uid}
-            left={p.left}
-            top={p.top}
-            height={p.height}
-            color={info.color}
-            name={info.name}
-          />
-        );
-      })}
+      {/* Remote caret overlays (Google Docs style) */}
+      {caretOverlays}
     </>
   );
 }
