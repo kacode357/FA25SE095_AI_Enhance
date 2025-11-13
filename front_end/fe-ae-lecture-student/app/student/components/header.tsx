@@ -1,40 +1,177 @@
+// app/student/components/header.tsx
 "use client";
 
 import Cookies from "js-cookie";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
+import { useNotificationHub } from "@/hooks/hubnotification/useNotificationHub";
 
 import Logo from "@/components/logo/Logo";
-import NotificationsMenu from "@/components/notifications/NotificationsMenu";
+import NotificationsMenu, {
+  NotificationItem,
+} from "@/components/notifications/NotificationsMenu";
 import UserMenu from "@/components/user/UserMenu";
-import { ROLE_LECTURER, UserServiceRole } from "@/config/user-service/user-role";
 import { useStudentNav } from "./nav-items";
+import { getSavedAccessToken } from "@/utils/auth/access-token";
+
+// ✅ hooks notifications
+import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
+import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
+
+const COOKIE_ACCESS_TOKEN_KEY = "accessToken";
+
+function normalizeNotification(raw: any): NotificationItem {
+  const nowIso = new Date().toISOString();
+
+  const id =
+    raw?.id ||
+    raw?.notificationId ||
+    (typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`);
+
+  const readFlag =
+    typeof raw?.read === "boolean"
+      ? raw.read
+      : typeof raw?.isRead === "boolean"
+      ? raw.isRead
+      : false;
+
+  return {
+    id,
+    title: raw?.title || raw?.subject || "New notification",
+    message: raw?.message || raw?.content || raw?.body || "",
+    createdAt: raw?.createdAt || raw?.timestamp || nowIso,
+    read: readFlag,
+  };
+}
 
 export default function Header() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const { user } = useAuth();
   const { logout } = useLogout();
-
   const navs = useStudentNav();
-  const isLecturer = user?.role === UserServiceRole[ROLE_LECTURER];
+
+  const { getNotifications } = useGetNotifications();
+  const { markAllNotificationsAsRead } = useMarkAllNotificationsAsRead();
+
+  const {
+    connect,
+    disconnect,
+    connected,
+    connecting,
+    lastError,
+  } = useNotificationHub({
+    getAccessToken: getSavedAccessToken,
+    onNotification: (raw) => {
+      const item = normalizeNotification(raw);
+      setNotifications((prev) => [item, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+    },
+    onError: (msg) => {
+      console.warn("[Header][NotificationHub] onError:", msg);
+    },
+  });
+
+  // ✅ Lấy lịch sử thông báo từ API khi có user
+  useEffect(() => {
+    if (!user?.id) return;
+
+    (async () => {
+      try {
+        const list = await getNotifications({ take: 50 });
+        if (!list) return;
+
+        setNotifications(list.map((n) => normalizeNotification(n)));
+
+        const unread = list.filter((n: any) => {
+          if (typeof n.isRead === "boolean") return !n.isRead;
+          if (typeof n.read === "boolean") return !n.read;
+          return false;
+        }).length;
+
+        setUnreadCount(unread);
+      } catch (err) {
+        console.warn("[Header][Notifications] fetch history error:", err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Auto connect khi có user + token
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const token = getSavedAccessToken();
+    console.log(
+      "[Header][NotificationHub] token from storage:",
+      token ? token.slice(0, 25) + "..." : "(EMPTY)"
+    );
+    if (!token) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        console.log("[Header][NotificationHub] calling connect()...");
+        await connect();
+        if (!cancelled) {
+          console.log("[Header][NotificationHub] connect() resolved");
+        }
+      } catch (e) {
+        console.warn("[Header][NotificationHub] connect exception:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const handleLogout = () => {
     setDropdownOpen(false);
+    disconnect();
+
     logout({
       userId: user?.id ?? "",
-      accessToken: Cookies.get("accessToken") || "",
+      accessToken: Cookies.get(COOKIE_ACCESS_TOKEN_KEY) || "",
       logoutAllDevices: false,
     });
   };
 
+  // ✅ Khi mở dropdown notif: mark-all-as-read (gọi API + update local)
+  const handleNotificationOpenChange = (v: boolean) => {
+    setNotificationOpen(v);
+    if (v) {
+      // Đóng menu user nếu đang mở
+      setDropdownOpen(false);
+
+      if (unreadCount > 0) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setUnreadCount(0);
+
+        // fire-and-forget
+        markAllNotificationsAsRead().catch((err) => {
+          console.warn(
+            "[Header][Notifications] markAllNotificationsAsRead error:",
+            err
+          );
+        });
+      }
+    }
+  };
+
   return (
     <header
-      // dùng fixed để ổn định khi chuyển route
       className="fixed top-0 z-40 w-full h-16 backdrop-blur-sm"
       style={{
         background: "rgba(255,255,255,0.72)",
@@ -49,52 +186,49 @@ export default function Header() {
         {/* Left: logo + nav */}
         <div className="flex items-center gap-8 min-w-0">
           <Logo />
-          {!isLecturer && (
-            <nav className="hidden md:flex items-center gap-8">
-              {navs.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="no-underline"
-                  aria-current={item.isActive ? "page" : undefined}
+          <nav className="hidden md:flex items-center gap-8">
+            {navs.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="no-underline"
+                aria-current={item.isActive ? "page" : undefined}
+              >
+                <span
+                  className={
+                    "text-base font-medium leading-none transition-colors visited:text-nav " +
+                    (item.isActive
+                      ? "text-nav-active"
+                      : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active")
+                  }
                 >
-                  <span
-                    className={
-                      "text-base font-medium leading-none transition-colors visited:text-nav " +
-                      (item.isActive
-                        ? "text-nav-active"
-                        : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active")
-                    }
-                  >
-                    {item.label}
-                  </span>
-                </Link>
-              ))}
-            </nav>
-          )}
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </nav>
         </div>
 
         {/* Right */}
         <div className="ml-auto flex bg-slate-100 p-0 rounded-xl shadow-lg items-center gap-2">
           <NotificationsMenu
             open={notificationOpen}
-            onOpenChange={(v) => {
-              setNotificationOpen(v);
-              if (v) setDropdownOpen(false);
-            }}
-            badgeCount={3}
+            onOpenChange={handleNotificationOpenChange}
+            badgeCount={unreadCount}
+            notifications={notifications}
+            connected={connected}
+            connecting={connecting}
+            lastError={lastError ?? undefined}
           />
-          {!isLecturer && (
-            <UserMenu
-              open={dropdownOpen}
-              onOpenChange={(v) => {
-                setDropdownOpen(v);
-                if (v) setNotificationOpen(false);
-              }}
-              user={user ?? null}
-              onLogout={handleLogout}
-            />
-          )}
+          <UserMenu
+            open={dropdownOpen}
+            onOpenChange={(v) => {
+              setDropdownOpen(v);
+              if (v) setNotificationOpen(false);
+            }}
+            user={user ?? null}
+            onLogout={handleLogout}
+          />
         </div>
       </div>
     </header>

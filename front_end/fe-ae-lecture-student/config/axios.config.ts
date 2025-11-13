@@ -7,6 +7,7 @@ import { toast } from "sonner";
 const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;
 const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API!;
 const CRAWL_BASE_URL = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_API!;
+const NOTIFICATION_BASE_URL = process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL_API!;
 
 /** ===== Token keys ===== */
 const ACCESS_TOKEN_KEY = "accessToken";
@@ -121,4 +122,5 @@ const createAxiosInstance = (baseURL: string, opts: CreateOpts = {}): AxiosInsta
 /** ===== Export axios instances ===== */
 export const userAxiosInstance = createAxiosInstance(USER_BASE_URL);
 export const courseAxiosInstance = createAxiosInstance(COURSE_BASE_URL);
+export const notificationAxiosInstance = createAxiosInstance(NOTIFICATION_BASE_URL);
 export const crawlAxiosInstance = createAxiosInstance(CRAWL_BASE_URL, { timeout: 600_000 });
