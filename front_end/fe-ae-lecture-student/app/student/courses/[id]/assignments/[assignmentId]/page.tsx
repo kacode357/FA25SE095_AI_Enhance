@@ -22,10 +22,16 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { useAllMembers } from "@/hooks/group-member/useAllMembers";
-import { AssignmentStatus, type GroupItem } from "@/types/assignments/assignment.response";
+import {
+  AssignmentStatus,
+  type GroupItem,
+} from "@/types/assignments/assignment.response";
 
 import CreateReportButton from "../components/createReportButton";
-import LiteRichTextEditor from "@/components/common/LiteRichTextEditor";
+// ❌ Bỏ import cũ
+// import LiteRichTextEditor from "@/components/common/LiteRichTextEditor";
+// ✅ Đổi sang TinyMCE wrapper
+import TinyMCEEditor from "@/components/common/TinyMCE";
 
 /* ============ utils ============ */
 const dt = (s?: string | null) => {
@@ -51,8 +57,14 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
         <Loader2 className="w-4 h-4 animate-spin" /> Loading members…
       </div>
     );
-  if (error) return <div className="text-sm text-red-600 py-2">Error: {error}</div>;
-  if (!members?.length) return <div className="text-sm text-slate-500 py-2">No members.</div>;
+  if (error)
+    return (
+      <div className="text-sm text-red-600 py-2">Error: {error}</div>
+    );
+  if (!members?.length)
+    return (
+      <div className="text-sm text-slate-500 py-2">No members.</div>
+    );
 
   return (
     <ul className="mt-2 divide-y divide-slate-200">
@@ -61,14 +73,23 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
           <div className="flex items-center gap-3">
             <div
               className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-semibold shadow"
-              style={{ background: "linear-gradient(135deg, var(--brand), var(--nav-active))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--brand), var(--nav-active))",
+              }}
               title={m.studentName || ""}
             >
-              {m.studentName?.split(" ").map((s) => s[0]).join("").slice(0, 2) || "ST"}
+              {m.studentName
+                ?.split(" ")
+                .map((s) => s[0])
+                .join("")
+                .slice(0, 2) || "ST"}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground truncate">{m.studentName}</span>
+                <span className="font-medium text-foreground truncate">
+                  {m.studentName}
+                </span>
                 {m.isLeader && (
                   <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-amber-200 text-amber-700 bg-amber-50/50">
                     <Shield className="w-3 h-3" />
@@ -90,7 +111,8 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
 
 /* ============ page ============ */
 export default function AssignmentDetailPage() {
-  const { id, assignmentId } = useParams<{ id: string; assignmentId: string }>();
+  const { id, assignmentId } =
+    useParams<{ id: string; assignmentId: string }>();
   const router = useRouter();
 
   const courseId = id;
@@ -109,7 +131,9 @@ export default function AssignmentDetailPage() {
   const a = data?.assignment;
 
   // chuẩn hoá groups = []
-  const groups: GroupItem[] = Array.isArray(a?.assignedGroups) ? a!.assignedGroups! : [];
+  const groups: GroupItem[] = Array.isArray(a?.assignedGroups)
+    ? a!.assignedGroups!
+    : [];
 
   useEffect(() => {
     if (!a?.isGroupAssignment) return setSelectedGroupId(null);
@@ -131,9 +155,9 @@ export default function AssignmentDetailPage() {
       case AssignmentStatus.Overdue:
         return "bg-red-50 text-red-700 border border-red-200";
       case AssignmentStatus.Closed:
-        return "bg-gray-100 text-gray-700 border border-gray-200";
+        return "bg-gray-100 text-gray-700 border-gray-200";
       case AssignmentStatus.Graded:
-        return "bg-purple-50 text-purple-700 border border-purple-200";
+        return "bg-purple-50 text-purple-700 border-purple-200";
       default:
         return "bg-slate-100 text-slate-700 border border-slate-200";
     }
@@ -160,7 +184,9 @@ export default function AssignmentDetailPage() {
     return (
       <div className="flex items-center justify-center h-[60vh] text-nav">
         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-        <span className="text-sm">{loading ? "Loading assignment…" : "No data"}</span>
+        <span className="text-sm">
+          {loading ? "Loading assignment…" : "No data"}
+        </span>
       </div>
     );
   }
@@ -198,14 +224,20 @@ export default function AssignmentDetailPage() {
             </h1>
 
             <div className="mt-2 flex items-center gap-2 flex-wrap">
-              <span className={`text-[11px] px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${statusClass}`}>
-                {a.status === AssignmentStatus.Active && <CheckCircle2 className="w-3 h-3" />}
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${statusClass}`}
+              >
+                {a.status === AssignmentStatus.Active && (
+                  <CheckCircle2 className="w-3 h-3" />
+                )}
                 {a.statusDisplay}
               </span>
               {chips.map((c, i) => (
                 <span
                   key={i}
-                  className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200 ${c.className || ""}`}
+                  className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200 ${
+                    c.className || ""
+                  }`}
                 >
                   {c.icon}
                   {c.label}
@@ -230,7 +262,11 @@ export default function AssignmentDetailPage() {
         <div className="w-full flex justify-end">
           <div className="flex flex-row flex-wrap items-center gap-2">
             <button
-              onClick={() => router.push(`/student/courses/${courseId}/reports?assignmentId=${aId}`)}
+              onClick={() =>
+                router.push(
+                  `/student/courses/${courseId}/reports?assignmentId=${aId}`
+                )
+              }
               className="btn bg-white border border-brand text-nav hover:text-nav-active"
             >
               <FileText className="w-4 h-4" />
@@ -269,7 +305,8 @@ export default function AssignmentDetailPage() {
         <div className="border border-red-200 rounded-xl p-3 bg-red-50 text-red-700 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="text-sm">
-            This assignment is <b>Overdue</b>. Please contact your lecturer if you need assistance.
+            This assignment is <b>Overdue</b>. Please contact your lecturer if
+            you need assistance.
           </div>
         </div>
       )}
@@ -277,7 +314,8 @@ export default function AssignmentDetailPage() {
         <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 text-slate-700 flex items-start gap-2">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="text-sm">
-            This assignment is currently in <b>Draft</b> and may not be visible to students.
+            This assignment is currently in <b>Draft</b> and may not be visible
+            to students.
           </div>
         </div>
       )}
@@ -307,7 +345,8 @@ export default function AssignmentDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-nav-active" />
-                  <b>Points:</b>&nbsp;{typeof a.maxPoints === "number" ? a.maxPoints : "—"}
+                  <b>Points:</b>&nbsp;
+                  {typeof a.maxPoints === "number" ? a.maxPoints : "—"}
                 </div>
               </div>
 
@@ -323,7 +362,9 @@ export default function AssignmentDetailPage() {
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
                       Grading Criteria
                     </div>
-                    <div className="whitespace-pre-wrap">{a.gradingCriteria || "—"}</div>
+                    <div className="whitespace-pre-wrap">
+                      {a.gradingCriteria || "—"}
+                    </div>
                   </div>
                 </div>
               )}
@@ -335,7 +376,8 @@ export default function AssignmentDetailPage() {
             <div className="mb-2 flex items-center gap-2">
               <h2 className="text-lg font-bold text-nav">Description</h2>
             </div>
-            <LiteRichTextEditor
+            {/* ✅ Dùng TinyMCE, readOnly */}
+            <TinyMCEEditor
               value={a.description ?? ""}
               onChange={() => {}}
               readOnly
@@ -351,14 +393,24 @@ export default function AssignmentDetailPage() {
           <div className="card rounded-2xl p-4">
             <h3 className="text-base font-bold text-nav mb-2">Meta</h3>
             <div className="text-sm text-foreground/80 space-y-2">
-              <div><b>Status:</b> {a.statusDisplay}</div>
-              <div><b>Course:</b> {a.courseName}</div>
-              <div><b>Overdue:</b> {a.isOverdue ? "Yes" : "No"}</div>
-              {(!a.isOverdue && a.daysUntilDue >= 0) && (
-                <div><b>Days until due:</b> {a.daysUntilDue}</div>
+              <div>
+                <b>Status:</b> {a.statusDisplay}
+              </div>
+              <div>
+                <b>Course:</b> {a.courseName}
+              </div>
+              <div>
+                <b>Overdue:</b> {a.isOverdue ? "Yes" : "No"}
+              </div>
+              {!a.isOverdue && a.daysUntilDue >= 0 && (
+                <div>
+                  <b>Days until due:</b> {a.daysUntilDue}
+                </div>
               )}
               {typeof a.assignedGroupsCount === "number" && (
-                <div><b>Assigned groups:</b> {a.assignedGroupsCount}</div>
+                <div>
+                  <b>Assigned groups:</b> {a.assignedGroupsCount}
+                </div>
               )}
               <div className="pt-1 text-xs text-slate-500">
                 Created: {dt(a.createdAt)}
@@ -369,19 +421,32 @@ export default function AssignmentDetailPage() {
 
           {!!groups.length && (
             <div className="card rounded-2xl p-4">
-              <h3 className="text-base font-bold text-nav mb-2">Assigned Groups & Members</h3>
+              <h3 className="text-base font-bold text-nav mb-2">
+                Assigned Groups & Members
+              </h3>
               <ul className="space-y-3">
                 {groups.map((g) => {
                   const membersLabel =
                     g.maxMembers == null
-                      ? `${g.memberCount ?? 0} ${g.memberCount === 1 ? "member" : "members"}`
-                      : `${g.memberCount}/${g.maxMembers} ${g.maxMembers === 1 ? "member" : "members"}`;
+                      ? `${g.memberCount ?? 0} ${
+                          g.memberCount === 1 ? "member" : "members"
+                        }`
+                      : `${g.memberCount}/${g.maxMembers} ${
+                          g.maxMembers === 1 ? "member" : "members"
+                        }`;
                   return (
-                    <li key={g.id} className="border border-slate-200 rounded-lg p-3">
+                    <li
+                      key={g.id}
+                      className="border border-slate-200 rounded-lg p-3"
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-medium text-foreground truncate">{g.name}</span>
-                          <span className="text-xs text-slate-500">• {membersLabel}</span>
+                          <span className="font-medium text-foreground truncate">
+                            {g.name}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            • {membersLabel}
+                          </span>
                         </div>
                         {g.isLocked && (
                           <span className="text-[11px] px-2 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200">

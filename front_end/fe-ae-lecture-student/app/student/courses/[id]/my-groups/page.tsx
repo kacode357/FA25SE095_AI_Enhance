@@ -128,7 +128,7 @@ export default function MyGroupsByCoursePage() {
           {empty && (
             <div className="flex flex-col items-center py-10 text-center">
               <Users className="w-10 h-10 text-nav-active mb-2" />
-              <p className="mb-4 text-sm text-nav">Bạn chưa tham gia nhóm nào trong khoá này.</p>
+              <p className="mb-4 text-sm text-nav">You have not joined any groups in this course.</p>
               <div className="flex gap-2">
                 <button
                   className="btn btn-gradient"
