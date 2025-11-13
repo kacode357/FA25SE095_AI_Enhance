@@ -39,13 +39,18 @@ export default function AccessCodeJoinSheet({
 
   const handleSubmit = async () => {
     if (!courseId || !accessCode.trim() || loading) return;
-    const res = await joinCourse(courseId, { accessCode });
-    if (res) {
-      toast.success(res.message || "Joined course successfully");
-      onOpenChange(false);
-      onJoined?.();
-      router.push(`/student/courses/${courseId}`);
+    const trimmedCode = accessCode.trim();
+    const res = await joinCourse(courseId, { accessCode: trimmedCode });
+    if (!res) {
+      return;
     }
+    if (res.success === false) {
+      return;
+    }
+    toast.success(res.message);
+    onOpenChange(false);
+    onJoined?.();
+    router.push(`/student/courses/${courseId}`);
   };
 
   return (
