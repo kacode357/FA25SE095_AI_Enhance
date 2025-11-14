@@ -74,3 +74,7 @@ export interface UploadCourseImageRequest {
   courseId: string;
   image: File;
 }
+
+export interface DeleteCourseImageRequest {
+  courseId: string;
+}

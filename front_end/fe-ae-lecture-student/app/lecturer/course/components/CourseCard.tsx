@@ -2,9 +2,10 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDeleteCourseImage } from "@/hooks/course/useDeleteCourseImage";
 import { useUploadCourseImage } from "@/hooks/course/useUploadCourseImage";
 import { CourseItem, CourseStatus } from "@/types/courses/course.response";
-import { ImageUp, Loader2, Users } from "lucide-react";
+import { ImageUp, Loader2, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef } from "react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
 
   const { uploadCourseImage, loading: uploading } = useUploadCourseImage();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { deleteCourseImage, loading: deleting } = useDeleteCourseImage();
 
   const hasCodeFeature = !!course.requiresAccessCode;
   const accessActive = hasCodeFeature && !course.isAccessCodeExpired;
@@ -102,10 +104,8 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
         className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#7f71f4] via-[#a786f9] to-[#f4a23b]"
       />
 
-      <div
-        className={`relative h-52 w-full bg-cover bg-center flex items-center justify-center group transition-all duration-300`}
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      >
+      <div className={`relative h-52 w-full flex items-center justify-center group transition-all duration-300 rounded-t-lg overflow-hidden`}> 
+        <img src={backgroundImage} alt="" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} aria-label="Upload course image" />
         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-all duration-300" />
         {!course.img && !uploading && (
@@ -122,9 +122,29 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
         >
           <div className="flex flex-col items-center justify-center">
             <ImageUp className="cursor-pointer" size={36} />
-            <span className="text-xs mt-1 cursor-pointer">Upload image</span>
+            <span className="text-xs mt-1 cursor-pointer">Upload Image</span>
           </div>
         </div>
+
+        {/* Delete icon (visible on hover) */}
+        {course.img && (
+          <button
+            onClick={async (e) => {
+              stop(e);
+              if (deleting) return;
+              if (!course.id) return;
+              const res = await deleteCourseImage({ courseId: course.id });
+              if (res?.success) {
+                onUpdated();
+              }
+            }}
+            title="Delete image"
+            aria-label="Delete course image"
+            className="absolute top-2 cursor-pointer right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/20 hover:bg-white/40 rounded-full p-1 text-red-500"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        )}
 
         {uploading && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

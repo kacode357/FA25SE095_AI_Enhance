@@ -41,3 +41,26 @@ export interface AssignmentReportsQuery {
   pageNumber?: number; // default 1
   pageSize?: number;   // default 20
 }
+
+export interface GetCourseReportsQuery {
+  courseId: string;
+  status?: string; 
+  fromDate?: string;
+  toDate?: string; 
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export interface GetReportsRequiringGradingQuery {
+  courseId?: string;
+  assignmentId?: string;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export interface GetLateSubmissionsQuery {
+  courseId?: string;
+  assignmentId?: string;
+  pageNumber?: number;
+  pageSize?: number;
+}

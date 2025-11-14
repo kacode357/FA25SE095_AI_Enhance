@@ -203,3 +203,8 @@ export interface UploadCourseImageResponse {
   message: string;
   imageUrl: string;
 }
+
+export interface DeleteCourseImageResponse {
+  success: boolean;
+  message: string;
+}

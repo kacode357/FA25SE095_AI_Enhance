@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { ReportsService } from "@/services/reports.services";
 import type { GetReportResponse } from "@/types/reports/reports.response";
+import { useState } from "react";
 
 export function useGetReportById() {
   const [loading, setLoading] = useState(false);

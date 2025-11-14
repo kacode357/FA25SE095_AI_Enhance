@@ -14,6 +14,16 @@
 //   Graded = 3,
 //   RequiresRevision = 4,
 // }
+export enum ReportStatus {
+  Draft = 1,
+  Submitted = 2,
+  UnderReview = 3,
+  RequiresRevision = 4,
+  Resubmitted = 5,
+  Graded = 6,
+  Late = 7,
+  Rejected = 8,
+}
 
 export interface ReportBase {
   id: string;
@@ -89,6 +99,95 @@ export interface MyReportsResponse extends ApiSuccess {
 
 export interface AssignmentReportsResponse extends ApiSuccess {
   reports: ReportListItem[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+export interface CourseReportItem {
+  id: string;
+  assignmentId: string;
+  assignmentTitle: string;
+  groupId: string | null;
+  groupName: string | null;
+  submittedBy: string | null;
+  submittedAt: string | null;
+  status: number;
+  grade: number | null;
+  feedback: string | null;
+  gradedBy: string | null;
+  gradedAt: string | null;
+  isGroupSubmission: boolean;
+  version: number;
+  fileUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetCourseReportsResponse {
+  success: boolean;
+  message: string;
+  reports: CourseReportItem[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+export interface RequiringGradingReportItem {
+  id: string;
+  assignmentId: string;
+  assignmentTitle: string;
+  groupId: string | null;
+  groupName: string | null;
+  submittedBy: string | null;
+  submittedAt: string | null;
+  status: number;
+  grade: number | null;
+  feedback: string | null;
+  gradedBy: string | null;
+  gradedAt: string | null;
+  isGroupSubmission: boolean;
+  version: number;
+  fileUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetReportsRequiringGradingResponse {
+  success: boolean;
+  message: string;
+  reports: RequiringGradingReportItem[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+export interface LateSubmissionReport {
+  id: string;
+  assignmentId: string;
+  assignmentTitle: string;
+  groupId: string;
+  groupName: string;
+  submittedBy: string;
+  submittedAt: string;
+  status: number;
+  grade: number;
+  feedback: string;
+  gradedBy: string;
+  gradedAt: string;
+  isGroupSubmission: boolean;
+  version: number;
+  fileUrl: string;
+  createdAt: string;
+  updatedAt: string;
+  deadline: string;
+  daysLate: number;
+}
+
+export interface GetLateSubmissionsResponse {
+  success: boolean;
+  message: string;
+  reports: LateSubmissionReport[];
   totalCount: number;
   totalPages: number;
   currentPage: number;

@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { courseAxiosInstance } from "@/config/axios.config";
 import { useCreateAssignment } from "@/hooks/assignment/useCreateAssignment";
 import { useScheduleAssignment } from "@/hooks/assignment/useScheduleAssignment";
@@ -172,7 +173,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             ) : (
               <select
                 title="Topic"
-                className="w-full border text-xs border-slate-200 placeholder:text-xs rounded-lg px-2 py-3"
+                className="w-full border text-xs border-slate-200 bg-white placeholder:text-xs rounded-lg px-2 py-3"
                 value={form.topicId}
                 onChange={(e) => setForm((p) => ({ ...p, topicId: e.target.value }))}
               >
@@ -234,7 +235,23 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
           </div>
 
           <div>
-            <Label className="text-sm flex items-center mb-1">Grading Criteria <CircleAlert className="size-4 text-slate-500 cursor-pointer" /></Label>
+            <Label className="text-sm flex items-center gap-1 mb-1">
+              Grading Criteria
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Grading criteria help"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full cursor-pointer bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    <CircleAlert className="size-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs bg-white text-slate-500">
+                  The assessment criteria used to determine the score.
+                </TooltipContent>
+              </Tooltip>
+            </Label>
             <Input
               placeholder="Rubric note (optional)"
               value={form.gradingCriteria}

@@ -2,6 +2,7 @@
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
   CreateCoursePayload,
+  DeleteCourseImageRequest,
   GetAvailableCoursesQuery,
   GetCourseEnrollmentsQuery,
   GetMyCoursesQuery,
@@ -12,6 +13,7 @@ import {
 } from "@/types/courses/course.payload";
 import {
   CreateCourseResponse,
+  DeleteCourseImageResponse,
   DeleteCourseResponse,
   GetAvailableCoursesResponse,
   GetCourseByIdResponse,
@@ -115,4 +117,12 @@ inactivateCourse: async (
     return res.data;
   },
 
+  deleteCourseImage: async ({
+    courseId,
+  }: DeleteCourseImageRequest): Promise<DeleteCourseImageResponse> => {
+    const res = await courseAxiosInstance.delete<DeleteCourseImageResponse>(
+      `/Courses/${courseId}/image`
+    );
+    return res.data;
+  },
 };

@@ -15,6 +15,7 @@ import { useDeleteAssignment } from "@/hooks/assignment/useDeleteAssignment";
 import type { AssignmentItem } from "@/types/assignments/assignment.response";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import AssignmentDetailView from "./components/AssignmentDetailView";
 import AssignmentsFilterBar, { FilterState } from "./components/AssignmentsFilterBar";
@@ -154,6 +155,8 @@ export default function AssignmentsPanel({
     setMode("edit");
   };
 
+  const router = useRouter();
+
   // Create view
   if (mode === "create") {
     return (
@@ -223,8 +226,8 @@ export default function AssignmentsPanel({
         </div>
 
         {/* Assignment items list */}
-        <Card className="border-slate-200 rounded-sm shadow-md">
-          <CardHeader className="bg-gradient-to-r from-indigo-50 to-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
+        <Card className="border-slate-200 rounded-sm shadow-md py-0">
+          <CardHeader className="sticky top-16 z-30 bg-gradient-to-r from-indigo-50 to-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
             <div className="text-sm text-slate-600">
               {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
             </div>
@@ -232,12 +235,12 @@ export default function AssignmentsPanel({
               <Button
                 size="sm"
                 variant="outline"
-                className="text-[#000D83]"
+                className="text-[#000D83] shadow-md"
                 onClick={() => setTopicSheetOpen(true)}
               >
                 Manage Topics
               </Button>
-              <Button size="sm" className="text-[#000D83]" onClick={openCreate}>
+              <Button size="sm" className="text-[#000D83] shadow-md" onClick={openCreate}>
                 New Assignment
               </Button>
             </div>
@@ -288,14 +291,14 @@ export default function AssignmentsPanel({
                     </div>
 
                     {/* Right actions */}
-                    <div className="flex flex-col items-end cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
+                    <div className="flex flex-row items-end cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
                       {/* Edit moved into detail view header */}
-                      {a.status === (AssignmentStatus.Draft as number) && (
+                      {a.status === (AssignmentStatus.Draft as number) ? (
                         <>
                           <Button
                             size="sm"
                             variant="destructive"
-                            className="text-xs cursor-pointer justify-end -mr-2 flex items-end"
+                            className="text-xs cursor-pointer justify-end mr-1.5 flex items-end text-red-500 hover:text-red-600"
                             disabled={deleting}
                             onClick={() => {
                               // open confirmation dialog with assignment info
@@ -331,6 +334,17 @@ export default function AssignmentsPanel({
                             }}
                           />
                         </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs cursor-pointer"
+                          onClick={() =>
+                            router.push(`/lecturer/course/${courseId}/reports?assignmentId=${a.id}`)
+                          }
+                        >
+                          View Report
+                        </Button>
                       )}
                       <Button
                         size="sm"

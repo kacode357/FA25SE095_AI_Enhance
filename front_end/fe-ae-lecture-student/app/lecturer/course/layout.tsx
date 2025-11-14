@@ -10,7 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
-import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, PanelLeftOpen, PanelRightOpen, Sparkles, Upload, User } from "lucide-react";
+import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, MessageSquareDot, PanelLeftOpen, PanelRightOpen, Sparkles, TableOfContents, Upload, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -27,8 +27,9 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
 
     const isImport = pathname?.includes("/lecturer/course/import");
     const isRequests = pathname?.includes("/lecturer/course/requests");
-    // Treat any /lecturer/course/* (except requests/import) as part of All Courses section
-    const isAllCourses = pathname?.startsWith("/lecturer/course") && !isRequests && !isImport;
+    const isMessages = pathname?.includes("/lecturer/course/messages");
+    const isReports = pathname?.includes("/lecturer/course/reports");
+    const isAllCourses = pathname?.startsWith("/lecturer/course") && !isRequests && !isImport && !isMessages && !isReports;
 
     const sidebarWidth = collapsed ? "w-[72px]" : "w-[270px]";
     const contentPadding = collapsed ? "pl-[72px]" : "pl-[270px]";
@@ -64,7 +65,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                     <button
                                         type="button"
                                         onClick={() => router.push("/lecturer/course")}
-                                        className={`group w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isAllCourses
+                                        className={`group cursor-pointer w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isAllCourses
                                             ? "bg-brand/10 text-brand ring-1 ring-brand/20"
                                             : "text-slate-700 hover:bg-slate-100"
                                             }`}
@@ -73,13 +74,13 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                         <span className={`${collapsed ? "hidden" : "flex-1 text-left"}`}>All Courses</span>
                                     </button>
                                 </li>
-                                
+
                                 {/* Course Request */}
                                 <li>
                                     <button
                                         type="button"
                                         onClick={() => router.push("/lecturer/course/requests")}
-                                        className={`group w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isRequests
+                                        className={`group cursor-pointer w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isRequests
                                             ? "bg-brand/10 text-brand ring-1 ring-brand/20"
                                             : "text-slate-700 hover:bg-slate-100"
                                             }`}
@@ -98,13 +99,41 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                     <button
                                         type="button"
                                         onClick={() => router.push("/lecturer/course/import")}
-                                        className={`group w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isImport
+                                        className={`group cursor-pointer w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isImport
                                             ? "bg-brand/10 text-brand ring-1 ring-brand/20"
                                             : "text-slate-700 hover:bg-slate-100"
                                             }`}
                                     >
                                         <Upload className={`size-4 transition-colors ${isImport ? "text-brand" : "text-slate-400 group-hover:text-slate-600"}`} />
                                         <span className={`${collapsed ? "hidden" : "flex-1 text-left"}`}>Import enrollments</span>
+                                    </button>
+                                </li>
+                                {/* Message */}
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push("/lecturer/course/messages")}
+                                        className={`group cursor-pointer w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isMessages
+                                            ? "bg-brand/10 text-brand ring-1 ring-brand/20"
+                                            : "text-slate-700 hover:bg-slate-100"
+                                            }`}
+                                    >
+                                        <MessageSquareDot className={`size-4 transition-colors ${isMessages ? "text-brand" : "text-slate-400 group-hover:text-slate-600"}`} />
+                                        <span className={`${collapsed ? "hidden" : "flex-1 text-left"}`}>Message</span>
+                                    </button>
+                                </li>
+                                {/* Reports */}
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push("/lecturer/course/reports")}
+                                        className={`group cursor-pointer w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isReports
+                                            ? "bg-brand/10 text-brand ring-1 ring-brand/20"
+                                            : "text-slate-700 hover:bg-slate-100"
+                                            }`}
+                                    >
+                                        <TableOfContents className={`size-4 transition-colors ${isReports ? "text-brand" : "text-slate-400 group-hover:text-slate-600"}`} />
+                                        <span className={`${collapsed ? "hidden" : "flex-1 text-left"}`}>Reports</span>
                                     </button>
                                 </li>
                             </ul>
@@ -152,11 +181,11 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                                 </button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="z-50 border-slate-200">
-                                                <DropdownMenuItem onClick={() => router.push('/lecturer/profile/my-profile')}>
+                                                <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/lecturer/profile/my-profile')}>
                                                     <User className="size-4 mr-1.5" />
                                                     Profile
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => logout()}>
+                                                <DropdownMenuItem className="cursor-pointer" onClick={() => logout()}>
                                                     <CircleArrowOutUpRight className="size-3.5 mr-2" />
                                                     Logout
                                                 </DropdownMenuItem>
@@ -166,7 +195,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                 </div>
                             </div>
                         </div>
-                        
+
                     </Card>
                 </div>
             </aside>

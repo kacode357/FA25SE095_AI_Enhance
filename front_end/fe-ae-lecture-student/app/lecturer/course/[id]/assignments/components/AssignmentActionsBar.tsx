@@ -1,8 +1,8 @@
 // app/lecturer/course/[id]/assignments/components/AssignmentActionsBar.tsx
 "use client";
 
-import { useMemo, useState } from "react";
 import { CalendarClock, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,7 +87,7 @@ export default function AssignmentActionsBar({
   return (
     <div className="space-y-3.5">
       {/* Collapsed summary header */}
-      <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2">
+      <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-1 py-2">
         <div className="flex items-center gap-2 text-xs text-slate-700">
           <CalendarClock className="size-4 text-[#000D83]" />
           <span className="font-medium">Due date</span>
@@ -105,12 +105,12 @@ export default function AssignmentActionsBar({
         <Button
           size="sm"
           variant="outline"
-          className="text-[11px] h-8 px-2"
+          className="text-[11px] h-8 px-0"
           onClick={() => setOpen((o) => !o)}
         >
           <span className="flex items-center gap-1 text-[#000D83]">
             {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-            {open ? "Hide actions" : "Manage"}
+            {open ? "Hide" : "Extend"}
           </span>
         </Button>
       </div>

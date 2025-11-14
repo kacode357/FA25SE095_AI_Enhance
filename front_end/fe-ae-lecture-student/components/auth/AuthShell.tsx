@@ -24,92 +24,88 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
 
   return (
     <div className="min-h-dvh relative isolate text-slate-800">
-      <div className="auth-bg" />
-      <div className="auth-grid" />
+      {/* Decorative background shapes will remain from global styles */}
 
-      {/* container: giảm py để form sát top hơn */}
-      <div className="relative z-10 mx-auto max-w-[1200px] px-5 sm:px-8 py-3 lg:py-4 min-h-dvh flex flex-col">
-        {/* header: bớt chiều cao */}
-        <header className="flex items-center justify-between gap-4 py-1">
+      <div className="relative z-10 mx-auto max-w-[1200px] px-6 sm:px-8 py-6 min-h-dvh flex flex-col">
+        {/* compact header */}
+        <header className="flex items-center justify-between gap-4 py-2">
           <Link href="/" className="inline-flex items-center gap-2" aria-label="AI Enhance Home">
-            <Image src="/ai-enhance-logo.svg" alt="AI Enhance" width={24} height={24} priority />
+            <div className="rounded-full bg-gradient-to-br from-[#f4a7df] to-[--brand] p-1">
+              <Image src="/ai-enhance-logo.svg" alt="AI Enhance" width={28} height={28} priority />
+            </div>
             <span className="font-semibold tracking-tight">AI Enhance</span>
           </Link>
 
           <nav aria-label="Auth navigation" className="flex items-center gap-2">
             <Link
               href="/login"
-              className={`btn h-8 border-b-2 ${isLogin ? "border-emerald-400" : "border-transparent btn-ghost"}`}
+              className={`btn px-3 py-1 text-sm rounded-md ${isLogin ? "border-brand text-nav-active" : "btn-ghost text-nav"}`}
             >
               Login
             </Link>
             <Link
               href="/register"
-              className={`btn h-8 border-b-2 ${isRegister ? "border-emerald-400" : "border-transparent btn-ghost"}`}
+              className={`btn px-3 py-1 text-sm rounded-md ${isRegister ? "border-brand text-nav-active" : "btn-ghost text-nav"}`}
             >
               Register
             </Link>
           </nav>
         </header>
 
-        {/* main: không căn giữa dọc nữa, đẩy phần form lên trên */}
-        <main
-          className="
-            mx-auto w-full max-w-[1100px]
-            grid grid-cols-12
-            gap-6 sm:gap-8 md:gap-16 lg:gap-20 xl:gap-24 2xl:gap-28
-            flex-1 items-start pt-1
-          "
-        >
-          {/* left hero */}
+        <main className="mx-auto w-full max-w-[1100px] grid grid-cols-12 gap-10 flex-1 items-center">
+          {/* Left hero (visual emphasis) */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="hidden lg:flex flex-col justify-start col-span-6"
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            className="hidden md:flex flex-col justify-center col-span-7 auth-hero"
           >
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-              <span className="text-slate-900">Real-time Data</span>{" "}
-              <span className="text-[--color-brand]">Automation</span>
+            <h1 className="hero-title text-slate-900">
+              Real-time Data <span className="text-brand">Automation</span>
             </h1>
-            <p className="mt-4 text-slate-600 max-w-prose">
+            <p className="mt-4 hero-sub max-w-prose">
               Streamline online data gathering and reporting for business students. Secure, fast, and elegant—powered by AI.
             </p>
 
-            <div className="mt-8 md:mt-10 grid grid-cols-3 gap-3 sm:gap-4 max-w-lg">
+            <div className="mt-8 grid grid-cols-3 gap-4 max-w-lg">
               {["Secure", "Fast", "Reliable"].map((k, i) => (
                 <motion.div
                   key={k}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.12 + i * 0.05 }}
-                  className="card p-4"
+                  transition={{ delay: 0.14 + i * 0.04 }}
+                  className="glass-card p-4"
                 >
-                  <div className="text-sm text-slate-700">{k}</div>
+                  <div className="text-sm text-slate-800">{k}</div>
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* right form: tự bám top */}
+          {/* Right form: glass card, centered on smaller screens */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut", delay: 0.05 }}
-            className="flex items-start col-span-12 lg:col-span-6 lg:pl-4 xl:pl-6 self-start"
+            transition={{ duration: 0.45, ease: "easeOut", delay: 0.05 }}
+            className="flex items-center col-span-12 md:col-span-5"
           >
-            <div className="card w-full max-w-[520px] mx-auto p-6 sm:p-8">
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h2>
+            <div className="glass-card w-full max-w-[520px] mx-auto p-6 sm:p-8">
+              <div className="mb-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h2>
+                  <div className="text-xs text-slate-500">{isLogin ? "Welcome back!" : "Welcome"}</div>
+                </div>
                 {subtitle && <div className="mt-1 text-sm text-slate-600">{subtitle}</div>}
               </div>
+
               {children}
-              {footer && <div className="mt-5 text-center text-sm text-slate-600">{footer}</div>}
+
+              {footer && <div className="mt-6 text-center text-sm text-slate-600">{footer}</div>}
             </div>
           </motion.div>
         </main>
 
-        <footer className="mt-4 text-center text-xs text-slate-500">
+        <footer className="mt-6 text-center text-xs text-slate-500">
           © 2025 AI Enhance. All rights reserved.
         </footer>
       </div>

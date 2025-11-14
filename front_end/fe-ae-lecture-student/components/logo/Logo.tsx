@@ -35,7 +35,7 @@ export default function Logo({
           className="drop-shadow-sm"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-md group-hover:blur-lg transition-all" />
+        {/* <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-md group-hover:blur-lg transition-all" /> */}
       </div>
 
       {/* <div className="flex flex-col">

@@ -1,8 +1,8 @@
 // app/lecturer/course/[id]/assignments/components/AssignmentDetailView.tsx
 "use client";
 
+import { ArrowLeft, CalendarCheck2, ChevronDown, ChevronRight, Info, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronDown, ChevronRight, Info, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,12 @@ import { Separator } from "@/components/ui/separator";
 import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { useCloseAssignment } from "@/hooks/assignment/useCloseAssignment";
 import { useExtendDueDate } from "@/hooks/assignment/useExtendDueDate";
+import { useScheduleAssignment } from "@/hooks/assignment/useScheduleAssignment";
 
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 
 import AssignmentActionsBar from "./AssignmentActionsBar";
+import ConfirmScheduleAssignmentDialog from "./ConfirmScheduleAssignmentDialog";
 import GroupAssignControls from "./GroupAssignControls";
 
 // dùng TinyMCE viewer (đã có sẵn trong project)
@@ -40,12 +42,28 @@ const statusColor: Record<AssignmentStatus, string> = {
 
 const fmt = (s?: string | null) => (s ? new Date(s).toLocaleString() : "—");
 
+const daysUntilDue = (iso?: string | null) => {
+  if (!iso) return "—";
+  try {
+    const ms = new Date(iso).getTime() - Date.now();
+    const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+    if (days > 1) return `${days} days`;
+    if (days === 1) return `1 day`;
+    if (days === 0) return `0`;
+    return `Overdue by ${Math.abs(days)} day${Math.abs(days) > 1 ? "s" : ""}`;
+  } catch (e) {
+    return "—";
+  }
+};
+
 export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
   const { data, loading, fetchAssignment } = useAssignmentById();
   const { extendDueDate, loading: loadingExtend } = useExtendDueDate();
   const { closeAssignment, loading: loadingClose } = useCloseAssignment();
+  const { scheduleAssignment, loading: loadingSchedule } = useScheduleAssignment();
 
   const [openOverview, setOpenOverview] = useState(false);
+  const [openScheduleConfirm, setOpenScheduleConfirm] = useState(false);
 
   useEffect(() => {
     if (id) fetchAssignment(id);
@@ -68,6 +86,12 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
     refetchDetail();
   };
 
+  const handleSchedule = async () => {
+    await scheduleAssignment(id, { schedule: true });
+    setOpenScheduleConfirm(false);
+    refetchDetail();
+  };
+
   return (
     <Card className="border border-slate-200 py-0 px-2 -gap-2 mr-3.5 shadow-none">
       {/* ===== Header ===== */}
@@ -77,7 +101,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
             {a ? (
               <>
                 <span className="truncate text-[#000D83]">{a.title}</span>
-                <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
+                <Badge className={`${statusColor[a.status]} shadow-md`}>{a.statusDisplay}</Badge>
                 {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
               </>
             ) : (
@@ -106,11 +130,26 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                   Extended: {fmt(a.extendedDueDate)}
                 </span>
               )}
+              <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
+                Days until due: {daysUntilDue(a.extendedDueDate ?? a.dueDate)}
+              </span>
             </div>
           )}
         </div>
 
         <div className="flex mt-3 items-center gap-2 shrink-0">
+          {a && a.status === AssignmentStatus.Draft && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs flex btn btn-gradient-slow mr-3 items-center gap-1"
+              onClick={() => setOpenScheduleConfirm(true)}
+              disabled={loadingSchedule}
+              title="Schedule this assignment"
+            >
+              <CalendarCheck2 className="h-3.5 w-3.5" /> Schedule
+            </Button>
+          )}
           {a && (
             <Button
               size="sm"
@@ -142,12 +181,25 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
 
         {!loading && a && (
           <>
+            {/* Confirm schedule modal */}
+            <ConfirmScheduleAssignmentDialog
+              open={openScheduleConfirm}
+              onOpenChange={setOpenScheduleConfirm}
+              submitting={loadingSchedule}
+              info={{
+                title: a.title,
+                start: a.startDate,
+                due: a.dueDate,
+                statusDisplay: a.statusDisplay,
+              }}
+              onConfirm={handleSchedule}
+            />
+
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:h-[calc(100vh-220px)] min-h-0 overflow-auto">
               {/* ===== Left column ===== */}
               <div
-                className={`${
-                  openOverview ? "lg:col-span-8" : "lg:col-span-12"
-                } min-h-0 grid grid-rows-[1fr,auto,auto] gap-6 relative`}
+                className={`${openOverview ? "lg:col-span-8" : "lg:col-span-12"
+                  } min-h-0 grid grid-rows-[1fr,auto,auto] gap-6 relative`}
               >
                 {/* Overview toggle (when collapsed) */}
                 {!openOverview && (
@@ -174,7 +226,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                     <div className="p-2">
                       <LiteRichTextEditor
                         value={a.description ?? ""}
-                        onChange={() => {}}
+                        onChange={() => { }}
                         readOnly
                         className="rounded-md"
                         debounceMs={200}
@@ -199,7 +251,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                           >
                             <div className="font-medium">{g.name}</div>
                             <div className="text-xs text-slate-500">
-                              Members: {g.memberCount}
+                              Members: {g.memberCount}/{g.maxMembers}
                               {g.leaderName ? ` • Leader: ${g.leaderName}` : ""}
                             </div>
                           </div>
@@ -231,7 +283,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
               {openOverview && (
                 <div className="lg:col-span-4 space-y-5">
                   <section className="rounded-md border mt-6.5 border-slate-200 bg-white">
-                    <div className="px-4 py-3 border-b border-slate-300 flex items-center justify-between">
+                    <div className="py-3 border-b border-slate-300 flex items-center justify-between">
                       <Button
                         size="sm"
                         variant="outline"
@@ -272,6 +324,16 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                       </div>
 
                       <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Format</span>
+                        <span className="font-medium">{a.format?.trim() || "—"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Grading Criteria</span>
+                        <span className="font-medium">{a.gradingCriteria?.trim() || "—"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
                         <span className="text-slate-500">Start</span>
                         <span className="font-medium">{fmt(a.startDate)}</span>
                       </div>
@@ -289,6 +351,11 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-slate-500">Created</span>
                         <span className="font-medium">{fmt(a.createdAt)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Updated</span>
+                        <span className="font-medium">{fmt(a.updatedAt)}</span>
                       </div>
 
                       {/* Due Date actions */}

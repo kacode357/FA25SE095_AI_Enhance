@@ -1,7 +1,7 @@
 "use client";
 
-import Header from "@/app/student/components/header";
 import { motion } from "framer-motion";
+import Header from "./components/header";
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
 
   return (

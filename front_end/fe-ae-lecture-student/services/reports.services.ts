@@ -1,17 +1,23 @@
 // services/reports.services.ts
 import { courseAxiosInstance as api } from "@/config/axios.config";
 import type {
-  CreateReportPayload,
-  UpdateReportPayload,
-  ResubmitReportPayload,
-  MyReportsQuery,
   AssignmentReportsQuery,
+  CreateReportPayload,
+  GetCourseReportsQuery,
+  GetLateSubmissionsQuery,
+  GetReportsRequiringGradingQuery,
+  MyReportsQuery,
+  ResubmitReportPayload,
+  UpdateReportPayload,
 } from "@/types/reports/reports.payload";
 import type {
   ApiSuccess,
   AssignmentReportsResponse,
   CreateReportResponse,
+  GetCourseReportsResponse,
+  GetLateSubmissionsResponse,
   GetReportResponse,
+  GetReportsRequiringGradingResponse,
   MyReportsResponse,
 } from "@/types/reports/reports.response";
 
@@ -57,6 +63,37 @@ export const ReportsService = {
     const { assignmentId, ...query } = params;
     const res = await api.get<AssignmentReportsResponse>(
       `/Reports/assignment/${assignmentId}`,
+      { params: query }
+    );
+    return res.data;
+  },
+
+  getByCourse: async (
+    params: Omit<GetCourseReportsQuery, "courseId"> & { courseId: string }
+  ): Promise<GetCourseReportsResponse> => {
+    const { courseId, ...query } = params;
+    const res = await api.get<GetCourseReportsResponse>(
+      `/Reports/course/${courseId}`,
+      { params: query }
+    );
+    return res.data;
+  },
+
+  getRequiringGrading: async (
+    query?: GetReportsRequiringGradingQuery
+  ): Promise<GetReportsRequiringGradingResponse> => {
+    const res = await api.get<GetReportsRequiringGradingResponse>(
+      "/Reports/requiring-grading",
+      { params: query }
+    );
+    return res.data;
+  },
+
+  getLateSubmissions: async (
+    query?: GetLateSubmissionsQuery
+  ): Promise<GetLateSubmissionsResponse> => {
+    const res = await api.get<GetLateSubmissionsResponse>(
+      "/Reports/late-submissions",
       { params: query }
     );
     return res.data;
