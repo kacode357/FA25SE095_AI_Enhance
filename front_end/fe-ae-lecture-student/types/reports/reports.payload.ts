@@ -64,3 +64,19 @@ export interface GetLateSubmissionsQuery {
   pageNumber?: number;
   pageSize?: number;
 }
+
+export interface GradeReportPayload {
+  reportId: string;
+  grade: number;
+  feedback: string;
+}
+
+export interface RequestReportRevisionPayload {
+  reportId: string;
+  feedback: string;
+}
+
+export interface RejectReportPayload {
+  reportId: string;
+  feedback: string;
+}

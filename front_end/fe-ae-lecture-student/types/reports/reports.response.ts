@@ -192,3 +192,9 @@ export interface GetLateSubmissionsResponse {
   totalPages: number;
   currentPage: number;
 }
+
+export type GradeReportResponse = ApiSuccess;
+
+export type RequestReportRevisionResponse = ApiSuccess;
+
+export type RejectReportResponse = ApiSuccess;

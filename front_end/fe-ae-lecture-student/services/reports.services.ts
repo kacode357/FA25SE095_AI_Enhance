@@ -6,7 +6,10 @@ import type {
   GetCourseReportsQuery,
   GetLateSubmissionsQuery,
   GetReportsRequiringGradingQuery,
+  GradeReportPayload,
   MyReportsQuery,
+  RejectReportPayload,
+  RequestReportRevisionPayload,
   ResubmitReportPayload,
   UpdateReportPayload,
 } from "@/types/reports/reports.payload";
@@ -18,7 +21,10 @@ import type {
   GetLateSubmissionsResponse,
   GetReportResponse,
   GetReportsRequiringGradingResponse,
+  GradeReportResponse,
   MyReportsResponse,
+  RejectReportResponse,
+  RequestReportRevisionResponse,
 } from "@/types/reports/reports.response";
 
 export const ReportsService = {
@@ -96,6 +102,30 @@ export const ReportsService = {
       "/Reports/late-submissions",
       { params: query }
     );
+    return res.data;
+  },
+
+  grade: async (
+    payload: GradeReportPayload
+  ): Promise<GradeReportResponse> => {
+    const res = await api.post<GradeReportResponse>("/Reports/grade", payload);
+    return res.data;
+  },
+
+  requestRevision: async (
+    payload: RequestReportRevisionPayload
+  ): Promise<RequestReportRevisionResponse> => {
+    const res = await api.post<RequestReportRevisionResponse>(
+      "/Reports/request-revision",
+      payload
+    );
+    return res.data;
+  },
+
+   reject: async (
+    payload: RejectReportPayload
+  ): Promise<RejectReportResponse> => {
+    const res = await api.post<RejectReportResponse>("/Reports/reject", payload);
     return res.data;
   },
 };

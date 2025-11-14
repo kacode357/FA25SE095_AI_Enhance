@@ -3,12 +3,16 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useCourseEnrollments } from "@/hooks/course/useCourseEnrollments";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
+import { useGradeReport } from "@/hooks/reports/useGradeReport";
+import { useRejectReport } from "@/hooks/reports/useRejectReport";
+import { useRequestReportRevision } from "@/hooks/reports/useRequestReportRevision";
 import { formatDistanceToNow, parseISO } from "date-fns";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, ClipboardPenLine, Loader2, OctagonAlert, PencilOff, X } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StatusBadge from "../utils/status";
 
 export default function ReportDetailsPage() {
@@ -22,14 +26,49 @@ export default function ReportDetailsPage() {
 
   const { getReportById, loading } = useGetReportById();
   const { data: course, fetchCourseById } = useGetCourseById();
+  const { data: enrollmentsData, fetchEnrollments } = useCourseEnrollments();
 
   const [detail, setDetail] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [gradeError, setGradeError] = useState<string | null>(null);
+  const [revisionError, setRevisionError] = useState<string | null>(null);
+  const [rejectError, setRejectError] = useState<string | null>(null);
+  const [showGradeForm, setShowGradeForm] = useState(false);
+  const [showRevisionForm, setShowRevisionForm] = useState(false);
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [gradeValue, setGradeValue] = useState<number | string>("");
+  const [feedbackValue, setFeedbackValue] = useState<string>("");
+  const [revisionFeedback, setRevisionFeedback] = useState<string>("");
+  const [rejectFeedback, setRejectFeedback] = useState<string>("");
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  const { gradeReport, loading: grading } = useGradeReport();
+  const { requestReportRevision, loading: requestingRevision } = useRequestReportRevision();
+  const { rejectReport, loading: rejecting } = useRejectReport();
 
   useEffect(() => {
-    if (courseId) fetchCourseById(courseId);
+    if (courseId) {
+      fetchCourseById(courseId);
+      fetchEnrollments?.(courseId);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
+
+  // Scroll to bottom when any form is shown
+  useEffect(() => {
+    if ((showGradeForm || showRevisionForm || showRejectForm) && formRef.current) {
+      // small timeout to ensure layout updated
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 50);
+    }
+  }, [showGradeForm, showRevisionForm, showRejectForm]);
+
+  const getStudentName = (id?: string | null) => {
+    if (!id) return "—";
+    const s = enrollmentsData?.enrollments?.find((e) => e.studentId === id)?.studentName;
+    return s ?? id;
+  };
 
   useEffect(() => {
     (async () => {
@@ -69,7 +108,7 @@ export default function ReportDetailsPage() {
             </li>
           </ol>
         </div>
-        </nav>
+      </nav>
       <Card className="shadow-md py-0 gap-0 border-slate-200 max-h-[calc(100vh-160px)] overflow-hidden">
         <CardHeader className="flex items-center justify-between p-4">
           <div>
@@ -78,6 +117,18 @@ export default function ReportDetailsPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {!showRevisionForm && (
+              <Button size="sm" className="cursor-pointer btn btn-gradient-slow mr-2" onClick={() => { setShowRevisionForm(true); setRevisionError(null); setShowGradeForm(false); setShowRejectForm(false); }}><PencilOff className="size-4" />Request Revision</Button>
+            )}
+
+            {!showRejectForm && (
+              <Button size="sm" className="cursor-pointer btn btn-gradient-slow mr-2" onClick={() => { setShowRejectForm(true); setRejectError(null); setShowRevisionForm(false); }}><X className="size-4" />Reject Report</Button>
+            )}
+
+            {!showGradeForm && detail?.status !== 'Rejected' && (
+              <Button size="sm" className="cursor-pointer btn btn-gradient-slow" onClick={() => { setShowGradeForm(true); setGradeError(null); setShowRevisionForm(false); setShowRejectForm(false); }}><ClipboardPenLine className="size-4"/>Grade</Button>
+            )}
+
             <Button size="sm" variant="ghost" className="cursor-pointer" onClick={goBack}><ArrowLeft className="size-4" />Back</Button>
           </div>
         </CardHeader>
@@ -151,7 +202,7 @@ export default function ReportDetailsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <div className="text-xs text-slate-500">Submitted By</div>
-                    <div className="font-medium">{detail.submittedBy ?? '—'}</div>
+                    <div className="font-medium">{getStudentName(detail.submittedBy)}</div>
                   </div>
 
                   <div>
@@ -235,6 +286,235 @@ export default function ReportDetailsPage() {
                   </div>
 
                   <div />
+                </div>
+                {/* Grade form (hidden until Grade clicked) */}
+                <div ref={formRef} className="my-6">
+                  {/* Grade form */}
+                  {showGradeForm && (
+                    <div className="p-4 bg-white border border-slate-200 rounded">
+                      <div className="text-sm text-red-600 uppercase mb-5">Submit grade and feedback for this report.</div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                        <div className="max-w-40">
+                          <label className="text-xs text-slate-800">Grade</label>
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.1"
+                            value={gradeValue as any}
+                            onChange={(e) => setGradeValue(e.target.value === "" ? "" : Number(e.target.value))}
+                            className="mt-1 border-slate-500 w-full px-3 py-2 border rounded text-slate-800"
+                            placeholder={detail.assignmentMaxPoints ? `0 - ${detail.assignmentMaxPoints}` : undefined}
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="text-xs text-slate-800">Feedback</label>
+                          <textarea
+                            value={feedbackValue}
+                            onChange={(e) => setFeedbackValue(e.target.value)}
+                            rows={3}
+                            className="mt-1 border-slate-200 w-full px-3 py-2 border rounded text-slate-800"
+                            placeholder="Optional feedback for the student"
+                          />
+                        </div>
+                      </div>
+
+                      {gradeError && <div className="text-xs text-red-600 mt-2">* {gradeError}</div>}
+
+                      <div className="mt-4 flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          className="btn btn-gradient-slow"
+                          onClick={async () => {
+                            if (!detail?.id && !reportId) return;
+                            // basic validation
+                            if (gradeValue === "" || typeof gradeValue !== 'number' || Number.isNaN(gradeValue)) {
+                              setGradeError("Please enter a valid numeric grade.");
+                              return;
+                            }
+
+                            try {
+                              const payload = {
+                                reportId: reportId,
+                                grade: Number(gradeValue),
+                                feedback: feedbackValue || "",
+                              };
+
+                              const res = await gradeReport(payload as any);
+                              if (res) {
+                                // update UI immediately
+                                setDetail((prev: any) => ({
+                                  ...prev,
+                                  grade: payload.grade,
+                                  feedback: payload.feedback,
+                                  status: 'Graded',
+                                  gradedAt: new Date().toISOString(),
+                                }));
+                                setShowGradeForm(false);
+                                setGradeValue("");
+                                setFeedbackValue("");
+                                setGradeError(null);
+                                setError(null);
+                              }
+                            } catch (e: any) {
+                              setGradeError(e?.message || 'Failed to submit grade');
+                            }
+                          }}
+                          disabled={grading}
+                        >
+                          {grading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving
+                            </>
+                          ) : (
+                            'Save Grade'
+                          )}
+                        </Button>
+
+                        <Button size="sm" variant="ghost" className="text-violet-800 hover:text-violet-500" onClick={() => { setShowGradeForm(false); setGradeError(null); }}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Revision form */}
+                  {showRevisionForm && (
+                    <div className="p-4 bg-white border border-slate-200 rounded">
+                      <div className="text-sm text-yellow-600 uppercase mb-3">Request revision for this report.</div>
+
+                      <div>
+                        <label className="text-xs cursor-text text-slate-800">Feedback (instructions for revision)</label>
+                        <textarea
+                          value={revisionFeedback}
+                          onChange={(e) => setRevisionFeedback(e.target.value)}
+                          rows={4}
+                          className="mt-1 border-slate-200 w-full px-3 py-2 border rounded text-slate-800"
+                          placeholder="Tell the student what to fix or improve"
+                        />
+                      </div>
+
+                      {revisionError && <div className="text-xs text-red-600 mt-2">* {revisionError}</div>}
+
+                      <div className="mt-4 flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          className="btn btn-gradient-slow"
+                          onClick={async () => {
+                            if (!reportId) return;
+                            if (!revisionFeedback || revisionFeedback.trim() === "") {
+                              setRevisionError("Please enter feedback for the revision request.");
+                              return;
+                            }
+
+                            try {
+                              const payload = {
+                                reportId: reportId,
+                                feedback: revisionFeedback || "",
+                              };
+
+                              const res = await requestReportRevision(payload as any);
+                              if (res && res.success) {
+                                setDetail((prev: any) => ({
+                                  ...prev,
+                                  status: 'RequiresRevision',
+                                  feedback: payload.feedback,
+                                }));
+                                setShowRevisionForm(false);
+                                setRevisionFeedback("");
+                                setRevisionError(null);
+                                setError(null);
+                              } else {
+                                setRevisionError(res?.message || 'Failed to request revision');
+                              }
+                            } catch (e: any) {
+                              setRevisionError(e?.message || 'Failed to request revision');
+                            }
+                          }}
+                          disabled={requestingRevision}
+                        >
+                          {requestingRevision ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending
+                            </>
+                          ) : (
+                            'Send Revision Request'
+                          )}
+                        </Button>
+
+                        <Button size="sm" variant="ghost" className="text-violet-800 hover:text-violet-500" onClick={() => { setShowRevisionForm(false); setRevisionError(null); }}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reject form */}
+                  {showRejectForm && (
+                    <div className="p-4 bg-white border border-slate-200 rounded">
+                      <div className="text-sm flex gap-2 text-red-600 uppercase mb-3"><OctagonAlert className="size-4" />Reject this report.</div>
+
+                      <div>
+                        <label className="text-xs text-slate-800">Reason for rejection</label>
+                        <textarea
+                          value={rejectFeedback}
+                          onChange={(e) => setRejectFeedback(e.target.value)}
+                          rows={3}
+                          className="mt-1 border-slate-200 w-full px-3 py-2 border rounded text-slate-800"
+                          placeholder="Explain why this report is rejected"
+                        />
+                      </div>
+
+                      {rejectError && <div className="text-xs text-red-600 mt-2">* {rejectError}</div>}
+
+                      <div className="mt-4 flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          className="btn btn-gradient-slow"
+                          onClick={async () => {
+                            if (!reportId) return;
+                            if (!rejectFeedback || rejectFeedback.trim() === "") {
+                              setRejectError("Please enter a reason for rejection.");
+                              return;
+                            }
+
+                            try {
+                              const payload = {
+                                reportId: reportId,
+                                feedback: rejectFeedback || "",
+                              };
+
+                              const res = await rejectReport(payload as any);
+                              if (res && res.success) {
+                                setDetail((prev: any) => ({
+                                  ...prev,
+                                  status: 'Rejected',
+                                  feedback: payload.feedback,
+                                }));
+                                // after reject, hide grade button (detail.status check handles it)
+                                setShowRejectForm(false);
+                                setRejectFeedback("");
+                                setRejectError(null);
+                                setError(null);
+                              } else {
+                                setRejectError(res?.message || 'Failed to reject report');
+                              }
+                            } catch (e: any) {
+                              setRejectError(e?.message || 'Failed to reject report');
+                            }
+                          }}
+                          disabled={rejecting}
+                        >
+                          {rejecting ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Rejecting
+                            </>
+                          ) : (
+                            'Reject Report'
+                          )}
+                        </Button>
+
+                        <Button size="sm" variant="ghost" className="text-violet-800 hover:text-violet-500" onClick={() => { setShowRejectForm(false); setRejectError(null); }}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
