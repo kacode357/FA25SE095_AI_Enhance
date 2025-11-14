@@ -150,14 +150,14 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
               <CalendarCheck2 className="h-3.5 w-3.5" /> Schedule
             </Button>
           )}
-          {a && (
+          {a && a.status !== AssignmentStatus.Overdue && (
             <Button
               size="sm"
               variant="outline"
               className="text-xs flex btn btn-gradient-slow items-center gap-1"
               onClick={() => onEdit && onEdit(a.id)}
-              disabled={a.status === 5}
-              title={a.status === 5 ? "Closed assignments cannot be edited" : "Edit"}
+              disabled={a.status === AssignmentStatus.Closed}
+              title={a.status === AssignmentStatus.Closed ? "Closed assignments cannot be edited" : "Edit"}
             >
               <Pencil className="h-3.5 w-3.5" /> Edit
             </Button>

@@ -77,31 +77,21 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
 
         const descriptionClean = normalizeHtmlForSave(form.description);
 
-        // Build payload only with changed fields, respecting business rules
-        const payload: UpdateAssignmentPayload = {};
-        if (form.title.trim() && form.title.trim() !== a.title) payload.title = form.title.trim();
-        if (descriptionClean && descriptionClean !== (a.description || "")) payload.description = descriptionClean;
-        if (form.format.trim() !== (a.format || "")) payload.format = form.format.trim() || undefined;
-        if (form.gradingCriteria.trim() !== (a.gradingCriteria || "")) payload.gradingCriteria = form.gradingCriteria.trim() || undefined;
-        if (form.maxPoints && Number(form.maxPoints) !== a.maxPoints) payload.maxPoints = Number(form.maxPoints);
 
-        // Dates: only Draft assignments can update startDate/dueDate
-        if (isDraft) {
-            if (form.startDate && new Date(form.startDate).toISOString() !== a.startDate) {
-                payload.startDate = new Date(form.startDate).toISOString();
+            const payload: UpdateAssignmentPayload = {
+                title: form.title !== undefined ? form.title.trim() : a.title ?? "",
+                description: descriptionClean !== undefined ? descriptionClean : a.description ?? "",
+                format: form.format !== undefined ? form.format.trim() : a.format ?? undefined,
+                gradingCriteria: form.gradingCriteria !== undefined ? form.gradingCriteria.trim() : a.gradingCriteria ?? undefined,
+                maxPoints: form.maxPoints !== undefined && form.maxPoints !== "" ? Number(form.maxPoints) : a.maxPoints ?? undefined,
+            };
+
+            if (isDraft) {
+                payload.startDate = form.startDate ? new Date(form.startDate).toISOString() : a.startDate ?? undefined;
+                payload.dueDate = form.dueDate ? new Date(form.dueDate).toISOString() : a.dueDate ?? undefined;
             }
-            if (form.dueDate && new Date(form.dueDate).toISOString() !== a.dueDate) {
-                payload.dueDate = new Date(form.dueDate).toISOString();
-            }
-        }
 
-        if (Object.keys(payload).length === 0) {
-            // nothing changed
-            onCancel?.();
-            return;
-        }
-
-        const res = await updateAssignment(a.id, payload);
+            const res = await updateAssignment(a.id, payload);
         if (res?.success) {
             onUpdated?.();
         }

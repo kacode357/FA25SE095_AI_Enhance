@@ -111,25 +111,26 @@ export default function ReportDetailsPage() {
       </nav>
       <Card className="shadow-md py-0 gap-0 border-slate-200 max-h-[calc(100vh-160px)] overflow-hidden">
         <CardHeader className="flex items-center justify-between p-4">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Report Details</h2>
-            <div className="text-sm text-slate-600">Report ID: <span className="font-mono">{reportId}</span></div>
+          <div className="flex">
+            <Button size="sm" variant="ghost" className="cursor-pointer -ml-2" onClick={goBack}><ArrowLeft className="size-4" /></Button>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Report Details</h2>
+              <div className="text-sm text-slate-600">Report ID: <span className="font-mono">{reportId}</span></div>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             {!showRevisionForm && (
-              <Button size="sm" className="cursor-pointer btn btn-gradient-slow mr-2" onClick={() => { setShowRevisionForm(true); setRevisionError(null); setShowGradeForm(false); setShowRejectForm(false); }}><PencilOff className="size-4" />Request Revision</Button>
+              <Button size="sm" className="cursor-pointer text-blue-500 shadow-lg mr-2" onClick={() => { setShowRevisionForm(true); setRevisionError(null); setShowGradeForm(false); setShowRejectForm(false); }}><PencilOff className="size-4" />Request Revision</Button>
             )}
 
             {!showRejectForm && (
-              <Button size="sm" className="cursor-pointer btn btn-gradient-slow mr-2" onClick={() => { setShowRejectForm(true); setRejectError(null); setShowRevisionForm(false); }}><X className="size-4" />Reject Report</Button>
+              <Button size="sm" className="cursor-pointer text-red-500 shadow-lg mr-2" onClick={() => { setShowRejectForm(true); setRejectError(null); setShowRevisionForm(false); }}><X className="size-4" />Reject Report</Button>
             )}
 
             {!showGradeForm && detail?.status !== 'Rejected' && (
-              <Button size="sm" className="cursor-pointer btn btn-gradient-slow" onClick={() => { setShowGradeForm(true); setGradeError(null); setShowRevisionForm(false); setShowRejectForm(false); }}><ClipboardPenLine className="size-4"/>Grade</Button>
+              <Button size="sm" className="cursor-pointer btn btn-gradient-slow" onClick={() => { setShowGradeForm(true); setGradeError(null); setShowRevisionForm(false); setShowRejectForm(false); }}><ClipboardPenLine className="size-4" />Grade</Button>
             )}
-
-            <Button size="sm" variant="ghost" className="cursor-pointer" onClick={goBack}><ArrowLeft className="size-4" />Back</Button>
           </div>
         </CardHeader>
 
@@ -398,7 +399,7 @@ export default function ReportDetailsPage() {
                       <div className="mt-4 flex items-center justify-end gap-2">
                         <Button
                           size="sm"
-                          className="btn btn-gradient-slow"
+                          className="text-blue-500 shadow-lg"
                           onClick={async () => {
                             if (!reportId) return;
                             if (!revisionFeedback || revisionFeedback.trim() === "") {
@@ -467,7 +468,7 @@ export default function ReportDetailsPage() {
                       <div className="mt-4 flex items-center justify-end gap-2">
                         <Button
                           size="sm"
-                          className="btn btn-gradient-slow"
+                          className="text-red-500 shadow-lg"
                           onClick={async () => {
                             if (!reportId) return;
                             if (!rejectFeedback || rejectFeedback.trim() === "") {
@@ -507,7 +508,7 @@ export default function ReportDetailsPage() {
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Rejecting
                             </>
                           ) : (
-                            'Reject Report'
+                            'Send Reject Report'
                           )}
                         </Button>
 
