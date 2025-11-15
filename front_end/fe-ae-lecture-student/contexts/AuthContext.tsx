@@ -4,9 +4,17 @@
 import { ROLE_LECTURER, ROLE_STUDENT, UserServiceRole } from "@/config/user-service/user-role";
 import type { UserProfile } from "@/types/user/user.response";
 import { clearEncodedUser, loadDecodedUser } from "@/utils/secure-user";
-import Cookies from "js-cookie";
+import { clearAuthTokens } from "@/utils/auth/access-token";
 import { usePathname } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type AuthContextType = {
   user: UserProfile | null;
@@ -19,18 +27,6 @@ const AuthContext = createContext<AuthContextType>({
   refreshProfile: async () => {},
   logout: () => {},
 });
-
-const ACCESS_TOKEN_KEY = "accessToken";
-const REFRESH_TOKEN_KEY = "refreshToken";
-
-function clearTokens() {
-  Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
-  Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
-  if (typeof window !== "undefined") {
-    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-  }
-}
 
 // ⬇️ helper: xác định trang home theo role
 function homeByRole(role?: string) {
@@ -70,15 +66,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useLayoutEffect(() => {
     if (!loaded) return;
 
-    // ✅ MỚI: đang ở /login mà đã có user -> redirect theo role
+    // ✅ đang ở /login mà đã có user -> redirect theo role
     if (user && pathname === "/login") {
       if (typeof window !== "undefined") window.location.replace(homeByRole(user.role));
-      return; // chặn các xử lý bên dưới
+      return;
     }
 
     // Không được phép vào route bảo vệ -> clear + về /login
     if (!allow) {
-      clearTokens();
+      clearAuthTokens();
       clearEncodedUser();
       setUser(null);
       if (typeof window !== "undefined") window.location.replace("/login");
@@ -91,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    clearTokens();
+    clearAuthTokens();
     clearEncodedUser();
     setUser(null);
     if (typeof window !== "undefined") window.location.replace("/login");

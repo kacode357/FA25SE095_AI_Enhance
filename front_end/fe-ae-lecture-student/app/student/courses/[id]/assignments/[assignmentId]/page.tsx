@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowLeft,
+  BookOpen,
   CalendarDays,
   CheckCircle2,
   Clock,
-  FileText,
   Info,
   ListTodo,
   Loader2,
@@ -16,6 +16,7 @@ import {
   Shield,
   Tag,
   Users,
+  Radar,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -28,9 +29,6 @@ import {
 } from "@/types/assignments/assignment.response";
 
 import CreateReportButton from "../components/createReportButton";
-// ❌ Bỏ import cũ
-// import LiteRichTextEditor from "@/components/common/LiteRichTextEditor";
-// ✅ Đổi sang TinyMCE wrapper
 import TinyMCEEditor from "@/components/common/TinyMCE";
 
 /* ============ utils ============ */
@@ -130,7 +128,6 @@ export default function AssignmentDetailPage() {
 
   const a = data?.assignment;
 
-  // chuẩn hoá groups = []
   const groups: GroupItem[] = Array.isArray(a?.assignedGroups)
     ? a!.assignedGroups!
     : [];
@@ -140,16 +137,10 @@ export default function AssignmentDetailPage() {
     const firstId = groups[0]?.id ?? null;
     setSelectedGroupId(firstId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [a?.isGroupAssignment, a?.assignedGroups]); // giữ deps như cũ; body dùng groups
+  }, [a?.isGroupAssignment, a?.assignedGroups]);
 
   const statusClass = useMemo(() => {
     switch (a?.status) {
-      case AssignmentStatus.Draft:
-        return "bg-slate-100 text-slate-700 border border-slate-200";
-      case AssignmentStatus.Scheduled:
-        return "bg-emerald-50 text-emerald-700 border border-emerald-200";
-      case AssignmentStatus.Active:
-        return "bg-[color-mix(in_oklab,var(--brand)_14%,#fff)] text-nav border border-brand";
       case AssignmentStatus.Extended:
         return "bg-amber-50 text-amber-700 border border-amber-200";
       case AssignmentStatus.Overdue:
@@ -195,7 +186,8 @@ export default function AssignmentDetailPage() {
 
   type Chip = { icon: ReactNode; label: string; className?: string };
   const chips: Chip[] = [];
-  if (a.topicName) chips.push({ icon: <Tag className="w-3 h-3" />, label: a.topicName });
+  if (a.topicName)
+    chips.push({ icon: <Tag className="w-3 h-3" />, label: a.topicName });
   if (a.isGroupAssignment)
     chips.push({
       icon: <Users className="w-3 h-3" />,
@@ -205,6 +197,7 @@ export default function AssignmentDetailPage() {
 
   const overdue = a.status === AssignmentStatus.Overdue;
   const draft = a.status === AssignmentStatus.Draft;
+  const hasDescription = !!a.description && a.description.trim().length > 0;
 
   return (
     <motion.div
@@ -215,7 +208,6 @@ export default function AssignmentDetailPage() {
     >
       {/* ===== Header ===== */}
       <div className="flex flex-col gap-3">
-        {/* row: title + back */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-3xl font-bold text-nav flex items-center gap-2 truncate">
@@ -258,9 +250,22 @@ export default function AssignmentDetailPage() {
           </div>
         </div>
 
-        {/* row: actions */}
+        {/* Actions */}
         <div className="w-full flex justify-end">
           <div className="flex flex-row flex-wrap items-center gap-2">
+            <button
+              onClick={() =>
+                router.push(
+                  `/student/crawler?courseId=${courseId}&assignmentId=${aId}&groupId=${selectedGroupId}`
+                )
+              }
+              className="btn btn-gradient-slow px-4 py-2"
+              title="Open AI Crawler workspace"
+            >
+              <Radar className="w-4 h-4" />
+              <span>Crawl with AI</span>
+            </button>
+
             <button
               onClick={() =>
                 router.push(
@@ -269,7 +274,7 @@ export default function AssignmentDetailPage() {
               }
               className="btn bg-white border border-brand text-nav hover:text-nav-active"
             >
-              <FileText className="w-4 h-4" />
+              <Info className="w-4 h-4" />
               <span>View My Reports</span>
             </button>
 
@@ -300,7 +305,7 @@ export default function AssignmentDetailPage() {
         </div>
       </div>
 
-      {/* ===== Alerts ===== */}
+      {/* Alerts */}
       {overdue && (
         <div className="border border-red-200 rounded-xl p-3 bg-red-50 text-red-700 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -320,20 +325,24 @@ export default function AssignmentDetailPage() {
         </div>
       )}
 
-      {/* ===== Grid ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-        {/* left */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
-          {/* details */}
-          <div className="card rounded-2xl p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-nav flex items-center gap-2">
-                <FileText className="w-5 h-5 text-nav-active" />
-                Details
-              </h2>
-            </div>
+      {/* ===== Top Grid: 7 / 3 ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-start">
+        {/* LEFT: col-span-7, full height card */}
+        <div className="lg:col-span-7 lg:self-stretch">
+          <div className="card rounded-2xl p-4 h-full flex flex-col">
+            <div className="text-sm text-foreground/80 space-y-4 flex-1">
+              {/* Course: 1 dòng, label đồng bộ UI */}
+              <div className="flex items-center gap-2 min-w-0">
+                <BookOpen className="w-4 h-4 text-nav-active" />
+                <span className="text-base sm:text-lg font-semibold text-nav truncate">
+                  Course:
+                </span>
+                <span className="text-base sm:text-lg font-semibold text-nav truncate">
+                  {a.courseName ?? "—"}
+                </span>
+              </div>
 
-            <div className="text-sm text-foreground/80 space-y-4">
+              {/* dates / points */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">
                   <CalendarDays className="w-4 h-4 text-nav-active" />
@@ -350,17 +359,34 @@ export default function AssignmentDetailPage() {
                 </div>
               </div>
 
+              {/* meta nhỏ */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <b>Overdue:</b>&nbsp;{a.isOverdue ? "Yes" : "No"}
+                </div>
+                {!a.isOverdue && a.daysUntilDue >= 0 && (
+                  <div>
+                    <b>Days until due:</b>&nbsp;{a.daysUntilDue}
+                  </div>
+                )}
+                {typeof a.assignedGroupsCount === "number" && (
+                  <div>
+                    <b>Assigned groups:</b>&nbsp;{a.assignedGroupsCount}
+                  </div>
+                )}
+              </div>
+
               {(a.format || a.gradingCriteria) && (
-                <div className="border-t pt-3 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="border-t pt-3 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-slate-200">
                   <div>
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
-                      Format Submit
+                      FORMAT SUBMIT
                     </div>
                     <div>{a.format || "—"}</div>
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
-                      Grading Criteria
+                      GRADING CRITERIA
                     </div>
                     <div className="whitespace-pre-wrap">
                       {a.gradingCriteria || "—"}
@@ -369,99 +395,71 @@ export default function AssignmentDetailPage() {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* description */}
-          <div className="card rounded-2xl p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <h2 className="text-lg font-bold text-nav">Description</h2>
+            {/* Footer bottom-right */}
+            <div className="pt-3 mt-3 border-t border-slate-200 text-xs text-slate-500 text-right">
+              Created: {dt(a.createdAt)}
+              {a.updatedAt && <> • Updated: {dt(a.updatedAt)}</>}
             </div>
-            {/* ✅ Dùng TinyMCE, readOnly */}
-            <TinyMCEEditor
-              value={a.description ?? ""}
-              onChange={() => {}}
-              readOnly
-              debounceMs={200}
-              placeholder="No description provided."
-              className="rounded-md"
-            />
           </div>
         </div>
 
-        {/* right */}
-        <div className="lg:col-span-3 flex flex-col gap-4 lg:sticky lg:top-24">
-          <div className="card rounded-2xl p-4">
-            <h3 className="text-base font-bold text-nav mb-2">Meta</h3>
-            <div className="text-sm text-foreground/80 space-y-2">
-              <div>
-                <b>Status:</b> {a.statusDisplay}
+        {/* RIGHT: col-span-3, card có max-height, bên trong cuộn */}
+        {groups.length > 0 && (
+          <div className="lg:col-span-3 lg:self-start">
+            <div className="card rounded-2xl p-4 h-full lg:max-h-[300px] flex flex-col">
+              {/* tiêu đề group (Team Beta ...) */}
+              <div className="text-base font-semibold text-nav mb-1">
+                {groups.length === 1 ? groups[0].name : "Groups & Members"}
               </div>
-              <div>
-                <b>Course:</b> {a.courseName}
-              </div>
-              <div>
-                <b>Overdue:</b> {a.isOverdue ? "Yes" : "No"}
-              </div>
-              {!a.isOverdue && a.daysUntilDue >= 0 && (
-                <div>
-                  <b>Days until due:</b> {a.daysUntilDue}
-                </div>
-              )}
-              {typeof a.assignedGroupsCount === "number" && (
-                <div>
-                  <b>Assigned groups:</b> {a.assignedGroupsCount}
-                </div>
-              )}
-              <div className="pt-1 text-xs text-slate-500">
-                Created: {dt(a.createdAt)}
-                {a.updatedAt && <> • Updated: {dt(a.updatedAt)}</>}
-              </div>
-            </div>
-          </div>
 
-          {!!groups.length && (
-            <div className="card rounded-2xl p-4">
-              <h3 className="text-base font-bold text-nav mb-2">
-                Assigned Groups & Members
-              </h3>
-              <ul className="space-y-3">
-                {groups.map((g) => {
-                  const membersLabel =
-                    g.maxMembers == null
-                      ? `${g.memberCount ?? 0} ${
-                          g.memberCount === 1 ? "member" : "members"
-                        }`
-                      : `${g.memberCount}/${g.maxMembers} ${
-                          g.maxMembers === 1 ? "member" : "members"
-                        }`;
-                  return (
-                    <li
-                      key={g.id}
-                      className="border border-slate-200 rounded-lg p-3"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-medium text-foreground truncate">
-                            {g.name}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            • {membersLabel}
-                          </span>
-                        </div>
-                        {g.isLocked && (
-                          <span className="text-[11px] px-2 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200">
-                            Locked
-                          </span>
-                        )}
+              {/* list: scroll nội bộ, card không kéo dài nữa */}
+              <div className="mt-2 flex-1 min-h-0 overflow-y-auto pr-1 space-y-3">
+                {groups.map((g) => (
+                  <div
+                    key={g.id}
+                    className="border border-slate-200 rounded-lg p-3 bg-white"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium text-foreground truncate">
+                          {g.name}
+                        </span>
                       </div>
-                      <GroupMembersPanel groupId={g.id} />
-                    </li>
-                  );
-                })}
-              </ul>
+                      {g.isLocked && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200">
+                          Locked
+                        </span>
+                      )}
+                    </div>
+
+                    <GroupMembersPanel groupId={g.id} />
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
+        )}
+      </div>
+
+      {/* ===== Description ===== */}
+      <div className="card rounded-2xl p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-nav">Description</h2>
         </div>
+
+        {hasDescription ? (
+          <TinyMCEEditor
+            value={a.description ?? ""}
+            onChange={() => {}}
+            readOnly
+            debounceMs={0}
+            placeholder="No description provided."
+            className="assignment-description-editor"
+          />
+        ) : (
+          <p className="text-sm text-slate-500">No description provided.</p>
+        )}
       </div>
     </motion.div>
   );

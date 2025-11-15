@@ -8,12 +8,8 @@ import type { LoginPayload } from "@/types/auth/auth.payload";
 import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
 import { saveEncodedUser } from "@/utils/secure-user";
-import Cookies from "js-cookie";
+import { saveTokensFromLogin } from "@/utils/auth/access-token";
 import { useState } from "react";
-
-const ACCESS_TOKEN_KEY = "accessToken";
-const REFRESH_TOKEN_KEY = "refreshToken";
-const COOKIE_OPTS = { secure: true, sameSite: "strict" as const, path: "/" as const, expires: 7 };
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
@@ -27,29 +23,15 @@ export function useLogin() {
       if (data && data.accessToken) {
         const rememberMe = payload.rememberMe ?? false;
 
-        // Lưu token theo remember
-        if (rememberMe) {
-          Cookies.set(ACCESS_TOKEN_KEY, data.accessToken, COOKIE_OPTS);
-          if (data.refreshToken) Cookies.set(REFRESH_TOKEN_KEY, data.refreshToken, COOKIE_OPTS);
-          if (typeof window !== "undefined") {
-            sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-            sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-          }
-        } else {
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
-            if (data.refreshToken) sessionStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
-          }
-          Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
-          Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
-        }
+        // ✅ Lưu access + refresh + remember logic
+        saveTokensFromLogin(data.accessToken, data.refreshToken, rememberMe);
 
         // Lấy profile -> MÃ HOÁ & LƯU theo remember (session/cookie)
-        const profileRes: ApiResponse<UserProfile> = await UserService.getProfile();
-        const profile = profileRes.data;
+        const profileRes = await UserService.getProfile();
+        const profile: UserProfile = profileRes.data;
         await saveEncodedUser(profile, rememberMe);
 
-        // Điều hướng theo role string (dùng reverse mapping enum để có "Student"/"Lecturer")
+        // Điều hướng theo role string
         const isStudent  = profile.role === UserServiceRole[ROLE_STUDENT];   // "Student"
         const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER];  // "Lecturer"
 

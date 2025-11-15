@@ -12,41 +12,7 @@ export interface SmartCrawlJobResponse {
   pageSnapshot?: string | null;
 }
 
-/** History item */
-export interface SmartCrawlHistoryItem {
-  id: string;
-  promptText: string;
-  type: string;
-  processedAt: string; // ISO
-  crawlJobId: string;
-  processingTimeMs: number;
-  success: boolean;
-}
-
-/** Strategy list item */
-export interface SmartCrawlStrategyItem {
-  id: string;
-  name: string;
-  domain: string;
-  type: string;
-  timesUsed: number;
-  successRate: number;
-  isTemplate: boolean;
-  createdAt: string; // ISO
-}
-
-/** Strategy detail */
-export interface SmartCrawlStrategyDetail extends SmartCrawlStrategyItem {
-  urlPattern: string;
-  navigationStepsJson: string; // raw JSON string
-  successCount: number;
-  failureCount: number;
-  averageExecutionTimeMs: number;
-  isActive: boolean;
-  updatedAt: string; // ISO
-}
-
-/** Job list item (summary) */
+/** Job list item (summary) — GET /jobs */
 export interface SmartCrawlJobSummary {
   id: string;
   status: string;
@@ -58,7 +24,7 @@ export interface SmartCrawlJobSummary {
   errorMessage: string | null;
 }
 
-/** Paginated job result item */
+/** Paginated job result item — GET /job/{jobId}/results */
 export interface SmartCrawlJobResultItem {
   id: string;
   url: string;
@@ -73,7 +39,7 @@ export interface SmartCrawlJobResultItem {
   promptUsed: string | null;
 }
 
-/** Realtime stats */
+/** Realtime stats — GET /job/{jobId}/stats */
 export interface SmartCrawlJobStats {
   jobId: string;
   status: string;
@@ -85,23 +51,31 @@ export interface SmartCrawlJobStats {
   totalContentSize: number;
   startedAt: string; // ISO
   estimatedCompletion: string | null; // ISO
-  elapsedTime: {
-    ticks: number;
-    days: number;
-    hours: number;
-    milliseconds: number;
-    microseconds: number;
-    nanoseconds: number;
-    minutes: number;
-    seconds: number;
-    totalDays: number;
-    totalHours: number;
-    totalMilliseconds: number;
-    totalMicroseconds: number;
-    totalNanoseconds: number;
-    totalMinutes: number;
-    totalSeconds: number;
-  };
+
+  /**
+   * BE hiện đang trả về đôi khi là string ("00:18:19.2838000"),
+   * schema lại là object TimeSpan => union cho chắc ăn.
+   */
+  elapsedTime:
+    | string
+    | {
+        ticks: number;
+        days: number;
+        hours: number;
+        milliseconds: number;
+        microseconds: number;
+        nanoseconds: number;
+        minutes: number;
+        seconds: number;
+        totalDays: number;
+        totalHours: number;
+        totalMilliseconds: number;
+        totalMicroseconds: number;
+        totalNanoseconds: number;
+        totalMinutes: number;
+        totalSeconds: number;
+      };
+
   currentUrl: string | null;
   successRate: number;
 }

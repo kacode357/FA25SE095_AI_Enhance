@@ -164,7 +164,7 @@ export default function NotificationsMenu({
                     )}
                     {item.createdAt && (
                       <p
-                        className="text-[11px] mt-1"
+                        className="text-[11px] mt-1 w-full text-right"
                         style={{ color: "var(--text-muted)" }}
                       >
                         {formatTime(item.createdAt)}
@@ -176,7 +176,7 @@ export default function NotificationsMenu({
             )}
           </div>
 
-          {/* ✅ Footer: View all */}
+          {/* Footer: View all */}
           <div
             className="px-4 py-2 flex justify-end"
             style={{ borderTop: "1px solid var(--border)" }}

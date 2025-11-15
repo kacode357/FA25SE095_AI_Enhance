@@ -1,15 +1,18 @@
+// hooks/term/useTerms.ts
 "use client";
 
+import { useCallback, useState } from "react";
 import { TermService } from "@/services/term.services";
 import { TermResponse } from "@/types/term/term.response";
-import { useState } from "react";
 
 export function useTerms() {
   const [data, setData] = useState<TermResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTerms = async () => {
+  // ✅ Sửa ở đây: thay [loading] thành []
+  const fetchTerms = useCallback(async () => {
+    if (loading) return null; // tránh spam thêm 1 lớp
     setLoading(true);
     setError(null);
     try {
@@ -22,7 +25,7 @@ export function useTerms() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // <--- LỖI LÀ Ở ĐÂY, SỬA THÀNH []
 
   return { data, loading, error, fetchTerms };
 }

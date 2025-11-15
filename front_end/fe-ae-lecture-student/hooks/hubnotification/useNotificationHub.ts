@@ -64,7 +64,6 @@ export function useNotificationHub({
       if (connectionRef.current) return connectionRef.current;
 
       const hubUrl = `${baseUrl.replace(/\/+$/, "")}/hubs/notifications`;
-      console.log("[NotificationHub] build connection:", hubUrl);
 
       const conn = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
@@ -72,19 +71,11 @@ export function useNotificationHub({
             try {
               const token = await getAccessToken();
               const tokenStr = typeof token === "string" ? token : "";
-              console.log(
-                "[NotificationHub] accessTokenFactory got token:",
-                tokenStr ? tokenStr.slice(0, 25) + "..." : "(EMPTY)"
-              );
               return tokenStr;
             } catch (err) {
-              console.error("[NotificationHub] accessTokenFactory error:", err);
               return "";
             }
           },
-          // KHÔNG dùng skipNegotiation nữa => server sẽ trả connectionId chuẩn
-          // transport: signalR.HttpTransportType.WebSockets,
-          // skipNegotiation: true,
         })
         .withAutomaticReconnect({
           nextRetryDelayInMilliseconds: (ctx) => {
@@ -92,14 +83,12 @@ export function useNotificationHub({
             return delays[Math.min(ctx.previousRetryCount, delays.length - 1)];
           },
         })
-        // Nếu muốn xem log chi tiết thì đổi sang LogLevel.Information
         .configureLogging(signalR.LogLevel.None)
         .build();
 
       // ===== Hub events =====
 
       conn.on("ReceiveNotification", (notification: NotificationDto) => {
-        console.log("[NotificationHub] ReceiveNotification:", notification);
         onNotification?.(notification);
 
         if (onNotificationsBatch) {
@@ -109,34 +98,25 @@ export function useNotificationHub({
       });
 
       conn.on("UnreadCountRequested", (userId: string) => {
-        console.log("[NotificationHub] UnreadCountRequested:", userId);
         if (!userId) return;
         onUnreadCountRequested?.(userId);
       });
 
       conn.on("Error", (message: string) => {
-        console.error("[NotificationHub] server Error event:", message);
         setLastError(message);
         onError?.(message);
       });
 
       conn.onclose((err) => {
-        console.log("[NotificationHub] onclose. error:", err);
         setConnected(false);
         setConnectionId(null);
       });
 
       conn.onreconnecting((err) => {
-        console.log("[NotificationHub] onreconnecting. error:", err);
         setConnected(false);
-        // giữ connectionId cũ hoặc clear cũng được, ở đây tao giữ
       });
 
       conn.onreconnected((newConnectionId) => {
-        console.log(
-          "[NotificationHub] onreconnected. new connectionId:",
-          newConnectionId
-        );
         setConnected(true);
         setConnectionId(newConnectionId ?? conn.connectionId ?? null);
       });
@@ -158,14 +138,8 @@ export function useNotificationHub({
 
   const connect = useCallback(async () => {
     const conn = ensureConnection();
-    console.log("[NotificationHub] connect() called. current state:", conn);
-    console.log(
-      "[NotificationHub] connect() called. current state:",
-      conn.state
-    );
 
     if (conn.state === signalR.HubConnectionState.Connected) {
-      console.log("[NotificationHub] already connected, skip start()");
       setConnected(true);
       setConnectionId(conn.connectionId ?? null);
       setLastError(null);
@@ -173,7 +147,6 @@ export function useNotificationHub({
     }
 
     if (startInProgressRef.current) {
-      console.log("[NotificationHub] start already in progress, skip");
       return;
     }
 
@@ -181,14 +154,7 @@ export function useNotificationHub({
       startInProgressRef.current = true;
       setConnecting(true);
 
-      console.log("[NotificationHub] calling conn.start()...");
       await conn.start();
-      console.log(
-        "[NotificationHub] conn.start() done. state:",
-        conn.state,
-        "connectionId:",
-        conn.connectionId
-      );
 
       setConnected(true);
       setConnectionId(conn.connectionId ?? null);
@@ -198,13 +164,7 @@ export function useNotificationHub({
       const isStrictModeStop =
         rawMsg.includes("Failed to start the HttpConnection before stop() was called");
 
-      if (isStrictModeStop) {
-        console.log(
-          "[NotificationHub] strict-mode start/stop race, ignoring error:",
-          rawMsg
-        );
-      } else {
-        console.warn("[NotificationHub] connect error (real):", e);
+      if (!isStrictModeStop) {
         const friendlyMsg = rawMsg || "Failed to connect NotificationHub";
         setConnected(false);
         setConnectionId(null);
@@ -221,16 +181,13 @@ export function useNotificationHub({
   const disconnect = useCallback(async () => {
     const conn = connectionRef.current;
     if (!conn || conn.state === signalR.HubConnectionState.Disconnected) {
-      console.log("[NotificationHub] disconnect() but already disconnected");
       setConnected(false);
       setConnectionId(null);
       return;
     }
 
     try {
-      console.log("[NotificationHub] calling conn.stop()...");
       await conn.stop();
-      console.log("[NotificationHub] conn.stop() done");
     } finally {
       setConnected(false);
       setConnectionId(null);
@@ -240,15 +197,13 @@ export function useNotificationHub({
   const requestUnreadCount = useCallback(async () => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) {
-      console.log("[NotificationHub] requestUnreadCount() but not connected");
       return;
     }
 
     try {
-      console.log("[NotificationHub] invoke RequestUnreadCount");
       await conn.invoke("RequestUnreadCount");
     } catch (err) {
-      console.error("[NotificationHub] RequestUnreadCount error:", err);
+      // Silent error catch
     }
   }, []);
 
@@ -259,7 +214,6 @@ export function useNotificationHub({
         throw new Error("NotificationHub not connected");
       }
       if (!userId) throw new Error("Missing userId");
-      console.log("[NotificationHub] SendNotificationToUser:", userId, notification);
       await conn.invoke("SendNotificationToUser", userId, notification);
     },
     []
@@ -272,7 +226,6 @@ export function useNotificationHub({
         throw new Error("NotificationHub not connected");
       }
       if (!userIds?.length) throw new Error("userIds is empty");
-      console.log("[NotificationHub] SendNotificationToUsers:", userIds, notification);
       await conn.invoke("SendNotificationToUsers", userIds, notification);
     },
     []
@@ -284,7 +237,6 @@ export function useNotificationHub({
       if (!conn || conn.state !== signalR.HubConnectionState.Connected) {
         throw new Error("NotificationHub not connected");
       }
-      console.log("[NotificationHub] BroadcastNotification:", notification);
       await conn.invoke("BroadcastNotification", notification);
     },
     []
@@ -294,7 +246,7 @@ export function useNotificationHub({
     connected,
     connecting,
     lastError,
-    connectionId, // ⭐ thêm cho mày debug
+    connectionId,
     connect,
     disconnect,
     requestUnreadCount,

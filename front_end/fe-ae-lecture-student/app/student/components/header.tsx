@@ -17,21 +17,19 @@ import UserMenu from "@/components/user/UserMenu";
 import { useStudentNav } from "./nav-items";
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 
-// ✅ hooks notifications
 import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
 import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
 
 const COOKIE_ACCESS_TOKEN_KEY = "accessToken";
 
+/** Chuẩn hóa format dữ liệu để UI render */
 function normalizeNotification(raw: any): NotificationItem {
   const nowIso = new Date().toISOString();
 
   const id =
     raw?.id ||
     raw?.notificationId ||
-    (typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random()}`);
+    (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
 
   const readFlag =
     typeof raw?.read === "boolean"
@@ -50,18 +48,21 @@ function normalizeNotification(raw: any): NotificationItem {
 }
 
 export default function Header() {
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
   const { user } = useAuth();
   const { logout } = useLogout();
   const navs = useStudentNav();
 
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
   const { getNotifications } = useGetNotifications();
   const { markAllNotificationsAsRead } = useMarkAllNotificationsAsRead();
 
+  /** HUB */
   const {
     connect,
     disconnect,
@@ -69,64 +70,59 @@ export default function Header() {
     connecting,
     lastError,
   } = useNotificationHub({
-    getAccessToken: getSavedAccessToken,
+    getAccessToken: () => getSavedAccessToken() || "",
     onNotification: (raw) => {
       const item = normalizeNotification(raw);
       setNotifications((prev) => [item, ...prev]);
       setUnreadCount((prev) => prev + 1);
     },
-    onError: (msg) => {
-      console.warn("[Header][NotificationHub] onError:", msg);
-    },
   });
 
-  // ✅ Lấy lịch sử thông báo từ API khi có user
+  /** ===============================
+   * 1️⃣ Fetch lịch sử thông báo — CHỈ 1 LẦN
+   * =============================== */
   useEffect(() => {
     if (!user?.id) return;
+    if (historyLoaded) return; // đã load rồi → bỏ
+    if (connected) return;     // hub đã kết nối → không fetch nữa
 
     (async () => {
       try {
         const list = await getNotifications({ take: 50 });
         if (!list) return;
 
-        setNotifications(list.map((n) => normalizeNotification(n)));
+        const normalized = list.map((n) => normalizeNotification(n));
+        setNotifications(normalized);
 
-        const unread = list.filter((n: any) => {
-          if (typeof n.isRead === "boolean") return !n.isRead;
-          if (typeof n.read === "boolean") return !n.read;
-          return false;
-        }).length;
-
+        const unread = normalized.filter((n) => !n.read).length;
         setUnreadCount(unread);
+
+        setHistoryLoaded(true); // khóa lại
       } catch (err) {
-        console.warn("[Header][Notifications] fetch history error:", err);
+        console.warn("[Header] fetch history error:", err);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, connected, historyLoaded]);
 
-  // Auto connect khi có user + token
+  /** ===============================
+   * 2️⃣ Kết nối hub
+   * =============================== */
   useEffect(() => {
     if (!user?.id) return;
 
     const token = getSavedAccessToken();
-    console.log(
-      "[Header][NotificationHub] token from storage:",
-      token ? token.slice(0, 25) + "..." : "(EMPTY)"
-    );
     if (!token) return;
 
     let cancelled = false;
 
     (async () => {
       try {
-        console.log("[Header][NotificationHub] calling connect()...");
         await connect();
         if (!cancelled) {
-          console.log("[Header][NotificationHub] connect() resolved");
+          console.log("[NotificationHub] Connected.");
         }
       } catch (e) {
-        console.warn("[Header][NotificationHub] connect exception:", e);
+        console.warn("[NotificationHub] connect failed:", e);
       }
     })();
 
@@ -134,9 +130,11 @@ export default function Header() {
       cancelled = true;
       disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  /** ===============================
+   * 3️⃣ Logout
+   * =============================== */
   const handleLogout = () => {
     setDropdownOpen(false);
     disconnect();
@@ -148,26 +146,22 @@ export default function Header() {
     });
   };
 
-  // ✅ Khi mở dropdown notif: mark-all-as-read (gọi API + update local)
+  /** ===============================
+   * 4️⃣ Khi mở menu notification → mark all as read
+   * =============================== */
   const handleNotificationOpenChange = (v: boolean) => {
     setNotificationOpen(v);
-    if (v) {
-      // Đóng menu user nếu đang mở
-      setDropdownOpen(false);
 
-      if (unreadCount > 0) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
+    if (v && unreadCount > 0) {
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
 
-        // fire-and-forget
-        markAllNotificationsAsRead().catch((err) => {
-          console.warn(
-            "[Header][Notifications] markAllNotificationsAsRead error:",
-            err
-          );
-        });
-      }
+      markAllNotificationsAsRead().catch((err) =>
+        console.warn("[markAll] error:", err)
+      );
     }
+
+    if (v) setDropdownOpen(false);
   };
 
   return (
@@ -178,12 +172,11 @@ export default function Header() {
         borderBottom: "1px solid var(--border)",
       }}
     >
-      {/* Container full-width */}
       <div
         className="mx-auto flex h-full w-full items-center gap-6"
         style={{ maxWidth: 1400, paddingLeft: "2rem", paddingRight: "1rem" }}
       >
-        {/* Left: logo + nav */}
+        {/* LEFT */}
         <div className="flex items-center gap-8 min-w-0">
           <Logo />
           <nav className="hidden md:flex items-center gap-8">
@@ -195,12 +188,11 @@ export default function Header() {
                 aria-current={item.isActive ? "page" : undefined}
               >
                 <span
-                  className={
-                    "text-base font-medium leading-none transition-colors visited:text-nav " +
-                    (item.isActive
+                  className={`text-base font-medium leading-none transition-colors visited:text-nav ${
+                    item.isActive
                       ? "text-nav-active"
-                      : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active")
-                  }
+                      : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active"
+                  }`}
                 >
                   {item.label}
                 </span>
@@ -209,7 +201,7 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* Right */}
+        {/* RIGHT */}
         <div className="ml-auto flex bg-slate-100 p-0 rounded-xl shadow-lg items-center gap-2">
           <NotificationsMenu
             open={notificationOpen}

@@ -1,9 +1,9 @@
 // app/student/courses/[id]/reports/[reportId]/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   BookOpen,
@@ -12,19 +12,20 @@ import {
   FileText,
   Info,
   Loader2,
-  Save,
   Tag,
   ChevronDown,
 } from "lucide-react";
-import Cookies from "js-cookie";
 
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
-import { cleanIncomingHtml } from "@/utils/html-normalize";
 import ReportCollabClient from "@/app/student/courses/[id]/reports/components/ReportCollabClient";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
-
-// ✅ import type rõ ràng để state không bị lỗi
 import type { ReportDetail } from "@/types/reports/reports.response";
+import { getSavedAccessToken } from "@/utils/auth/access-token";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 /** ============ utils ============ */
 const dt = (s?: string | null) => {
@@ -33,17 +34,9 @@ const dt = (s?: string | null) => {
   if (Number.isNaN(d.getTime())) return s;
   return d.toLocaleString("en-GB");
 };
-const normalizeHtml = (html: string) => cleanIncomingHtml(html ?? "").trim();
 
-const ACCESS_TOKEN_KEY = "accessToken";
-async function getAccessToken(): Promise<string> {
-  if (typeof window !== "undefined") {
-    const ss = sessionStorage.getItem(ACCESS_TOKEN_KEY);
-    if (ss) return ss;
-  }
-  const ck = Cookies.get(ACCESS_TOKEN_KEY);
-  return ck || "";
-}
+const getAccessToken = async (): Promise<string> =>
+  getSavedAccessToken() || "";
 
 export default function ReportDetailPage() {
   const router = useRouter();
@@ -54,22 +47,15 @@ export default function ReportDetailPage() {
 
   const { getReportById, loading } = useGetReportById();
 
-  // ✅ Phân tách state:
-  // `initialHtml`: Chỉ set 1 lần khi fetch, dùng cho `initialValue` của Tiny
   const [initialHtml, setInitialHtml] = useState<string>("");
-  // `html`: State "live" khi gõ, dùng để save và gửi collab
   const [html, setHtml] = useState<string>("");
 
-  const [saving, setSaving] = useState<boolean>(false);
-  const [saveMsg, setSaveMsg] = useState<string>("");
-
-  // ✅ dùng kiểu tường minh
   const [report, setReport] = useState<ReportDetail | null>(null);
   const didFetchRef = useRef(false);
 
   const [infoOpen, setInfoOpen] = useState(false);
 
-  // ref giữ TinyMCE editor API để collab client dùng tính caret
+  // TinyMCE editor API ref
   const tinyEditorRef = useRef<any>(null);
 
   useEffect(() => {
@@ -77,53 +63,20 @@ export default function ReportDetailPage() {
     didFetchRef.current = true;
 
     (async () => {
-      const res = await getReportById(reportId); // GetReportResponse | null
+      const res = await getReportById(reportId);
       const r = res?.report ?? null;
       setReport(r);
 
-      const safe = normalizeHtml(r?.submission || "");
-      setInitialHtml(safe); // ✅ Set initialHtml (cho initialValue)
-      setHtml(safe); // ✅ Set html live
+      const safe = r?.submission ?? "";
+      setInitialHtml(safe);
+      setHtml(safe);
 
-      // ✅ FIX (1): Chủ động PUSH data vào editor khi fetch xong
       tinyEditorRef.current?.pushContentFromOutside?.(safe);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportId]);
 
-  const handleSave = async () => {
-    if (!reportId) return;
-    setSaving(true);
-    setSaveMsg("");
-    try {
-      // ✅ Dùng state `html` (live) để save
-      const payload = { submission: html };
-      const res = await fetch(`/api/reports/${reportId}/submission`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error((await res.text()) || "Failed to save");
-      
-      // ✅ Sau khi save, cập nhật `initialHtml` thành state hiện tại
-      setInitialHtml(html);
-      setSaveMsg("Saved");
-    } catch (err: any) {
-      setSaveMsg(err?.message || "Save failed");
-    } finally {
-      setSaving(false);
-      setTimeout(() => setSaveMsg(""), 2000);
-    }
-  };
-
-  const isDirty = useMemo(
-    // ✅ So sánh state `html` (live) với `initialHtml` (lần cuối save/load)
-    () => normalizeHtml(html) !== normalizeHtml(initialHtml),
-    [html, initialHtml]
-  );
-
   if (!reportId) {
-    // ... (return như cũ)
     return (
       <div className="py-16 text-center">
         <p className="text-[var(--text-muted)]">
@@ -141,7 +94,6 @@ export default function ReportDetailPage() {
   }
 
   if (loading && !report) {
-    // ... (return như cũ)
     return (
       <div className="flex items-center justify-center h-[60vh] text-nav">
         <Loader2 className="w-6 h-6 mr-2 animate-spin text-nav-active" />
@@ -151,7 +103,6 @@ export default function ReportDetailPage() {
   }
 
   if (!report) {
-    // ... (return như cũ)
     return (
       <div className="py-16 text-center">
         <p className="text-[var(--text-muted)]">Report not found.</p>
@@ -174,7 +125,6 @@ export default function ReportDetailPage() {
       transition={{ duration: 0.25 }}
     >
       {/* Header */}
-      {/* ... (Header như cũ) */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-bold text-nav flex items-center gap-2">
@@ -213,148 +163,97 @@ export default function ReportDetailPage() {
       </div>
 
       {/* Assignment Info */}
-      {/* ... (Assignment Info như cũ) */}
-      <div className="card rounded-2xl p-4">
-        <button
-          type="button"
-          className="w-full flex items-center justify-between text-left"
-          onClick={() => setInfoOpen((v) => !v)}
-        >
+      <Collapsible
+        open={infoOpen}
+        onOpenChange={setInfoOpen}
+        className="card rounded-2xl p-4"
+      >
+        <CollapsibleTrigger className="w-full flex items-center justify-between text-left">
           <span className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-nav-active" />
             <span className="text-base font-bold text-nav">Assignment Info</span>
           </span>
           <ChevronDown
-            className={`w-5 h-5 text-slate-500 transition-transform ${
+            className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${
               infoOpen ? "rotate-180" : ""
             }`}
           />
-        </button>
+        </CollapsibleTrigger>
 
-        <AnimatePresence initial={false}>
-          {infoOpen && (
-            <motion.div
-              key="assign-info"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              style={{ overflow: "hidden" }}
-              className="mt-3"
-            >
-              <div className="text-sm text-foreground/80 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-nav-active" />
-                  <div>
-                    <b>Course:</b> {report.courseName || "—"}
-                  </div>
-                </div>
-                {report.assignmentDueDate && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-nav-active" />
-                    <div>
-                      <b>Due:</b> {dt(report.assignmentDueDate)}
-                    </div>
-                  </div>
-                )}
-                {report.assignmentDescription && (
-                  <div className="flex items-start gap-2">
-                    <BookOpen className="w-4 h-4 text-nav-active mt-0.5" />
-                    <div className="flex-1">
-                      <b>Description</b>
-                      <div
-                        className="prose prose-sm max-w-none text-foreground/80"
-                        dangerouslySetInnerHTML={{
-                          __html: cleanIncomingHtml(report.assignmentDescription),
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Submission editor (TinyMCE) */}
-      <div className="flex flex-col gap-4">
-        <div className="card rounded-2xl p-0 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 border-b">
-            <h2 className="text-lg font-bold text-nav">Submission</h2>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={saving || !isDirty}
-                onClick={handleSave}
-                className={`btn px-3 py-1.5 ${
-                  saving || !isDirty ? "opacity-60 cursor-not-allowed" : "btn-gradient"
-                }`}
-                title="Save changes"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Saving…</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>Save</span>
-                  </>
-                )}
-              </button>
-              {saveMsg && (
-                <span className="text-xs text-[var(--text-muted)]">{saveMsg}</span>
-              )}
+        <CollapsibleContent className="mt-3 text-sm text-foreground/80 space-y-2">
+          <div className="flex items-center gap-2">
+            <Tag className="w-4 h-4 text-nav-active" />
+            <div>
+              <b>Course:</b> {report.courseName || "—"}
             </div>
           </div>
+          {report.assignmentDueDate && (
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-nav-active" />
+              <div>
+                <b>Due:</b> {dt(report.assignmentDueDate)}
+              </div>
+            </div>
+          )}
+          {report.assignmentDescription && (
+            <div className="flex items-start gap-2">
+              <BookOpen className="w-4 h-4 text-nav-active mt-0.5" />
+              <div className="flex-1">
+                <b>Description</b>
+                <div className="mt-2">
+                  <LiteRichTextEditor
+                    value={report.assignmentDescription || ""}
+                    onChange={() => {}}
+                    readOnly
+                    className="w-full"
+                    placeholder=""
+                    debounceMs={0}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
 
-          <div className="px-4 py-3">
-            <LiteRichTextEditor
-              // ✅ Dùng `initialHtml` cho `value` (chỉ load 1 lần)
-              value={initialHtml}
-              // ✅ `onChange` cập nhật state `html` (live)
-              onChange={(v) => setHtml(v)}
-              placeholder="Write your report here..."
-              className="w-full"
-              onInit={(api) => {
-                // api = Tiny editor + pushContentFromOutside
-                tinyEditorRef.current = api;
-                
-                // ✅ FIX (2): Xử lý race-condition: Nếu fetch xong TRƯỚC khi
-                // editor init xong, thì `initialHtml` đã có giá trị.
-                // Push nó vào editor ngay khi init.
-                if (initialHtml) {
-                  api.pushContentFromOutside?.(initialHtml);
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Live collaboration bar + remote caret */}
-        <ReportCollabClient
-          reportId={reportId}
-          getAccessToken={getAccessToken}
-          // ✅ Vẫn gửi `html` (state live) đi cho client khác
-          html={html}
-          onRemoteHtml={(newHtml) => {
-            // ✅ FIX (3): Khi có data từ Collab
-            // 1. Cập nhật state `html` (live)
-            setHtml(newHtml);
-            // 2. Chủ động PUSH data đó vào editor
-            tinyEditorRef.current?.pushContentFromOutside?.(newHtml);
-          }}
-          getEditorRoot={() => tinyEditorRef.current?.getRoot?.() ?? null}
-        />
-
-        <div className="rounded-xl p-3 border border-slate-200 bg-slate-50 text-slate-700 flex items-start gap-2">
+      {/* Collaboration text + Live collaboration */}
+      <div className="rounded-xl p-3 border border-slate-200 bg-slate-50 text-slate-700 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-2 max-w-xl">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="text-xs">
-            Edit <b>Submission</b> trực tiếp ở trên và nhấn <b>Save</b> để lưu. Thay đổi
-            sẽ sync realtime với cộng tác viên khác.
+            Edit the <b>submission</b> below. Your changes will sync in real time with
+            other collaborators.
           </div>
         </div>
+
+        <div className="md:flex-shrink-0">
+          <ReportCollabClient
+            reportId={reportId}
+            getAccessToken={getAccessToken}
+            html={html}
+            onRemoteHtml={(newHtml) => {
+              setHtml(newHtml);
+              tinyEditorRef.current?.pushContentFromOutside?.(newHtml);
+            }}
+            getEditorRoot={() => tinyEditorRef.current?.getRoot?.() ?? null}
+          />
+        </div>
+      </div>
+
+      {/* Submission editor – KHÔNG card, chỉ khung TinyMCE mặc định */}
+      <div className="flex flex-col gap-2">
+        <LiteRichTextEditor
+          value={initialHtml}
+          onChange={(v) => setHtml(v)}
+          placeholder="Write your report here..."
+          className="w-full"
+          onInit={(api: any) => {
+            tinyEditorRef.current = api;
+            if (initialHtml) {
+              api.pushContentFromOutside?.(initialHtml);
+            }
+          }}
+        />
       </div>
     </motion.div>
   );
