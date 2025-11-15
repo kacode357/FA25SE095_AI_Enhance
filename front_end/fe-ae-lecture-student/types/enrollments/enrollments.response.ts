@@ -62,9 +62,20 @@ export interface EnrollmentInfo {
   studentName: string;
   joinedAt: string;
   unenrolledAt?: string | null;
-  status: number;
+  status: EnrollmentStatus;
   unenrollmentReason?: string | null;
   createdAt: string;
+}
+
+/**
+ * Enrollment status values used across the frontend and backend.
+ */
+export enum EnrollmentStatus {
+  Active = 1,
+  Inactive = 2,
+  Withdrawn = 3,
+  Suspended = 4,
+  Completed = 5,
 }
 
 /** 🧑‍🎓 Response khi join course */
@@ -115,7 +126,7 @@ export interface CourseEnrolledStudent {
   studentIdNumber: string;
   profilePictureUrl: string;
   joinedAt: string;        // ISO string
-  status: string;          // server trả string (VD: "Active" | "Pending" | "Unenrolled"...)
+  status: EnrollmentStatus;          // use EnrollmentStatus enum
   enrollmentId: string;
 }
 
@@ -126,4 +137,25 @@ export interface GetCourseEnrolledStudentsResponse {
   courseName: string;
   students: CourseEnrolledStudent[];
   totalStudents: number;
+}
+
+// types/enrollments/unenroll-student.response.ts
+export interface UnenrolledStudent {
+  id: string;
+  courseId: string;
+  courseName: string;
+  courseCode: string;
+  studentId: string;
+  studentName: string;
+  joinedAt: string;
+  unenrolledAt: string;
+  status: number;
+  unenrollmentReason: string;
+  createdAt: string;
+}
+
+export interface UnenrollStudentResponse {
+  success: boolean;
+  message: string;
+  unenrolledStudent: UnenrolledStudent;
 }

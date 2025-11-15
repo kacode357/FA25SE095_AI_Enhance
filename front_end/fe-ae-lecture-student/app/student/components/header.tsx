@@ -14,8 +14,8 @@ import NotificationsMenu, {
   NotificationItem,
 } from "@/components/notifications/NotificationsMenu";
 import UserMenu from "@/components/user/UserMenu";
-import { useStudentNav } from "./nav-items";
 import { getSavedAccessToken } from "@/utils/auth/access-token";
+import { useStudentNav } from "./nav-items";
 
 import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
 import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
@@ -201,26 +201,33 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* RIGHT */}
-        <div className="ml-auto flex bg-slate-100 p-0 rounded-xl shadow-lg items-center gap-2">
-          <NotificationsMenu
-            open={notificationOpen}
-            onOpenChange={handleNotificationOpenChange}
-            badgeCount={unreadCount}
-            notifications={notifications}
-            connected={connected}
-            connecting={connecting}
-            lastError={lastError ?? undefined}
-          />
-          <UserMenu
-            open={dropdownOpen}
-            onOpenChange={(v) => {
-              setDropdownOpen(v);
-              if (v) setNotificationOpen(false);
-            }}
-            user={user ?? null}
-            onLogout={handleLogout}
-          />
+        {/* Right */}
+        <div className="ml-auto flex items-center gap-3">
+          {/* Separate small container for notifications */}
+          <div className="flex items-center bg-slate-100 p-1 mr-3 rounded-lg shadow-sm">
+            <NotificationsMenu
+              open={notificationOpen}
+              onOpenChange={handleNotificationOpenChange}
+              badgeCount={unreadCount}
+              notifications={notifications}
+              connected={connected}
+              connecting={connecting}
+              lastError={lastError ?? undefined}
+            />
+          </div>
+
+          {/* User menu in its own pill */}
+          <div className="flex items-center border-slate-100 bg-slate-100 rounded-xl shadow-lg">
+            <UserMenu
+              open={dropdownOpen}
+              onOpenChange={(v) => {
+                setDropdownOpen(v);
+                if (v) setNotificationOpen(false);
+              }}
+              user={user ?? null}
+              onLogout={handleLogout}
+            />
+          </div>
         </div>
       </div>
     </header>

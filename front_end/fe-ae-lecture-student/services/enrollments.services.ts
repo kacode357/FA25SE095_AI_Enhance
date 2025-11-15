@@ -3,6 +3,8 @@ import {
   ImportEnrollmentsPayload,
   ImportStudentsSpecificCoursePayload,
   JoinCoursePayload,
+  UnenrollStudentParams,
+  UnenrollStudentPayload,
 } from "@/types/enrollments/enrollments.payload";
 import {
   GetCourseEnrolledStudentsResponse,
@@ -13,6 +15,7 @@ import {
   ImportTemplateResponse,
   JoinCourseResponse,
   LeaveCourseResponse,
+  UnenrollStudentResponse,
 } from "@/types/enrollments/enrollments.response";
 
 export const EnrollmentsService = {
@@ -163,4 +166,19 @@ export const EnrollmentsService = {
       );
     return res.data;
   },
+
+  unenrollStudent: async (
+    params: UnenrollStudentParams,
+    body: UnenrollStudentPayload
+  ): Promise<UnenrollStudentResponse> => {
+    const { courseId, studentId } = params;
+
+    const res = await courseAxiosInstance.delete<UnenrollStudentResponse>(
+      `/enrollments/courses/${courseId}/students/${studentId}`,
+      { data: body }
+    );
+
+    return res.data;
+  },
+
 };

@@ -14,3 +14,12 @@ export interface ImportStudentsSpecificCoursePayload {
 export interface JoinCoursePayload {
   accessCode?: string;
 }
+
+export interface UnenrollStudentPayload {
+  reason: string;
+}
+
+export interface UnenrollStudentParams {
+  courseId: string;
+  studentId: string;
+}

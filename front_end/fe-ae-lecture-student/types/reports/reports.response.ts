@@ -25,6 +25,18 @@ export enum ReportStatus {
   Rejected = 8,
 }
 
+// Types and helpers for report history actions
+export enum ReportHistoryAction {
+  Created = 0,
+  Updated = 1,
+  Submitted = 2,
+  Resubmitted = 3,
+  Graded = 4,
+  RevisionRequested = 5,
+  Rejected = 6,
+  StatusChanged = 7,
+}
+
 export interface ReportBase {
   id: string;
   assignmentId: string;
@@ -198,3 +210,76 @@ export type GradeReportResponse = ApiSuccess;
 export type RequestReportRevisionResponse = ApiSuccess;
 
 export type RejectReportResponse = ApiSuccess;
+
+export interface ExportAssignmentGradesResponse {
+  file: Blob; // Excel file (binary)
+}
+
+export interface ReportHistoryItem {
+  id: string;
+  reportId: string;
+  action: string;
+  changedBy: string;
+  changedAt: string; // ISO date
+  version: number;
+  comment: string;
+  changes: Record<string, any>; // key-value diff
+  changeSummary: string;
+  changeDetails: string;
+  unifiedDiff: string;
+  contributorNames: string[];
+}
+
+export interface GetReportHistoryResponse {
+  reportId: string;
+  currentVersion: number;
+  history: ReportHistoryItem[];
+
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
+}
+
+export interface GetReportHistoryVersionResponse {
+  id: string;
+  reportId: string;
+  action: string;
+  changedBy: string;
+  changedAt: string; // ISO datetime
+  version: number;
+  comment: string;
+  changes: Record<string, any>;
+  changeSummary: string;
+  changeDetails: string;
+  unifiedDiff: string;
+  contributorNames: string[];
+}
+
+export interface ReportVersionCompareItem {
+  version: number;
+  content: string;
+  status: string;
+  changedBy: string;
+  changedAt: string; // ISO datetime
+  action: string;
+}
+
+export interface ReportVersionFieldDiff {
+  field: string;
+  changed: boolean;
+  oldValue: any;
+  newValue: any;
+}
+
+export interface CompareReportVersionsResponse {
+  reportId: string;
+  version1: ReportVersionCompareItem;
+  version2: ReportVersionCompareItem;
+  differences: ReportVersionFieldDiff[];
+  unifiedDiff: string;
+  changeSummary: string;
+  contributorNames: string[];
+}

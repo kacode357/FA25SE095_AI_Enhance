@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import { Book, ChevronRight, FileText, Loader2 } from "lucide-react";
+import { Book, ChevronRight, FileDown, FileText, Loader2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useCourseEnrollments } from "@/hooks/course/useCourseEnrollments";
 import { useAssignmentReports } from "@/hooks/reports/useAssignmentReports";
+import { useExportAssignmentGrades } from "@/hooks/reports/useExportAssignmentGrades";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
 import type { ReportBase } from "@/types/reports/reports.response";
 import { formatDistanceToNow, parseISO } from "date-fns";
@@ -25,6 +26,7 @@ export default function LecturerAssignmentReportsPage() {
     const { getReportById, loading: loadingDetail } = useGetReportById();
     const { data: course, fetchCourseById } = useGetCourseById();
     const { data: enrollmentsData, fetchEnrollments } = useCourseEnrollments();
+    const { exportGrades, loading: exporting } = useExportAssignmentGrades();
 
     const [items, setItems] = useState<ReportBase[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -109,12 +111,22 @@ export default function LecturerAssignmentReportsPage() {
             </nav>
 
             <Card className="shadow-md py-0 gap-0 border-slate-200 max-h-[calc(100vh-160px)] overflow-y-auto">
-                <CardHeader className="flex items-center justify-between p-4">
-                    <div className="flex gap-1 items-center">
-                        <h2 className="text-xl font-semibold text-slate-900">Reports for</h2>
-                        <div className="text-sm text-slate-600 mt-1">{assignmentTitle}</div>
+                <CardHeader className="flex flex-row items-start justify-between p-4">
+                    <div>
+                        <div className="flex gap-1 items-end">
+                            <h2 className="text-lg font-normal text-slate-600">Reports for - </h2>
+                            <div className="text-xl text-slate-900 mt-1">{assignmentTitle}</div>
+                        </div>
+                        <div className="text-sm text-slate-500">{items.length} report(s)</div>
                     </div>
-                    <div className="text-sm text-slate-500">{items.length} report(s)</div>
+                    <Button
+                        className="bg-green-100 shadow-lg text-sm text-green-900"
+                        onClick={() => exportGrades(assignmentId)}
+                        disabled={!assignmentId || exporting}
+                    >
+                        {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="size-4" />}
+                        Export Grade
+                    </Button>
                 </CardHeader>
 
                 <CardContent className="p-0">

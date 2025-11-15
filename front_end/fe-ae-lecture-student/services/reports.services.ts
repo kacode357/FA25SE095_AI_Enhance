@@ -2,9 +2,12 @@
 import { courseAxiosInstance as api } from "@/config/axios.config";
 import type {
   AssignmentReportsQuery,
+  CompareReportVersionsPayload,
   CreateReportPayload,
   GetCourseReportsQuery,
   GetLateSubmissionsQuery,
+  GetReportHistoryQuery,
+  GetReportHistoryVersionPayload,
   GetReportsRequiringGradingQuery,
   GradeReportPayload,
   MyReportsQuery,
@@ -16,9 +19,12 @@ import type {
 import type {
   ApiSuccess,
   AssignmentReportsResponse,
+  CompareReportVersionsResponse,
   CreateReportResponse,
   GetCourseReportsResponse,
   GetLateSubmissionsResponse,
+  GetReportHistoryResponse,
+  GetReportHistoryVersionResponse,
   GetReportResponse,
   GetReportsRequiringGradingResponse,
   GradeReportResponse,
@@ -128,4 +134,48 @@ export const ReportsService = {
     const res = await api.post<RejectReportResponse>("/Reports/reject", payload);
     return res.data;
   },
+
+  exportAssignmentGrades: async (
+    assignmentId: string
+  ): Promise<Blob> => {
+    const res = await api.get(`/Reports/export/${assignmentId}`, {
+      responseType: "blob",
+    });
+    return res.data;
+  },
+
+  getHistory: async (
+    params: GetReportHistoryQuery
+  ): Promise<GetReportHistoryResponse> => {
+    const { reportId, ...query } = params;
+
+    const res = await api.get<GetReportHistoryResponse>(
+      `/Reports/${reportId}/history`,
+      { params: query }
+    );
+
+    return res.data;
+  },
+  
+  getHistoryVersion: async (
+    payload: GetReportHistoryVersionPayload
+  ): Promise<GetReportHistoryVersionResponse> => {
+    const { reportId, version } = payload;
+    const res = await api.get<GetReportHistoryVersionResponse>(
+      `/Reports/${reportId}/history/${version}`
+    );
+    return res.data;
+  },
+
+  compareVersions: async (
+    payload: CompareReportVersionsPayload
+  ): Promise<CompareReportVersionsResponse> => {
+    const { reportId, version1, version2 } = payload;
+    const res = await api.get<CompareReportVersionsResponse>(
+      `/Reports/${reportId}/compare`,
+      { params: { version1, version2 } }
+    );
+    return res.data;
+  },
+
 };

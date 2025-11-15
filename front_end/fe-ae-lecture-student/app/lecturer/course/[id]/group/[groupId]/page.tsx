@@ -236,8 +236,8 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
             <DialogTitle>Confirm Delete</DialogTitle>
           </DialogHeader>
           <div className="py-2">
-            Are you sure you want to delete{" "}
-            <span className="font-semibold">{selectedMember?.studentName}</span>?
+            Are you sure you want to remove{" "}
+            <span className="font-semibold">{selectedMember?.studentName}</span> from group?
           </div>
           <DialogFooter className="flex gap-3">
             <Button
@@ -249,9 +249,9 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
               Cancel
             </Button>
             <Button
-              className="cursor-pointer"
+              className="cursor-pointer btn btn-gradient-slow"
               onClick={handleConfirmDelete} disabled={deleting}>
-              {deleting ? "Deleting..." : "Delete"}
+              {deleting ? "Removing..." : "Remove"}
             </Button>
           </DialogFooter>
         </DialogContent>

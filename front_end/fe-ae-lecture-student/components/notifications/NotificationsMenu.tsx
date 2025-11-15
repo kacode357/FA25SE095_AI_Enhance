@@ -1,9 +1,10 @@
 // components/notifications/NotificationsMenu.tsx
 "use client";
 
+import { motion } from "framer-motion";
 import { Bell } from "lucide-react";
-import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 export type NotificationItem = {
   id: string;
@@ -85,9 +86,9 @@ export default function NotificationsMenu({
     <div ref={rootRef} className="relative">
       <button
         onClick={toggle}
-        className="relative p-2 rounded-lg cursor-pointer transition-colors text-nav hover:bg-[var(--focus-ring)] focus:bg-[var(--focus-ring)] focus:outline-none"
+        className="relative p-1.5 rounded-lg cursor-pointer transition-colors text-nav hover:bg-[var(--focus-ring)] focus:bg-[var(--focus-ring)] focus:outline-none"
         aria-label="Notifications"
-        aria-expanded={open}
+        aria-expanded={open ? "true" : "false"}
         aria-haspopup="menu"
       >
         <Bell className="w-5 h-5" />
@@ -110,12 +111,15 @@ export default function NotificationsMenu({
       </button>
 
       {open && (
-        <div
+        <motion.div
           role="menu"
-          className="absolute right-0 top-12 w-80 rounded-2xl shadow-xl py-2 z-50"
+          initial={{ opacity: 0, y: -6, scale: 0.99 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="absolute right-0 top-12 w-80 rounded-2xl shadow-lg py-2 z-50"
           style={{
             background: "var(--card)",
-            border: "1px solid var(--border)",
+            border: "1px solid rgba(15,23,42,0.06)",
             color: "var(--foreground)",
           }}
         >
@@ -141,37 +145,41 @@ export default function NotificationsMenu({
               </div>
             ) : (
               notifications.map((item) => (
-                <button
-                  key={item.id}
-                  className="w-full text-left px-4 py-3 transition-colors"
-                  onClick={() => onOpenChange(false)}
-                  role="menuitem"
-                >
-                  <div className="rounded-md hover:bg-[var(--focus-ring)] p-2 -m-2">
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: "var(--foreground)" }}
-                    >
-                      {item.title || "New notification"}
-                    </p>
-                    {item.message && (
+                <div role="menu">
+                  <button
+                    title="Menu"
+                    type="button"
+                    key={item.id}
+                    className="w-full text-left px-4 py-3 transition-colors"
+                    onClick={() => onOpenChange(false)}
+                    role="menuitem"
+                  >
+                    <div className="rounded-md hover:bg-[var(--focus-ring)] p-2 -m-2">
                       <p
-                        className="text-xs mt-1"
-                        style={{ color: "var(--text-muted)" }}
+                        className="text-sm font-medium"
+                        style={{ color: "var(--foreground)" }}
                       >
-                        {item.message}
+                        {item.title || "New notification"}
                       </p>
-                    )}
-                    {item.createdAt && (
-                      <p
-                        className="text-[11px] mt-1 w-full text-right"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {formatTime(item.createdAt)}
-                      </p>
-                    )}
-                  </div>
-                </button>
+                      {item.message && (
+                        <p
+                          className="text-xs mt-1"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {item.message}
+                        </p>
+                      )}
+                      {item.createdAt && (
+                        <p
+                          className="text-[11px] mt-1"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {formatTime(item.createdAt)}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                </div>
               ))
             )}
           </div>
@@ -190,7 +198,7 @@ export default function NotificationsMenu({
               View all notifications
             </Link>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

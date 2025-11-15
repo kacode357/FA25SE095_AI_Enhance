@@ -10,10 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { courseAxiosInstance } from "@/config/axios.config";
+import { useAssignGroups } from "@/hooks/assignment/useAssignGroups";
 import { useCreateAssignment } from "@/hooks/assignment/useCreateAssignment";
 import { useScheduleAssignment } from "@/hooks/assignment/useScheduleAssignment";
+import { useUnassignedGroups } from "@/hooks/assignment/useUnassignedGroups";
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
 import { useGetTopicsDropdown } from "@/hooks/topic/useGetTopicsDropdown";
+import { AssignmentService } from "@/services/assignment.services";
 import type { CreateAssignmentPayload } from "@/types/assignments/assignment.payload";
 import { CircleAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -38,8 +41,13 @@ type Props = {
 export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Props) {
   const { createAssignment, loading: creating } = useCreateAssignment();
   const { scheduleAssignment, loading: scheduling } = useScheduleAssignment();
+  const { assignGroups, loading: assigning } = useAssignGroups();
   const { data: topics, loading: loadingTopics, fetchDropdown } = useGetTopicsDropdown();
   const { listData: courseGroups, loading: loadingGroups, fetchByCourseId } = useGroupsByCourseId();
+  const { data: unassignedData, loading: loadingUnassigned, fetchUnassignedGroups } = useUnassignedGroups();
+
+  const [assignmentLookup, setAssignmentLookup] = useState<Record<string, any>>({});
+  const [loadingLookup, setLoadingLookup] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -61,6 +69,11 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
   }, [courseId]);
 
   useEffect(() => {
+    if (courseId) fetchUnassignedGroups(courseId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]);
+
+  useEffect(() => {
     fetchDropdown();
   }, []);
 
@@ -74,6 +87,41 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
       return { ...prev, groupIds: Array.from(next) };
     });
   };
+
+  // Build a lookup of assigned groups -> their current assignment (if any)
+  useEffect(() => {
+    async function fetchLookups() {
+      const groups = courseGroups ?? [];
+      const unassigned = new Set((unassignedData?.unassignedGroups || []).map((g) => g.id));
+      const assigned = groups.filter((g) => !unassigned.has(g.id));
+      if (assigned.length === 0) {
+        setAssignmentLookup({});
+        return;
+      }
+
+      setLoadingLookup(true);
+      try {
+        const pairs = await Promise.all(
+          assigned.map(async (g) => {
+            try {
+              const res = await AssignmentService.getAssignmentByGroupId(g.id);
+              return [g.id, res.assignment] as const;
+            } catch (err) {
+              return [g.id, null] as const;
+            }
+          })
+        );
+        const map: Record<string, any> = {};
+        for (const [gid, assignment] of pairs) map[gid] = assignment;
+        setAssignmentLookup(map);
+      } finally {
+        setLoadingLookup(false);
+      }
+    }
+
+    // only run when courseGroups or unassignedData changes
+    if ((courseGroups ?? []).length > 0) fetchLookups();
+  }, [courseGroups, unassignedData]);
 
   const resetForm = () =>
     setForm({
@@ -123,6 +171,14 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
     const res = await createAssignment(payload);
     if (res?.success) {
+      const createdHasAssignedGroups = !!res.assignment?.assignedGroups && res.assignment.assignedGroups.length > 0;
+      if (form.isGroupAssignment && form.groupIds.length > 0 && !createdHasAssignedGroups) {
+        try {
+          await assignGroups({ assignmentId: res.assignmentId, groupIds: form.groupIds });
+        } catch (err) {
+          // assignGroups hook toasts on success/failure; continue flow regardless
+        }
+      }
       // If user wants automatic scheduling, call schedule hook
       if (form.autoSchedule) {
         try {
@@ -264,67 +320,93 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
         <Separator />
 
         {/* Group assignment */}
-        <div className="flex justify-between">
+        <div className="">
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="isGroup"
-                checked={form.isGroupAssignment}
-                onCheckedChange={(v) =>
-                  setForm((p) => ({
-                    ...p,
-                    isGroupAssignment: !!v,
-                    groupIds: !!v ? p.groupIds : [],
-                  }))
-                }
-              />
-              <Label htmlFor="isGroup" className="cursor-pointer">
-                This is a group assignment
-              </Label>
+            <div className="flex justify-between items-center gap-2">
+              <div className="flex gap-2 items-center">
+                <Checkbox
+                  id="isGroup"
+                  checked={form.isGroupAssignment}
+                  onCheckedChange={(v) =>
+                    setForm((p) => ({
+                      ...p,
+                      isGroupAssignment: !!v,
+                      groupIds: !!v ? p.groupIds : [],
+                    }))
+                  }
+                />
+                <Label htmlFor="isGroup" className="cursor-pointer">
+                  This is a group assignment
+                </Label>
+              </div>
+              {/* Automatically schedule */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="autoSchedule"
+                    checked={form.autoSchedule}
+                    onCheckedChange={(v) => setForm((p) => ({ ...p, autoSchedule: !!v }))}
+                    className="border-slate-400 text-white data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                  />
+                  <Label htmlFor="autoSchedule" className="cursor-pointer">
+                    Automatically schedule this Assignment
+                  </Label>
+                </div>
+              </div>
             </div>
 
             {form.isGroupAssignment && (
               <div className="rounded-lg border border-slate-300 p-3">
                 <div className="mb-2 text-sm font-medium">Select groups in this course</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-auto pr-1">
-                  {loadingGroups ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-h-60 overflow-auto pr-1">
+                  {loadingGroups || loadingUnassigned ? (
                     <div className="text-sm text-slate-500 p-2">Loading groups...</div>
                   ) : (courseGroups?.length ?? 0) === 0 ? (
                     <div className="text-sm text-slate-500 p-2">No groups in this course.</div>
                   ) : (
-                    (courseGroups ?? []).map((g) => (
-                      <label key={g.id} className="flex border-slate-300 items-center gap-2 rounded-md border px-3 py-2">
-                        <Checkbox
-                          checked={selectedGroupSet.has(g.id)}
-                          onCheckedChange={(v) => toggleGroup(g.id, v)}
-                        />
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{g.name}</div>
-                          <div className="text-xs text-slate-500">
-                            Members: {g.memberCount}
-                            {g.leaderName ? ` • Leader: ${g.leaderName}` : ""}
+                    (courseGroups ?? []).map((g) => {
+                      const unassignedIds = new Set((unassignedData?.unassignedGroups || []).map((u) => u.id));
+                      const isAssigned = !unassignedIds.has(g.id);
+                      const assignedInfo = assignmentLookup[g.id];
+
+                      return (
+                        <label
+                          key={g.id}
+                          className={`flex border-slate-300 items-center gap-2 rounded-md border px-3 py-2 ${isAssigned ? "opacity-70" : ""}`}
+                        >
+                          <Checkbox
+                            checked={selectedGroupSet.has(g.id)}
+                            onCheckedChange={(v) => toggleGroup(g.id, v)}
+                            disabled={isAssigned}
+                            className="cursor-pointer"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm cursor-text font-medium">{g.name}</div>
+                            <div className="text-xs text-slate-500 cursor-text">
+                              Members: {g.memberCount}
+                              {g.leaderName ? ` • Leader: ${g.leaderName}` : ""}
+                            </div>
+                            {isAssigned && (
+                              <div className="text-xs cursor-text text-amber-700 mt-1">
+                                {loadingLookup ? (
+                                  "Checking assignment..."
+                                ) : assignedInfo ? (
+                                  <>
+                                    Assignment: <span className="cursor-text font-medium">{assignedInfo.title ?? assignedInfo.name ?? "Unnamed"}</span>
+                                  </>
+                                ) : (
+                                  "Assigned"
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </label>
-                    ))
+                        </label>
+                      );
+                    })
                   )}
                 </div>
               </div>
             )}
-          </div>
-          {/* Automatically schedule */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="autoSchedule"
-                checked={form.autoSchedule}
-                onCheckedChange={(v) => setForm((p) => ({ ...p, autoSchedule: !!v }))}
-                className="border-slate-400 text-white data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-              />
-              <Label htmlFor="autoSchedule" className="cursor-pointer">
-                Automatically schedule this Assignment
-              </Label>
-            </div>
           </div>
         </div>
       </CardContent>
@@ -335,7 +417,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             Cancel
           </Button>
         )}
-        <Button className="btn btn-gradient-slow" onClick={onSubmit} disabled={creating || scheduling}>
+        <Button className="btn btn-gradient-slow" onClick={onSubmit} disabled={creating || scheduling || assigning}>
           Create
         </Button>
       </CardFooter>

@@ -66,7 +66,8 @@ export default function Header() {
     connecting,
     lastError,
   } = useNotificationHub({
-    getAccessToken: getSavedAccessToken,
+    // Wrap to always return a string (never null) to satisfy hook signature
+    getAccessToken: () => getSavedAccessToken() || "",
     onNotification: (raw) => {
       const item = normalizeNotification(raw);
       setNotifications((prev) => [item, ...prev]);

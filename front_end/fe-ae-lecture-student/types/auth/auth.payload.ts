@@ -19,6 +19,7 @@ export interface LoginPayload {
   rememberMe?: boolean;
   ipAddress?: string;
   userAgent?: string;
+  captchaToken?: string; // optional token from CAPTCHA (reCAPTCHA v3 or similar)
 }
 
 export interface ConfirmEmailPayload {

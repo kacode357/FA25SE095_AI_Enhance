@@ -10,10 +10,12 @@ import { useGradeReport } from "@/hooks/reports/useGradeReport";
 import { useRejectReport } from "@/hooks/reports/useRejectReport";
 import { useRequestReportRevision } from "@/hooks/reports/useRequestReportRevision";
 import { formatDistanceToNow, parseISO } from "date-fns";
-import { ArrowLeft, ClipboardPenLine, Loader2, OctagonAlert, PencilOff, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, ClipboardPenLine, Loader2, OctagonAlert, PencilOff, X } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import HistoryReportLog from "../history/HistoryReportLog";
 import StatusBadge from "../utils/status";
+
 
 export default function ReportDetailsPage() {
   const params = useParams();
@@ -41,6 +43,7 @@ export default function ReportDetailsPage() {
   const [revisionFeedback, setRevisionFeedback] = useState<string>("");
   const [rejectFeedback, setRejectFeedback] = useState<string>("");
   const formRef = useRef<HTMLDivElement | null>(null);
+  const [activeTab, setActiveTab] = useState<'details'|'history'>('details');
 
   const { gradeReport, loading: grading } = useGradeReport();
   const { requestReportRevision, loading: requestingRevision } = useRequestReportRevision();
@@ -94,13 +97,16 @@ export default function ReportDetailsPage() {
   };
 
   return (
-    <div className="py-4 px-3 min-h-screen">
+    <div className="pb-4 px-3 min-h-screen">
       <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mb-4">
         <div className="flex items-center justify-between">
           <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
             <li>
               <button onClick={() => router.push('/lecturer/course')} className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition">Courses Management</button>
             </li>
+
+            <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
+
             <li className="text-slate-500 max-w-[220px] truncate">
               <button onClick={() => router.push(courseId ? `/lecturer/course/${courseId}` : '/lecturer/course')} className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition" title={course?.courseCodeTitle ?? `Course ${courseId}`}>
                 {course?.courseCode ? `${course.courseCode} — ${course.courseCodeTitle}` : `Course ${courseId}`}
@@ -109,28 +115,49 @@ export default function ReportDetailsPage() {
           </ol>
         </div>
       </nav>
-      <Card className="shadow-md py-0 gap-0 border-slate-200 max-h-[calc(100vh-160px)] overflow-hidden">
-        <CardHeader className="flex items-center justify-between p-4">
-          <div className="flex">
-            <Button size="sm" variant="ghost" className="cursor-pointer -ml-2" onClick={goBack}><ArrowLeft className="size-4" /></Button>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900">Report Details</h2>
-              <div className="text-sm text-slate-600">Report ID: <span className="font-mono">{reportId}</span></div>
+      <Card className="shadow-md py-0 gap-0 border-slate-200 max-h-[calc(100vh-140px)] overflow-hidden">
+        <CardHeader className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Button size="sm" variant="ghost" className="cursor-pointer -ml-2" onClick={goBack}><ArrowLeft className="size-4" /></Button>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Report Details</h2>
+                <div className="text-sm text-slate-600">Report ID: <span className="font-mono">{reportId}</span></div>
+              </div>
             </div>
+
+            {activeTab !== 'history' && (
+              <div className="flex items-center gap-2">
+                {!showRevisionForm && (
+                  <Button size="sm" className="cursor-pointer text-blue-500 shadow-lg mr-2" onClick={() => { setShowRevisionForm(true); setRevisionError(null); setShowGradeForm(false); setShowRejectForm(false); }}><PencilOff className="size-4" />Request Revision</Button>
+                )}
+
+                {!showRejectForm && (
+                  <Button size="sm" className="cursor-pointer text-red-500 shadow-lg mr-2" onClick={() => { setShowRejectForm(true); setRejectError(null); setShowRevisionForm(false); }}><X className="size-4" />Reject Report</Button>
+                )}
+
+                {!showGradeForm && detail?.status !== 'Rejected' && (
+                  <Button size="sm" className="cursor-pointer btn btn-gradient-slow" onClick={() => { setShowGradeForm(true); setGradeError(null); setShowRevisionForm(false); setShowRejectForm(false); }}><ClipboardPenLine className="size-4" />Grade</Button>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
-            {!showRevisionForm && (
-              <Button size="sm" className="cursor-pointer text-blue-500 shadow-lg mr-2" onClick={() => { setShowRevisionForm(true); setRevisionError(null); setShowGradeForm(false); setShowRejectForm(false); }}><PencilOff className="size-4" />Request Revision</Button>
-            )}
+          {/* Tabs: keep these inside header so they don't scroll with CardContent */}
+          <div className="mt-3 px-0">
+            <div className="px-6 py-2 bg-gradient-to-r from-blue-100 to-white rounded-md">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveTab('details')}
+                  className={`px-3 cursor-pointer py-1 text-sm rounded ${activeTab === 'details' ? 'bg-violet-50 text-violet-700 rounded-md shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+                >Details</button>
 
-            {!showRejectForm && (
-              <Button size="sm" className="cursor-pointer text-red-500 shadow-lg mr-2" onClick={() => { setShowRejectForm(true); setRejectError(null); setShowRevisionForm(false); }}><X className="size-4" />Reject Report</Button>
-            )}
-
-            {!showGradeForm && detail?.status !== 'Rejected' && (
-              <Button size="sm" className="cursor-pointer btn btn-gradient-slow" onClick={() => { setShowGradeForm(true); setGradeError(null); setShowRevisionForm(false); setShowRejectForm(false); }}><ClipboardPenLine className="size-4" />Grade</Button>
-            )}
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`px-3 cursor-pointer py-1 text-sm rounded ${activeTab === 'history' ? 'bg-violet-50 text-violet-700 rounded-md shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+                >History Log</button>
+              </div>
+            </div>
           </div>
         </CardHeader>
 
@@ -151,11 +178,12 @@ export default function ReportDetailsPage() {
             <div className="p-6 text-slate-600">No report data available.</div>
           )}
 
-          {!loading && detail && (
+          {/* Render tabs content */}
+          {!loading && activeTab === 'details' && detail && (
             <div className="p-6">
               <div className="space-y-6 text-sm text-slate-700">
                 {/* Assignment & Course meta */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-slate-200 pb-5">
                   <div>
                     <div className="text-xs text-slate-500">Assignment ID</div>
                     <div className="font-mono text-xs text-slate-700 truncate">{detail.assignmentId ?? '—'}</div>
@@ -175,11 +203,11 @@ export default function ReportDetailsPage() {
                 {detail.assignmentDescription && (
                   <div>
                     <div className="text-xs text-slate-500">Assignment Description</div>
-                    <div className="mt-1 text-slate-700 whitespace-pre-wrap">{detail.assignmentDescription}</div>
+                    <div className="mt-1 text-slate-700 bg-white p-5 border-slate-200 rounded-md shadow-md whitespace-pre-wrap">{detail.assignmentDescription}</div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5 border-t border-slate-200">
                   <div>
                     <div className="text-xs text-slate-500">Due Date</div>
                     <div className="font-medium">{detail.assignmentDueDate ? new Date(detail.assignmentDueDate).toLocaleString() : '—'}</div>
@@ -518,6 +546,12 @@ export default function ReportDetailsPage() {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {!loading && activeTab === 'history' && (
+            <div className="p-6">
+              <HistoryReportLog reportId={reportId} />
             </div>
           )}
         </CardContent>

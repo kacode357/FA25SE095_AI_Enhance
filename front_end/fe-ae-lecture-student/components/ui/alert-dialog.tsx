@@ -1,17 +1,25 @@
 "use client"
 
-import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
+import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
 
-function getButtonClasses(options: { variant?: "default" | "outline" } = {}) {
-  const baseClasses = "inline-flex items-center justify-center whitespace-nowrap rounded-sm text-base font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-4 py-2"
+function getButtonClasses(options: { variant?: "default" | "outline" | "destructive" } = {}) {
+  const baseClasses = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-4 py-2"
 
   switch (options.variant) {
     case "outline":
-      return cn(baseClasses, "border border-input bg-background hover:bg-accent hover:text-accent-foreground")
+      return cn(
+        baseClasses,
+        "border border-input bg-background hover:bg-accent hover:text-accent-foreground text-sm"
+      )
+    case "destructive":
+      return cn(
+        baseClasses,
+        "bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-400"
+      )
     case "default":
     default:
       return cn(baseClasses, "bg-primary text-primary-foreground hover:bg-primary/90")
@@ -66,7 +74,7 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          "bg-white data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+          "bg-white data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl border border-slate-100 p-8 shadow-2xl duration-200 sm:max-w-lg",
           className
         )}
         {...props}
@@ -96,7 +104,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "flex flex-col-reverse gap-3 sm:flex-row sm:justify-end items-center",
         className
       )}
       {...props}
@@ -111,7 +119,7 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn("text-lg font-semibold", className)}
+      className={cn("text-xl font-semibold text-slate-900", className)}
       {...props}
     />
   )
@@ -124,7 +132,7 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-slate-600 text-sm leading-relaxed", className)}
       {...props}
     />
   )
@@ -132,11 +140,12 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
+  variant,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action> & { variant?: "default" | "outline" | "destructive" }) {
   return (
     <AlertDialogPrimitive.Action
-      className={cn(getButtonClasses(), className)}
+      className={cn(getButtonClasses({ variant }), className)}
       {...props}
     />
   )
@@ -155,15 +164,6 @@ function AlertDialogCancel({
 }
 
 export {
-  AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
+    AlertDialog, AlertDialogAction,
+    AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, AlertDialogPortal, AlertDialogTitle, AlertDialogTrigger
 }

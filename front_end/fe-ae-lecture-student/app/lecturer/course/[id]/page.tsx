@@ -81,6 +81,11 @@ export default function CourseDetailPage() {
     setShowInlineImport(action === "importCourse");
     setOpenGroup(action === "createGroup");
     setOpenAssign(action === "createAssign");
+
+    const tabParam = search?.get?.("tab");
+    if (tabParam && (tabParam === "students" || tabParam === "groups" || tabParam === "assignments")) {
+      setActiveTab(tabParam as any);
+    }
   }, [action]);
 
   function clearAction() {
@@ -144,7 +149,16 @@ export default function CourseDetailPage() {
 
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as any)}
+        onValueChange={(v) => {
+          setActiveTab(v as any);
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.set("tab", v as string);
+            router.replace(url.pathname + url.search);
+          } catch (err) {
+            // ignore - window might be undefined during SSR (shouldn't happen in client)
+          }
+        }}
         className="w-full"
       >
         {/* Underline style tabs */}

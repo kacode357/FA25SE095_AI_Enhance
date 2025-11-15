@@ -80,3 +80,24 @@ export interface RejectReportPayload {
   reportId: string;
   feedback: string;
 }
+
+export interface ExportAssignmentGradesParams {
+  assignmentId: string;
+}
+
+export interface GetReportHistoryQuery {
+  reportId: string;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export interface GetReportHistoryVersionPayload {
+  reportId: string;
+  version: number;
+}
+
+export interface CompareReportVersionsPayload {
+  reportId: string;
+  version1: number;   // query param
+  version2: number;   // query param
+}

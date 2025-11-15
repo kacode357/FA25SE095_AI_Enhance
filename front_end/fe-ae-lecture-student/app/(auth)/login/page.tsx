@@ -4,8 +4,9 @@
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin";
 import { useLogin } from "@/hooks/auth/useLogin";
-import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin"; 
+import { executeTurnstile, loadTurnstileScript, renderTurnstileWidget } from "@/lib/turnstile";
 import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +14,8 @@ import { useEffect, useRef, useState } from "react";
 declare global {
   interface Window {
     google?: any;
+    grecaptcha?: any;
+    turnstile?: any;
   }
 }
 
@@ -72,8 +75,60 @@ export default function LoginPage() {
     document.head.appendChild(s);
   }, [googleLogin, rememberMe]);
 
+  // Load Turnstile script (if configured) using helper
+  useEffect(() => {
+    const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    if (!SITE_KEY) return;
+    loadTurnstileScript();
+  }, []);
+
+  const turnstileWidgetIdRef = useRef<number | null>(null);
+  const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Try render widget into hidden container when turnstile becomes available
+  useEffect(() => {
+    const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    if (!SITE_KEY) return;
+
+    const tryRender = () => {
+      try {
+        if (!turnstileContainerRef.current) return;
+        if (turnstileWidgetIdRef.current !== null) return;
+
+        const id = renderTurnstileWidget(turnstileContainerRef.current, SITE_KEY, (token: string) => {
+          if (turnstileContainerRef.current) turnstileContainerRef.current.dataset.token = token;
+        });
+
+        if (id !== null) turnstileWidgetIdRef.current = id;
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    tryRender();
+    const handler = () => tryRender();
+    window.addEventListener("turnstile:load", handler as EventListener);
+    return () => window.removeEventListener("turnstile:load", handler as EventListener);
+  }, []);
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+    if (SITE_KEY) {
+      try {
+        const token = await executeTurnstile(turnstileWidgetIdRef.current, turnstileContainerRef.current);
+        if (token) {
+          await login({ email: email.trim(), password: password.trim(), rememberMe, captchaToken: token });
+          return;
+        }
+      } catch (err) {
+        console.error("Turnstile error:", err);
+      }
+    }
+
+    // fallback
     await login({ email: email.trim(), password: password.trim(), rememberMe });
   };
 
@@ -148,7 +203,6 @@ export default function LoginPage() {
           type="submit"
           className="btn btn-gradient w-full"
           disabled={loading}
-          aria-busy={loading}
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>
@@ -174,6 +228,8 @@ export default function LoginPage() {
 
         {/* Container ẩn nếu sau này muốn render Google button gốc (không bắt buộc) */}
         <div id="g-btn-container" className="hidden" />
+  {/* Hidden container for Cloudflare Turnstile invisible widget */}
+  <div ref={turnstileContainerRef} className="hidden" />
 
         <motion.div
           initial={{ opacity: 0 }}

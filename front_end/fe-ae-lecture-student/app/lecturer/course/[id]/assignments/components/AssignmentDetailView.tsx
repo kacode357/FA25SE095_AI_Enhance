@@ -64,6 +64,8 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
 
   const [openOverview, setOpenOverview] = useState(false);
   const [openScheduleConfirm, setOpenScheduleConfirm] = useState(false);
+  const [overviewEnter, setOverviewEnter] = useState(false);
+  const [overviewMounted, setOverviewMounted] = useState(false);
 
   useEffect(() => {
     if (id) fetchAssignment(id);
@@ -91,6 +93,25 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
     setOpenScheduleConfirm(false);
     refetchDetail();
   };
+
+  // trigger a small enter animation when overview opens, and keep it mounted during exit
+  useEffect(() => {
+    let t: number | undefined;
+    if (openOverview) {
+      setOverviewMounted(true);
+      setOverviewEnter(false);
+      // schedule in next frame so transition runs
+      requestAnimationFrame(() => setOverviewEnter(true));
+    } else {
+      // start exit animation
+      setOverviewEnter(false);
+      // keep mounted until animation finishes (match duration 500ms)
+      t = window.setTimeout(() => setOverviewMounted(false), 500);
+    }
+    return () => {
+      if (t) window.clearTimeout(t);
+    };
+  }, [openOverview]);
 
   return (
     <Card className="border border-slate-200 py-0 px-2 -gap-2 mr-3.5 shadow-none">
@@ -198,8 +219,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:h-[calc(100vh-220px)] min-h-0 overflow-auto">
               {/* ===== Left column ===== */}
               <div
-                className={`${openOverview ? "lg:col-span-8" : "lg:col-span-12"
-                  } min-h-0 grid grid-rows-[1fr,auto,auto] gap-6 relative`}
+                className={`${overviewMounted ? "lg:col-span-8" : "lg:col-span-12"} min-h-0 grid grid-rows-[1fr,auto,auto] lg:grid-rows-[4fr,auto,auto] gap-6 relative`}
               >
                 {/* Overview toggle (when collapsed) */}
                 {!openOverview && (
@@ -220,9 +240,9 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                 )}
 
                 {/* ===== Description (TinyMCE read-only) ===== */}
-                <section className="min-h-0 h-full flex flex-col">
+                <section className="min-h-0 h-full flex flex-col lg:min-h-[65vh]">
                   <div className="mb-2 text-sm text-slate-500">Description</div>
-                  <ScrollArea className="border border-slate-300 rounded-md bg-white/50 flex-1 min-h-0 h-full w-full overflow-y-auto">
+                  <ScrollArea className="border border-slate-300 rounded-md bg-white/50 flex-1 min-h-0 w-full overflow-y-auto">
                     <div className="p-2">
                       <LiteRichTextEditor
                         value={a.description ?? ""}
@@ -273,6 +293,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                         assignedGroupsCount: a.assignedGroupsCount,
                         assignedGroups: a.assignedGroups,
                       }}
+                      status={a.status}
                       onChanged={refetchDetail}
                     />
                   </section>
@@ -280,15 +301,15 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
               </div>
 
               {/* ===== Right column (Overview) ===== */}
-              {openOverview && (
-                <div className="lg:col-span-4 space-y-5">
-                  <section className="rounded-md border mt-6.5 border-slate-200 bg-white">
+              {overviewMounted && (
+                <div className="lg:col-span-4">
+                  <div className={`rounded-md border mt-6.5 border-slate-200 bg-white overflow-hidden transition-all duration-300`}>
                     <div className="py-3 border-b border-slate-300 flex items-center justify-between">
                       <Button
                         size="sm"
                         variant="outline"
                         className="text-[11px] h-8 px-2"
-                        onClick={() => setOpenOverview(false)}
+                        onClick={() => setOpenOverview((s) => !s)}
                       >
                         <span className="flex items-center gap-1 text-[#000D83]">
                           <Info className="size-4" />
@@ -298,7 +319,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                       </Button>
                     </div>
 
-                    <div className="px-4 py-3 text-sm grid grid-cols-1 gap-5">
+                    <div className={`px-4 py-3 text-sm grid grid-cols-1 gap-5 transition-all duration-500 ease-out transform ${overviewEnter ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0 pointer-events-none'}`}>
                       <div className="flex items-start justify-between gap-3">
                         <span className="text-slate-500">Course</span>
                         <span className="font-medium text-right">{a.courseName}</span>
@@ -313,9 +334,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
 
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-slate-500">Type</span>
-                        <span className="font-medium">
-                          {a.isGroupAssignment ? "Group" : "Individual"}
-                        </span>
+                        <span className="font-medium">{a.isGroupAssignment ? "Group" : "Individual"}</span>
                       </div>
 
                       <div className="flex items-center justify-between gap-3">
@@ -373,7 +392,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                         />
                       </div>
                     </div>
-                  </section>
+                  </div>
                 </div>
               )}
             </div>

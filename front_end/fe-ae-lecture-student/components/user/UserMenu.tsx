@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, CircleArrowOutUpRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
@@ -23,6 +24,7 @@ type Props = {
 
 export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const initials = useMemo(() => {
     if (!user) return "ST";
@@ -54,16 +56,16 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
   }, [onOpenChange]);
 
   return (
-    <div ref={rootRef} className="relative cursor-pointer">
+    <div ref={rootRef} className="relative cursor-pointer border-slate-100">
       <button
         onClick={toggle}
-        aria-expanded={open}
+        aria-expanded={open ? "true" : "false"}
         aria-haspopup="menu"
-        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all"
+        className="flex items-center gap-3 px-3 py-1 rounded-lg transition-all hover:shadow-md"
         style={{
           background:
             "linear-gradient(135deg, color-mix(in oklab, var(--brand) 8%, #fff), color-mix(in oklab, var(--brand) 16%, #fff))",
-          border: "1px solid var(--border)",
+          border: "0.5px solid rgba(15,23,42,0.06)",
         }}
       >
         <div className="relative">
@@ -101,16 +103,23 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
         />
       </button>
 
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 top-12 w-56 rounded-2xl shadow-xl py-2 z-50"
-          style={{
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            color: "var(--foreground)",
-          }}
-        >
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="usermenu"
+            role="menu"
+            initial={{ opacity: 0, y: -6, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.99 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
+            className="absolute right-0 top-12 w-56 rounded-2xl shadow-lg py-2 z-50"
+            style={{
+              background: "var(--card)",
+              border: "1px solid rgba(15,23,42,0.06)",
+              color: "var(--foreground)",
+            }}
+          >
+              {/* If user prefers reduced motion, transition is shortened above. */}
           <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
             <p className="font-semibold cursor-text" style={{ color: "var(--foreground)" }}>
               {fullName}
@@ -148,8 +157,9 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
               Logout
             </button>
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

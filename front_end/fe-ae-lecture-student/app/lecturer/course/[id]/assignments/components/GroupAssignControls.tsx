@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAssignGroups } from "@/hooks/assignment/useAssignGroups";
 import { useUnassignGroups } from "@/hooks/assignment/useUnassignGroups";
 import { AssignmentService } from "@/services/assignment.services";
-import { AssignmentItem, GroupItem } from "@/types/assignments/assignment.response";
+import { AssignmentItem, AssignmentStatus, GroupItem } from "@/types/assignments/assignment.response";
 import { useEffect, useMemo, useState } from "react";
 
 type Props = {
@@ -15,10 +15,11 @@ type Props = {
   assignment: Pick<AssignmentItem, "id" | "assignedGroupsCount"> & {
     assignedGroups?: GroupItem[];
   };
+  status?: AssignmentStatus;
   onChanged?: () => void; // gọi để parent refetch detail
 };
 
-export default function GroupAssignControls({ courseId, assignment, onChanged }: Props) {
+export default function GroupAssignControls({ courseId, assignment, onChanged, status }: Props) {
   const [unassigned, setUnassigned] = useState<GroupItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -29,6 +30,8 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
   const { unassignGroups, loading: loadingUnassign } = useUnassignGroups();
 
   const assignedList = assignment.assignedGroups ?? [];
+
+  const isDraft = status === AssignmentStatus.Draft;
 
   const refreshUnassigned = async () => {
     setLoading(true);
@@ -87,13 +90,20 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
 
   return (
     <div className="rounded-md border border-slate-200 p-4 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="font-medium text-[#000D83]">Manage Groups</div>
-        <div className="flex gap-2">
-          <Button className="text-violet-800 hover:text-violet-500" size="sm" variant="secondary" onClick={refreshUnassigned} disabled={loading}>
-            Reload
-          </Button>
+      <div className="flex flex-col">
+        <div className="flex flex-row items-center justify-between">
+          <div className="font-medium text-[#000D83]">Manage Groups</div>
+          <div className="flex gap-2">
+            <Button className="text-violet-800 hover:text-violet-500" size="sm" variant="secondary" onClick={refreshUnassigned} disabled={loading}>
+              Reload
+            </Button>
+          </div>
         </div>
+        {isDraft && (
+          <div className=" rounded-md bg-yellow-50 border border-yellow-100 p-3 text-sm text-yellow-900">
+            This assignment is still in Draft status, please schedule it to be assigned to the group.
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -110,6 +120,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
                 <label key={g.id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
                   <Checkbox
                     checked={!!pickUnassigned[g.id]}
+                    disabled={isDraft}
                     onCheckedChange={(v) =>
                       setPickUnassigned((m) => ({ ...m, [g.id]: !!v }))
                     }
@@ -130,7 +141,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
               className="text-[#000D83]"
               size="sm"
               onClick={handleAssign}
-              disabled={loadingAssign || selectedUnassignedIds.length === 0}
+              disabled={isDraft || loadingAssign || selectedUnassignedIds.length === 0}
             >
               Assign selected
             </Button>
@@ -150,6 +161,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
                 <label key={g.id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
                   <Checkbox
                     checked={!!pickAssigned[g.id]}
+                    disabled={isDraft}
                     onCheckedChange={(v) =>
                       setPickAssigned((m) => ({ ...m, [g.id]: !!v }))
                     }
@@ -171,7 +183,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged }:
               variant="destructive"
               onClick={handleUnassign}
               className="text-[#000D83]"
-              disabled={loadingUnassign || selectedAssignedIds.length === 0}
+              disabled={isDraft || loadingUnassign || selectedAssignedIds.length === 0}
             >
               Unassign selected
             </Button>
