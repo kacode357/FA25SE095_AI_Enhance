@@ -15,13 +15,15 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+import { useGetMyReports } from "@/hooks/reports/useGetMyReports";
+import CreateReportButton from "../assignments/components/createReportButton";
+import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
+
+// shadcn
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { useGetMyReports } from "@/hooks/reports/useGetMyReports";
-import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
-import { ReportStatus } from "@/config/classroom-service/report-status.enum";
-
+// ===== helpers =====
 const dt = (s?: string | null) => {
   if (!s) return "";
   const d = new Date(s);
@@ -37,31 +39,6 @@ type UIReportItem = {
   grade: number | null;
 };
 
-const getStatusLabel = (status: number | string): string => {
-  if (typeof status === "string") return status;
-
-  switch (status) {
-    case ReportStatus.Draft:
-      return "Draft";
-    case ReportStatus.Submitted:
-      return "Submitted";
-    case ReportStatus.UnderReview:
-      return "Under review";
-    case ReportStatus.RequiresRevision:
-      return "Requires revision";
-    case ReportStatus.Resubmitted:
-      return "Resubmitted";
-    case ReportStatus.Graded:
-      return "Graded";
-    case ReportStatus.Late:
-      return "Late";
-    case ReportStatus.Rejected:
-      return "Rejected";
-    default:
-      return `Unknown (${status})`;
-  }
-};
-
 export default function ReportsListPage() {
   const params = useParams();
   const router = useRouter();
@@ -71,6 +48,8 @@ export default function ReportsListPage() {
   const assignmentId = sp.get("assignmentId") || "";
 
   const { getMyReports, loading } = useGetMyReports();
+
+  // 🔹 assignment detail để lấy isGroupAssignment + assignedGroups
   const {
     data: assignmentData,
     loading: assignmentLoading,
@@ -79,23 +58,20 @@ export default function ReportsListPage() {
 
   const [items, setItems] = useState<UIReportItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const didInitRef = useRef(false);
+  const didFetchReportsRef = useRef(false);
+  const didFetchAssignmentRef = useRef(false);
 
+  // Fetch reports theo assignmentId
   useEffect(() => {
-    if (!assignmentId || didInitRef.current) return;
-    didInitRef.current = true;
-
     (async () => {
+      if (!assignmentId || didFetchReportsRef.current) return;
+      didFetchReportsRef.current = true;
       try {
-        const [reportsRes] = await Promise.all([
-          getMyReports({ assignmentId }),
-          fetchAssignment(assignmentId),
-        ]);
-
-        const list = reportsRes?.reports ?? [];
+        const res = await getMyReports({ assignmentId });
+        const list = res?.reports ?? [];
 
         const mapped: UIReportItem[] = list
-          .filter(Boolean)
+          .filter((r) => !!r)
           .filter((r) => !assignmentId || r.assignmentId === assignmentId)
           .map((r) => ({
             id: r.id,
@@ -111,11 +87,20 @@ export default function ReportsListPage() {
         setError(e?.message || "Failed to load reports");
       }
     })();
-  }, [assignmentId, getMyReports, fetchAssignment]);
+  }, [assignmentId, getMyReports]);
+
+  // 🔹 Fetch assignment detail để biết group info
+  useEffect(() => {
+    if (!assignmentId || didFetchAssignmentRef.current) return;
+    didFetchAssignmentRef.current = true;
+    fetchAssignment(assignmentId);
+  }, [assignmentId, fetchAssignment]);
 
   const assignment = assignmentData?.assignment;
   const isGroupAssignment = !!assignment?.isGroupAssignment;
 
+  // 🔹 groupId cho CreateReportButton:
+  // tạm thời lấy group đầu tiên được assign cho assignment
   const groupIdForCreateReport =
     isGroupAssignment && Array.isArray(assignment?.assignedGroups)
       ? assignment!.assignedGroups![0]?.id ?? null
@@ -128,8 +113,6 @@ export default function ReportsListPage() {
       items.length > 1 ? "reports" : "report"
     } for this assignment.`;
   }, [items]);
-
-  const showLoading = loading || assignmentLoading;
 
   if (!assignmentId) {
     return (
@@ -157,9 +140,8 @@ export default function ReportsListPage() {
     );
   }
 
-  const handleOpenReport = (reportId: string) => {
-    router.push(`/student/courses/${courseId}/reports/${reportId}`);
-  };
+  const showLoading =
+    loading || assignmentLoading; // gộp loading của reports + assignment
 
   return (
     <motion.div
@@ -168,8 +150,9 @@ export default function ReportsListPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
+      {/* ===== Header ===== */}
       <div className="flex flex-col gap-3">
+        {/* Row 1: Title + Back */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-3xl font-bold text-nav flex items-center gap-2 truncate">
@@ -206,9 +189,24 @@ export default function ReportsListPage() {
             </Button>
           </div>
         </div>
+
+        {/* Row 2: Actions */}
+        <div className="w-full flex justify-end">
+          <div className="flex flex-row flex-wrap items-center gap-2">
+            <CreateReportButton
+              courseId={courseId}
+              assignmentId={assignmentId}
+              assignmentTitle={assignment?.title}
+              groupId={groupIdForCreateReport}
+              isGroupSubmission={isGroupAssignment}
+              label="Create Report"
+              className="btn btn-gradient px-5 py-2"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Content */}
+      {/* ===== Content ===== */}
       <Card className="card rounded-2xl">
         <CardContent className="p-4">
           {showLoading && (
@@ -232,47 +230,53 @@ export default function ReportsListPage() {
           {!showLoading && !error && items.length > 0 && (
             <ul className="divide-y divide-[var(--border)]">
               {items.map((r) => {
-                const statusLabel = getStatusLabel(r.status);
+                const reportId = r.id;
+                const title = r.title;
+                const status = r.status;
+                const created = r.createdAt;
+                const updated = r.updatedAt;
+                const grade = r.grade;
 
                 return (
-                  <li key={r.id} className="py-3">
+                  <li key={reportId} className="py-3">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-nav-active shrink-0" />
                           <button
                             className="text-foreground font-medium hover:text-nav-active truncate text-left"
-                            onClick={() => handleOpenReport(r.id)}
+                            onClick={() =>
+                              router.push(
+                                `/student/courses/${courseId}/reports/${reportId}`
+                              )
+                            }
                             title="Open report"
                           >
-                            {r.title}
+                            {title}
                           </button>
                         </div>
 
                         <div className="mt-1 text-xs text-foreground/70 flex flex-wrap items-center gap-x-3 gap-y-1">
                           <span className="inline-flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" />
-                            <b>Status:</b>&nbsp;{statusLabel}
+                            <b>Status:</b>&nbsp;{String(status)}
                           </span>
-
-                          {typeof r.grade === "number" && (
+                          {typeof grade === "number" && (
                             <span className="inline-flex items-center gap-1">
                               <ListChecks className="w-3 h-3" />
-                              <b>Score:</b>&nbsp;{r.grade}
+                              <b>Score:</b>&nbsp;{grade}
                             </span>
                           )}
-
-                          {r.createdAt && (
+                          {created && (
                             <span className="inline-flex items-center gap-1">
                               <CalendarDays className="w-3 h-3" />
-                              <b>Created:</b>&nbsp;{dt(r.createdAt)}
+                              <b>Created:</b>&nbsp;{dt(created)}
                             </span>
                           )}
-
-                          {r.updatedAt && (
+                          {updated && (
                             <span className="inline-flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              <b>Updated:</b>&nbsp;{dt(r.updatedAt)}
+                              <b>Updated:</b>&nbsp;{dt(updated)}
                             </span>
                           )}
                         </div>
@@ -282,7 +286,11 @@ export default function ReportsListPage() {
                         <Button
                           className="bg-white border border-brand text-nav hover:text-nav-active"
                           variant="outline"
-                          onClick={() => handleOpenReport(r.id)}
+                          onClick={() =>
+                            router.push(
+                              `/student/courses/${courseId}/reports/${reportId}`
+                            )
+                          }
                         >
                           <FileText className="w-4 h-4" />
                           View

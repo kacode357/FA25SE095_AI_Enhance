@@ -56,7 +56,7 @@ export default function LecturerAssignmentReportsPage() {
         if (!id) return "—";
         const s = enrolledStudents?.find((e) => e.studentId === id);
         if (!s) return id;
-    return (s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()) || id;
+        return (s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()) || id;
     };
 
     const assignmentTitle = useMemo(() => {

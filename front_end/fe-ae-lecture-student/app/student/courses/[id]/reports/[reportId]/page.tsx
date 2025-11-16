@@ -152,9 +152,9 @@ export default function ReportDetailPage() {
 
         <div className="shrink-0">
           <button
-            onClick={() => router.push(`/student/courses/${courseId}`)}
+            onClick={() => router.back()}
             className="btn bg-white border border-brand text-nav hover:text-nav-active"
-            title="Back to Course"
+            title="Back to Previous Page"
           >
             <ArrowLeft className="w-4 h-4" />
             Back

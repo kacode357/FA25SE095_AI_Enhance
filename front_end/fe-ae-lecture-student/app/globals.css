@@ -324,6 +324,36 @@ select {
 .btn-green-slow:hover::after {
   clip-path: circle(150% at 50% 50%);
 }
+
+/* === NÚT XANH DƯƠNG (Blue / Primary Info) === */
+.btn-blue-slow {
+  /* Gradient từ xanh dương nhạt sang xanh dương đậm */
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+
+  transition: color 1.2s ease-in-out, filter .2s, transform .02s, box-shadow .2s;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
+}
+
+.btn-blue-slow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  /* Màu overlay khi hover: xanh dương đậm / navy */
+  background: #0b3b82;
+  z-index: -1;
+
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1);
+  clip-path: circle(0% at 50% 50%);
+}
+
+.btn-blue-slow:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
 /* Utility: keep scrollbar space to avoid layout shift (where supported) */
 @supports (scrollbar-gutter: stable) {
   .scrollbar-stable {

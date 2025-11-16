@@ -1,4 +1,3 @@
-// app/student/courses/[id]/reports/submit/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -10,6 +9,8 @@ import {
   CalendarDays,
   Clock,
   FileText,
+  Eye,
+  Info,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -87,22 +88,25 @@ export default function SubmitReportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
+  // map reportId -> File (selected but not uploaded yet)
+  const [pendingFiles, setPendingFiles] = useState<Record<string, File | null>>(
+    {}
+  );
+
   useEffect(() => {
     if (!assignmentId) return;
 
     (async () => {
       try {
-        const res = await fetchAssignmentReports({
-          assignmentId,
-        });
+        const res = await fetchAssignmentReports({ assignmentId });
         if (!res?.success) {
-          setError(res?.message || "Failed to load reports");
+          setError(res?.message || "Failed to load reports.");
           return;
         }
         setItems(res.reports || []);
         setError(null);
       } catch (e: any) {
-        setError(e?.message || "Failed to load reports");
+        setError(e?.message || "Failed to load reports.");
       }
     })();
   }, [assignmentId, fetchAssignmentReports, refreshToken]);
@@ -122,11 +126,18 @@ export default function SubmitReportsPage() {
         <div className="max-w-2xl mx-auto text-center">
           <AlertTriangle className="w-7 h-7 text-red-500 mx-auto mb-3" />
           <h2 className="text-xl font-semibold text-nav mb-2">
-            Missing assignmentId
+            Assignment not specified
           </h2>
           <p className="text-sm text-foreground/70">
-            Add <code>?assignmentId=...</code> to the URL to submit your
-            report.
+            This page requires an{" "}
+            <code className="px-1 py-0.5 rounded bg-slate-100 text-xs">
+              assignmentId
+            </code>{" "}
+            query parameter. Please open this page from an assignment or add{" "}
+            <code className="px-1 py-0.5 rounded bg-slate-100 text-xs">
+              ?assignmentId=...
+            </code>{" "}
+            to the URL.
           </p>
           <div className="mt-6">
             <Button
@@ -135,7 +146,7 @@ export default function SubmitReportsPage() {
               className="bg-white border border-brand text-nav hover:text-nav-active"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Course
+              Back to course
             </Button>
           </div>
         </div>
@@ -151,19 +162,20 @@ export default function SubmitReportsPage() {
       transition={{ duration: 0.3 }}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-3xl font-bold text-nav flex items-center gap-2 truncate">
             <FileText className="w-7 h-7 text-nav-active shrink-0" />
-            <span className="truncate">Submit Report</span>
+            <span className="truncate">Submit report</span>
           </h1>
           <p className="mt-1 text-sm text-foreground/70">
-            Attach your report file and submit the draft for this assignment.
+            Upload your report file and submit your draft when you&apos;re ready
+            for review.
           </p>
           {assignmentTitle && (
             <p className="mt-1 text-xs text-foreground/60">
               Assignment:&nbsp;
-              <span className="font-semibold">{assignmentTitle}</span>
+              <span className="font-semibold text-nav">{assignmentTitle}</span>
             </p>
           )}
         </div>
@@ -179,107 +191,224 @@ export default function SubmitReportsPage() {
             className="bg-white border border-brand text-nav hover:text-nav-active"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Assignment
+            Back to assignment
           </Button>
         </div>
       </div>
 
-      {/* Content */}
-      <Card className="card rounded-2xl">
-        <CardContent className="p-4 space-y-4">
-          {loading && (
-            <div className="text-sm text-foreground/70">
-              Loading reports...
-            </div>
-          )}
+      {/* Main content layout: 7 / 3 */}
+      <div className="grid gap-4 lg:gap-6 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)]">
+        {/* Left: reports list */}
+        <Card className="card rounded-2xl">
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            {loading && (
+              <div className="text-sm text-foreground/70">
+                Loading reports...
+              </div>
+            )}
 
-          {!loading && error && (
-            <div className="text-sm text-red-600">{error}</div>
-          )}
+            {!loading && error && (
+              <div className="text-sm text-red-600">
+                {error || "Failed to load reports."}
+              </div>
+            )}
 
-          {!loading && !error && items.length === 0 && (
-            <div className="text-sm text-foreground/70">
-              You don't have any report for this assignment yet. Create a
-              report first, then come back here to submit it.
-            </div>
-          )}
+            {!loading && !error && items.length === 0 && (
+              <div className="text-sm text-foreground/70">
+                You don&apos;t have any reports for this assignment yet. Create
+                a report from the assignment page first, then come back here to
+                upload and submit it.
+              </div>
+            )}
 
-          {!loading && !error && items.length > 0 && (
-            <div className="space-y-3">
-              {!hasDraft && (
-                <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                  No report in <b>Draft</b> status. Only draft reports can be
-                  submitted with this page.
+            {!loading && !error && items.length > 0 && (
+              <div className="space-y-3">
+                {!hasDraft && (
+                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                    No report in <b>Draft</b> status. Only reports in{" "}
+                    <b>Draft</b> status can be submitted from this page.
+                  </div>
+                )}
+
+                <ul className="space-y-3">
+                  {items.map((r) => {
+                    const isDraft = r.status === ReportStatus.Draft;
+                    const pendingFile = pendingFiles[r.id] || null;
+
+                    return (
+                      <li
+                        key={r.id}
+                        className="border border-[var(--border)] rounded-xl px-3 py-3 sm:px-4 sm:py-4 flex flex-col gap-3 bg-white/70"
+                      >
+                        {/* Top: title + meta + status */}
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm text-nav truncate">
+                                  {r.assignmentTitle || "Report"}
+                                </p>
+                                <p className="text-[11px] text-foreground/60 truncate">
+                                  {isDraft
+                                    ? "This report is currently in Draft status."
+                                    : "This report has already been processed."}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="mt-2 text-[11px] text-foreground/70 flex flex-wrap gap-x-4 gap-y-1">
+                              <span className="inline-flex items-center gap-1">
+                                <CalendarDays className="w-3 h-3" />
+                                Created: {dt(r.createdAt)}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Updated: {dt(r.updatedAt)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 flex flex-col items-end gap-1">
+                            <span
+                              className={`text-[11px] px-2 py-0.5 rounded-full ${statusBadgeClass(
+                                r.status
+                              )}`}
+                            >
+                              {statusLabel(r.status)}
+                            </span>
+                            {typeof r.grade === "number" && (
+                              <span className="text-[11px] text-emerald-700">
+                                Grade: <b>{r.grade}</b>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Middle: file attachment */}
+                        <div className="mt-1">
+                          <ReportFileAttachment
+                            reportId={r.id}
+                            fileUrl={r.fileUrl}
+                            disabled={!isDraft}
+                            pendingFileName={pendingFile?.name ?? null}
+                            onFileSelected={(file) => {
+                              setPendingFiles((prev) => ({
+                                ...prev,
+                                [r.id]: file,
+                              }));
+                            }}
+                            onChanged={() => {
+                              // mainly for delete: clear pending file & refresh
+                              setPendingFiles((prev) => ({
+                                ...prev,
+                                [r.id]: null,
+                              }));
+                              refresh();
+                            }}
+                          />
+                        </div>
+
+                        {/* Bottom: actions only */}
+                        <div className="pt-2 border-t border-dashed border-slate-200/70">
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="border-brand/60 text-nav hover:text-nav-active hover:border-brand px-3 py-1.5 rounded-xl text-xs sm:text-sm"
+                              onClick={() =>
+                                router.push(
+                                  `/student/courses/${courseId}/reports/${r.id}`
+                                )
+                              }
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View report
+                            </Button>
+
+                            <SubmitDraftButton
+                              reportId={r.id}
+                              status={r.status}
+                              fileUrl={r.fileUrl}
+                              pendingFile={pendingFile}
+                              onSubmitted={() => {
+                                // clear pending file + reload data
+                                setPendingFiles((prev) => ({
+                                  ...prev,
+                                  [r.id]: null,
+                                }));
+                                refresh();
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Right: upload rules (separated column) */}
+        <div className="lg:self-start">
+          <Card className="rounded-2xl border-dashed border-slate-200 bg-slate-50/60">
+            <CardContent className="p-4 sm:p-5 space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="mt-0.5">
+                  <Info className="w-4 h-4 text-blue-500" />
                 </div>
-              )}
+                <div>
+                  <h3 className="text-sm font-semibold text-nav">
+                    File upload rules
+                  </h3>
+                  <p className="text-xs text-foreground/70 mt-1">
+                    These rules are enforced by the report service. If any rule
+                    is violated, the upload will be rejected.
+                  </p>
+                </div>
+              </div>
 
-              <ul className="space-y-3">
-                {items.map((r) => (
-                  <li
-                    key={r.id}
-                    className="border border-[var(--border)] rounded-xl px-3 py-3 flex flex-col gap-2"
-                  >
-                    {/* top row: title + status */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm text-nav truncate">
-                            {r.assignmentTitle || "Report"}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-[11px] text-foreground/70 flex flex-wrap gap-x-3 gap-y-1">
-                          <span className="inline-flex items-center gap-1">
-                            <CalendarDays className="w-3 h-3" />
-                            Created: {dt(r.createdAt)}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            Updated: {dt(r.updatedAt)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex flex-col items-end gap-1">
-                        <span
-                          className={`text-[11px] px-2 py-0.5 rounded-full ${statusBadgeClass(
-                            r.status
-                          )}`}
-                        >
-                          {statusLabel(r.status)}
-                        </span>
-                        {typeof r.grade === "number" && (
-                          <span className="text-[11px] text-emerald-700">
-                            Grade: <b>{r.grade}</b>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* middle row: file attachment */}
-                    <div className="mt-1">
-                      <ReportFileAttachment
-                        reportId={r.id}
-                        fileUrl={r.fileUrl}
-                        disabled={r.status !== ReportStatus.Draft}
-                        onChanged={() => refresh()}
-                      />
-                    </div>
-
-                    {/* bottom row: actions */}
-                    <div className="flex justify-end">
-                      <SubmitDraftButton
-                        reportId={r.id}
-                        status={r.status}
-                        onSubmitted={() => refresh()}
-                      />
-                    </div>
-                  </li>
-                ))}
+              <ul className="text-xs text-foreground/80 space-y-1.5 list-disc list-inside">
+                <li>
+                  <span className="font-medium">Status restriction:</span>{" "}
+                  uploads are only allowed when the report status is{" "}
+                  <b>Draft</b> or <b>Requires revision</b>.
+                </li>
+                <li>
+                  <span className="font-medium">Ownership:</span> only the
+                  report owner or group members can upload files.
+                </li>
+                <li>
+                  <span className="font-medium">File types:</span> allowed
+                  extensions are <b>PDF, DOC, DOCX, TXT, ZIP, RAR</b>.
+                </li>
+                <li>
+                  <span className="font-medium">File size:</span> maximum{" "}
+                  <b>10MB</b> per file.
+                </li>
+                <li>
+                  <span className="font-medium">Versioning:</span> old files are
+                  preserved in history when a new file is uploaded.
+                </li>
+                <li>
+                  <span className="font-medium">Tracking:</span> all file
+                  changes are recorded in <b>ReportHistory</b> for audit trail.
+                </li>
               </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+              <p className="text-[11px] text-foreground/70 border-t border-slate-200/60 pt-2">
+                Workflow: select a file with{" "}
+                <span className="font-medium">Upload file / Change file</span>,
+                then click <span className="font-medium">Submit draft</span>.
+                The system will upload the latest selected file (if any) and
+                submit the draft in one action.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </motion.div>
   );
 }

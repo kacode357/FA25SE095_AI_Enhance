@@ -1,4 +1,3 @@
-// app/student/courses/[id]/reports/submit/components/SubmitDraftButton.tsx
 "use client";
 
 import { useCallback } from "react";
@@ -6,11 +5,15 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSubmitDraftReport } from "@/hooks/reports/useSubmitDraftReport";
+import { useUploadReportFile } from "@/hooks/reports/useUploadReportFile";
 import { ReportStatus } from "@/types/reports/reports.response";
 
 type Props = {
   reportId: string;
   status: number;
+  fileUrl: string | null;
+  /** File selected by user but not uploaded yet */
+  pendingFile: File | null;
   disabled?: boolean;
   onSubmitted?: () => void;
 };
@@ -18,12 +21,16 @@ type Props = {
 export default function SubmitDraftButton({
   reportId,
   status,
+  fileUrl,
+  pendingFile,
   disabled,
   onSubmitted,
 }: Props) {
-  const { submitDraft, loading } = useSubmitDraftReport();
+  const { submitDraft, loading: submitting } = useSubmitDraftReport();
+  const { uploadFile, loading: uploading } = useUploadReportFile();
 
   const canSubmit = status === ReportStatus.Draft;
+  const isProcessing = submitting || uploading;
 
   const handleClick = useCallback(async () => {
     if (!canSubmit) {
@@ -31,7 +38,27 @@ export default function SubmitDraftButton({
       return;
     }
 
+    if (disabled || isProcessing) return;
+
+    // No existing file and no new file -> block submit
+    if (!fileUrl && !pendingFile) {
+      toast.error("Please attach a file before submitting.");
+      return;
+    }
+
     try {
+      // If there is a new selected file, upload it first
+      if (pendingFile) {
+        const uploadRes = await uploadFile(reportId, pendingFile);
+        if (!uploadRes?.success) {
+          toast.error(
+            uploadRes?.message || "Failed to upload file before submitting."
+          );
+          return;
+        }
+        toast.success("File uploaded successfully.");
+      }
+
       const res = await submitDraft(reportId);
       if (res?.success) {
         toast.success(res.message || "Report submitted for grading.");
@@ -42,18 +69,28 @@ export default function SubmitDraftButton({
     } catch (err: any) {
       toast.error(err?.message || "Failed to submit report.");
     }
-  }, [canSubmit, onSubmitted, reportId, submitDraft]);
+  }, [
+    canSubmit,
+    disabled,
+    isProcessing,
+    fileUrl,
+    pendingFile,
+    reportId,
+    submitDraft,
+    uploadFile,
+    onSubmitted,
+  ]);
 
   return (
     <Button
       type="button"
       size="sm"
-      className="bg-brand text-white hover:bg-brand/90"
-      disabled={disabled || loading || !canSubmit}
+      className="btn-green-slow text-xs sm:text-sm px-4 py-2 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+      disabled={disabled || !canSubmit || isProcessing}
       onClick={handleClick}
       title={
         canSubmit
-          ? "Submit this draft for grading"
+          ? "Upload selected file (if any) and submit this draft"
           : "Only Draft status can be submitted"
       }
     >
