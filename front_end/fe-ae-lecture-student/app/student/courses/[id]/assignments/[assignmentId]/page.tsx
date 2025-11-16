@@ -17,6 +17,7 @@ import {
   Tag,
   Users,
   Radar,
+  Send,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -28,8 +29,19 @@ import {
   type GroupItem,
 } from "@/types/assignments/assignment.response";
 
-import CreateReportButton from "../components/createReportButton";
 import TinyMCEEditor from "@/components/common/TinyMCE";
+
+// shadcn
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardFooter,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 /* ============ utils ============ */
 const dt = (s?: string | null) => {
@@ -51,7 +63,7 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
 
   if (loading)
     return (
-      <div className="flex items-center gap-2 text-slate-500 py-2">
+      <div className="flex items-center gap-2 text-slate-500 py-2 text-sm">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading members…
       </div>
     );
@@ -89,10 +101,13 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
                   {m.studentName}
                 </span>
                 {m.isLeader && (
-                  <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-amber-200 text-amber-700 bg-amber-50/50">
+                  <Badge
+                    variant="outline"
+                    className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border-amber-200 text-amber-700 bg-amber-50/50"
+                  >
                     <Shield className="w-3 h-3" />
                     Leader
-                  </span>
+                  </Badge>
                 )}
               </div>
               <div className="text-xs text-slate-500 flex items-center gap-1">
@@ -160,13 +175,14 @@ export default function AssignmentDetailPage() {
         <p className="text-slate-600">
           Không tìm thấy <b>assignmentId</b> trong URL.
         </p>
-        <button
-          className="btn mt-4 bg-white border border-brand text-nav hover:text-nav-active"
+        <Button
+          className="mt-4 bg-white border border-brand text-nav hover:text-nav-active"
+          variant="outline"
           onClick={() => router.push(`/student/courses/${courseId}`)}
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Course
-        </button>
+        </Button>
       </div>
     );
   }
@@ -207,134 +223,132 @@ export default function AssignmentDetailPage() {
       transition={{ duration: 0.25 }}
     >
       {/* ===== Header ===== */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+      <div className="flex flex-col gap-4">
+        {/* Row 1: title + back */}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-bold text-nav flex items-center gap-2 truncate">
               <ListTodo className="w-7 h-7 text-nav-active shrink-0" />
               <span className="truncate">{a.title}</span>
             </h1>
-
-            <div className="mt-2 flex items-center gap-2 flex-wrap">
-              <span
-                className={`text-[11px] px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${statusClass}`}
-              >
-                {a.status === AssignmentStatus.Active && (
-                  <CheckCircle2 className="w-3 h-3" />
-                )}
-                {a.statusDisplay}
-              </span>
-              {chips.map((c, i) => (
-                <span
-                  key={i}
-                  className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200 ${
-                    c.className || ""
-                  }`}
-                >
-                  {c.icon}
-                  {c.label}
-                </span>
-              ))}
-            </div>
           </div>
 
-          <div className="shrink-0 self-start">
-            <button
-              onClick={() => router.push(`/student/courses/${courseId}`)}
-              className="btn bg-white border border-brand text-nav hover:text-nav-active"
-              title="Back to Course"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </div>
+          <Button
+            onClick={() => router.push(`/student/courses/${courseId}`)}
+            variant="outline"
+            className="bg-white border border-brand text-nav hover:text-nav-active rounded-2xl px-4 h-10"
+            title="Back to Course"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </Button>
         </div>
 
-        {/* Actions */}
-        <div className="w-full flex justify-end">
-          <div className="flex flex-row flex-wrap items-center gap-2">
-            <button
-              onClick={() =>
-                router.push(
-                  `/student/crawler?courseId=${courseId}&assignmentId=${aId}&groupId=${selectedGroupId}`
-                )
-              }
-              className="btn btn-gradient-slow px-4 py-2"
-              title="Open AI Crawler workspace"
+        {/* Row 2: chips + action bar */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          {/* status + chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant="outline"
+              className={`text-[11px] px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${statusClass}`}
             >
-              <Radar className="w-4 h-4" />
-              <span>Crawl with AI</span>
-            </button>
+              {a.status === AssignmentStatus.Active && (
+                <CheckCircle2 className="w-3 h-3" />
+              )}
+              {a.statusDisplay}
+            </Badge>
 
-            <button
-              onClick={() =>
-                router.push(
-                  `/student/courses/${courseId}/reports?assignmentId=${aId}`
-                )
-              }
-              className="btn bg-white border border-brand text-nav hover:text-nav-active"
-            >
-              <Info className="w-4 h-4" />
-              <span>View My Reports</span>
-            </button>
-
-            {a.isGroupAssignment && groups.length > 1 && (
-              <select
-                className="border border-slate-200 rounded-lg px-3 py-2 bg-white text-sm"
-                value={selectedGroupId ?? ""}
-                onChange={(e) => setSelectedGroupId(e.target.value || null)}
-                title="Choose a group"
+            {chips.map((c, i) => (
+              <Badge
+                key={i}
+                variant="outline"
+                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200 ${
+                  c.className || ""
+                }`}
               >
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            )}
+                {c.icon}
+                {c.label}
+              </Badge>
+            ))}
+          </div>
 
-            <CreateReportButton
-              courseId={courseId}
-              assignmentId={aId}
-              isGroupSubmission={!!a.isGroupAssignment}
-              groupId={selectedGroupId}
-              label="Create Report"
-              className="btn btn-gradient px-5 py-2"
-            />
+          {/* action buttons in pill card */}
+          <div className="flex-1 lg:flex-none">
+            <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2 rounded-2xl bg-white/80 border border-[var(--border)] shadow-sm px-3 py-2">
+              {/* 1. View My Reports (tím) */}
+              <Button
+                onClick={() =>
+                  router.push(
+                    `/student/courses/${courseId}/reports?assignmentId=${aId}`
+                  )
+                }
+                className="btn-gradient-slow h-10 px-4 text-sm rounded-xl"
+              >
+                <Info className="w-4 h-4" />
+                <span>View My Reports</span>
+              </Button>
+
+              {/* 2. Crawl with AI (vàng) */}
+              <Button
+                onClick={() =>
+                  router.push(
+                    `/student/crawler?courseId=${courseId}&assignmentId=${aId}&groupId=${selectedGroupId}`
+                  )
+                }
+                className="btn-yellow-slow h-10 px-4 text-sm rounded-xl"
+                title="Open AI Crawler workspace"
+              >
+                <Radar className="w-4 h-4" />
+                <span>Crawl with AI</span>
+              </Button>
+
+              {/* 3. Submit Report (xanh) */}
+              <Button
+                onClick={() =>
+                  router.push(
+                    `/student/courses/${courseId}/reports/submit?assignmentId=${aId}`
+                  )
+                }
+                className="btn-green-slow h-10 px-4 text-sm rounded-xl"
+              >
+                <Send className="w-4 h-4" />
+                <span>Submit Report</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Alerts */}
       {overdue && (
-        <div className="border border-red-200 rounded-xl p-3 bg-red-50 text-red-700 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-          <div className="text-sm">
+        <Alert variant="destructive" className="border-red-200 bg-red-50">
+          <AlertTriangle className="w-4 h-4" />
+          <AlertDescription className="text-sm text-red-700">
             This assignment is <b>Overdue</b>. Please contact your lecturer if
             you need assistance.
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
       {draft && (
-        <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 text-slate-700 flex items-start gap-2">
-          <Info className="w-4 h-4 mt-0.5 shrink-0" />
-          <div className="text-sm">
+        <Alert className="border-slate-200 bg-slate-50 text-slate-700">
+          <Info className="w-4 h-4" />
+          <AlertDescription className="text-sm">
             This assignment is currently in <b>Draft</b> and may not be visible
             to students.
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* ===== Top Grid: 7 / 3 ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-start">
         {/* LEFT: col-span-7, full height card */}
         <div className="lg:col-span-7 lg:self-stretch">
-          <div className="card rounded-2xl p-4 h-full flex flex-col">
-            <div className="text-sm text-foreground/80 space-y-4 flex-1">
+          <Card className="card rounded-2xl h-full flex flex-col">
+            <CardContent className="p-4 flex-1 flex flex-col gap-4 text-sm text-foreground/80">
               {/* Course: 1 dòng, label đồng bộ UI */}
               <div className="flex items-center gap-2 min-w-0">
                 <BookOpen className="w-4 h-4 text-nav-active" />
-                <span className="text-base sm:text-lg font-semibold text-nav truncate">
+                <span className="text-base sm:text-lg font-semibold text-nav whitespace-nowrap">
                   Course:
                 </span>
                 <span className="text-base sm:text-lg font-semibold text-nav truncate">
@@ -346,32 +360,39 @@ export default function AssignmentDetailPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">
                   <CalendarDays className="w-4 h-4 text-nav-active" />
-                  <b>Start:</b>&nbsp;{dt(a.startDate)}
+                  <span className="font-semibold">Start:</span>
+                  <span>{dt(a.startDate)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-nav-active" />
-                  <b>Due:</b>&nbsp;{dt(due)}
+                  <span className="font-semibold">Due:</span>
+                  <span>{dt(due)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-nav-active" />
-                  <b>Points:</b>&nbsp;
-                  {typeof a.maxPoints === "number" ? a.maxPoints : "—"}
+                  <span className="font-semibold">Points:</span>
+                  <span>
+                    {typeof a.maxPoints === "number" ? a.maxPoints : "—"}
+                  </span>
                 </div>
               </div>
 
               {/* meta nhỏ */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
-                  <b>Overdue:</b>&nbsp;{a.isOverdue ? "Yes" : "No"}
+                  <span className="font-semibold">Overdue:</span>{" "}
+                  {a.isOverdue ? "Yes" : "No"}
                 </div>
                 {!a.isOverdue && a.daysUntilDue >= 0 && (
                   <div>
-                    <b>Days until due:</b>&nbsp;{a.daysUntilDue}
+                    <span className="font-semibold">Days until due:</span>{" "}
+                    {a.daysUntilDue}
                   </div>
                 )}
                 {typeof a.assignedGroupsCount === "number" && (
                   <div>
-                    <b>Assigned groups:</b>&nbsp;{a.assignedGroupsCount}
+                    <span className="font-semibold">Assigned groups:</span>{" "}
+                    {a.assignedGroupsCount}
                   </div>
                 )}
               </div>
@@ -382,85 +403,91 @@ export default function AssignmentDetailPage() {
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
                       FORMAT SUBMIT
                     </div>
-                    <div>{a.format || "—"}</div>
+                    <div className="text-sm">{a.format || "—"}</div>
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
                       GRADING CRITERIA
                     </div>
-                    <div className="whitespace-pre-wrap">
+                    <div className="text-sm whitespace-pre-wrap">
                       {a.gradingCriteria || "—"}
                     </div>
                   </div>
                 </div>
               )}
-            </div>
+            </CardContent>
 
-            {/* Footer bottom-right */}
-            <div className="pt-3 mt-3 border-t border-slate-200 text-xs text-slate-500 text-right">
-              Created: {dt(a.createdAt)}
-              {a.updatedAt && <> • Updated: {dt(a.updatedAt)}</>}
-            </div>
-          </div>
+            <CardFooter className="pt-3 mt-0 border-t border-slate-200 text-xs text-slate-500 justify-end">
+              <div className="w-full text-right">
+                Created: {dt(a.createdAt)}
+                {a.updatedAt && <> • Updated: {dt(a.updatedAt)}</>}
+              </div>
+            </CardFooter>
+          </Card>
         </div>
 
         {/* RIGHT: col-span-3, card có max-height, bên trong cuộn */}
         {groups.length > 0 && (
           <div className="lg:col-span-3 lg:self-start">
-            <div className="card rounded-2xl p-4 h-full lg:max-h-[300px] flex flex-col">
-              {/* tiêu đề group (Team Beta ...) */}
-              <div className="text-base font-semibold text-nav mb-1">
-                {groups.length === 1 ? groups[0].name : "Groups & Members"}
-              </div>
-
-              {/* list: scroll nội bộ, card không kéo dài nữa */}
-              <div className="mt-2 flex-1 min-h-0 overflow-y-auto pr-1 space-y-3">
-                {groups.map((g) => (
-                  <div
-                    key={g.id}
-                    className="border border-slate-200 rounded-lg p-3 bg-white"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-foreground truncate">
-                          {g.name}
-                        </span>
+            <Card className="card rounded-2xl h-full flex flex-col lg:max-h-[300px]">
+              <CardHeader className="p-4 pb-2">
+                <div className="text-base font-semibold text-nav">
+                  {groups.length === 1 ? groups[0].name : "Groups & Members"}
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 flex-1 min-h-0">
+                <ScrollArea className="h-[240px] pr-1 space-y-3">
+                  {groups.map((g) => (
+                    <div
+                      key={g.id}
+                      className="border border-slate-200 rounded-lg p-3 bg-white"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-medium text-foreground truncate">
+                            {g.name}
+                          </span>
+                        </div>
+                        {g.isLocked && (
+                          <Badge
+                            variant="outline"
+                            className="text-[11px] px-2 py-0.5 rounded-md border-red-200 bg-red-50 text-red-700"
+                          >
+                            Locked
+                          </Badge>
+                        )}
                       </div>
-                      {g.isLocked && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200">
-                          Locked
-                        </span>
-                      )}
-                    </div>
 
-                    <GroupMembersPanel groupId={g.id} />
-                  </div>
-                ))}
-              </div>
-            </div>
+                      <GroupMembersPanel groupId={g.id} />
+                    </div>
+                  ))}
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
 
       {/* ===== Description ===== */}
-      <div className="card rounded-2xl p-4">
-        <div className="mb-2 flex items-center gap-2">
+      <Card className="card rounded-2xl">
+        <CardHeader className="p-4 pb-2 flex flex-row items-center gap-2">
           <h2 className="text-lg font-bold text-nav">Description</h2>
-        </div>
-
-        {hasDescription ? (
-          <TinyMCEEditor
-            value={a.description ?? ""}
-            onChange={() => {}}
-            readOnly
-            debounceMs={0}
-            placeholder="No description provided."
-            className="assignment-description-editor"
-          />
-        ) : (
-          <p className="text-sm text-slate-500">No description provided.</p>
-        )}
-      </div>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          {hasDescription ? (
+            <TinyMCEEditor
+              value={a.description ?? ""}
+              onChange={() => {}}
+              readOnly
+              debounceMs={0}
+              placeholder="No description provided."
+              className="assignment-description-editor"
+            />
+          ) : (
+            <p className="text-sm text-slate-500">No description provided.</p>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }

@@ -283,3 +283,8 @@ export interface CompareReportVersionsResponse {
   changeSummary: string;
   contributorNames: string[];
 }
+
+export interface UploadReportFileResponse extends ApiSuccess {
+  fileUrl: string;
+  version: number;
+}

@@ -31,17 +31,23 @@ import type {
   MyReportsResponse,
   RejectReportResponse,
   RequestReportRevisionResponse,
+  UploadReportFileResponse,
 } from "@/types/reports/reports.response";
 
 export const ReportsService = {
   /** ✅ POST /api/Reports — Create a draft report */
-  create: async (payload: CreateReportPayload): Promise<CreateReportResponse> => {
+  create: async (
+    payload: CreateReportPayload
+  ): Promise<CreateReportResponse> => {
     const res = await api.post<CreateReportResponse>("/Reports", payload);
     return res.data;
   },
 
   /** ✅ PUT /api/Reports/{id} — Update a draft (collab editing) */
-  update: async (id: string, payload: UpdateReportPayload): Promise<ApiSuccess> => {
+  update: async (
+    id: string,
+    payload: UpdateReportPayload
+  ): Promise<ApiSuccess> => {
     const res = await api.put<ApiSuccess>(`/Reports/${id}`, payload);
     return res.data;
   },
@@ -66,11 +72,15 @@ export const ReportsService = {
 
   /** ✅ GET /api/Reports/my-reports — Current user's reports (filters + paging) */
   getMyReports: async (query?: MyReportsQuery): Promise<MyReportsResponse> => {
-    const res = await api.get<MyReportsResponse>("/Reports/my-reports", { params: query });
+    const res = await api.get<MyReportsResponse>("/Reports/my-reports", {
+      params: query,
+    });
     return res.data;
   },
-   getByAssignment: async (
-    params: Omit<AssignmentReportsQuery, "assignmentId"> & { assignmentId: string }
+  getByAssignment: async (
+    params: Omit<AssignmentReportsQuery, "assignmentId"> & {
+      assignmentId: string;
+    }
   ): Promise<AssignmentReportsResponse> => {
     const { assignmentId, ...query } = params;
     const res = await api.get<AssignmentReportsResponse>(
@@ -111,9 +121,7 @@ export const ReportsService = {
     return res.data;
   },
 
-  grade: async (
-    payload: GradeReportPayload
-  ): Promise<GradeReportResponse> => {
+  grade: async (payload: GradeReportPayload): Promise<GradeReportResponse> => {
     const res = await api.post<GradeReportResponse>("/Reports/grade", payload);
     return res.data;
   },
@@ -128,16 +136,17 @@ export const ReportsService = {
     return res.data;
   },
 
-   reject: async (
+  reject: async (
     payload: RejectReportPayload
   ): Promise<RejectReportResponse> => {
-    const res = await api.post<RejectReportResponse>("/Reports/reject", payload);
+    const res = await api.post<RejectReportResponse>(
+      "/Reports/reject",
+      payload
+    );
     return res.data;
   },
 
-  exportAssignmentGrades: async (
-    assignmentId: string
-  ): Promise<Blob> => {
+  exportAssignmentGrades: async (assignmentId: string): Promise<Blob> => {
     const res = await api.get(`/Reports/export/${assignmentId}`, {
       responseType: "blob",
     });
@@ -156,7 +165,7 @@ export const ReportsService = {
 
     return res.data;
   },
-  
+
   getHistoryVersion: async (
     payload: GetReportHistoryVersionPayload
   ): Promise<GetReportHistoryVersionResponse> => {
@@ -177,5 +186,35 @@ export const ReportsService = {
     );
     return res.data;
   },
+  /** ✅ POST /api/Reports/{id}/submit-draft — submit draft for grading */
+  submitDraft: async (id: string): Promise<ApiSuccess> => {
+    const res = await api.post<ApiSuccess>(`/Reports/${id}/submit-draft`);
+    return res.data;
+  },
 
+  /** ✅ POST /api/Reports/{reportId}/upload-file — upload attachment (multipart) */
+  uploadFile: async (
+    reportId: string,
+    file: File
+  ): Promise<UploadReportFileResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await api.post<UploadReportFileResponse>(
+      `/Reports/${reportId}/upload-file`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return res.data;
+  },
+
+  /** ✅ DELETE /api/Reports/{reportId}/file — delete attachment */
+  deleteFile: async (reportId: string): Promise<ApiSuccess> => {
+    const res = await api.delete<ApiSuccess>(`/Reports/${reportId}/file`);
+    return res.data;
+  },
 };

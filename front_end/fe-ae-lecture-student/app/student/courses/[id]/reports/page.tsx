@@ -15,10 +15,13 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-import { useGetMyReports } from "@/hooks/reports/useGetMyReports";
-import CreateReportButton from "../assignments/components/createReportButton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
-// ===== helpers =====
+import { useGetMyReports } from "@/hooks/reports/useGetMyReports";
+import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
+import { ReportStatus } from "@/config/classroom-service/report-status.enum";
+
 const dt = (s?: string | null) => {
   if (!s) return "";
   const d = new Date(s);
@@ -34,6 +37,31 @@ type UIReportItem = {
   grade: number | null;
 };
 
+const getStatusLabel = (status: number | string): string => {
+  if (typeof status === "string") return status;
+
+  switch (status) {
+    case ReportStatus.Draft:
+      return "Draft";
+    case ReportStatus.Submitted:
+      return "Submitted";
+    case ReportStatus.UnderReview:
+      return "Under review";
+    case ReportStatus.RequiresRevision:
+      return "Requires revision";
+    case ReportStatus.Resubmitted:
+      return "Resubmitted";
+    case ReportStatus.Graded:
+      return "Graded";
+    case ReportStatus.Late:
+      return "Late";
+    case ReportStatus.Rejected:
+      return "Rejected";
+    default:
+      return `Unknown (${status})`;
+  }
+};
+
 export default function ReportsListPage() {
   const params = useParams();
   const router = useRouter();
@@ -42,28 +70,33 @@ export default function ReportsListPage() {
   const courseId = typeof params?.id === "string" ? params.id : "";
   const assignmentId = sp.get("assignmentId") || "";
 
-  // ✅ dùng hook mới
   const { getMyReports, loading } = useGetMyReports();
+  const {
+    data: assignmentData,
+    loading: assignmentLoading,
+    fetchAssignment,
+  } = useAssignmentById();
 
   const [items, setItems] = useState<UIReportItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const didFetchRef = useRef(false);
+  const didInitRef = useRef(false);
 
-  // Fetch once theo assignmentId
   useEffect(() => {
-    (async () => {
-      if (!assignmentId || didFetchRef.current) return;
-      didFetchRef.current = true;
-      try {
-        // Nếu BE hỗ trợ filter theo assignmentId thì truyền vào, còn không vẫn ok
-        const res = await getMyReports({ assignmentId });
-        // Shape chính thức: { success, message, reports: ReportListItem[] }
-        const list = res?.reports ?? [];
+    if (!assignmentId || didInitRef.current) return;
+    didInitRef.current = true;
 
-        // Map về UI item. Tên hiển thị ưu tiên assignmentTitle.
+    (async () => {
+      try {
+        const [reportsRes] = await Promise.all([
+          getMyReports({ assignmentId }),
+          fetchAssignment(assignmentId),
+        ]);
+
+        const list = reportsRes?.reports ?? [];
+
         const mapped: UIReportItem[] = list
-          .filter((r) => !!r) // guard
-          .filter((r) => !assignmentId || r.assignmentId === assignmentId) // phòng khi BE chưa filter
+          .filter(Boolean)
+          .filter((r) => !assignmentId || r.assignmentId === assignmentId)
           .map((r) => ({
             id: r.id,
             title: r.assignmentTitle || `Report ${String(r.id).slice(0, 8)}`,
@@ -78,35 +111,55 @@ export default function ReportsListPage() {
         setError(e?.message || "Failed to load reports");
       }
     })();
-  }, [assignmentId, getMyReports]);
+  }, [assignmentId, getMyReports, fetchAssignment]);
+
+  const assignment = assignmentData?.assignment;
+  const isGroupAssignment = !!assignment?.isGroupAssignment;
+
+  const groupIdForCreateReport =
+    isGroupAssignment && Array.isArray(assignment?.assignedGroups)
+      ? assignment!.assignedGroups![0]?.id ?? null
+      : null;
 
   const headerSubtitle = useMemo(() => {
-    if (!items?.length) return "You have no reports yet for this assignment.";
-    return `You have ${items.length} ${items.length > 1 ? "reports" : "report"} for this assignment.`;
+    if (!items?.length)
+      return "You have no reports yet for this assignment.";
+    return `You have ${items.length} ${
+      items.length > 1 ? "reports" : "report"
+    } for this assignment.`;
   }, [items]);
+
+  const showLoading = loading || assignmentLoading;
 
   if (!assignmentId) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-2xl mx-auto text-center">
           <AlertTriangle className="w-7 h-7 text-red-500 mx-auto mb-3" />
-          <h2 className="text-xl font-semibold text-nav mb-2">Missing assignmentId</h2>
+          <h2 className="text-xl font-semibold text-nav mb-2">
+            Missing assignmentId
+          </h2>
           <p className="text-sm text-foreground/70">
             Add <code>?assignmentId=...</code> to the URL to view your reports.
           </p>
           <div className="mt-6">
-            <button
+            <Button
               onClick={() => router.push(`/student/courses/${courseId}`)}
-              className="btn bg-white border border-brand text-nav hover:text-nav-active"
+              variant="outline"
+              className="bg-white border border-brand text-nav hover:text-nav-active"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Course
-            </button>
+            </Button>
           </div>
         </div>
       </div>
     );
   }
+
+  const handleOpenReport = (reportId: string) => {
+    router.push(`/student/courses/${courseId}/reports/${reportId}`);
+  };
 
   return (
     <motion.div
@@ -115,9 +168,8 @@ export default function ReportsListPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* ===== Header ===== */}
+      {/* Header */}
       <div className="flex flex-col gap-3">
-        {/* Row 1: Title + Back (Back ngang hàng Title) */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-3xl font-bold text-nav flex items-center gap-2 truncate">
@@ -125,132 +177,125 @@ export default function ReportsListPage() {
               <span className="truncate">My Reports</span>
             </h1>
             <p className="mt-1 text-sm text-foreground/70">{headerSubtitle}</p>
+            {assignment && (
+              <p className="mt-1 text-xs text-foreground/60">
+                Assignment:&nbsp;
+                <span className="font-semibold">{assignment.title}</span>
+                {isGroupAssignment && (
+                  <span className="ml-2 inline-flex items-center text-[11px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Group assignment
+                  </span>
+                )}
+              </p>
+            )}
           </div>
 
           <div className="shrink-0 self-start">
-            <button
+            <Button
               onClick={() =>
-                router.push(`/student/courses/${courseId}/assignments/${assignmentId}`)
+                router.push(
+                  `/student/courses/${courseId}/assignments/${assignmentId}`
+                )
               }
-              className="btn bg-white border border-brand text-nav hover:text-nav-active"
+              variant="outline"
+              className="bg-white border border-brand text-nav hover:text-nav-active"
               title="Back to Assignment"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
-            </button>
-          </div>
-        </div>
-
-        {/* Row 2: Actions ở dòng riêng */}
-        <div className="w-full flex justify-end">
-          <div className="flex flex-row flex-wrap items-center gap-2">
-            <CreateReportButton
-              courseId={courseId}
-              assignmentId={assignmentId}
-              isGroupSubmission={false}
-              label="Create Report"
-              className="btn btn-gradient px-5 py-2"
-            />
+            </Button>
           </div>
         </div>
       </div>
-      {/* ===== /Header ===== */}
 
-      {/* ===== Content ===== */}
-      <div className="card rounded-2xl p-4">
-        {loading && (
-          <div className="flex items-center justify-center h-48 text-nav">
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            Loading reports…
-          </div>
-        )}
+      {/* Content */}
+      <Card className="card rounded-2xl">
+        <CardContent className="p-4">
+          {showLoading && (
+            <div className="flex items-center justify-center h-48 text-nav">
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Loading reports…
+            </div>
+          )}
 
-        {!loading && error && (
-          <div className="text-red-600 text-sm">{error}</div>
-        )}
+          {!showLoading && error && (
+            <div className="text-red-600 text-sm">{error}</div>
+          )}
 
-        {!loading && !error && items.length === 0 && (
-          <div className="text-sm text-foreground/70">
-            You don’t have any report yet. Click <b>Create Report</b> to start a new one.
-          </div>
-        )}
+          {!showLoading && !error && items.length === 0 && (
+            <div className="text-sm text-foreground/70">
+              You don’t have any report yet. Click <b>Create Report</b> to
+              start a new one.
+            </div>
+          )}
 
-        {!loading && !error && items.length > 0 && (
-          <ul className="divide-y divide-[var(--border)]">
-            {items.map((r) => {
-              const reportId = r.id;
-              const title = r.title;
-              const status = r.status; // number (theo BE). Nếu muốn text map ở client thì làm thêm map.
-              const created = r.createdAt;
-              const updated = r.updatedAt;
-              const grade = r.grade;
+          {!showLoading && !error && items.length > 0 && (
+            <ul className="divide-y divide-[var(--border)]">
+              {items.map((r) => {
+                const statusLabel = getStatusLabel(r.status);
 
-              return (
-                <li key={reportId} className="py-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-nav-active shrink-0" />
-                        <button
-                          className="text-foreground font-medium hover:text-nav-active truncate text-left"
-                          onClick={() =>
-                            router.push(
-                              `/student/courses/${courseId}/reports/${reportId}`
-                            )
-                          }
-                          title="Open report"
+                return (
+                  <li key={r.id} className="py-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-nav-active shrink-0" />
+                          <button
+                            className="text-foreground font-medium hover:text-nav-active truncate text-left"
+                            onClick={() => handleOpenReport(r.id)}
+                            title="Open report"
+                          >
+                            {r.title}
+                          </button>
+                        </div>
+
+                        <div className="mt-1 text-xs text-foreground/70 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="inline-flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <b>Status:</b>&nbsp;{statusLabel}
+                          </span>
+
+                          {typeof r.grade === "number" && (
+                            <span className="inline-flex items-center gap-1">
+                              <ListChecks className="w-3 h-3" />
+                              <b>Score:</b>&nbsp;{r.grade}
+                            </span>
+                          )}
+
+                          {r.createdAt && (
+                            <span className="inline-flex items-center gap-1">
+                              <CalendarDays className="w-3 h-3" />
+                              <b>Created:</b>&nbsp;{dt(r.createdAt)}
+                            </span>
+                          )}
+
+                          {r.updatedAt && (
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <b>Updated:</b>&nbsp;{dt(r.updatedAt)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-2">
+                        <Button
+                          className="bg-white border border-brand text-nav hover:text-nav-active"
+                          variant="outline"
+                          onClick={() => handleOpenReport(r.id)}
                         >
-                          {title}
-                        </button>
-                      </div>
-
-                      <div className="mt-1 text-xs text-foreground/70 flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <span className="inline-flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <b>Status:</b>&nbsp;{String(status)}
-                        </span>
-                        {typeof grade === "number" && (
-                          <span className="inline-flex items-center gap-1">
-                            <ListChecks className="w-3 h-3" />
-                            <b>Score:</b>&nbsp;{grade}
-                          </span>
-                        )}
-                        {created && (
-                          <span className="inline-flex items-center gap-1">
-                            <CalendarDays className="w-3 h-3" />
-                            <b>Created:</b>&nbsp;{dt(created)}
-                          </span>
-                        )}
-                        {updated && (
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            <b>Updated:</b>&nbsp;{dt(updated)}
-                          </span>
-                        )}
+                          <FileText className="w-4 h-4" />
+                          View
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="shrink-0 flex items-center gap-2">
-                      <button
-                        className="btn bg-white border border-brand text-nav hover:text-nav-active"
-                        onClick={() =>
-                          router.push(
-                            `/student/courses/${courseId}/reports/${reportId}`
-                          )
-                        }
-                      >
-                        <FileText className="w-4 h-4" />
-                        View
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-      {/* ===== /Content ===== */}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }
