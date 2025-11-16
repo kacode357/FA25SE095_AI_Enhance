@@ -167,7 +167,6 @@ export default function CourseList({
             >
               <Card className="overflow-hidden py-0 rounded-lg border-[var(--border)] bg-[var(--card)] shadow-md md:h-[220px]">
                 <CardContent className="h-full p-0 flex flex-col md:flex-row md:items-stretch">
-                  {/* LEFT: Ảnh – luôn cao = height card ở desktop */}
                   <div className="relative w-full md:w-[45%] lg:w-[38%] h-[180px] md:h-[220px] overflow-hidden rounded-l-lg">
                     <div
                       ref={bgRef}
