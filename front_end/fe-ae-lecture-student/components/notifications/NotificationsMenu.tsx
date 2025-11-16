@@ -145,41 +145,40 @@ export default function NotificationsMenu({
               </div>
             ) : (
               notifications.map((item) => (
-                <div role="menu">
-                  <button
-                    title="Menu"
-                    type="button"
-                    key={item.id}
-                    className="w-full text-left px-4 py-3 transition-colors"
-                    onClick={() => onOpenChange(false)}
-                    role="menuitem"
-                  >
-                    <div className="rounded-md hover:bg-[var(--focus-ring)] p-2 -m-2">
+                <button
+                  key={item.id}
+                  title="Menu"
+                  type="button"
+                  className="w-full text-left px-4 py-3 transition-colors"
+                  onClick={() => onOpenChange(false)}
+                  role="menuitem"
+                >
+                  <div className="rounded-md hover:bg-[var(--focus-ring)] p-2 -m-2">
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: "var(--foreground)" }}
+                    >
+                      {item.title || "New notification"}
+                    </p>
+                    {item.message && (
                       <p
-                        className="text-sm font-medium"
-                        style={{ color: "var(--foreground)" }}
+                        className="text-xs mt-1"
+                        style={{ color: "var(--text-muted)" }}
                       >
-                        {item.title || "New notification"}
+                        {item.message}
                       </p>
-                      {item.message && (
-                        <p
-                          className="text-xs mt-1"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          {item.message}
-                        </p>
-                      )}
-                      {item.createdAt && (
-                        <p
-                          className="text-[11px] mt-1"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          {formatTime(item.createdAt)}
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                </div>
+                    )}
+                    {item.createdAt && (
+                      // Tao thêm text-right vào đây 👇
+                      <p
+                        className="text-[11px] mt-1 text-right"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {formatTime(item.createdAt)}
+                      </p>
+                    )}
+                  </div>
+                </button>
               ))
             )}
           </div>

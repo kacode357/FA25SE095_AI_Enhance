@@ -161,9 +161,9 @@ export interface EnrollmentStatus {
 export interface AvailableCourseItem {
   id: string;
   courseCode: string;
-  /** Tên hiển thị (có thể gồm code + hash + giảng viên) */
+  /** Tên hiển thị (Data Analysis & Visualization, Web Development 101, ...) */
   name: string;
-  /** Mô tả khoá học (backend trả string) */
+  /** Mô tả khoá học */
   description: string;
   lecturerId: string;
   lecturerName: string;
@@ -171,10 +171,26 @@ export interface AvailableCourseItem {
   enrollmentCount: number;
   requiresAccessCode: boolean;
   isAccessCodeExpired: boolean;
-  /** Ảnh thumbnail; backend có thể trả null */
+
+  /** Ảnh thumbnail chung của course; backend có thể trả null */
   img: string | null;
+
+  /** 🔹 Mã unique riêng của course (F24002, F24001, ...) */
+  uniqueCode: string;
+
+  /** 🔹 Avatar giảng viên nếu có, null nếu chưa set */
+  lecturerImage: string | null;
+
+  /** 🔹 Thời gian bắt đầu/kết thúc term (string ISO) */
+  termStartDate: string;
+  termEndDate: string;
+
+  /** Trạng thái enrollment của current student, hoặc null nếu chưa join */
   enrollmentStatus: EnrollmentStatus | null;
+
+  /** Có được phép join (theo rule backend) */
   canJoin: boolean;
+
   /** Link join trực tiếp; có thể null khi không đủ điều kiện */
   joinUrl: string | null;
 }

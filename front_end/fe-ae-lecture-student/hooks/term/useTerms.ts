@@ -8,24 +8,19 @@ import { TermResponse } from "@/types/term/term.response";
 export function useTerms() {
   const [data, setData] = useState<TermResponse[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // ✅ Sửa ở đây: thay [loading] thành []
+  // ✅ Không cần bắt lỗi nữa, interceptor đã xử lý toast
   const fetchTerms = useCallback(async () => {
-    if (loading) return null; // tránh spam thêm 1 lớp
+    if (loading) return null; // tránh spam gọi liên tục
     setLoading(true);
-    setError(null);
     try {
       const res = await TermService.getAll();
-      setData(res.terms);
+      setData(res.terms || []);
       return res;
-    } catch (err: any) {
-      setError(err?.message || "Failed to load terms");
-      return null;
     } finally {
       setLoading(false);
     }
-  }, []); // <--- LỖI LÀ Ở ĐÂY, SỬA THÀNH []
+  }, []); // giữ [] như mày đang để
 
-  return { data, loading, error, fetchTerms };
+  return { data, loading, fetchTerms };
 }

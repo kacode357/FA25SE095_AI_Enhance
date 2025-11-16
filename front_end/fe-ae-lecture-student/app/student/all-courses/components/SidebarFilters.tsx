@@ -1,3 +1,4 @@
+// app/student/all-courses/components/SidebarFilters.tsx
 "use client";
 
 import { KeyboardEvent } from "react";
@@ -5,31 +6,29 @@ import { Filter, Search } from "lucide-react";
 import type { TermResponse } from "@/types/term/term.response";
 
 type Props = {
-  name: string;
+  courseCode: string;
   lecturerName: string;
   selectedTermId: string | null;
-  onNameChange: (v: string) => void;
+  onCourseCodeChange: (v: string) => void;
   onLecturerChange: (v: string) => void;
   onSearchSubmit: () => void;
   onReset: () => void;
   onTermToggle: (termId: string) => void;
   terms: TermResponse[];
   termsLoading: boolean;
-  termsError: string | null;
 };
 
 export default function SidebarFilters({
-  name,
+  courseCode,
   lecturerName,
   selectedTermId,
-  onNameChange,
+  onCourseCodeChange,
   onLecturerChange,
   onSearchSubmit,
   onReset,
   onTermToggle,
   terms,
   termsLoading,
-  termsError,
 }: Props) {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") onSearchSubmit();
@@ -49,13 +48,13 @@ export default function SidebarFilters({
           Search Courses
         </h2>
 
-        {/* Search input */}
+        {/* Search input (course code only) */}
         <div className="relative mt-1">
           <input
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
+            value={courseCode}
+            onChange={(e) => onCourseCodeChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search by course code or name..."
+            placeholder="Search by course code..."
             className="w-full h-11 rounded-xl pl-4 pr-10 text-sm border border-[rgba(0,0,0,0.05)] outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent bg-white"
           />
           <button
@@ -116,19 +115,13 @@ export default function SidebarFilters({
           </p>
         )}
 
-        {termsError && !termsLoading && (
-          <p className="text-xs" style={{ color: "var(--destructive)" }}>
-            {termsError}
-          </p>
-        )}
-
-        {!termsLoading && !termsError && terms.length === 0 && (
+        {!termsLoading && terms.length === 0 && (
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             No terms available.
           </p>
         )}
 
-        {!termsLoading && !termsError && terms.length > 0 && (
+        {!termsLoading && terms.length > 0 && (
           <ul className="space-y-2">
             {terms.map((term) => {
               const checked = selectedTermId === term.id;

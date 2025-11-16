@@ -10,9 +10,20 @@ import {
   KeyRound,
 } from "lucide-react";
 import type { AvailableCourseItem } from "@/types/courses/course.response";
+import type React from "react";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const DEFAULT_IMAGE_URL =
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT15_Krn-RVlYgHN53kc-FUhY9a4xx179lqkQ&s";
+  "https://i.postimg.cc/VL3PwwpK/Gemini-Generated-Image-pu4lm6pu4lm6pu4l.png";
 
 const formatDate = (iso?: string | null) =>
   iso
@@ -45,9 +56,14 @@ const getCTA = (course: AvailableCourseItem) => {
   const status = (course.enrollmentStatus?.status || "").toLowerCase();
   const isEnrolled = !!course.enrollmentStatus?.isEnrolled;
 
-  if (isEnrolled) return { label: "Go to Course", intent: "go" as const, disabled: false };
+  if (isEnrolled)
+    return { label: "Go to Course", intent: "go" as const, disabled: false };
   if (status === "pending" || status === "pendingapproval")
-    return { label: "Pending Approval", intent: "pending" as const, disabled: true };
+    return {
+      label: "Pending Approval",
+      intent: "pending" as const,
+      disabled: true,
+    };
 
   if (course.canJoin) {
     if (course.requiresAccessCode)
@@ -94,201 +110,226 @@ export default function CourseList({
   if (courses.length === 0) return null;
 
   return (
-    <div className="space-y-4">
-      {courses.map((course, i) => {
-        const imgUrl =
-          course.img && typeof course.img === "string"
-            ? course.img
-            : DEFAULT_IMAGE_URL;
-        const createdAt = formatDate(course.createdAt);
-        const cta = getCTA(course);
-        const isBusy = loadingCourseId === course.id;
+    <TooltipProvider delayDuration={200}>
+      <div className="space-y-4">
+        {courses.map((course, i) => {
+          const imgUrl =
+            course.img && typeof course.img === "string"
+              ? course.img
+              : DEFAULT_IMAGE_URL;
+          const createdAt = formatDate(course.createdAt);
+          const cta = getCTA(course);
+          const isBusy = loadingCourseId === course.id;
 
-        const styleBase: React.CSSProperties = {
-          height: 38,
-          borderRadius: 10,
-          paddingInline: 14,
-        };
+          const styleBase: React.CSSProperties = {
+            height: 38,
+            borderRadius: 10,
+            paddingInline: 14,
+          };
 
-        const lecturerName = course.lecturerName || "Unknown lecturer";
-        const lecturerAvatarUrl = getLecturerAvatarUrl(course);
-        const lecturerInitials = getInitials(lecturerName);
+          const lecturerName = course.lecturerName || "Unknown lecturer";
+          const lecturerAvatarUrl = getLecturerAvatarUrl(course);
+          const lecturerInitials = getInitials(lecturerName);
 
-        return (
-          <motion.article
-            key={course.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.03 }}
-            className="card overflow-hidden flex flex-col md:flex-row md:items-stretch min-h-[200px]"
-          >
-            {/* LEFT: Image – phủ full chiều cao card */}
-            <div className="relative w-full md:w-2/5 lg:w-1/3 overflow-hidden">
-              <img
-                src={imgUrl}
-                alt={course.courseCode}
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  const t = e.currentTarget as HTMLImageElement;
-                  if (t.src !== DEFAULT_IMAGE_URL) t.src = DEFAULT_IMAGE_URL;
-                }}
-                loading="lazy"
-                decoding="async"
-              />
+          const desc = course.description || "";
+          const needsTooltip = desc.length > 0;
 
-              {/* Status (bottom-left) — chỉ hiển thị nếu pending */}
-              <div className="absolute left-3 bottom-3">
-                <StatusChip status={course.enrollmentStatus?.status} />
-              </div>
-            </div>
-
-            {/* RIGHT: Content */}
-            <div className="flex-1 p-4 flex flex-col justify-between gap-2">
-              {/* Top: title + date ở góc phải */}
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h3
-                    className="text-base font-bold"
-                    style={{ color: "var(--foreground)" }}
-                  >
-                    {course.courseCode}
-                    {course.description ? ` — ${course.description}` : ""}
-                  </h3>
-
-                  {createdAt && (
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
-                      style={{
-                        background: "rgba(248,248,255,0.9)",
-                        color: "var(--foreground)",
-                        border: "1px solid var(--border)",
+          return (
+            <motion.div
+              key={course.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.03 }}
+            >
+              <Card className="overflow-hidden border-[var(--border)] bg-[var(--card)] shadow-md md:h-[220px]">
+                <CardContent className="h-full p-0 flex flex-col md:flex-row md:items-stretch">
+                  {/* LEFT: Ảnh – luôn cao = height card ở desktop */}
+                  <div className="relative w-full md:w-2/5 lg:w-1/3 h-[180px] md:h-full">
+                    <img
+                      src={imgUrl}
+                      alt={course.courseCode}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={(e) => {
+                        const t = e.currentTarget as HTMLImageElement;
+                        if (t.src !== DEFAULT_IMAGE_URL) {
+                          t.src = DEFAULT_IMAGE_URL;
+                        }
                       }}
-                    >
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {createdAt}
-                    </span>
-                  )}
-                </div>
-
-                {/* ❌ Không còn hiển thị course.name (subtitle) */}
-              </div>
-
-              {/* Bottom: total enrolled (trên), lecturer (dưới), CTA */}
-              <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-col gap-2">
-                  {/* Total enrolled TRƯỚC lecturer */}
-                  <div
-                    className="flex items-center gap-2 text-sm"
-                    style={{ color: "var(--foreground)" }}
-                  >
-                    <Users
-                      className="h-4 w-4"
-                      style={{ color: "var(--brand)" }}
+                      loading="lazy"
+                      decoding="async"
                     />
-                    <span>{course.enrollmentCount} enrolled</span>
-                  </div>
 
-                  {/* Lecturer avatar + name */}
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold overflow-hidden"
-                      style={{ background: "var(--brand)", color: "white" }}
-                    >
-                      {lecturerAvatarUrl ? (
-                        <img
-                          src={lecturerAvatarUrl}
-                          alt={lecturerName}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        lecturerInitials
-                      )}
+                    <div className="absolute left-3 bottom-3 z-[1]">
+                      <StatusChip status={course.enrollmentStatus?.status} />
                     </div>
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: "var(--brand)" }}
-                    >
-                      {lecturerName}
-                    </span>
                   </div>
-                </div>
 
-                {/* CTA button bên phải */}
-                <div className="flex justify-end md:justify-start">
-                  {cta.intent === "go" && (
-                    <button
-                      className="btn btn-gradient-slow"
-                      style={styleBase}
-                      onClick={() => onGoToCourse(course.id)}
-                    >
-                      <PlayCircle className="w-5 h-5" />
-                      <span>Go to Course</span>
-                    </button>
-                  )}
+                  {/* RIGHT */}
+                  <div className="flex-1 h-full p-4 flex flex-col justify-between gap-2">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3
+                            className="text-base font-bold"
+                            style={{ color: "var(--foreground)" }}
+                          >
+                            {course.courseCode}
+                          </h3>
 
-                  {cta.intent === "join" && (
-                    <button
-                      className="btn btn-gradient-slow"
-                      style={styleBase}
-                      disabled={isBusy}
-                      onClick={() => onJoinClick(course)}
-                    >
-                      {isBusy ? (
-                        <>
-                          <Clock className="w-5 h-5 animate-spin" />
-                          <span>Joining...</span>
-                        </>
-                      ) : (
-                        <>
-                          <PlusCircle className="w-5 h-5" />
-                          <span>Join</span>
-                        </>
-                      )}
-                    </button>
-                  )}
+                          {desc && (
+                            <>
+                              {needsTooltip ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <p className="mt-1 text-sm text-[var(--text-muted)] line-clamp-2 cursor-help">
+                                      {desc}
+                                    </p>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs text-xs">
+                                    {desc}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                                  {desc}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
 
-                  {cta.intent === "join-code" && (
-                    <button
-                      className="btn btn-gradient-slow"
-                      style={styleBase}
-                      disabled={isBusy || !!course.isAccessCodeExpired}
-                      onClick={() => onJoinClick(course)}
-                    >
-                      {isBusy ? (
-                        <>
-                          <Clock className="w-5 h-5 animate-spin" />
-                          <span>Joining...</span>
-                        </>
-                      ) : (
-                        <>
-                          <KeyRound className="w-5 h-5" />
-                          <span>Join</span>
-                        </>
-                      )}
-                    </button>
-                  )}
+                        {createdAt && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
+                            style={{
+                              background: "rgba(248,248,255,0.9)",
+                              color: "var(--foreground)",
+                              border: "1px solid var(--border)",
+                            }}
+                          >
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            {createdAt}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                  {(cta.intent === "pending" || cta.intent === "disabled") && (
-                    <button
-                      className="btn btn-gradient-slow"
-                      style={{
-                        ...styleBase,
-                        opacity: 0.65,
-                        cursor: "not-allowed",
-                        filter: "grayscale(10%)",
-                      }}
-                      disabled
-                    >
-                      <Clock className="w-5 h-5" />
-                      <span>{cta.label}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.article>
-        );
-      })}
-    </div>
+                    <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="flex flex-col gap-2">
+                        <div
+                          className="flex items-center gap-2 text-sm"
+                          style={{ color: "var(--foreground)" }}
+                        >
+                          <Users
+                            className="h-4 w-4"
+                            style={{ color: "var(--brand)" }}
+                          />
+                          <span>{course.enrollmentCount} enrolled</span>
+                        </div>
+
+                        {/* Avatar shadcn */}
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-9 w-9 border border-[var(--border)] shadow-sm">
+                            {lecturerAvatarUrl && (
+                              <AvatarImage
+                                src={lecturerAvatarUrl}
+                                alt={lecturerName}
+                              />
+                            )}
+                            <AvatarFallback className="bg-[var(--brand)] text-white text-xs font-semibold">
+                              {lecturerInitials}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <span
+                            className="text-sm font-medium"
+                            style={{ color: "var(--brand)" }}
+                          >
+                            {lecturerName}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* CTA */}
+                      <div className="flex justify-end md:justify-start">
+                        {cta.intent === "go" && (
+                          <button
+                            className="btn btn-gradient-slow"
+                            style={styleBase}
+                            onClick={() => onGoToCourse(course.id)}
+                          >
+                            <PlayCircle className="w-5 h-5" />
+                            <span>Go to Course</span>
+                          </button>
+                        )}
+
+                        {cta.intent === "join" && (
+                          <button
+                            className="btn btn-gradient-slow"
+                            style={styleBase}
+                            disabled={isBusy}
+                            onClick={() => onJoinClick(course)}
+                          >
+                            {isBusy ? (
+                              <>
+                                <Clock className="w-5 h-5 animate-spin" />
+                                <span>Joining...</span>
+                              </>
+                            ) : (
+                              <>
+                                <PlusCircle className="w-5 h-5" />
+                                <span>Join</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        {cta.intent === "join-code" && (
+                          <button
+                            className="btn btn-gradient-slow"
+                            style={styleBase}
+                            disabled={isBusy || !!course.isAccessCodeExpired}
+                            onClick={() => onJoinClick(course)}
+                          >
+                            {isBusy ? (
+                              <>
+                                <Clock className="w-5 h-5 animate-spin" />
+                                <span>Joining...</span>
+                              </>
+                            ) : (
+                              <>
+                                <KeyRound className="w-5 h-5" />
+                                <span>Join</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        {(cta.intent === "pending" ||
+                          cta.intent === "disabled") && (
+                          <button
+                            className="btn btn-gradient-slow"
+                            style={{
+                              ...styleBase,
+                              opacity: 0.65,
+                              cursor: "not-allowed",
+                              filter: "grayscale(10%)",
+                            }}
+                            disabled
+                          >
+                            <Clock className="w-5 h-5" />
+                            <span>{cta.label}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 }

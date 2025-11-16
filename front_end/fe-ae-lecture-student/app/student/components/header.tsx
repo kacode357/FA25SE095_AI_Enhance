@@ -3,7 +3,7 @@
 
 import Cookies from "js-cookie";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
@@ -21,6 +21,7 @@ import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
 import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
 
 const COOKIE_ACCESS_TOKEN_KEY = "accessToken";
+const NOTI_CACHE_KEY_PREFIX = "student:notifs:v1:";
 
 /** Chuẩn hóa format dữ liệu để UI render */
 function normalizeNotification(raw: any): NotificationItem {
@@ -29,7 +30,9 @@ function normalizeNotification(raw: any): NotificationItem {
   const id =
     raw?.id ||
     raw?.notificationId ||
-    (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
+    (typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`);
 
   const readFlag =
     typeof raw?.read === "boolean"
@@ -62,6 +65,18 @@ export default function Header() {
   const { getNotifications } = useGetNotifications();
   const { markAllNotificationsAsRead } = useMarkAllNotificationsAsRead();
 
+  /** ====== memo callback cho hub ====== */
+  const getTokenForHub = useCallback(() => {
+    return getSavedAccessToken() || "";
+  }, []);
+
+  const handleHubNotification = useCallback((raw: any) => {
+    const item = normalizeNotification(raw);
+    console.log("[Header] New notification from hub:", item);
+    setNotifications((prev) => [item, ...prev]);
+    setUnreadCount((prev) => prev + 1);
+  }, []);
+
   /** HUB */
   const {
     connect,
@@ -70,42 +85,78 @@ export default function Header() {
     connecting,
     lastError,
   } = useNotificationHub({
-    getAccessToken: () => getSavedAccessToken() || "",
-    onNotification: (raw) => {
-      const item = normalizeNotification(raw);
-      setNotifications((prev) => [item, ...prev]);
-      setUnreadCount((prev) => prev + 1);
-    },
+    getAccessToken: getTokenForHub,
+    onNotification: handleHubNotification,
   });
 
   /** ===============================
-   * 1️⃣ Fetch lịch sử thông báo — CHỈ 1 LẦN
+   * 1️⃣ Fetch lịch sử thông báo — CHỈ 1 LẦN / USER / SESSION
    * =============================== */
   useEffect(() => {
     if (!user?.id) return;
-    if (historyLoaded) return; // đã load rồi → bỏ
-    if (connected) return;     // hub đã kết nối → không fetch nữa
+    if (historyLoaded) return;
 
+    const cacheKey = `${NOTI_CACHE_KEY_PREFIX}${user.id}`;
+
+    // 1) Thử đọc cache từ sessionStorage trước
+    try {
+      if (typeof window !== "undefined") {
+        const cached = window.sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached) as {
+            notifications: NotificationItem[];
+            unreadCount: number;
+          };
+
+          if (Array.isArray(parsed.notifications)) {
+            console.log("[Header] Restore notifications from cache");
+            setNotifications(parsed.notifications);
+            setUnreadCount(parsed.unreadCount ?? 0);
+            setHistoryLoaded(true);
+            return; // đã có dữ liệu → khỏi gọi API
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[Header] restore notifications cache error:", err);
+    }
+
+    // 2) Không có cache → gọi API lần đầu, rồi cache lại
     (async () => {
       try {
+        console.log("[Header] Fetch notifications from API (first time)");
         const list = await getNotifications({ take: 50 });
         if (!list) return;
 
-        const normalized = list.map((n) => normalizeNotification(n));
+        const normalized = list.map((n: any) => normalizeNotification(n));
         setNotifications(normalized);
 
         const unread = normalized.filter((n) => !n.read).length;
         setUnreadCount(unread);
+
+        // Lưu cache cho lần F5 sau
+        try {
+          if (typeof window !== "undefined") {
+            const payload = JSON.stringify({
+              notifications: normalized,
+              unreadCount: unread,
+            });
+            window.sessionStorage.setItem(cacheKey, payload);
+            console.log("[Header] Saved notifications to cache");
+          }
+        } catch (err) {
+          console.warn("[Header] save notifications cache error:", err);
+        }
 
         setHistoryLoaded(true); // khóa lại
       } catch (err) {
         console.warn("[Header] fetch history error:", err);
       }
     })();
-  }, [user?.id, connected, historyLoaded]);
+  }, [user?.id, historyLoaded, getNotifications]);
 
   /** ===============================
-   * 2️⃣ Kết nối hub
+   * 2️⃣ Kết nối hub — tránh spam connect/disconnect
    * =============================== */
   useEffect(() => {
     if (!user?.id) return;
@@ -117,6 +168,7 @@ export default function Header() {
 
     (async () => {
       try {
+        console.log("[NotificationHub] connecting...");
         await connect();
         if (!cancelled) {
           console.log("[NotificationHub] Connected.");
@@ -128,9 +180,10 @@ export default function Header() {
 
     return () => {
       cancelled = true;
+      console.log("[NotificationHub] disconnect on unmount");
       disconnect();
     };
-  }, [user?.id]);
+  }, [user?.id, connect, disconnect]);
 
   /** ===============================
    * 3️⃣ Logout
@@ -153,12 +206,28 @@ export default function Header() {
     setNotificationOpen(v);
 
     if (v && unreadCount > 0) {
+      console.log("[Header] Mark all notifications as read");
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
 
       markAllNotificationsAsRead().catch((err) =>
         console.warn("[markAll] error:", err)
       );
+
+      // update cache luôn cho đồng bộ
+      if (user?.id && typeof window !== "undefined") {
+        const cacheKey = `${NOTI_CACHE_KEY_PREFIX}${user.id}`;
+        try {
+          const payload = JSON.stringify({
+            notifications: notifications.map((n) => ({ ...n, read: true })),
+            unreadCount: 0,
+          });
+          window.sessionStorage.setItem(cacheKey, payload);
+          console.log("[Header] Updated notifications cache after markAll");
+        } catch (err) {
+          console.warn("[Header] update cache after markAll error:", err);
+        }
+      }
     }
 
     if (v) setDropdownOpen(false);
@@ -203,7 +272,7 @@ export default function Header() {
 
         {/* Right */}
         <div className="ml-auto flex items-center gap-3">
-          {/* Separate small container for notifications */}
+          {/* Notifications */}
           <div className="flex items-center bg-slate-100 p-1 mr-3 rounded-lg shadow-sm">
             <NotificationsMenu
               open={notificationOpen}
@@ -216,7 +285,7 @@ export default function Header() {
             />
           </div>
 
-          {/* User menu in its own pill */}
+          {/* User menu */}
           <div className="flex items-center border-slate-100 bg-slate-100 rounded-xl shadow-lg">
             <UserMenu
               open={dropdownOpen}

@@ -1,7 +1,7 @@
 // app/student/all-courses/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, BookOpen } from "lucide-react";
 
@@ -24,7 +24,7 @@ type CoursesQueryState = {
   pageSize: number;
   sortBy: SortBy;
   sortDirection: SortDirection;
-  name: string | undefined;
+  courseCode: string | undefined;
   lecturerName: string | undefined;
   termId: string | undefined;
 };
@@ -32,16 +32,25 @@ type CoursesQueryState = {
 export default function AllCoursesPage() {
   const router = useRouter();
 
-  const { listData, loading, fetchAvailableCourses } = useAvailableCourses();
+  const {
+    listData,
+    totalCount,
+    currentPage,
+    pageSize,
+    loading,
+    fetchAvailableCourses,
+  } = useAvailableCourses();
+
   const { joinCourse } = useJoinCourse();
+
+  // ✅ useTerms không còn error nữa
   const {
     data: termList,
     loading: termsLoading,
-    error: termsError,
     fetchTerms,
   } = useTerms();
 
-  const [name, setName] = useState("");
+  const [courseCode, setCourseCode] = useState("");
   const [lecturerName, setLecturerName] = useState("");
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>("CreatedAt");
@@ -57,52 +66,19 @@ export default function AllCoursesPage() {
     pageSize: 10,
     sortBy: "CreatedAt",
     sortDirection: "desc",
-    name: undefined,
+    courseCode: undefined,
     lecturerName: undefined,
     termId: undefined,
   });
 
   /** ===== Map response ===== */
-  const courses: AvailableCourseItem[] = useMemo(() => {
-    if (!listData) return [];
-    // ✅ backend trả { courses: [...] }
-    if (Array.isArray((listData as any).courses)) {
-      return (listData as any).courses as AvailableCourseItem[];
-    }
-    if (Array.isArray(listData as any)) {
-      return listData as any;
-    }
-    return [];
-  }, [listData]);
+  const courses: AvailableCourseItem[] = Array.isArray(listData) ? listData : [];
 
-  const totalItems: number = useMemo(() => {
-    if (!listData) return courses.length;
-    // ✅ backend trả totalCount
-    if (typeof (listData as any).totalCount === "number") {
-      return (listData as any).totalCount;
-    }
-    if (typeof (listData as any).totalItems === "number") {
-      return (listData as any).totalItems;
-    }
-    if (typeof (listData as any).total === "number") {
-      return (listData as any).total;
-    }
-    return courses.length;
-  }, [listData, courses.length]);
-
-  const currentPage: number =
-    typeof (listData as any)?.currentPage === "number"
-      ? (listData as any).currentPage
-      : lastQueryRef.current.page;
-
-  const pageSize: number =
-    typeof (listData as any)?.pageSize === "number"
-      ? (listData as any).pageSize
-      : lastQueryRef.current.pageSize;
+  const totalItems: number = typeof totalCount === "number" ? totalCount : courses.length;
 
   /** ===== Fetch initial ===== */
   useEffect(() => {
-    fetchAvailableCourses(lastQueryRef.current);
+    fetchAvailableCourses(lastQueryRef.current as any);
   }, [fetchAvailableCourses]);
 
   useEffect(() => {
@@ -113,7 +89,7 @@ export default function AllCoursesPage() {
   const runQuery = (override?: Partial<CoursesQueryState>) => {
     const next: CoursesQueryState = {
       ...lastQueryRef.current,
-      name: name.trim() || undefined,
+      courseCode: courseCode.trim() || undefined,
       lecturerName: lecturerName.trim() || undefined,
       termId: selectedTermId || undefined,
       sortBy,
@@ -140,7 +116,7 @@ export default function AllCoursesPage() {
   };
 
   const handleResetFilters = () => {
-    setName("");
+    setCourseCode("");
     setLecturerName("");
     setSelectedTermId(null);
     setSortBy("CreatedAt");
@@ -150,7 +126,7 @@ export default function AllCoursesPage() {
       pageSize: lastQueryRef.current.pageSize,
       sortBy: "CreatedAt",
       sortDirection: "desc",
-      name: undefined,
+      courseCode: undefined,
       lecturerName: undefined,
       termId: undefined,
     };
@@ -158,7 +134,7 @@ export default function AllCoursesPage() {
     fetchAvailableCourses(base as any);
   };
 
-  const refetchAfterAction = () => fetchAvailableCourses(lastQueryRef.current);
+  const refetchAfterAction = () => fetchAvailableCourses(lastQueryRef.current as any);
 
   const handleJoinClick = async (course: AvailableCourseItem) => {
     if (course.requiresAccessCode) {
@@ -192,17 +168,17 @@ export default function AllCoursesPage() {
           {/* LEFT 4: sidebar */}
           <aside className="lg:col-span-4">
             <SidebarFilters
-              name={name}
+              courseCode={courseCode}
               lecturerName={lecturerName}
               selectedTermId={selectedTermId}
-              onNameChange={setName}
+              onCourseCodeChange={setCourseCode}
               onLecturerChange={setLecturerName}
               onSearchSubmit={handleSearchSubmit}
               onReset={handleResetFilters}
               onTermToggle={handleTermToggle}
               terms={termList}
               termsLoading={termsLoading}
-              termsError={termsError}
+          
             />
           </aside>
 
