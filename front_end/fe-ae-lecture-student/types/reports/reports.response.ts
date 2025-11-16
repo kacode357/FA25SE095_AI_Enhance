@@ -296,3 +296,9 @@ export interface GetReportTimelineResponse {
   reportId: string;
   timeline: ReportTimelineItem[];
 }
+
+export interface UploadReportFileResponse extends ApiSuccess {
+  fileUrl: string;
+  version: number;
+}
+

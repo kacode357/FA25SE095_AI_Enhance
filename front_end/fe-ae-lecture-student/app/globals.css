@@ -255,6 +255,105 @@ select {
   clip-path: circle(150% at 50% 50%);
 }
 
+/* === NÚT VÀNG (Accent Style) === */
+/* Dùng cho nút Warning, Premium, hoặc điểm nhấn thứ 2 */
+.btn-yellow-slow {
+  /* Gradient từ vàng sáng sang cam vàng */
+  background: linear-gradient(135deg, #ffe066 0%, #f4a23b 100%);
+  color: #ffffff; /* Chữ trắng cho nổi */
+  /* border-radius: 9999px; Bật cái này nếu muốn bo tròn hẳn */
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  
+  /* Transition y hệt nút tím */
+  transition: color 1.2s ease-in-out, filter .2s, transform .02s, box-shadow .2s;
+  
+  /* Bóng đổ màu vàng cam nhẹ */
+  box-shadow: 0 10px 22px rgba(244, 162, 59, 0.28);
+}
+
+.btn-yellow-slow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  
+  /* Màu overlay khi hover: Cam đậm/Nâu đất */
+  background: #d9840c; 
+  z-index: -1;
+  
+  /* Hiệu ứng lan tỏa chậm */
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1); 
+  clip-path: circle(0% at 50% 50%);
+}
+
+.btn-yellow-slow:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
+
+/* === NÚT XANH (Sub/Info Style) === */
+/* Dùng cho nút phụ, thông tin, hoặc hành động Sub */
+.btn-green-slow {
+  /* Gradient từ xanh lá nhạt sang xanh lá đậm */
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  color: #ffffff;
+  /* border-radius: 9999px; */
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  
+  transition: color 1.2s ease-in-out, filter .2s, transform .02s, box-shadow .2s;
+  
+  /* Bóng đổ màu xanh lá */
+  box-shadow: 0 10px 22px rgba(5, 150, 105, 0.28);
+}
+
+.btn-green-slow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  
+  /* Màu overlay khi hover: xanh lá đậm */
+  background: #064e3b;
+  z-index: -1;
+  
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1); 
+  clip-path: circle(0% at 50% 50%);
+}
+
+.btn-green-slow:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
+
+/* === NÚT XANH DƯƠNG (Blue / Primary Info) === */
+.btn-blue-slow {
+  /* Gradient từ xanh dương nhạt sang xanh dương đậm */
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+
+  transition: color 1.2s ease-in-out, filter .2s, transform .02s, box-shadow .2s;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
+}
+
+.btn-blue-slow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  /* Màu overlay khi hover: xanh dương đậm / navy */
+  background: #0b3b82;
+  z-index: -1;
+
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1);
+  clip-path: circle(0% at 50% 50%);
+}
+
+.btn-blue-slow:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
 /* Utility: keep scrollbar space to avoid layout shift (where supported) */
 @supports (scrollbar-gutter: stable) {
   .scrollbar-stable {
