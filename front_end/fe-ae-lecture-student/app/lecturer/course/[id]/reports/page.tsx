@@ -106,7 +106,7 @@ export default function LecturerAssignmentReportsPage() {
 
                         <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
 
-                        <li className="font-medium cursor-pointer text-slate-900 max-w-[150px] truncate">{assignmentId || assignmentTitle}</li>
+                        <li className="font-medium cursor-text text-slate-900 max-w-[150px] truncate">Report Details</li>
                     </ol>
                 </div>
             </nav>

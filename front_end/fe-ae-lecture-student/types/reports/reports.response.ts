@@ -283,3 +283,16 @@ export interface CompareReportVersionsResponse {
   changeSummary: string;
   contributorNames: string[];
 }
+
+export interface ReportTimelineItem {
+  timestamp: string; // ISO datetime
+  actor: string;
+  action: string;
+  version: number;
+  details: string;
+}
+
+export interface GetReportTimelineResponse {
+  reportId: string;
+  timeline: ReportTimelineItem[];
+}

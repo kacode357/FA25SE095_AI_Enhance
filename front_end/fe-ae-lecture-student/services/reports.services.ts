@@ -9,6 +9,7 @@ import type {
   GetReportHistoryQuery,
   GetReportHistoryVersionPayload,
   GetReportsRequiringGradingQuery,
+  GetReportTimelinePayload,
   GradeReportPayload,
   MyReportsQuery,
   RejectReportPayload,
@@ -27,6 +28,7 @@ import type {
   GetReportHistoryVersionResponse,
   GetReportResponse,
   GetReportsRequiringGradingResponse,
+  GetReportTimelineResponse,
   GradeReportResponse,
   MyReportsResponse,
   RejectReportResponse,
@@ -178,4 +180,13 @@ export const ReportsService = {
     return res.data;
   },
 
+  getTimeline: async (
+    payload: GetReportTimelinePayload
+  ): Promise<GetReportTimelineResponse> => {
+    const { reportId } = payload;
+    const res = await api.get<GetReportTimelineResponse>(
+      `/Reports/${reportId}/timeline`
+    );
+    return res.data;
+  },
 };
