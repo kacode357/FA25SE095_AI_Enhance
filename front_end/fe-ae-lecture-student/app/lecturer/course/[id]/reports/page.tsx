@@ -8,7 +8,7 @@ import { Book, ChevronRight, FileDown, FileText, Loader2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { useCourseEnrollments } from "@/hooks/course/useCourseEnrollments";
+import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useAssignmentReports } from "@/hooks/reports/useAssignmentReports";
 import { useExportAssignmentGrades } from "@/hooks/reports/useExportAssignmentGrades";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
@@ -25,7 +25,7 @@ export default function LecturerAssignmentReportsPage() {
     const { fetchAssignmentReports, loading: loadingList } = useAssignmentReports();
     const { getReportById, loading: loadingDetail } = useGetReportById();
     const { data: course, fetchCourseById } = useGetCourseById();
-    const { data: enrollmentsData, fetchEnrollments } = useCourseEnrollments();
+    const { students: enrolledStudents, fetchCourseStudents } = useCourseStudents("");
     const { exportGrades, loading: exporting } = useExportAssignmentGrades();
 
     const [items, setItems] = useState<ReportBase[]>([]);
@@ -48,14 +48,15 @@ export default function LecturerAssignmentReportsPage() {
     }, [assignmentId]);
     useEffect(() => {
         if (courseId) fetchCourseById(courseId);
-        if (courseId) fetchEnrollments?.(courseId);
+        if (courseId) fetchCourseStudents(courseId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId]);
 
     const getStudentName = (id?: string | null) => {
         if (!id) return "—";
-        const s = enrollmentsData?.enrollments?.find((e) => e.studentId === id)?.studentName;
-        return s ?? id;
+        const s = enrolledStudents?.find((e) => e.studentId === id);
+        if (!s) return id;
+    return (s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()) || id;
     };
 
     const assignmentTitle = useMemo(() => {

@@ -1,26 +1,26 @@
 "use client";
 
+import type { AvailableCourseItem } from "@/types/courses/course.response";
 import { motion } from "framer-motion";
 import {
   CalendarDays,
-  Users,
-  PlayCircle,
-  PlusCircle,
   Clock,
   KeyRound,
+  PlayCircle,
+  PlusCircle,
+  Users,
 } from "lucide-react";
-import type { AvailableCourseItem } from "@/types/courses/course.response";
-import type React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
   TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const DEFAULT_IMAGE_URL =
   "https://i.postimg.cc/VL3PwwpK/Gemini-Generated-Image-pu4lm6pu4lm6pu4l.png";
@@ -117,6 +117,30 @@ export default function CourseList({
             course.img && typeof course.img === "string"
               ? course.img
               : DEFAULT_IMAGE_URL;
+
+          const [bgUrl, setBgUrl] = useState<string>(imgUrl);
+          const bgRef = useRef<HTMLDivElement | null>(null);
+
+          useEffect(() => {
+            let mounted = true;
+            const loader = new Image();
+            loader.src = imgUrl;
+            loader.onload = () => {
+              if (mounted) setBgUrl(imgUrl);
+            };
+            loader.onerror = () => {
+              if (mounted) setBgUrl(DEFAULT_IMAGE_URL);
+            };
+            return () => {
+              mounted = false;
+            };
+          }, [imgUrl]);
+
+          useEffect(() => {
+            if (bgRef.current) {
+              bgRef.current.style.backgroundImage = `url(${bgUrl})`;
+            }
+          }, [bgUrl]);
           const createdAt = formatDate(course.createdAt);
           const cta = getCTA(course);
           const isBusy = loadingCourseId === course.id;
@@ -141,22 +165,14 @@ export default function CourseList({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
             >
-              <Card className="overflow-hidden border-[var(--border)] bg-[var(--card)] shadow-md md:h-[220px]">
+              <Card className="overflow-hidden py-0 rounded-lg border-[var(--border)] bg-[var(--card)] shadow-md md:h-[220px]">
                 <CardContent className="h-full p-0 flex flex-col md:flex-row md:items-stretch">
-                  {/* LEFT: Ảnh – luôn cao = height card ở desktop */}
-                  <div className="relative w-full md:w-2/5 lg:w-1/3 h-[180px] md:h-full">
-                    <img
-                      src={imgUrl}
-                      alt={course.courseCode}
-                      className="absolute inset-0 h-full w-full object-cover"
-                      onError={(e) => {
-                        const t = e.currentTarget as HTMLImageElement;
-                        if (t.src !== DEFAULT_IMAGE_URL) {
-                          t.src = DEFAULT_IMAGE_URL;
-                        }
-                      }}
-                      loading="lazy"
-                      decoding="async"
+                  <div className="relative w-full md:w-[45%] lg:w-[38%] h-[180px] md:h-[220px] overflow-hidden rounded-l-lg">
+                    <div
+                      ref={bgRef}
+                      role="img"
+                      aria-label={course.courseCode}
+                      className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-l-lg"
                     />
 
                     <div className="absolute left-3 bottom-3 z-[1]">
@@ -165,7 +181,7 @@ export default function CourseList({
                   </div>
 
                   {/* RIGHT */}
-                  <div className="flex-1 h-full p-4 flex flex-col justify-between gap-2">
+                  <div className="flex-1 h-full px-6 py-4 flex flex-col justify-between gap-1">
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">

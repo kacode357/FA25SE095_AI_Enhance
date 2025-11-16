@@ -10,8 +10,8 @@ import { BookOpenCheck, ChevronRight, Loader2 } from "lucide-react";
 import LateSubmissions from "./late-submitssion/LateSubmissions";
 
 import { useAssignments } from "@/hooks/assignment/useAssignments";
-import { useCourseEnrollments } from "@/hooks/course/useCourseEnrollments";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
+import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useGetLateSubmissions } from "@/hooks/reports/useGetLateSubmissions";
 import { useGetReportByCourse } from "@/hooks/reports/useGetReportByCourse";
 import type { CourseItem } from "@/types/courses/course.response";
@@ -26,7 +26,7 @@ export default function LecturerCourseReportsPage() {
     const { getReportByCourse, loading: loadingReports } = useGetReportByCourse();
     const { getLateSubmissions, loading: loadingLate } = useGetLateSubmissions();
     const { listData: assignmentsData, loading: loadingAssignments, fetchAssignments } = useAssignments();
-    const { data: enrollmentsData, fetchEnrollments } = useCourseEnrollments();
+    const { students: enrolledStudents, fetchCourseStudents } = useCourseStudents("");
 
     const [courseId, setCourseId] = useState<string>(courseIdParam);
     const [items, setItems] = useState<CourseReportItem[]>([]);
@@ -81,8 +81,8 @@ export default function LecturerCourseReportsPage() {
         qs.set("courseId", cid);
         router.replace(`/lecturer/course/reports?${qs.toString()}`);
         fetchData(cid);
-        // preload enrollments for nicer display of submitted-by names
-        fetchEnrollments?.(cid);
+        // preload students for nicer display of submitted-by names
+        fetchCourseStudents(cid);
     };
 
     const handleCourseChangeForLate = (cid: string) => {
@@ -94,7 +94,7 @@ export default function LecturerCourseReportsPage() {
         // fetch assignments for selector and late items
         fetchAssignments({ courseId: cid, pageNumber: 1, pageSize: 200 });
         fetchLateData(cid, assignmentId || undefined);
-        fetchEnrollments?.(cid);
+        fetchCourseStudents(cid);
     };
 
     // Keep in sync when URL already had a courseId
@@ -102,7 +102,7 @@ export default function LecturerCourseReportsPage() {
         if (courseIdParam && courseIdParam !== courseId) {
             setCourseId(courseIdParam);
             fetchData(courseIdParam);
-            fetchEnrollments?.(courseIdParam);
+            fetchCourseStudents(courseIdParam);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseIdParam]);
@@ -248,8 +248,8 @@ export default function LecturerCourseReportsPage() {
                                                 </td>
                                                         <td className="px-4 py-2">
                                                             {(() => {
-                                                                // Prefer group name, then map submittedBy (studentId) to enrolled studentName when available
-                                                                const studentName = enrollmentsData?.enrollments?.find((e) => e.studentId === r.submittedBy)?.studentName;
+                                                                // Prefer group name, then map submittedBy (studentId) to enrolled student fullName when available
+                                                                const studentName = enrolledStudents?.find((e) => e.studentId === r.submittedBy)?.fullName || enrolledStudents?.find((e) => e.studentId === r.submittedBy)?.firstName && enrolledStudents?.find((e) => e.studentId === r.submittedBy)?.lastName ? `${enrolledStudents?.find((e) => e.studentId === r.submittedBy)?.firstName} ${enrolledStudents?.find((e) => e.studentId === r.submittedBy)?.lastName}` : undefined;
                                                                 const display = r.groupName || studentName || r.submittedBy || "—";
                                                                 return (
                                                                     <>

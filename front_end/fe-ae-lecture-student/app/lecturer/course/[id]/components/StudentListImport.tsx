@@ -10,7 +10,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { useCourseEnrollments } from "@/hooks/course/useCourseEnrollments";
+import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useUnenrollStudent } from "@/hooks/enrollments/useUnenrollStudent";
 import { EnrollmentStatus } from "@/types/enrollments/enrollments.response";
 import { format } from "date-fns";
@@ -24,12 +24,12 @@ export default function StudentList({
     courseId: string;
     refreshSignal: number;
 }) {
-    const { data, loading, fetchEnrollments } = useCourseEnrollments();
+    const { students: courseStudents, loading, fetchCourseStudents } = useCourseStudents(courseId);
     const { unenrollStudent, loading: unenrolling } = useUnenrollStudent();
 
     useEffect(() => {
         if (courseId) {
-            fetchEnrollments(courseId);
+            fetchCourseStudents(courseId);
         }
     }, [courseId, refreshSignal]);
 
@@ -80,11 +80,11 @@ export default function StudentList({
         );
 
         if (res?.success) {
-            fetchEnrollments(courseId);
+            fetchCourseStudents(courseId);
         }
     };
 
-    const students = data?.enrollments || [];
+    const students = courseStudents || [];
 
     return (
         <div className="-mt-10">
@@ -104,36 +104,38 @@ export default function StudentList({
                                 <TableHead className="text-center min-w-[140px]">
                                     Student Name
                                 </TableHead>
+                                <TableHead className="text-center min-w-[140px]">
+                                    Email
+                                </TableHead>
                                 <TableHead className="text-center w-[150px]">Joined At</TableHead>
                                 <TableHead className="text-center w-[150px]">
                                     Unenrolled At
                                 </TableHead>
-                                <TableHead className="text-center w-[110px]">Status</TableHead>
-                                <TableHead className="text-center min-w-[120px]">Reason</TableHead>
+                                {/* <TableHead className="text-center w-[110px]">Status</TableHead> */}
                                 <TableHead className="text-center w-20">Action</TableHead>
                             </TableRow>
                         </TableHeader>
 
                         <TableBody>
                             {students.map((s, i) => (
-                                <TableRow key={s.id} className="border-0">
+                                <TableRow key={s.enrollmentId} className="border-0">
                                     <TableCell className="text-center text-slate-500">
                                         {i + 1}
                                     </TableCell>
                                     <TableCell className="font-medium text-slate-800">
-                                        {s.studentName}
+                                        {s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()}
+                                    </TableCell>
+                                    <TableCell className="text-center text-slate-600">
+                                        {s.email}
                                     </TableCell>
                                     <TableCell className="text-center text-slate-600">
                                         {formatDate(s.joinedAt)}
                                     </TableCell>
-                                    <TableCell className="text-center text-slate-600">
-                                        {formatDate(s.unenrolledAt)}
-                                    </TableCell>
-                                    <TableCell className="text-center">
+                                    {/* <TableCell className="text-center">
                                         {getStatusBadge(s.status as EnrollmentStatus)}
-                                    </TableCell>
+                                    </TableCell> */}
                                     <TableCell className="text-slate-500 text-sm">
-                                        {s.unenrollmentReason || "-"}
+                                        {"-"}
                                     </TableCell>
                                     <TableCell className="text-center">
                                         {s.status === EnrollmentStatus.Active ? (
@@ -150,7 +152,7 @@ export default function StudentList({
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>
-                                                            Unenroll {s.studentName}?
+                                                            Unenroll {s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()}?
                                                         </AlertDialogTitle>
                                                         <AlertDialogDescription className="flex gap-2 items-start text-yellow-600">
                                                             <span className="flex gap-2 items-center text-xs"><TriangleAlert className="size-4" />This action cannot be undone. Remove this student from the course.</span>
