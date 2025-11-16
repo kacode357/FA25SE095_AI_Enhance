@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useCourseEnrollments } from "@/hooks/course/useCourseEnrollments";
+import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useAddGroupMember } from "@/hooks/group-member/useAddGroupMember";
 import { AddGroupMemberPayload, MemberRole } from "@/types/group-members/group-member.payload";
 import { UserRoundPen, UserRoundX } from "lucide-react";
@@ -31,7 +31,7 @@ export default function AddGroupMemberSheet({
     onAdded,
 }: AddGroupMemberSheetProps) {
     const { addGroupMember } = useAddGroupMember();
-    const { data: enrollments, loading: enrollmentsLoading, fetchEnrollments } = useCourseEnrollments();
+    const { students, loading: enrollmentsLoading, fetchCourseStudents } = useCourseStudents(courseId);
 
     const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
     const [leaderId, setLeaderId] = useState<string | null>(null);
@@ -39,9 +39,10 @@ export default function AddGroupMemberSheet({
     const [submitting, setSubmitting] = useState(false);
 
     // Load enrollments khi mở sheet
+    // include fetchCourseStudents in deps to avoid stale closure and to satisfy lint
     useEffect(() => {
-        if (open && courseId) fetchEnrollments(courseId);
-    }, [open, courseId]);
+        if (open && courseId) fetchCourseStudents(courseId);
+    }, [open, courseId, fetchCourseStudents]);
 
     // Reset form khi đóng
     useEffect(() => {
@@ -52,9 +53,12 @@ export default function AddGroupMemberSheet({
         }
     }, [open]);
 
-    const activeStudents = enrollments?.enrollments.filter((e) => e.status === 1) || [];
+    // Use all students returned by the hook (do not filter by status)
+    const activeStudents = students ?? [];
     // Lọc ra những student chưa có trong group
     const availableStudents = activeStudents.filter((s) => !existingMemberIds.includes(s.studentId));
+
+    // (debug logs removed)
 
     // Khi selectedStudents thay đổi, set leader mặc định là học viên đầu tiên
     useEffect(() => {
@@ -126,7 +130,10 @@ export default function AddGroupMemberSheet({
                     {/* Multi-select Students */}
                     <div>
                         <div className="flex justify-between">
-                            <Label className="py-2 cursor-text">Students</Label>
+                            <div>
+                                <Label className="py-2 cursor-text">Students                                 
+                                    <div className="text-sm text-slate-500 font-normal">({availableStudents.length} / {students?.length ?? 0})</div></Label>
+                            </div>
                             <div className="flex gap-1 mb-2">
                                 <Button size="xs" className="text-[#000D83] cursor-pointer !bg-emerald-50" variant="ghost" onClick={selectAll} disabled={enrollmentsLoading}>
                                     Select All
@@ -137,7 +144,7 @@ export default function AddGroupMemberSheet({
                             </div>
                         </div>
 
-                        <Command className="w-full max-h-60 overflow-auto">
+                        <Command className="w-full max-h-[60vh] overflow-auto">
                             <CommandInput placeholder={enrollmentsLoading ? "Loading..." : "Search students..."} />
                             <CommandEmpty>
                                 <div className="flex gap-2 items-center italic justify-center">
@@ -154,7 +161,7 @@ export default function AddGroupMemberSheet({
                                             readOnly
                                             className="mr-2 cursor-pointer"
                                         />
-                                        <div className="cursor-pointer">{s.studentName} ({s.studentId})</div>
+                                        <div className="cursor-pointer">{s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()} ({s.studentIdNumber ?? s.studentId})</div>
                                     </CommandItem>
                                 ))}
                             </CommandGroup>
@@ -167,7 +174,7 @@ export default function AddGroupMemberSheet({
                                 if (!s) return null;
                                 return (
                                     <div key={id} className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-sm flex items-center gap-1">
-                                        {s.studentName}
+                                        {s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()}
                                     </div>
                                 );
                             })}
@@ -194,7 +201,7 @@ export default function AddGroupMemberSheet({
                                                 onChange={() => setLeaderId(id)}
                                                 className="cursor-pointer"
                                             />
-                                            {s.studentName}
+                                            {s.fullName}
                                         </label>
                                     );
                                 })}

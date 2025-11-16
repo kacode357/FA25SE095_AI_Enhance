@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useCourseEnrollments } from "@/hooks/course/useCourseEnrollments";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
+import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
 import { useGradeReport } from "@/hooks/reports/useGradeReport";
 import { useRejectReport } from "@/hooks/reports/useRejectReport";
@@ -28,7 +28,7 @@ export default function ReportDetailsPage() {
 
   const { getReportById, loading } = useGetReportById();
   const { data: course, fetchCourseById } = useGetCourseById();
-  const { data: enrollmentsData, fetchEnrollments } = useCourseEnrollments();
+  const { students: enrolledStudents, fetchCourseStudents } = useCourseStudents("");
 
   const [detail, setDetail] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export default function ReportDetailsPage() {
   useEffect(() => {
     if (courseId) {
       fetchCourseById(courseId);
-      fetchEnrollments?.(courseId);
+      fetchCourseStudents(courseId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
@@ -69,8 +69,9 @@ export default function ReportDetailsPage() {
 
   const getStudentName = (id?: string | null) => {
     if (!id) return "—";
-    const s = enrollmentsData?.enrollments?.find((e) => e.studentId === id)?.studentName;
-    return s ?? id;
+    const s = enrolledStudents?.find((e) => e.studentId === id);
+    if (!s) return id;
+    return (s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()) || id;
   };
 
   useEffect(() => {
