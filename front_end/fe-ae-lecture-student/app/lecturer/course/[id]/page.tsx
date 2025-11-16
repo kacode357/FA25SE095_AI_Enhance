@@ -136,7 +136,7 @@ export default function CourseDetailPage() {
               {id && (
                 <>
                   <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
-                  <li className={isDetailRoute ? "font-medium text-slate-900 max-w-[120px] truncate" : "text-slate-500 max-w-[120px] truncate"}>{id}</li>
+                  <li className={isDetailRoute ? "font-medium cursor-text text-slate-900 max-w-[120px] truncate" : "text-slate-500 max-w-[120px] truncate"}>Course Details</li>
                 </>
               )}
           </ol>

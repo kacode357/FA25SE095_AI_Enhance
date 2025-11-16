@@ -9,6 +9,7 @@ import type {
   GetReportHistoryQuery,
   GetReportHistoryVersionPayload,
   GetReportsRequiringGradingQuery,
+  GetReportTimelinePayload,
   GradeReportPayload,
   MyReportsQuery,
   RejectReportPayload,
@@ -27,6 +28,7 @@ import type {
   GetReportHistoryVersionResponse,
   GetReportResponse,
   GetReportsRequiringGradingResponse,
+  GetReportTimelineResponse,
   GradeReportResponse,
   MyReportsResponse,
   RejectReportResponse,
@@ -191,6 +193,16 @@ export const ReportsService = {
     const res = await api.post<ApiSuccess>(`/Reports/${id}/submit-draft`);
     return res.data;
   },
+    
+    getTimeline: async (
+    payload: GetReportTimelinePayload
+  ): Promise<GetReportTimelineResponse> => {
+    const { reportId } = payload;
+    const res = await api.get<GetReportTimelineResponse>(
+      `/Reports/${reportId}/timeline`
+    );
+    return res.data;
+  },
 
   /** ✅ POST /api/Reports/{reportId}/upload-file — upload attachment (multipart) */
   uploadFile: async (
@@ -217,4 +229,5 @@ export const ReportsService = {
     const res = await api.delete<ApiSuccess>(`/Reports/${reportId}/file`);
     return res.data;
   },
+
 };
