@@ -55,7 +55,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                 className="rounded-md hover:bg-slate-100 text-slate-600"
                                 onClick={() => setCollapsed((v) => !v)}
                             >
-                                {collapsed ? <PanelLeftOpen className="size-5" color="#8851c2" /> : <PanelRightOpen className="size-5" color="#8851c2" />}
+                                {collapsed ? <PanelLeftOpen className="size-5 cursor-pointer" color="#8851c2" /> : <PanelRightOpen className="size-5 cursor-pointer" color="#8851c2" />}
                             </button>
                         </div>
                         <nav aria-label="Sidebar" className="-mx-1">
