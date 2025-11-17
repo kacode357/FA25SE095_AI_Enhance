@@ -1,10 +1,10 @@
 // types/auth/auth.response.ts
 
-/** Khung response chuẩn bọc dữ liệu từ server */
+
 export type ApiResponse<T> = {
-  status: number;      // ví dụ: 200
-  message: string;     // ví dụ: "Login successful"
-  data: T;             // payload thật sự
+  status: number;    
+  message: string;     
+  data: T;            
 };
 
 export interface RegisterResponse {
@@ -67,3 +67,5 @@ export interface ChangePasswordResponse {
   success: boolean;
   message: string;
 }
+
+export type GoogleLoginResponse = LoginResponse;

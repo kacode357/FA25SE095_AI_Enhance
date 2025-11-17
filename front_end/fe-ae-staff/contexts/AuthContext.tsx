@@ -1,95 +1,109 @@
 // contexts/AuthContext.tsx
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import type { UserProfile } from "@/types/user/user.response";
-import { UserService } from "@/services/user.services";
-import { mapRole } from "@/config/user-role";
-import type { ApiResponse } from "@/types/auth/auth.response";
+import { clearEncodedUser, loadDecodedUser } from "@/utils/secure-user";
+import { clearAuthTokens } from "@/utils/auth/access-token";
+import { usePathname } from "next/navigation";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type AuthContextType = {
   user: UserProfile | null;
-  setUser: (u: UserProfile | null) => void;
-  loading: boolean;
+  refreshProfile: () => Promise<void>;
+  logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  setUser: () => {},
-  loading: true,
+  refreshProfile: async () => {},
+  logout: () => {},
 });
+
+// helper: home theo role (giờ chỉ còn Staff)
+function homeByRole(role?: string) {
+  if (role === "Staff") return "/staff/manager/courses";
+  return "/";
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
 
+  // load user từ cache (cookie/session) lúc mount
   useEffect(() => {
-    const authPages = new Set<string>([
-      "/login",
-      "/register",
-      "/verify-email",
-      "/forgot-password",
-      "/reset-password",
-    ]);
+    (async () => {
+      const cached = await loadDecodedUser();
+      setUser(cached);
+      setLoaded(true);
+    })();
+  }, []);
 
-    // Trang auth → không fetch profile để tránh vòng lặp 401 interceptor
-    if (authPages.has(pathname)) {
-      setUser(null);
-      setLoading(false);
+  const allow = useMemo(() => {
+    if (!loaded) return false;
+
+    const isStaffRoute = pathname.startsWith("/staff");
+
+    // route public (login, register, v.v.)
+    if (!isStaffRoute) return true;
+
+    if (!user) return false;
+
+    // staff route chỉ cho role = "Staff"
+    if (isStaffRoute) return user.role === "Staff";
+
+    return true;
+  }, [loaded, user, pathname]);
+
+  useLayoutEffect(() => {
+    if (!loaded) return;
+
+    // đang ở /login mà đã có user -> redirect theo role
+    if (user && pathname === "/login") {
+      const target = homeByRole(user.role);
+      if (typeof window !== "undefined") {
+        window.location.replace(target);
+      }
       return;
     }
 
-    let mounted = true;
-
-    (async () => {
-      try {
-        // ✅ Lấy đúng payload thật: resp.data (UserProfile)
-        const resp: ApiResponse<UserProfile> = await UserService.getProfile();
-        if (!mounted) return;
-
-        const profile = resp.data; // <-- đây mới là UserProfile
-        setUser(profile);
-        setLoading(false);
-
-        // Điều hướng theo role
-        const roleLower = (profile?.role ?? "").toLowerCase();
-        // Nếu mày muốn chắc role hợp lệ theo mapRole thì giữ dòng dưới,
-        // còn không có thể chỉ check roleLower === "staff"
-        const isStaff = mapRole(profile?.role as string) !== null && roleLower === "staff";
-        const onStaffRoute = pathname.startsWith("/staff");
-
-        if (isStaff && !onStaffRoute) {
-          router.replace("/staff/manager/terms");
-          return;
-        }
-
-        if (!isStaff && onStaffRoute) {
-          router.replace("/login?error=forbidden");
-          return;
-        }
-      } catch {
-        if (!mounted) return;
-        setUser(null);
-        setLoading(false);
-
-        // Nếu đang ở /staff mà bị 401 → đẩy ra login
-        if (pathname.startsWith("/staff")) {
-          router.replace("/login");
-        }
-        // Trang public thì giữ nguyên
+    // route bảo vệ mà không được phép -> clear + về /login
+    if (!allow) {
+      clearAuthTokens();
+      clearEncodedUser();
+      if (typeof window !== "undefined") {
+        window.location.replace("/login");
       }
-    })();
+    }
+  }, [allow, loaded, user, pathname]);
 
-    return () => {
-      mounted = false;
-    };
-  }, [pathname, router]);
+  const refreshProfile = useCallback(async () => {
+    const cached = await loadDecodedUser();
+    setUser(cached);
+  }, []);
+
+  const logout = useCallback(() => {
+    clearAuthTokens();
+    clearEncodedUser();
+    if (typeof window !== "undefined") {
+      window.location.replace("/login");
+    }
+  }, []);
+
+  if (!loaded || !allow) {
+    return null;
+  }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading }}>
+    <AuthContext.Provider value={{ user, refreshProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

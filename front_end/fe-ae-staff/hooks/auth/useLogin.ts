@@ -1,66 +1,54 @@
 // hooks/auth/useLogin.ts
 "use client";
 
-import { useState } from "react";
+import { ROLE_STAFF, UserServiceRole } from "@/config/user-service/user-role";
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
 import type { LoginPayload } from "@/types/auth/auth.payload";
-import type { LoginResponse, ApiResponse } from "@/types/auth/auth.response";
+import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { mapRole, ALLOWED_LOGIN_ROLES } from "@/config/user-role";
+import { saveEncodedUser } from "@/utils/secure-user";
+import { saveTokensFromLogin } from "@/utils/auth/access-token";
+import { useState } from "react";
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
-  const login = async (
-    payload: LoginPayload,
-    rememberMe: boolean
-  ): Promise<LoginResponse | null> => {
+  const login = async (payload: LoginPayload) => {
     setLoading(true);
     try {
-      // 1) Gọi login: có thể trả LoginResponse hoặc ApiResponse<LoginResponse>
-      const raw = (await AuthService.login(payload)) as LoginResponse | ApiResponse<LoginResponse>;
-      const res: LoginResponse = ("data" in raw ? raw.data : raw);
+      const res: ApiResponse<LoginResponse> = await AuthService.login(payload);
+      const data = res.data;
 
-      // 2) Lưu token vào storage (KHÔNG cookie)
-      if (res?.accessToken) {
-        if (rememberMe) {
-          localStorage.setItem("accessToken", res.accessToken);
-          localStorage.setItem("refreshToken", res.refreshToken);
-          sessionStorage.removeItem("accessToken");
-        } else {
-          sessionStorage.setItem("accessToken", res.accessToken);
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
+      if (data && data.accessToken) {
+        const rememberMe = payload.rememberMe ?? false;
+
+        // Lưu token + rememberMe
+        saveTokensFromLogin(data.accessToken, data.refreshToken, rememberMe);
+
+        // Lấy profile -> mã hoá & lưu theo remember (session/cookie)
+        const profileRes = await UserService.getProfile();
+        const profile: UserProfile = profileRes.data;
+        await saveEncodedUser(profile, rememberMe);
+
+        // Điều hướng theo role Staff
+        const STAFF = UserServiceRole[ROLE_STAFF]; // ví dụ: "Staff"
+
+        let target = "/";
+        if (profile.role === STAFF) {
+          target = "/staff/manager/courses";
         }
-      } else {
-        toast.error("Login response is missing accessToken.");
-        return null;
+
+        if (typeof window !== "undefined") {
+          window.location.href = target;
+        }
+
+        return { ok: true, data, role: profile.role } as const;
       }
 
-      // 3) Lấy profile thật (BE của mày đang bọc ApiResponse<UserProfile>)
-      const profileResp = await UserService.getProfile();
-      const profile: UserProfile = profileResp.data;
-
-      const roleEnum = mapRole(profile.role as string);
-      if (!roleEnum || !ALLOWED_LOGIN_ROLES.includes(roleEnum)) {
-        // Không phải role cho phép → clear token & dừng
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        sessionStorage.removeItem("accessToken");
-        toast.error("Only staff members are allowed to log in!");
-        return null;
-      }
-
-      // 4) Hợp lệ → vào trang staff
-      router.replace("/staff/manager/terms");
-      return res;
-    } catch (err) {
-      toast.error("Login failed. Please check your credentials.");
-      return null;
+      return { ok: false, data, role: null } as const;
+    } catch {
+      return { ok: false, data: null, role: null } as const;
     } finally {
       setLoading(false);
     }

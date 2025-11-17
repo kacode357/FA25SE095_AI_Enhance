@@ -4,48 +4,38 @@
 import { useState, useCallback } from "react";
 import { UserService } from "@/services/user.services";
 import type { UpdateProfilePayload } from "@/types/user/user.payload";
-import type { UpdateProfileResponse, UserProfile } from "@/types/user/user.response";
-import type { ApiResponse } from "@/types/auth/auth.response";
+import type { UpdateProfileResponse } from "@/types/user/user.response";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import type { ApiResponse } from "@/types/auth/auth.response";
 
 export function useUpdateProfile() {
   const [loading, setLoading] = useState(false);
-  const { setUser } = useAuth();
+  const { refreshProfile } = useAuth();
 
   const updateProfile = useCallback(
     async (payload: UpdateProfilePayload): Promise<UpdateProfileResponse | null> => {
       setLoading(true);
       try {
-        // resp: { status, message, data }
-        const resp: ApiResponse<UpdateProfileResponse> = await UserService.updateProfile(payload);
-        const { status, message, data } = resp;
-
-        const isOk = status >= 200 && status < 300;
-        if (isOk) {
-          // Ưu tiên message từ server nếu có
-          toast.success(message );
-
-          // Nếu BE trả updatedProfile thì cập nhật vào AuthContext
-          const updated: UserProfile | undefined = data?.updatedProfile as UserProfile | undefined;
-          if (updated) {
-            setUser(updated);
+        const res: ApiResponse<UpdateProfileResponse> = await UserService.updateProfile(payload);
+        const data = res.data;
+        const success = (data as any)?.success ?? res.status === 200;
+        if (success) {
+          toast.success(res.message || (data as any)?.message || "Cập nhật thành công");
+          await refreshProfile();
+          if (typeof window !== "undefined") {
+            localStorage.setItem("auth:broadcast", JSON.stringify({ at: Date.now(), reason: "profile-updated" }));
           }
-
-          // Trả về payload đã unwrap cho caller
-          return data ?? null;
-        } else {
-          toast.error(message || "Cập nhật thất bại");
-          return null;
+          return data;
         }
-      } catch (e) {
-        toast.error("Cập nhật thất bại");
+        return null;
+      } catch {
         return null;
       } finally {
         setLoading(false);
       }
     },
-    [setUser]
+    [refreshProfile]
   );
 
   return { updateProfile, loading };

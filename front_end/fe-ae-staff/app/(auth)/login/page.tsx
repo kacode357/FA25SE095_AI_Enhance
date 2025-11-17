@@ -1,65 +1,157 @@
 // app/(auth)/login/page.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { Chrome } from "lucide-react";
-
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
+import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin";
 import { useLogin } from "@/hooks/auth/useLogin";
-import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
-import { useGoogleProfilePreview } from "@/hooks/auth/useGoogleProfilePreview";
+import { executeTurnstile, loadTurnstileScript, renderTurnstileWidget } from "@/lib/turnstile";
+import { motion } from "framer-motion";
+import { Chrome } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
+declare global {
+  interface Window {
+    google?: any;
+    grecaptcha?: any;
+    turnstile?: any;
+  }
+}
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+console.log("GOOGLE_CLIENT_ID::", GOOGLE_CLIENT_ID);
 export default function LoginPage() {
   const { login, loading } = useLogin();
+  const { googleLogin, loading: googleAuthLoading } = useGoogleLogin(); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const gisReadyRef = useRef(false);
 
-  useAuthRedirect();
-
-  const {
-    ready: googleReady,
-    loading: googleLoading,
-    error,
-    profile,
-    loginGooglePreview,
-    credential,
-    credentialPayload,
-    promptOneTap,
-    cancelOneTap,
-    renderGoogleButton,
-    reset,
-  } = useGoogleProfilePreview();
-
-  // --- chống hydration mismatch ---
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // Chỉ render những phần phụ thuộc browser sau khi mounted
-  const canUseGoogleUI = mounted && googleReady;
-
-  const googleBtnRef = useRef<HTMLDivElement | null>(null);
+  // Load GIS script 1 lần và initialize callback -> nhận ID token
   useEffect(() => {
-    if (!canUseGoogleUI || !googleBtnRef.current) return;
-    renderGoogleButton(googleBtnRef.current, { width: "100%" });
-  }, [canUseGoogleUI, renderGoogleButton]);
+    const SCRIPT_ID = "google-identity-services";
+    const init = () => {
+      try {
+        window.google?.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          // callback nhận ID token -> call BE google-login
+          callback: async (resp: { credential?: string }) => {
+            const credential = resp?.credential;
+            if (!credential) return;
+
+            await googleLogin({
+              googleIdToken: credential,
+              rememberMe,
+              ipAddress: "", // optional
+              userAgent:
+                typeof navigator !== "undefined" ? navigator.userAgent : "",
+            });
+          },
+          auto_select: false,
+          ux_mode: "popup",
+          use_fedcm_for_prompt: true,
+        });
+        gisReadyRef.current = true;
+      } catch (e) {
+        console.error("[auth] init google id error:", e);
+      }
+    };
+
+    const existed = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (existed) {
+      if (window.google?.accounts?.id) init();
+      return;
+    }
+
+    const s = document.createElement("script");
+    s.id = SCRIPT_ID;
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true;
+    s.defer = true;
+    s.onload = init;
+    document.head.appendChild(s);
+  }, [googleLogin, rememberMe]);
+
+  // Load Turnstile script (if configured) using helper
+  useEffect(() => {
+    const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    if (!SITE_KEY) return;
+    loadTurnstileScript();
+  }, []);
+
+  const turnstileWidgetIdRef = useRef<number | null>(null);
+  const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Try render widget into hidden container when turnstile becomes available
+  useEffect(() => {
+    const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    if (!SITE_KEY) return;
+
+    const tryRender = () => {
+      try {
+        if (!turnstileContainerRef.current) return;
+        if (turnstileWidgetIdRef.current !== null) return;
+
+        const id = renderTurnstileWidget(turnstileContainerRef.current, SITE_KEY, (token: string) => {
+          if (turnstileContainerRef.current) turnstileContainerRef.current.dataset.token = token;
+        });
+
+        if (id !== null) turnstileWidgetIdRef.current = id;
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    tryRender();
+    const handler = () => tryRender();
+    window.addEventListener("turnstile:load", handler as EventListener);
+    return () => window.removeEventListener("turnstile:load", handler as EventListener);
+  }, []);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await login({ email: email.trim(), password: password.trim() }, rememberMe);
+
+    const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+    if (SITE_KEY) {
+      try {
+        const token = await executeTurnstile(turnstileWidgetIdRef.current, turnstileContainerRef.current);
+        if (token) {
+          await login({ email: email.trim(), password: password.trim(), rememberMe, captchaToken: token });
+          return;
+        }
+      } catch (err) {
+        console.error("Turnstile error:", err);
+      }
+    }
+
+    // fallback
+    await login({ email: email.trim(), password: password.trim(), rememberMe });
   };
 
-  const handleGoogleOAuth = async () => {
-    await loginGooglePreview();
-  };
-
-  const handleOneTap = () => {
-    if (canUseGoogleUI) promptOneTap();
+  // Nhấn nút Google -> bật One Tap/Popup của GIS, callback ở trên sẽ xử lý
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      if (!gisReadyRef.current || !window.google?.accounts?.id) {
+        throw new Error("Google SDK not ready");
+      }
+      // Hiển thị One Tap / popup. Khi user chọn account, callback sẽ bắn về.
+      await new Promise<void>((resolve) => {
+        window.google.accounts.id.prompt((notification: any) => {
+          // Nếu không hiển thị được One Tap (bị chặn), vẫn resolve để tắt loading
+          // Callback sign-in thành công vẫn chạy riêng (không qua nhánh này)
+          resolve();
+        });
+      });
+    } catch (e) {
+      console.error("[auth] google prompt error:", e);
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -68,164 +160,89 @@ export default function LoginPage() {
       subtitle={
         <span>
           New here?{" "}
-          <Link className="underline" href="/register">
+          <a className="underline" href="/register" rel="nofollow">
             Create an account
-          </Link>
+          </a>
         </span>
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <Input
+          label="Email"
+          placeholder="example@crawldata.com"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="youremail@example.com"
           required
-          autoComplete="email"
         />
         <Input
+          label="Password"
+          placeholder="•••••••••"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
           required
-          autoComplete="current-password"
         />
 
-        <div className="mb-6 flex items-center justify-between text-sm text-white/70">
+        <div className="mb-6 flex items-center justify-between text-sm text-slate-600">
           <label className="inline-flex select-none items-center gap-2">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border border-white/20 bg-black"
+              className="h-4 w-4 rounded border border-slate-300 bg-white"
             />
             Remember me
           </label>
-          <Link href="/forgot-password" className="underline">
+          <a href="/forgot-password" className="underline" rel="nofollow">
             Forgot password?
-          </Link>
+          </a>
         </div>
 
-        <Button type="submit" className="w-full" loading={loading}>
-          Sign in
-        </Button>
+        <button
+          type="submit"
+          className="btn btn-gradient w-full"
+          disabled={loading}
+        >
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
 
         <div className="relative my-4">
-          <div className="border-t border-white/10" />
-          <span className="bg-[--color-card] text-[11px] text-white/60 absolute -top-3 left-1/2 -translate-x-1/2 px-2 tracking-wide">
-            hoặc
+          <div className="border-t border-slate-200" />
+          <span className="bg-[--card] absolute -top-2 left-1/2 -translate-x-1/2 px-2 text-[11px] tracking-wide text-slate-500">
+            Or continue with
           </span>
         </div>
 
-        {/* Giữ trạng thái ổn định trước khi mounted để không mismatch */}
         <Button
           type="button"
           variant="ghost"
-          className="w-full border border-white/15 hover:border-white/25"
-          onClick={handleGoogleOAuth}
-          loading={!mounted ? true : googleLoading || !googleReady}
-          aria-label="Đăng nhập với Google (OAuth)"
-          disabled={!mounted ? true : !googleReady}
+          className="w-full border border-slate-200 hover:border-slate-300"
+          onClick={handleGoogleLogin}
+          loading={googleLoading || googleAuthLoading}
+          aria-label="Đăng nhập với Google"
         >
           <Chrome size={18} />
-          Đăng nhập với Google (OAuth)
+          Đăng nhập với Google
         </Button>
 
-        {/* Nút Credential chỉ render sau khi mounted & ready */}
-        {canUseGoogleUI && (
-          <div className="mt-2">
-            <div ref={googleBtnRef} className="w-full" />
-          </div>
-        )}
-
-        <div className="mt-2 flex gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-9 px-3"
-            onClick={handleOneTap}
-            disabled={!canUseGoogleUI}
-          >
-            Bật One Tap
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-9 px-3"
-            onClick={cancelOneTap}
-          >
-            Tắt One Tap
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-9 px-3"
-            onClick={reset}
-          >
-            Clear
-          </Button>
-        </div>
-
-        {(profile || credentialPayload) && (
-          <div className="mt-4 rounded-lg border border-white/10 p-3 text-sm text-white/80">
-            {profile && (
-              <>
-                <div className="mb-2 text-xs font-semibold text-white/60">
-                  OAuth userinfo
-                </div>
-                <div className="flex items-center gap-3">
-                  {profile.picture && (
-                    <img
-                      src={profile.picture}
-                      alt="avatar"
-                      className="h-8 w-8 rounded-full"
-                    />
-                  )}
-                  <div className="font-medium">{profile.name || "(no name)"}</div>
-                </div>
-                <div className="mt-2">
-                  <div>Email: {profile.email ?? "—"}</div>
-                  <div>Verified: {String(profile.email_verified ?? false)}</div>
-                  <div>sub (id): {profile.sub}</div>
-                </div>
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/40 p-2 text-xs">
-                  {JSON.stringify(profile, null, 2)}
-                </pre>
-              </>
-            )}
-
-            {credentialPayload && (
-              <>
-                <div className="mt-4 text-xs font-semibold text-white/60">
-                  Credential (ID token) payload
-                </div>
-                <div className="mt-1 break-all text-xs text-white/60">
-                  <span className="font-medium">JWT: </span>
-                  {credential?.slice(0, 60)}...
-                </div>
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/40 p-2 text-xs">
-                  {JSON.stringify(credentialPayload, null, 2)}
-                </pre>
-              </>
-            )}
-          </div>
-        )}
-
-        {error && <div className="mt-3 text-xs text-red-400">Google error: {error}</div>}
+        {/* Container ẩn nếu sau này muốn render Google button gốc (không bắt buộc) */}
+        <div id="g-btn-container" className="hidden" />
+  {/* Hidden container for Cloudflare Turnstile invisible widget */}
+  <div ref={turnstileContainerRef} className="hidden" />
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15 }}
-          className="text-center text-xs text-white/50"
+          className="text-center text-xs text-slate-500"
         >
           By continuing, you agree to our{" "}
-          <a href="#" className="text-green-600">
+          <a href="#" className="text-green-600" rel="nofollow">
             Terms
           </a>{" "}
           and{" "}
-          <a href="#" className="text-green-600">
+          <a href="#" className="text-green-600" rel="nofollow">
             Privacy Policy
           </a>
           .

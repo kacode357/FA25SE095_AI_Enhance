@@ -8,9 +8,11 @@ import {
   RefreshTokenPayload,
   RegisterPayload,
   ResetPasswordPayload,
-  ChangePasswordRequest, // <— thêm
+  ChangePasswordRequest,
+  GoogleLoginPayload,
 } from "@/types/auth/auth.payload";
-import {
+import type {
+  ApiResponse,           // <-- dùng khung response chuẩn
   ConfirmEmailResponse,
   ForgotPasswordResponse,
   LoginResponse,
@@ -18,14 +20,24 @@ import {
   RefreshTokenResponse,
   RegisterResponse,
   ResetPasswordResponse,
-  ChangePasswordResponse, // <— thêm
+  ChangePasswordResponse,
+  GoogleLoginResponse,
 } from "@/types/auth/auth.response";
 
+/**
+ * LƯU Ý:
+ * - Backend đã đổi /Auth/login trả về { status, message, data }.
+ * - Các endpoint còn lại giữ nguyên shape cũ (trả trực tiếp payload),
+ *   trừ khi bạn đã đổi backend cho chúng.
+ */
 export const AuthService = {
-  login: async (data: LoginPayload): Promise<LoginResponse> => {
-    const response = await userAxiosInstance.post<LoginResponse>("/Auth/login", data);
-    console.log("AuthService login response:", response);
-    return response.data;
+  /** POST /Auth/login — trả về ApiResponse<LoginResponse> */
+  login: async (data: LoginPayload): Promise<ApiResponse<LoginResponse>> => {
+    const response = await userAxiosInstance.post<ApiResponse<LoginResponse>>(
+      "/Auth/login",
+      data
+    );
+    return response.data; // { status, message, data }
   },
 
   register: async (data: RegisterPayload): Promise<RegisterResponse> => {
@@ -53,7 +65,7 @@ export const AuthService = {
     return response.data;
   },
 
-  /** POST /api/Auth/change-password */
+  /** POST /Auth/change-password */
   changePassword: async (data: ChangePasswordRequest): Promise<ChangePasswordResponse> => {
     const response = await userAxiosInstance.post<ChangePasswordResponse>("/Auth/change-password", data);
     return response.data;
@@ -61,6 +73,15 @@ export const AuthService = {
 
   logout: async (data: LogoutPayload): Promise<LogoutResponse> => {
     const response = await userAxiosInstance.post<LogoutResponse>("/Auth/logout", data);
+    return response.data;
+  },
+  googleLogin: async (
+    data: GoogleLoginPayload
+  ): Promise<ApiResponse<GoogleLoginResponse>> => {
+    const response = await userAxiosInstance.post<ApiResponse<GoogleLoginResponse>>(
+      "/Auth/google-login",
+      data
+    );
     return response.data;
   },
 };
