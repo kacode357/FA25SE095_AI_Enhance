@@ -96,7 +96,7 @@ export default function LecturerAssignmentReportsPage() {
 
                         <li className="text-slate-500 max-w-[220px] truncate">
                             <button
-                                onClick={() => router.push(courseId ? `/lecturer/course/${courseId}` : '/lecturer/course')}
+                                onClick={() => router.push(courseId ? `/lecturer/course/${courseId}?tab=assignments` : '/lecturer/course')}
                                 className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition max-w-[220px] truncate text-left"
                                 title={course?.courseCodeTitle ?? `Course ${courseId}`}
                             >
@@ -168,9 +168,9 @@ export default function LecturerAssignmentReportsPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-slate-600">
+                                                    <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-slate-600">
                                                         <div>
-                                                            <div className="text-xs text-slate-500">Submitted At</div>
+                                                            <div className="text-xs mb-2 text-slate-500">Submitted At</div>
                                                             <div className="font-normal">{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "—"}</div>
                                                             {r.submittedAt && (
                                                                 <div className="text-xs text-slate-400">{formatDistanceToNow(parseISO(r.submittedAt), { addSuffix: true })}</div>
@@ -178,37 +178,59 @@ export default function LecturerAssignmentReportsPage() {
                                                         </div>
 
                                                         <div>
-                                                            <div className="text-xs text-slate-500">Created</div>
+                                                            <div className="text-xs text-slate-500 mb-2">Created</div>
                                                             <div className="font-normal">{r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"}</div>
                                                         </div>
 
                                                         <div>
-                                                            <div className="text-xs text-slate-500">Updated</div>
+                                                            <div className="text-xs text-slate-500 mb-2">Updated</div>
                                                             <div className="font-normal">{r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "—"}</div>
                                                         </div>
                                                     </div>
 
-                                                    <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                                    <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 sm:items-center sm:justify-between gap-3">
                                                         <div className="text-sm text-slate-700">
-                                                            <div><span className="text-xs text-slate-500">Submitted by</span> <span className="font-medium">{getStudentName(r.submittedBy)}</span></div>
+                                                            <div className="flex flex-col gap-2">
+                                                                <span className="text-xs text-slate-500">Group</span>
+                                                                <span className="font-medium">{r.groupName ?? '-'}</span>
+                                                            </div>
                                                         </div>
 
-                                                        <div className="flex items-center gap-2">
-                                                            {r.fileUrl && (
-                                                                <a
-                                                                    href={r.fileUrl}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="btn bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded"
-                                                                >
-                                                                    Download
-                                                                </a>
-                                                            )}
-
-                                                            <Button size="sm" className="btn btn-gradient-slow" onClick={() => router.push(`/lecturer/course/${courseId}/reports/${r.id}`)}>
-                                                                Details
-                                                            </Button>
+                                                        <div className="text-sm text-slate-700">
+                                                            <div className="flex flex-col gap-2">
+                                                                <span className="text-xs text-slate-500">Submitted by</span>
+                                                                <span className="font-medium">{getStudentName(r.submittedBy)}</span>
+                                                            </div>
                                                         </div>
+
+                                                        <div className="text-sm text-slate-700">
+                                                            <div className="flex flex-col gap-2">
+                                                                <span className="text-xs text-slate-500">File URL</span>
+                                                                <div className="text-xs font-mono">
+                                                                    {r.fileUrl ? (
+                                                                        <a href={r.fileUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{r.fileUrl}</a>
+                                                                    ) : (
+                                                                        '-'
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-end gap-2">
+                                                        {r.fileUrl && (
+                                                            <a
+                                                                href={r.fileUrl}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="btn bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded"
+                                                            >
+                                                                Download
+                                                            </a>
+                                                        )}
+
+                                                        <Button size="sm" className="btn btn-gradient-slow" onClick={() => router.push(`/lecturer/course/${courseId}/reports/${r.id}`)}>
+                                                            Details
+                                                        </Button>
                                                     </div>
                                                 </div>
                                             </div>
