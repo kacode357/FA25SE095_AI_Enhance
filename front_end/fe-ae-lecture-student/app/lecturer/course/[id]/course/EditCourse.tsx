@@ -247,7 +247,7 @@ export default function EditCourse() {
                                     <InfoV2 label="Course Code Title" value={course.courseCodeTitle} />
                                     <InfoV2 label="Name" value={course.name} />
                                     <InfoV2 label="Term" value={course.term} />
-                                    <InfoV2 label="Year" value={course.year.toString()} />
+                                    {/* <InfoV2 label="Year" value={course.year.toString()} /> */}
                                     <InfoV2 label="Department" value={course.department} />
                                     <InfoV2 label="Lecturer" value={course.lecturerName} />
                                     <InfoV2 label="Enrollment Count" value={course.enrollmentCount.toString()} />

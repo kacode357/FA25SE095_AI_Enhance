@@ -29,51 +29,38 @@ export default function SubmitDraftButton({
   const { submitDraft, loading: submitting } = useSubmitDraftReport();
   const { uploadFile, loading: uploading } = useUploadReportFile();
 
-  const canSubmit = status === ReportStatus.Draft;
+  const canSubmit =
+    status === ReportStatus.Draft ||
+    status === ReportStatus.RequiresRevision;
+
   const isProcessing = submitting || uploading;
 
   const handleClick = useCallback(async () => {
     if (!canSubmit) {
-      toast.error("Only draft reports can be submitted.");
+      toast.error(
+        "Only reports in Draft or Requires revision status can be submitted."
+      );
       return;
     }
 
     if (disabled || isProcessing) return;
 
-    // No existing file and no new file -> block submit
-    if (!fileUrl && !pendingFile) {
-      toast.error("Please attach a file before submitting.");
-      return;
+    // Có chọn file mới thì upload trước, không thì bỏ qua vẫn submit được
+    if (pendingFile) {
+      await uploadFile(reportId, pendingFile);
+      // Nếu lỗi, interceptor đã xử lý toast
+      toast.success("File uploaded successfully.");
     }
 
-    try {
-      // If there is a new selected file, upload it first
-      if (pendingFile) {
-        const uploadRes = await uploadFile(reportId, pendingFile);
-        if (!uploadRes?.success) {
-          toast.error(
-            uploadRes?.message || "Failed to upload file before submitting."
-          );
-          return;
-        }
-        toast.success("File uploaded successfully.");
-      }
-
-      const res = await submitDraft(reportId);
-      if (res?.success) {
-        toast.success(res.message || "Report submitted for grading.");
-        onSubmitted?.();
-      } else {
-        toast.error(res?.message || "Failed to submit report.");
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to submit report.");
+    const res = await submitDraft(reportId);
+    if (res?.success) {
+      toast.success(res.message || "Report submitted for grading.");
+      onSubmitted?.();
     }
   }, [
     canSubmit,
     disabled,
     isProcessing,
-    fileUrl,
     pendingFile,
     reportId,
     submitDraft,
@@ -90,8 +77,8 @@ export default function SubmitDraftButton({
       onClick={handleClick}
       title={
         canSubmit
-          ? "Upload selected file (if any) and submit this draft"
-          : "Only Draft status can be submitted"
+          ? "Submit draft (file optional)"
+          : "Only Draft or Requires revision status can be submitted"
       }
     >
       <CheckCircle2 className="w-4 h-4 mr-1" />

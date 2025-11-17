@@ -1,7 +1,14 @@
 // hooks/auth/useLogin.ts
 "use client";
 
-import { ROLE_LECTURER, ROLE_STUDENT, UserServiceRole } from "@/config/user-service/user-role";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import {
+  ROLE_LECTURER,
+  ROLE_STUDENT,
+  UserServiceRole,
+} from "@/config/user-service/user-role";
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
 import type { LoginPayload } from "@/types/auth/auth.payload";
@@ -9,7 +16,6 @@ import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
 import { saveEncodedUser } from "@/utils/secure-user";
 import { saveTokensFromLogin } from "@/utils/auth/access-token";
-import { useState } from "react";
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
@@ -20,34 +26,45 @@ export function useLogin() {
       const res: ApiResponse<LoginResponse> = await AuthService.login(payload);
       const data = res.data;
 
-      if (data && data.accessToken) {
-        const rememberMe = payload.rememberMe ?? false;
-
-        // Lưu token + rememberMe
-        saveTokensFromLogin(data.accessToken, data.refreshToken, rememberMe);
-
-        // Lấy profile -> mã hoá & lưu theo remember (session/cookie)
-        const profileRes = await UserService.getProfile();
-        const profile: UserProfile = profileRes.data;
-        await saveEncodedUser(profile, rememberMe);
-
-        // Điều hướng theo role string
-        const isStudent = profile.role === UserServiceRole[ROLE_STUDENT];   // "Student"
-        const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER]; // "Lecturer"
-
-        let target = "/";
-        if (isStudent) target = "/student/all-courses";
-        else if (isLecturer) target = "/lecturer/course";
-
-        if (typeof window !== "undefined") {
-          window.location.href = target;
-        }
-
-        return { ok: true, data, role: profile.role } as const;
+      if (!data || !data.accessToken) {
+        return { ok: false, data: null, role: null } as const;
       }
 
-      return { ok: false, data, role: null } as const;
+      const rememberMe = payload.rememberMe ?? false;
+
+      // Tạm lưu token để call getProfile (interceptor dùng token từ đây)
+      saveTokensFromLogin(data.accessToken, data.refreshToken, rememberMe);
+
+      // Lấy profile
+      const profileRes = await UserService.getProfile();
+      const profile: UserProfile = profileRes.data;
+
+      const isStudent = profile.role === UserServiceRole[ROLE_STUDENT]; // "Student"
+      const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER]; // "Lecturer"
+      const isAllowed = isStudent || isLecturer;
+
+      // ❌ Sai role -> không cho vào hệ thống
+      if (!isAllowed) {
+        // clear token tạm (overwrite bằng rỗng)
+        saveTokensFromLogin("", "", false);
+        toast.error("Bạn không có quyền truy cập vào hệ thống này.");
+        return { ok: false, data: null, role: profile.role } as const;
+      }
+
+      // ✅ Đúng role -> mã hoá & lưu user + redirect
+      await saveEncodedUser(profile, rememberMe);
+
+      let target = "/";
+      if (isStudent) target = "/student/all-courses";
+      else if (isLecturer) target = "/lecturer/course";
+
+      if (typeof window !== "undefined") {
+        window.location.href = target;
+      }
+
+      return { ok: true, data, role: profile.role } as const;
     } catch {
+      // Lỗi HTTP / network: interceptor lo toast, ở đây chỉ trả kết quả
       return { ok: false, data: null, role: null } as const;
     } finally {
       setLoading(false);

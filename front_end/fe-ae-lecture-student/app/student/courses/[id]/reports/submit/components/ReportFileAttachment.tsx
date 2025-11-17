@@ -1,10 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import { Upload, Trash2, FileText } from "lucide-react";
+import { Upload, XCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useDeleteReportFile } from "@/hooks/reports/useDeleteReportFile";
 
 type Props = {
   reportId: string;
@@ -16,9 +15,6 @@ type Props = {
 
   /** Called when user selects a new file (only emits File, no API call here) */
   onFileSelected?: (file: File | null) => void;
-
-  /** Called when server-side file changes (e.g. delete) */
-  onChanged?: (opts?: { fileUrl?: string | null }) => void;
 };
 
 export default function ReportFileAttachment({
@@ -27,13 +23,11 @@ export default function ReportFileAttachment({
   disabled,
   pendingFileName,
   onFileSelected,
-  onChanged,
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const { deleteFile, loading: deleting } = useDeleteReportFile();
 
   const handlePickFile = () => {
-    if (disabled || deleting) return;
+    if (disabled) return;
     inputRef.current?.click();
   };
 
@@ -56,23 +50,13 @@ export default function ReportFileAttachment({
     e.target.value = "";
   };
 
-  const handleDelete = async () => {
-    if (!fileUrl) return;
-    try {
-      const res = await deleteFile(reportId);
-      if (res?.success) {
-        toast.success("File deleted successfully.");
-        onChanged?.({ fileUrl: null });
-      } else {
-        toast.error(res?.message || "Failed to delete file.");
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to delete file.");
-    }
+  const handleClearPending = () => {
+    if (disabled) return;
+    onFileSelected?.(null);
+    toast.info("Pending file cleared.");
   };
 
-  const isBusy = deleting;
-  const isDisabled = disabled || isBusy;
+  const isDisabled = !!disabled;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -88,22 +72,17 @@ export default function ReportFileAttachment({
           {fileUrl || pendingFileName ? "Change file" : "Upload file"}
         </Button>
 
-        {fileUrl && (
+        {pendingFileName && !isDisabled && (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="text-red-500 hover:text-red-600"
-            disabled={isBusy}
-            onClick={handleDelete}
-            title="Remove attachment"
+            className="text-slate-500 hover:text-slate-700"
+            onClick={handleClearPending}
+            title="Clear selected file"
           >
-            <Trash2 className="w-4 h-4" />
+            <XCircle className="w-4 h-4" />
           </Button>
-        )}
-
-        {isBusy && (
-          <span className="text-xs text-foreground/60">Processing...</span>
         )}
       </div>
 

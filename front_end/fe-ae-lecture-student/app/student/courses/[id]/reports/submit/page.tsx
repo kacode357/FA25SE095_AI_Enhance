@@ -118,8 +118,6 @@ export default function SubmitReportsPage() {
     [items]
   );
 
-  const hasDraft = items.some((r) => r.status === ReportStatus.Draft);
-
   if (!assignmentId) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-12">
@@ -223,22 +221,30 @@ export default function SubmitReportsPage() {
 
             {!loading && !error && items.length > 0 && (
               <div className="space-y-3">
-                {!hasDraft && (
-                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                    No report in <b>Draft</b> status. Only reports in{" "}
-                    <b>Draft</b> status can be submitted from this page.
-                  </div>
-                )}
-
                 <ul className="space-y-3">
                   {items.map((r) => {
                     const isDraft = r.status === ReportStatus.Draft;
+                    const canEdit =
+                      r.status === ReportStatus.Draft ||
+                      r.status === ReportStatus.RequiresRevision;
+                    const isSubmittedFinal =
+                      r.status === ReportStatus.Submitted ||
+                      r.status === ReportStatus.UnderReview ||
+                      r.status === ReportStatus.Resubmitted ||
+                      r.status === ReportStatus.Graded ||
+                      r.status === ReportStatus.Late ||
+                      r.status === ReportStatus.Rejected;
+
                     const pendingFile = pendingFiles[r.id] || null;
 
                     return (
                       <li
                         key={r.id}
-                        className="border border-[var(--border)] rounded-xl px-3 py-3 sm:px-4 sm:py-4 flex flex-col gap-3 bg-white/70"
+                        className={`border rounded-xl px-3 py-3 sm:px-4 sm:py-4 flex flex-col gap-3 ${
+                          isSubmittedFinal
+                            ? "bg-emerald-50/70 border-emerald-200/80"
+                            : "bg-white/70 border-[var(--border)]"
+                        }`}
                       >
                         {/* Top: title + meta + status */}
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -249,8 +255,10 @@ export default function SubmitReportsPage() {
                                   {r.assignmentTitle || "Report"}
                                 </p>
                                 <p className="text-[11px] text-foreground/60 truncate">
-                                  {isDraft
-                                    ? "This report is currently in Draft status."
+                                  {canEdit
+                                    ? "You can still change the file and submit this report."
+                                    : isSubmittedFinal
+                                    ? "This report has been submitted. You can only view it."
                                     : "This report has already been processed."}
                                 </p>
                               </div>
@@ -281,6 +289,11 @@ export default function SubmitReportsPage() {
                                 Grade: <b>{r.grade}</b>
                               </span>
                             )}
+                            {isSubmittedFinal && (
+                              <span className="text-[10px] text-emerald-700/80 mt-0.5">
+                                You have submitted this report.
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -289,7 +302,7 @@ export default function SubmitReportsPage() {
                           <ReportFileAttachment
                             reportId={r.id}
                             fileUrl={r.fileUrl}
-                            disabled={!isDraft}
+                            disabled={!canEdit}
                             pendingFileName={pendingFile?.name ?? null}
                             onFileSelected={(file) => {
                               setPendingFiles((prev) => ({
@@ -297,18 +310,10 @@ export default function SubmitReportsPage() {
                                 [r.id]: file,
                               }));
                             }}
-                            onChanged={() => {
-                              // mainly for delete: clear pending file & refresh
-                              setPendingFiles((prev) => ({
-                                ...prev,
-                                [r.id]: null,
-                              }));
-                              refresh();
-                            }}
                           />
                         </div>
 
-                        {/* Bottom: actions only */}
+                        {/* Bottom: actions */}
                         <div className="pt-2 border-t border-dashed border-slate-200/70">
                           <div className="flex flex-wrap justify-end gap-2">
                             <Button
@@ -326,20 +331,22 @@ export default function SubmitReportsPage() {
                               View report
                             </Button>
 
-                            <SubmitDraftButton
-                              reportId={r.id}
-                              status={r.status}
-                              fileUrl={r.fileUrl}
-                              pendingFile={pendingFile}
-                              onSubmitted={() => {
-                                // clear pending file + reload data
-                                setPendingFiles((prev) => ({
-                                  ...prev,
-                                  [r.id]: null,
-                                }));
-                                refresh();
-                              }}
-                            />
+                            {canEdit && (
+                              <SubmitDraftButton
+                                reportId={r.id}
+                                status={r.status}
+                                fileUrl={r.fileUrl}
+                                pendingFile={pendingFile}
+                                onSubmitted={() => {
+                                  // clear pending file + reload data
+                                  setPendingFiles((prev) => ({
+                                    ...prev,
+                                    [r.id]: null,
+                                  }));
+                                  refresh();
+                                }}
+                              />
+                            )}
                           </div>
                         </div>
                       </li>
