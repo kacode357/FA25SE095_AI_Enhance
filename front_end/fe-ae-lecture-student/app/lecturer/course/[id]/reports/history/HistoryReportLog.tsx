@@ -30,7 +30,6 @@ export default function HistoryReportLog({ reportId }: Props) {
   const [versionData, setVersionData] = useState<any | null>(null);
   const [compareResult, setCompareResult] = useState<any | null>(null);
   
-
   const fetch = async (p = 1) => {
     if (!reportId) return;
     const res = await getReportHistory({ reportId, pageNumber: p, pageSize });

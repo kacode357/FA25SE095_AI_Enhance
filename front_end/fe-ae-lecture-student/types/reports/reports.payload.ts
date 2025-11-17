@@ -101,3 +101,7 @@ export interface CompareReportVersionsPayload {
   version1: number;   // query param
   version2: number;   // query param
 }
+
+export interface GetReportTimelinePayload {
+  reportId: string; // path param
+}

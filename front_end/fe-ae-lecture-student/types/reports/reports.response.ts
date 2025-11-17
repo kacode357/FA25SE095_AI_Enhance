@@ -284,7 +284,21 @@ export interface CompareReportVersionsResponse {
   contributorNames: string[];
 }
 
+export interface ReportTimelineItem {
+  timestamp: string; // ISO datetime
+  actor: string;
+  action: string;
+  version: number;
+  details: string;
+}
+
+export interface GetReportTimelineResponse {
+  reportId: string;
+  timeline: ReportTimelineItem[];
+}
+
 export interface UploadReportFileResponse extends ApiSuccess {
   fileUrl: string;
   version: number;
 }
+

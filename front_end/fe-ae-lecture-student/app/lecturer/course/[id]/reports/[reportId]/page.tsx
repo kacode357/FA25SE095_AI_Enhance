@@ -10,10 +10,11 @@ import { useGradeReport } from "@/hooks/reports/useGradeReport";
 import { useRejectReport } from "@/hooks/reports/useRejectReport";
 import { useRequestReportRevision } from "@/hooks/reports/useRequestReportRevision";
 import { formatDistanceToNow, parseISO } from "date-fns";
-import { ArrowLeft, ChevronRight, ClipboardPenLine, Loader2, OctagonAlert, PencilOff, X } from "lucide-react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Book, ChevronRight, ClipboardPenLine, Loader2, OctagonAlert, PencilOff, X } from "lucide-react";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import HistoryReportLog from "../history/HistoryReportLog";
+import TimelineReportLog from "../timeline/TimelineReportLog";
 import StatusBadge from "../utils/status";
 
 
@@ -43,7 +44,34 @@ export default function ReportDetailsPage() {
   const [revisionFeedback, setRevisionFeedback] = useState<string>("");
   const [rejectFeedback, setRejectFeedback] = useState<string>("");
   const formRef = useRef<HTMLDivElement | null>(null);
-  const [activeTab, setActiveTab] = useState<'details'|'history'>('details');
+  const initialTab = (() => {
+    const t = sp?.get('tab');
+    return t === 'history' || t === 'timeline' || t === 'details' ? (t as 'details' | 'history' | 'timeline') : 'details';
+  })();
+
+  const [activeTab, setActiveTab] = useState<'details' | 'history' | 'timeline'>(initialTab);
+  const pathname = usePathname();
+
+  const updateTabInUrl = (tab: string) => {
+    try {
+      const params = new URLSearchParams(Array.from(sp?.entries?.() || []));
+      if (tab) params.set('tab', tab);
+      else params.delete('tab');
+      const search = params.toString();
+      const url = `${pathname}${search ? `?${search}` : ''}`;
+      router.replace(url);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    const t = sp?.get('tab');
+    if (t === 'history' || t === 'timeline' || t === 'details') {
+      if (t !== activeTab) setActiveTab(t as 'details' | 'history' | 'timeline');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp]);
 
   const { gradeReport, loading: grading } = useGradeReport();
   const { requestReportRevision, loading: requestingRevision } = useRequestReportRevision();
@@ -101,7 +129,8 @@ export default function ReportDetailsPage() {
     <div className="pb-4 px-3 min-h-screen">
       <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mb-4">
         <div className="flex items-center justify-between">
-          <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
+          <ol className="flex items-center gap-0 mt-1.5 text-slate-500 flex-nowrap overflow-hidden">
+            <Book className="size-4" />
             <li>
               <button onClick={() => router.push('/lecturer/course')} className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition">Courses Management</button>
             </li>
@@ -112,6 +141,12 @@ export default function ReportDetailsPage() {
               <button onClick={() => router.push(courseId ? `/lecturer/course/${courseId}` : '/lecturer/course')} className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition" title={course?.courseCodeTitle ?? `Course ${courseId}`}>
                 {course?.courseCode ? `${course.courseCode} — ${course.courseCodeTitle}` : `Course ${courseId}`}
               </button>
+            </li>
+
+            <ChevronRight className="size-3 text-slate-400 mx-1 hidden sm:inline" />
+
+            <li className="font-medium cursor-text text-slate-900 max-w-[150px] truncate">
+              Report Details
             </li>
           </ol>
         </div>
@@ -149,14 +184,19 @@ export default function ReportDetailsPage() {
             <div className="px-6 py-2 bg-gradient-to-r from-blue-100 to-white rounded-md">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setActiveTab('details')}
+                  onClick={() => { setActiveTab('details'); updateTabInUrl('details'); }}
                   className={`px-3 cursor-pointer py-1 text-sm rounded ${activeTab === 'details' ? 'bg-violet-50 text-violet-700 rounded-md shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
                 >Details</button>
 
                 <button
-                  onClick={() => setActiveTab('history')}
+                  onClick={() => { setActiveTab('history'); updateTabInUrl('history'); }}
                   className={`px-3 cursor-pointer py-1 text-sm rounded ${activeTab === 'history' ? 'bg-violet-50 text-violet-700 rounded-md shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
                 >History Log</button>
+
+                <button
+                  onClick={() => { setActiveTab('timeline'); updateTabInUrl('timeline'); }}
+                  className={`px-3 cursor-pointer py-1 text-sm rounded ${activeTab === 'timeline' ? 'bg-violet-50 text-violet-700 rounded-md shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+                >Timeline</button>
               </div>
             </div>
           </div>
@@ -555,6 +595,12 @@ export default function ReportDetailsPage() {
               <HistoryReportLog reportId={reportId} />
             </div>
           )}
+
+            {!loading && activeTab === 'timeline' && (
+              <div className="p-6">
+                <TimelineReportLog reportId={reportId} courseId={courseId} />
+              </div>
+            )}
         </CardContent>
       </Card>
     </div>
