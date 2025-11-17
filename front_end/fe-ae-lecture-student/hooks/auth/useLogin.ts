@@ -23,30 +23,31 @@ export function useLogin() {
       if (data && data.accessToken) {
         const rememberMe = payload.rememberMe ?? false;
 
-        // ✅ Lưu access + refresh + remember logic
+        // Lưu token + rememberMe
         saveTokensFromLogin(data.accessToken, data.refreshToken, rememberMe);
 
-        // Lấy profile -> MÃ HOÁ & LƯU theo remember (session/cookie)
+        // Lấy profile -> mã hoá & lưu theo remember (session/cookie)
         const profileRes = await UserService.getProfile();
         const profile: UserProfile = profileRes.data;
         await saveEncodedUser(profile, rememberMe);
 
         // Điều hướng theo role string
-        const isStudent  = profile.role === UserServiceRole[ROLE_STUDENT];   // "Student"
-        const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER];  // "Lecturer"
+        const isStudent = profile.role === UserServiceRole[ROLE_STUDENT];   // "Student"
+        const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER]; // "Lecturer"
 
         let target = "/";
         if (isStudent) target = "/student/all-courses";
         else if (isLecturer) target = "/lecturer/course";
 
-        if (typeof window !== "undefined") window.location.href = target;
+        if (typeof window !== "undefined") {
+          window.location.href = target;
+        }
 
         return { ok: true, data, role: profile.role } as const;
       }
 
       return { ok: false, data, role: null } as const;
-    } catch (err) {
-      console.error("[auth] login error:", err);
+    } catch {
       return { ok: false, data: null, role: null } as const;
     } finally {
       setLoading(false);

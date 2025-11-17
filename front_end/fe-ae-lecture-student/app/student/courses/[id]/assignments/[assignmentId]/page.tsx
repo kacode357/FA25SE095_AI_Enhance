@@ -262,9 +262,8 @@ export default function AssignmentDetailPage() {
               <Badge
                 key={i}
                 variant="outline"
-                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200 ${
-                  c.className || ""
-                }`}
+                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200 ${c.className || ""
+                  }`}
               >
                 {c.icon}
                 {c.label}
@@ -430,41 +429,36 @@ export default function AssignmentDetailPage() {
         {groups.length > 0 && (
           <div className="lg:col-span-3 lg:self-start">
             <Card className="card rounded-2xl h-full flex flex-col lg:max-h-[300px]">
-              <CardHeader className="p-4 pb-2">
-                <div className="text-base font-semibold text-nav">
+              {/* Dùng 1 CardContent, title + list nằm chung để sát nhau */}
+              <CardContent className="px-4 py-3 flex-1 min-h-0">
+                <div className="text-base font-semibold text-nav mb-2">
                   {groups.length === 1 ? groups[0].name : "Groups & Members"}
                 </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-0 flex-1 min-h-0">
-                <ScrollArea className="h-[240px] pr-1 space-y-3">
-                  {groups.map((g) => (
-                    <div
-                      key={g.id}
-                      className="border border-slate-200 rounded-lg p-3 bg-white"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-medium text-foreground truncate">
-                            {g.name}
-                          </span>
-                        </div>
-                        {g.isLocked && (
-                          <Badge
-                            variant="outline"
-                            className="text-[11px] px-2 py-0.5 rounded-md border-red-200 bg-red-50 text-red-700"
-                          >
-                            Locked
-                          </Badge>
-                        )}
-                      </div>
 
-                      <GroupMembersPanel groupId={g.id} />
-                    </div>
-                  ))}
+                <ScrollArea className="max-h-[240px]">
+                  <div className="space-y-3">
+                    {groups.map((g) => (
+                      <div key={g.id}>
+                        {g.isLocked && (
+                          <div className="flex justify-end mb-1">
+                            <Badge
+                              variant="outline"
+                              className="text-[11px] px-2 py-0.5 rounded-md border-red-200 bg-red-50 text-red-700"
+                            >
+                              Locked
+                            </Badge>
+                          </div>
+                        )}
+
+                        <GroupMembersPanel groupId={g.id} />
+                      </div>
+                    ))}
+                  </div>
                 </ScrollArea>
               </CardContent>
             </Card>
           </div>
+
         )}
       </div>
 
@@ -477,7 +471,7 @@ export default function AssignmentDetailPage() {
           {hasDescription ? (
             <TinyMCEEditor
               value={a.description ?? ""}
-              onChange={() => {}}
+              onChange={() => { }}
               readOnly
               debounceMs={0}
               placeholder="No description provided."

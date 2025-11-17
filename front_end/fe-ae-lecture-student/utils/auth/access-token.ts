@@ -13,24 +13,21 @@ const BASE_COOKIE_OPTS = {
   path: "/" as const,
 };
 
-const ACCESS_TOKEN_EXPIRES_DAYS = 1 / 24; // ~1 giờ
-
+/** Lấy access token (cookie ưu tiên, fallback sessionStorage) */
 export function getSavedAccessToken(): string | null {
   if (typeof window === "undefined") return null;
 
-  // Ưu tiên cookie trước (remember me)
   const cookieToken = Cookies.get(ACCESS_TOKEN_KEY);
   if (cookieToken) return cookieToken;
 
-  // Nếu không có cookie thì thử sessionStorage (login thường)
   const sessionToken = window.sessionStorage.getItem(ACCESS_TOKEN_KEY);
   return sessionToken || null;
 }
 
+/** Lấy refresh token từ cookie (ONLY FROM COOKIE) */
 export function getSavedRefreshToken(): string | null {
   if (typeof window === "undefined") return null;
-  const token = Cookies.get(REFRESH_TOKEN_KEY);
-  return token || null;
+  return Cookies.get(REFRESH_TOKEN_KEY) || null;
 }
 
 export function getRememberMeFlag(): boolean {
@@ -39,9 +36,9 @@ export function getRememberMeFlag(): boolean {
 }
 
 /**
- * Lưu token sau khi login lần đầu
- * - rememberMe = true  -> access + refresh đều cookie, refresh 30 ngày
- * - rememberMe = false -> access dùng sessionStorage, refresh token cookie 7 ngày
+ * Lưu token khi login
+ * - rememberMe = true  -> access + refresh đều cookie
+ * - rememberMe = false -> access = session, KHÔNG giữ refreshToken cookie
  */
 export function saveTokensFromLogin(
   accessToken: string,
@@ -50,59 +47,59 @@ export function saveTokensFromLogin(
 ) {
   if (typeof window === "undefined") return;
 
-  // clear trước cho sạch
   clearAuthTokens();
 
-  // nhớ kiểu login
+  // lưu cờ rememberMe
   Cookies.set(REMEMBER_ME_KEY, rememberMe ? "1" : "0", {
     ...BASE_COOKIE_OPTS,
-    expires: rememberMe ? 30 : 7,
   });
 
+  // ===== CASE REMEMBER ME = TRUE → token nằm ở cookie =====
   if (rememberMe) {
     if (accessToken) {
       Cookies.set(ACCESS_TOKEN_KEY, accessToken, {
         ...BASE_COOKIE_OPTS,
-        expires: ACCESS_TOKEN_EXPIRES_DAYS,
       });
     }
     if (refreshToken) {
       Cookies.set(REFRESH_TOKEN_KEY, refreshToken, {
         ...BASE_COOKIE_OPTS,
-        expires: 30,
       });
     }
+
     // xoá session cho chắc
     window.sessionStorage.removeItem(ACCESS_TOKEN_KEY);
     window.sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-  } else {
-    // login thường: access để session, refresh để cookie 7 ngày
-    if (accessToken) {
-      window.sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    }
-    if (refreshToken) {
-      Cookies.set(REFRESH_TOKEN_KEY, refreshToken, {
-        ...BASE_COOKIE_OPTS,
-        expires: 7,
-      });
-    }
-    Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
+    return;
   }
+
+  // ===== CASE LOGIN THƯỜNG (KHÔNG REMEMBER ME) =====
+  // accessToken chỉ để trong session
+  if (accessToken) {
+    window.sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  }
+
+  // không giữ refreshToken trong cookie
+  window.sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+  Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
+
+  // accessToken không để cookie
+  Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
 }
 
 /**
- * Cập nhật access token khi refresh
- * - Nếu rememberMe -> luôn để cookie 1 giờ
- * - Nếu không      -> luôn để sessionStorage
+ * Update access token khi refresh
+ * - rememberMe = true  → cookie
+ * - rememberMe = false → sessionStorage
  */
 export function updateAccessToken(accessToken: string) {
   if (typeof window === "undefined") return;
+
   const rememberMe = getRememberMeFlag();
 
   if (rememberMe) {
     Cookies.set(ACCESS_TOKEN_KEY, accessToken, {
       ...BASE_COOKIE_OPTS,
-      expires: ACCESS_TOKEN_EXPIRES_DAYS,
     });
   } else {
     window.sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
@@ -111,22 +108,26 @@ export function updateAccessToken(accessToken: string) {
 }
 
 /**
- * Cập nhật refresh token khi refresh
- * TTL:
- * - rememberMe = true  -> 30 ngày
- * - rememberMe = false -> 7 ngày
+ * Update refresh token khi refresh
+ * - chỉ giữ refreshToken nếu rememberMe = true
  */
 export function updateRefreshToken(refreshToken: string) {
   if (typeof window === "undefined") return;
+
   const rememberMe = getRememberMeFlag();
-  const expires = rememberMe ? 30 : 7;
+
+  if (!rememberMe) {
+    window.sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+    Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
+    return;
+  }
 
   Cookies.set(REFRESH_TOKEN_KEY, refreshToken, {
     ...BASE_COOKIE_OPTS,
-    expires,
   });
 }
 
+/** Clear cả access + refresh + remember */
 export function clearAuthTokens() {
   Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
   Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
