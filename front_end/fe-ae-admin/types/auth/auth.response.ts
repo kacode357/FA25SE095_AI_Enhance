@@ -1,5 +1,12 @@
 // types/auth/auth.response.ts
 
+
+export type ApiResponse<T> = {
+  status: number;    
+  message: string;     
+  data: T;            
+};
+
 export interface RegisterResponse {
   userId: string;
   email: string;
@@ -55,3 +62,10 @@ export interface LogoutResponse {
   success: boolean;
   message: string;
 }
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export type GoogleLoginResponse = LoginResponse;

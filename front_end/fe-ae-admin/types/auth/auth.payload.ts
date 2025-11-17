@@ -1,5 +1,4 @@
 // types/auth/auth.payload.ts
-
 export interface RegisterPayload {
   email: string;
   password: string;
@@ -17,6 +16,10 @@ export interface RegisterPayload {
 export interface LoginPayload {
   email: string;
   password: string;
+  rememberMe?: boolean;
+  ipAddress?: string;
+  userAgent?: string;
+  captchaToken?: string; // optional token from CAPTCHA (reCAPTCHA v3 or similar)
 }
 
 export interface ConfirmEmailPayload {
@@ -44,3 +47,18 @@ export interface LogoutPayload {
   logoutAllDevices: boolean;
 }
 
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordRequest extends ChangePasswordPayload {
+  userId: string;
+}
+
+export interface GoogleLoginPayload {
+  googleIdToken: string;
+  rememberMe?: boolean;
+  ipAddress?: string;
+  userAgent?: string;
+}
