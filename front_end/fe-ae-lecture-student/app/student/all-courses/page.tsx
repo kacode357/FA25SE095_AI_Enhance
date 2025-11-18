@@ -7,14 +7,18 @@ import { Loader2, BookOpen } from "lucide-react";
 
 import { useAvailableCourses } from "@/hooks/course/useAvailableCourses";
 import { useJoinCourse } from "@/hooks/enrollments/useJoinCourse";
-import { useTerms } from "@/hooks/term/useTerms";
+import { useTermsQuery } from "@/hooks/term/useTermsQuery";
+import { useCoursesByTermYear } from "@/hooks/course/useCoursesByTermYear";
 
 import AccessCodeJoinSheet from "./components/AccessCodeJoinSheet";
 import SidebarFilters from "./components/SidebarFilters";
 import ResultsHeader from "./components/ResultsHeader";
 import CourseList from "./components/CourseList";
 
-import type { AvailableCourseItem } from "@/types/courses/course.response";
+import type {
+  AvailableCourseItem,
+  CoursesByTermYearItem,
+} from "@/types/courses/course.response";
 
 type SortBy = "CreatedAt" | "Name" | "EnrollmentCount";
 type SortDirection = "desc" | "asc";
@@ -29,9 +33,46 @@ type CoursesQueryState = {
   termId: string | undefined;
 };
 
+// map SortBy UI -> sortBy backend
+const mapSortByToBackend = (sortBy: SortBy): "Name" | "CourseCode" | "EnrollmentCount" | "CreatedAt" => {
+  switch (sortBy) {
+    case "Name":
+      return "Name";
+    case "EnrollmentCount":
+      return "EnrollmentCount";
+    case "CreatedAt":
+    default:
+      return "CreatedAt";
+  }
+};
+
+// map item từ /by-term-year -> AvailableCourseItem cho CourseList xài chung
+const mapTermCourseToAvailable = (c: CoursesByTermYearItem): AvailableCourseItem => ({
+  id: c.id,
+  courseCode: c.courseCode,
+  name: c.name,
+  description: c.description,
+  lecturerId: c.lecturerId,
+  lecturerName: c.lecturerName,
+  createdAt: c.createdAt,
+  enrollmentCount: c.enrollmentCount,
+  requiresAccessCode: c.requiresAccessCode,
+  isAccessCodeExpired: c.isAccessCodeExpired,
+  img: c.img ?? null,
+  uniqueCode: c.uniqueCode,
+  lecturerImage: c.lecturerImage ?? null,
+  termStartDate: c.termStartDate,
+  termEndDate: c.termEndDate,
+  // endpoint này không trả enrollmentStatus/joinUrl => để null
+  enrollmentStatus: null,
+  canJoin: c.canEnroll,
+  joinUrl: null,
+});
+
 export default function AllCoursesPage() {
   const router = useRouter();
 
+  // ===== API /Courses/available (default) =====
   const {
     listData,
     totalCount,
@@ -43,12 +84,32 @@ export default function AllCoursesPage() {
 
   const { joinCourse } = useJoinCourse();
 
-  // ✅ useTerms không còn error nữa
+  // ===== Terms list =====
   const {
     data: termList,
     loading: termsLoading,
     fetchTerms,
-  } = useTerms();
+  } = useTermsQuery({
+    page: 1,
+    pageSize: 50,
+    sortBy: "Name",
+    sortDirection: "asc",
+    activeOnly: true,
+  });
+
+  // ===== API /Courses/by-term-year (search theo kỳ) =====
+  const {
+    data: termCourses,
+    loading: termCoursesLoading,
+    meta: termMeta,
+    fetchCourses: fetchCoursesByTermYear,
+  } = useCoursesByTermYear({
+    termId: "00000000-0000-0000-0000-000000000000", // dummy, chỉ fetch khi có term thật
+    page: 1,
+    pageSize: 10,
+    sortBy: "Name",
+    sortDirection: "asc",
+  });
 
   const [courseCode, setCourseCode] = useState("");
   const [lecturerName, setLecturerName] = useState("");
@@ -71,19 +132,14 @@ export default function AllCoursesPage() {
     termId: undefined,
   });
 
-  /** ===== Map response ===== */
-  const courses: AvailableCourseItem[] = Array.isArray(listData) ? listData : [];
-
-  const totalItems: number = typeof totalCount === "number" ? totalCount : courses.length;
-
-  /** ===== Fetch initial ===== */
+  /** ===== Fetch initial (chỉ chạy 1 lần, tránh spam) ===== */
   useEffect(() => {
     fetchAvailableCourses(lastQueryRef.current as any);
-  }, [fetchAvailableCourses]);
-
-  useEffect(() => {
     fetchTerms();
-  }, [fetchTerms]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const usingTermFilter = !!selectedTermId;
 
   /** ===== Helpers ===== */
   const runQuery = (override?: Partial<CoursesQueryState>) => {
@@ -99,7 +155,24 @@ export default function AllCoursesPage() {
     };
 
     lastQueryRef.current = next;
-    fetchAvailableCourses(next as any);
+
+    const effectiveTermId = next.termId;
+
+    if (effectiveTermId) {
+      // 🔹 Khi có termId thì dùng API by-term-year
+      const backendSortBy = mapSortByToBackend(next.sortBy);
+      fetchCoursesByTermYear({
+        termId: effectiveTermId,
+        courseCode: next.courseCode,
+        page: next.page,
+        pageSize: next.pageSize,
+        sortBy: backendSortBy,
+        sortDirection: next.sortDirection,
+      });
+    } else {
+      // 🔹 Không có term => dùng API available như cũ
+      fetchAvailableCourses(next as any);
+    }
   };
 
   const handleSearchSubmit = () => runQuery();
@@ -107,6 +180,7 @@ export default function AllCoursesPage() {
   const handleTermToggle = (termId: string) => {
     const nextSelected = selectedTermId === termId ? null : termId;
     setSelectedTermId(nextSelected);
+
     runQuery({ termId: nextSelected || undefined });
   };
 
@@ -134,7 +208,23 @@ export default function AllCoursesPage() {
     fetchAvailableCourses(base as any);
   };
 
-  const refetchAfterAction = () => fetchAvailableCourses(lastQueryRef.current as any);
+  // Refetch sau khi join / thao tác
+  const refetchAfterAction = () => {
+    const current = lastQueryRef.current;
+    if (current.termId) {
+      const backendSortBy = mapSortByToBackend(current.sortBy);
+      fetchCoursesByTermYear({
+        termId: current.termId,
+        courseCode: current.courseCode,
+        page: current.page,
+        pageSize: current.pageSize,
+        sortBy: backendSortBy,
+        sortDirection: current.sortDirection,
+      });
+    } else {
+      fetchAvailableCourses(current as any);
+    }
+  };
 
   const handleJoinClick = async (course: AvailableCourseItem) => {
     if (course.requiresAccessCode) {
@@ -157,6 +247,34 @@ export default function AllCoursesPage() {
     router.push(`/student/courses/${id}`);
   };
 
+  /** ===== Chuẩn bị data hiển thị ===== */
+
+  const availableCourses: AvailableCourseItem[] = Array.isArray(listData) ? listData : [];
+
+  // Khi filter theo kỳ: dùng kết quả từ /by-term-year + filter lecturerName frontend
+  let termCoursesMapped: AvailableCourseItem[] = [];
+  if (usingTermFilter) {
+    const lecturerFilter = lecturerName.trim().toLowerCase();
+    const filteredByLecturer = termCourses.filter((c) =>
+      lecturerFilter
+        ? c.lecturerName.toLowerCase().includes(lecturerFilter)
+        : true
+    );
+    termCoursesMapped = filteredByLecturer.map(mapTermCourseToAvailable);
+  }
+
+  const displayCourses = usingTermFilter ? termCoursesMapped : availableCourses;
+
+  const totalItems: number = usingTermFilter
+    ? termMeta.totalCount
+    : typeof totalCount === "number"
+    ? totalCount
+    : availableCourses.length;
+
+  const displayPage = usingTermFilter ? termMeta.page : currentPage;
+  const displayPageSize = usingTermFilter ? termMeta.pageSize : pageSize;
+  const isLoading = usingTermFilter ? termCoursesLoading : loading;
+
   /** ===== Render ===== */
   return (
     <div className="py-6">
@@ -178,7 +296,6 @@ export default function AllCoursesPage() {
               onTermToggle={handleTermToggle}
               terms={termList}
               termsLoading={termsLoading}
-          
             />
           </aside>
 
@@ -186,20 +303,20 @@ export default function AllCoursesPage() {
           <section className="lg:col-span-6 space-y-4">
             <ResultsHeader
               total={totalItems}
-              page={currentPage}
-              pageSize={pageSize}
+              page={displayPage}
+              pageSize={displayPageSize}
               sortBy={sortBy}
               onSortChange={handleSortChange}
             />
 
-            {loading && (
+            {isLoading && (
               <div className="flex justify-center py-10" style={{ color: "var(--brand)" }}>
                 <Loader2 className="w-6 h-6 animate-spin" />
                 <span className="ml-2 text-sm">Loading courses...</span>
               </div>
             )}
 
-            {!loading && courses.length === 0 && (
+            {!isLoading && displayCourses.length === 0 && (
               <div className="text-center py-14">
                 <BookOpen
                   className="w-10 h-10 mx-auto mb-2"
@@ -209,9 +326,9 @@ export default function AllCoursesPage() {
               </div>
             )}
 
-            {!loading && courses.length > 0 && (
+            {!isLoading && displayCourses.length > 0 && (
               <CourseList
-                courses={courses}
+                courses={displayCourses}
                 loadingCourseId={loadingCourseId}
                 onGoToCourse={handleGoToCourse}
                 onJoinClick={handleJoinClick}

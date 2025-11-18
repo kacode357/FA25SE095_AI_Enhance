@@ -78,3 +78,18 @@ export interface UploadCourseImageRequest {
 export interface DeleteCourseImageRequest {
   courseId: string;
 }
+
+export interface GetCoursesByTermYearQuery {
+  termId: string;
+  status?: number;
+  lecturerId?: string;
+  courseCode?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: "Name" | "CourseCode" | "EnrollmentCount" | "CreatedAt";
+  sortDirection?: "asc" | "desc";
+}
+
+export interface GetCourseByUniqueCodePayload {
+  uniqueCode: string;
+}

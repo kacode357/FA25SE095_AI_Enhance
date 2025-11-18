@@ -83,6 +83,7 @@ export interface GetCourseByIdResponse {
   success: boolean;
   message: string;
   course: GetCourseByIdItems;
+   isEnrolled: boolean;
 }
 export interface GetCourseByIdItems {
   id: string;
@@ -223,4 +224,89 @@ export interface UploadCourseImageResponse {
 export interface DeleteCourseImageResponse {
   success: boolean;
   message: string;
+}
+
+export interface CoursesByTermYearItem {
+  id: string;
+  courseCode: string;
+  uniqueCode: string;
+  courseCodeTitle: string;
+  name: string;
+  description: string;
+  term: string;
+  termStartDate: string;
+  termEndDate: string;
+  lecturerId: string;
+  lecturerName: string;
+  lecturerImage: string | null;
+  createdAt: string;
+  enrollmentCount: number;
+  status: CourseStatus | number;
+  approvedBy: string | null;
+  approvedByName: string | null;
+  approvedAt: string | null;
+  approvalComments: string | null;
+  rejectionReason: string | null;
+  canEnroll: boolean;
+  requiresAccessCode: boolean;
+  accessCode: string | null;
+  accessCodeCreatedAt: string | null;
+  accessCodeExpiresAt: string | null;
+  isAccessCodeExpired: boolean;
+  img: string | null;
+  department: string | null;
+}
+
+/** ✅ Response GET /api/Courses/by-term-year */
+export interface GetCoursesByTermYearResponse {
+  success: boolean;
+  message: string;
+  courses: CoursesByTermYearItem[];
+
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+
+  /** Tên term tương ứng với termId */
+  termName: string;
+}
+export interface CourseByUniqueCodeItem {
+  id: string;
+  courseCode: string;
+  uniqueCode: string;
+  courseCodeTitle: string;
+  name: string;
+  description: string;
+  term: string;
+  termStartDate: string;
+  termEndDate: string;
+  lecturerId: string;
+  lecturerName: string;
+  lecturerImage: string | null;
+  createdAt: string;
+  enrollmentCount: number;
+  status: CourseStatus | number;
+  approvedBy: string | null;
+  approvedByName: string | null;
+  approvedAt: string | null;
+  approvalComments: string | null;
+  rejectionReason: string | null;
+  canEnroll: boolean;
+  requiresAccessCode: boolean;
+  accessCode: string | null;
+  accessCodeCreatedAt: string | null;
+  accessCodeExpiresAt: string | null;
+  isAccessCodeExpired: boolean;
+  img: string | null;
+  department: string | null;
+}
+
+/** ✅ Response GET /api/Courses/by-code/{uniqueCode} */
+export interface GetCourseByUniqueCodeResponse {
+  success: boolean;
+  message: string;
+  course: CourseByUniqueCodeItem;
+  /** Current user đã enroll course này chưa */
+  isEnrolled: boolean;
 }

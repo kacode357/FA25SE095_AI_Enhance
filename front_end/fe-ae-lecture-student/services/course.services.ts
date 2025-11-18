@@ -5,6 +5,7 @@ import {
   DeleteCourseImageRequest,
   GetAvailableCoursesQuery,
   GetCourseEnrollmentsQuery,
+  GetCoursesByTermYearQuery,
   GetMyCoursesQuery,
   InactivateCoursePayload,
   UpdateAccessCodeRequest,
@@ -17,7 +18,9 @@ import {
   DeleteCourseResponse,
   GetAvailableCoursesResponse,
   GetCourseByIdResponse,
+  GetCourseByUniqueCodeResponse,
   GetCourseEnrollmentsResponse,
+  GetCoursesByTermYearResponse,
   GetMyCoursesResponse,
   InactivateCourseResponse,
   UpdateAccessCodeResponse,
@@ -122,6 +125,23 @@ inactivateCourse: async (
   }: DeleteCourseImageRequest): Promise<DeleteCourseImageResponse> => {
     const res = await courseAxiosInstance.delete<DeleteCourseImageResponse>(
       `/Courses/${courseId}/image`
+    );
+    return res.data;
+  },
+  getCoursesByTermYear: async (
+    params: GetCoursesByTermYearQuery
+  ): Promise<GetCoursesByTermYearResponse> => {
+    const res = await courseAxiosInstance.get<GetCoursesByTermYearResponse>(
+      "/Courses/by-term-year",
+      { params }
+    );
+    return res.data;
+  },
+   getCourseByUniqueCode: async (
+    uniqueCode: string
+  ): Promise<GetCourseByUniqueCodeResponse > => {
+    const res = await courseAxiosInstance.get<GetCourseByUniqueCodeResponse>(
+      `/Courses/by-code/${uniqueCode}`
     );
     return res.data;
   },

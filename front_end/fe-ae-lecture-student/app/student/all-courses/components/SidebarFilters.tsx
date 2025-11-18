@@ -18,6 +18,17 @@ type Props = {
   termsLoading: boolean;
 };
 
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const year = d.getUTCFullYear();
+  if (year === 1) return ""; // 0001-01-01 => ẩn
+
+  return d.toLocaleDateString("en-GB"); // 17/11/2025
+}
+
 export default function SidebarFilters({
   courseCode,
   lecturerName,
@@ -125,6 +136,10 @@ export default function SidebarFilters({
           <ul className="space-y-2">
             {terms.map((term) => {
               const checked = selectedTermId === term.id;
+              const start = formatDate(term.startDate);
+              const end = formatDate(term.endDate);
+              const hasRange = !!(start || end);
+
               return (
                 <li key={term.id}>
                   <button
@@ -148,7 +163,21 @@ export default function SidebarFilters({
                     >
                       {checked && <span className="h-2 w-2 rounded-sm bg-white" />}
                     </span>
-                    <span className="flex-1 text-left">{term.name}</span>
+
+                    <span className="flex-1 text-left">
+                      {term.name}
+                      {hasRange && (
+                        <span
+                          className="ml-1 text-[11px]"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          (
+                          {start || "N/A"}
+                          {end && ` - ${end}`}
+                          )
+                        </span>
+                      )}
+                    </span>
                   </button>
                 </li>
               );

@@ -1,4 +1,5 @@
 // app/student/components/header.tsx
+
 "use client";
 
 import Cookies from "js-cookie";
@@ -19,6 +20,9 @@ import { useStudentNav } from "./nav-items";
 
 import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
 import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
+
+// ✅ NEW: search bằng uniqueCode tách thành component riêng
+import CourseCodeSearch from "./CourseCodeSearch";
 
 const COOKIE_ACCESS_TOKEN_KEY = "accessToken";
 const NOTI_CACHE_KEY_PREFIX = "student:notifs:v1:";
@@ -72,29 +76,22 @@ export default function Header() {
 
   const handleHubNotification = useCallback((raw: any) => {
     const item = normalizeNotification(raw);
-    console.log("[Header] New notification from hub:", item);
     setNotifications((prev) => [item, ...prev]);
     setUnreadCount((prev) => prev + 1);
   }, []);
 
   /** HUB */
-  const {
-    connect,
-    disconnect,
-    connected,
-    connecting,
-    lastError,
-  } = useNotificationHub({
-    getAccessToken: getTokenForHub,
-    onNotification: handleHubNotification,
-  });
+  const { connect, disconnect, connected, connecting, lastError } =
+    useNotificationHub({
+      getAccessToken: getTokenForHub,
+      onNotification: handleHubNotification,
+    });
 
   /** ===============================
    * 1️⃣ Fetch lịch sử thông báo — CHỈ 1 LẦN / USER / SESSION
    * =============================== */
   useEffect(() => {
-    if (!user?.id) return;
-    if (historyLoaded) return;
+    if (!user?.id || historyLoaded) return;
 
     const cacheKey = `${NOTI_CACHE_KEY_PREFIX}${user.id}`;
 
@@ -109,7 +106,6 @@ export default function Header() {
           };
 
           if (Array.isArray(parsed.notifications)) {
-            console.log("[Header] Restore notifications from cache");
             setNotifications(parsed.notifications);
             setUnreadCount(parsed.unreadCount ?? 0);
             setHistoryLoaded(true);
@@ -117,21 +113,20 @@ export default function Header() {
           }
         }
       }
-    } catch (err) {
-      console.warn("[Header] restore notifications cache error:", err);
+    } catch {
+      // ignore cache error
     }
 
     // 2) Không có cache → gọi API lần đầu, rồi cache lại
     (async () => {
       try {
-        console.log("[Header] Fetch notifications from API (first time)");
         const list = await getNotifications({ take: 50 });
         if (!list) return;
 
         const normalized = list.map((n: any) => normalizeNotification(n));
-        setNotifications(normalized);
-
         const unread = normalized.filter((n) => !n.read).length;
+
+        setNotifications(normalized);
         setUnreadCount(unread);
 
         // Lưu cache cho lần F5 sau
@@ -142,15 +137,14 @@ export default function Header() {
               unreadCount: unread,
             });
             window.sessionStorage.setItem(cacheKey, payload);
-            console.log("[Header] Saved notifications to cache");
           }
-        } catch (err) {
-          console.warn("[Header] save notifications cache error:", err);
+        } catch {
+          // ignore cache error
         }
 
-        setHistoryLoaded(true); // khóa lại
-      } catch (err) {
-        console.warn("[Header] fetch history error:", err);
+        setHistoryLoaded(true);
+      } catch {
+        // ignore API error, UI vẫn chạy bình thường
       }
     })();
   }, [user?.id, historyLoaded, getNotifications]);
@@ -164,23 +158,13 @@ export default function Header() {
     const token = getSavedAccessToken();
     if (!token) return;
 
-    let cancelled = false;
+    // connect 1 lần khi mount / userId thay đổi
+    connect().catch(() => {
+      // ignore connect error
+    });
 
-    (async () => {
-      try {
-        console.log("[NotificationHub] connecting...");
-        await connect();
-        if (!cancelled) {
-          console.log("[NotificationHub] Connected.");
-        }
-      } catch (e) {
-        console.warn("[NotificationHub] connect failed:", e);
-      }
-    })();
-
+    // ✅ cleanup đúng: luôn disconnect khi unmount
     return () => {
-      cancelled = true;
-      console.log("[NotificationHub] disconnect on unmount");
       disconnect();
     };
   }, [user?.id, connect, disconnect]);
@@ -206,34 +190,37 @@ export default function Header() {
     setNotificationOpen(v);
 
     if (v && unreadCount > 0) {
-      console.log("[Header] Mark all notifications as read");
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      // cập nhật state + cache trong cùng 1 chỗ để tránh lệch dữ liệu
+      setNotifications((prev) => {
+        const updated = prev.map((n) => ({ ...n, read: true }));
+
+        if (user?.id && typeof window !== "undefined") {
+          const cacheKey = `${NOTI_CACHE_KEY_PREFIX}${user.id}`;
+          try {
+            const payload = JSON.stringify({
+              notifications: updated,
+              unreadCount: 0,
+            });
+            window.sessionStorage.setItem(cacheKey, payload);
+          } catch {
+            // ignore cache error
+          }
+        }
+
+        return updated;
+      });
+
       setUnreadCount(0);
 
-      markAllNotificationsAsRead().catch((err) =>
-        console.warn("[markAll] error:", err)
-      );
-
-      // update cache luôn cho đồng bộ
-      if (user?.id && typeof window !== "undefined") {
-        const cacheKey = `${NOTI_CACHE_KEY_PREFIX}${user.id}`;
-        try {
-          const payload = JSON.stringify({
-            notifications: notifications.map((n) => ({ ...n, read: true })),
-            unreadCount: 0,
-          });
-          window.sessionStorage.setItem(cacheKey, payload);
-          console.log("[Header] Updated notifications cache after markAll");
-        } catch (err) {
-          console.warn("[Header] update cache after markAll error:", err);
-        }
-      }
+      markAllNotificationsAsRead().catch(() => {
+        // BE lỗi thì lần sau mở lại vẫn sẽ fetch/unread từ server
+      });
     }
 
     if (v) setDropdownOpen(false);
   };
 
-  return (
+    return (
     <header
       className="fixed top-0 z-40 w-full h-16 backdrop-blur-sm"
       style={{
@@ -245,32 +232,37 @@ export default function Header() {
         className="mx-auto flex h-full w-full items-center gap-6"
         style={{ maxWidth: 1400, paddingLeft: "2rem", paddingRight: "1rem" }}
       >
-        {/* LEFT */}
-        <div className="flex items-center gap-8 min-w-0">
-          <Logo />
-          <nav className="hidden md:flex items-center gap-8">
-            {navs.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="no-underline"
-                aria-current={item.isActive ? "page" : undefined}
+        {/* Logo */}
+        <Logo />
+
+        {/* Nav links */}
+        <nav className="hidden md:flex items-center gap-8">
+          {navs.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="no-underline"
+              aria-current={item.isActive ? "page" : undefined}
+            >
+              <span
+                className={`text-base font-medium leading-none transition-colors visited:text-nav ${
+                  item.isActive
+                    ? "text-nav-active"
+                    : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active"
+                }`}
               >
-                <span
-                  className={`text-base font-medium leading-none transition-colors visited:text-nav ${
-                    item.isActive
-                      ? "text-nav-active"
-                      : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active"
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            ))}
-          </nav>
+                {item.label}
+              </span>
+            </Link>
+          ))}
+        </nav>
+
+        {/* 🔍 Search nằm ngay sau My Assignments */}
+        <div className="ml-32">
+          <CourseCodeSearch />
         </div>
 
-        {/* Right */}
+        {/* RIGHT: push bell + user ra mép phải */}
         <div className="ml-auto flex items-center gap-3">
           {/* Notifications */}
           <div className="flex items-center bg-slate-100 p-1 mr-3 rounded-lg shadow-sm">
@@ -301,4 +293,5 @@ export default function Header() {
       </div>
     </header>
   );
+
 }
