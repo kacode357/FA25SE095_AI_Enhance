@@ -168,7 +168,7 @@ export default function AssignmentsPanel({
             Back
           </Button>
         </div>
-        <div className="flex-1 overflow-auto p-4 mr-3.5 bg-slate-50">
+        <div className="flex-1 overflow-auto py-4 mr-3.5 bg-slate-50">
           <div className="max-w-full mx-auto">
             <NewAssignmentForm courseId={courseId} onCreated={backToList} onCancel={backToList} />
           </div>
@@ -199,7 +199,7 @@ export default function AssignmentsPanel({
             Back
           </Button>
         </div>
-        <div className="flex-1 overflow-auto p-4 mr-3.5 bg-slate-50">
+        <div className="flex-1 overflow-auto py-4 mr-3.5 bg-slate-50">
           <div className="max-w-full mx-auto">
             <EditAssignmentForm id={editId} onUpdated={backToList} onCancel={backToList} />
           </div>

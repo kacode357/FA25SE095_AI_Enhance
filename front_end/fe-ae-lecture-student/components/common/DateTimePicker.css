@@ -1,0 +1,10 @@
+.ae-datepicker-popper {
+  z-index: 99999 !important; /* ensure above editors/popovers */
+}
+
+/* Remove default blue outline when focusing the input */
+.react-datepicker__input-container input:focus,
+.react-datepicker__input-container input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}

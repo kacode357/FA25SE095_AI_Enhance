@@ -138,7 +138,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
                             inputMode="numeric"
                             value={form.maxPoints}
                             className="text-xs"
-                            onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value }))}
+                            onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))}
                         />
                     </div>
 
