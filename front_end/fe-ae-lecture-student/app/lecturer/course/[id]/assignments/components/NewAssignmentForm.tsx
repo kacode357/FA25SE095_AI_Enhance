@@ -1,7 +1,7 @@
 // app/lecture/manager/course/[id]/assignments/components/NewAssignmentForm.tsx
 "use client";
 
-import DateTimePicker from "@/components/common/DateTimePicker";
+import DateTimePicker from "@/components/common/DateTimePickerShadcn";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -161,7 +161,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     // Start must be at least 5 minutes from now
     const nowMs = Date.now();
     const startMs = new Date(form.startDate).getTime();
-    if (startMs < nowMs + 5 * 60 * 1000) return alert("Start Date/Time must be at least 5 minutes from now");
+    if (startMs < nowMs + 5 * 60 * 1000) return toast.warning("Start Date/Time must be at least 5 minutes from now");
     // Due date must be at least the next calendar day after start date (ignore time)
     const start = new Date(form.startDate);
     const due = new Date(form.dueDate);
@@ -226,7 +226,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             />
           </div>
 
-                    <div>
+          <div>
             <Label className="text-sm mb-1">Topic</Label>
             {loadingTopics ? (
               <div className="text-sm text-slate-500 p-2">Loading topics...</div>
@@ -264,7 +264,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
         {/* Settings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+          <div>
             <Label className="text-sm mb-1">Max Points</Label>
             <Input
               type="number"
@@ -275,10 +275,11 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))}
             />
           </div>
-                    <div className="flex gap-3 w-full">
+          <div className="flex gap-3 w-full">
             <div className="flex-1">
               <Label className="text-sm mb-1">Start Date *</Label>
               <DateTimePicker
+                className="placeholder:text-slate-100 border-slate-100"
                 value={form.startDate}
                 onChange={(iso: string) => setForm((p) => ({ ...p, startDate: iso }))}
                 placeholder="yyyy-MM-dd HH:mm"
@@ -298,9 +299,9 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                 minDate={
                   form.startDate
                     ? (() => {
-                        const s = new Date(form.startDate);
-                        return new Date(s.getFullYear(), s.getMonth(), s.getDate() + 1);
-                      })()
+                      const s = new Date(form.startDate);
+                      return new Date(s.getFullYear(), s.getMonth(), s.getDate() + 1);
+                    })()
                     : new Date()
                 }
                 timeIntervals={5}

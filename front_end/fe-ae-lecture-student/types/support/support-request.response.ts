@@ -1,6 +1,15 @@
 // types/support/support-request.response.ts
 
 /** Item support request trả về từ API */
+
+export enum SupportRequestStatus {
+  Pending = 0,
+  Accepted = 1,
+  InProgress = 2,
+  Resolved = 3,
+  Cancelled = 4,
+}
+
 export interface SupportRequestItem {
   id: string;
   courseId: string;
@@ -16,7 +25,7 @@ export interface SupportRequestItem {
   assignedStaffName: string | null;
 
   /** Status enum (BE dùng số, ví dụ 0 = Pending, ...) */
-  status: number;
+  status: SupportRequestStatus;
   /** Priority enum (BE dùng số) */
   priority: number;
   /** Category enum (BE dùng số) */

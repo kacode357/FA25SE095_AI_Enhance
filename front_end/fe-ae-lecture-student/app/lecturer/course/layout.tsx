@@ -10,7 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
-import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, MessageSquareDot, PanelLeftOpen, PanelRightOpen, Sparkles, TableOfContents, Upload, User } from "lucide-react";
+import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, MessageSquareDot, PanelLeftOpen, PanelRightOpen, Sparkles, TableOfContents, Upload, User, Wrench } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -29,7 +29,8 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
     const isRequests = pathname?.includes("/lecturer/course/requests");
     const isMessages = pathname?.includes("/lecturer/course/messages");
     const isReports = pathname?.includes("/lecturer/course/reports");
-    const isAllCourses = pathname?.startsWith("/lecturer/course") && !isRequests && !isImport && !isMessages && !isReports;
+    const isSupportRequests = pathname?.includes("/lecturer/course/support-requests");
+    const isAllCourses = pathname?.startsWith("/lecturer/course") && !isRequests && !isImport && !isMessages && !isReports && !isSupportRequests;
 
     const sidebarWidth = collapsed ? "w-[72px]" : "w-[270px]";
     const contentPadding = collapsed ? "pl-[72px]" : "pl-[270px]";
@@ -134,6 +135,20 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                     >
                                         <TableOfContents className={`size-4 transition-colors ${isReports ? "text-brand" : "text-slate-400 group-hover:text-slate-600"}`} />
                                         <span className={`${collapsed ? "hidden" : "flex-1 text-left"}`}>Reports</span>
+                                    </button>
+                                </li>
+                                {/* Support Request */}
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push("/lecturer/course/support-requests")}
+                                        className={`group cursor-pointer w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isSupportRequests
+                                                ? "bg-brand/10 text-brand ring-1 ring-brand/20"
+                                                : "text-slate-700 hover:bg-slate-100"
+                                                }`}
+                                        >
+                                            <Wrench className={`size-4 transition-colors ${isSupportRequests ? "text-brand" : "text-slate-400 group-hover:text-slate-600"}`} />
+                                        <span className={`${collapsed ? "hidden" : "flex-1 text-left"}`}>Support Requests</span>
                                     </button>
                                 </li>
                             </ul>

@@ -342,11 +342,7 @@ export default function LecturerCourseReportsPage() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex justify-end gap-2 mt-3">
-                                                                {r.fileUrl && (
-                                                                    <a href={r.fileUrl} target="_blank" rel="noreferrer" className="btn bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded">Download</a>
-                                                                )}
-
+                                                            <div className="flex justify-end gap-2 mt-7">
                                                                 <Button size="sm" className="shadow-md mb-2 mr-1 text-violet-800 bg-violet-50" onClick={() => router.push(`/lecturer/course/reports/${r.id}${courseId ? `?courseId=${courseId}` : ''}`)}>
                                                                     View<ArrowBigRightDash className="size-4" />
                                                                 </Button>
