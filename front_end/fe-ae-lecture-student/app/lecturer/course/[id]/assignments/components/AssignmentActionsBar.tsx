@@ -90,7 +90,7 @@ export default function AssignmentActionsBar({
       <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-1 py-2">
         <div className="flex items-center gap-2 text-xs text-slate-700">
           <CalendarClock className="size-4 text-[#000D83]" />
-          <span className="font-medium">Due date</span>
+          <span className="font-medium text-sm">Due date</span>
           {currentDue && (
             <span className="rounded-full border border-slate-300 bg-white px-2 py-0.5">
               Current: {new Date(currentDue).toLocaleString()}
@@ -108,7 +108,7 @@ export default function AssignmentActionsBar({
           className="text-[11px] h-8 px-0"
           onClick={() => setOpen((o) => !o)}
         >
-          <span className="flex items-center gap-1 text-[#000D83]">
+          <span className="flex items-center gap-1 text-sm text-[#000D83]">
             {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
             {open ? "Hide" : "Extend"}
           </span>

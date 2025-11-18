@@ -94,6 +94,9 @@ export default function GroupAssignControls({ courseId, assignment, onChanged, s
         <div className="flex flex-row items-center justify-between">
           <div className="font-medium text-[#000D83]">Manage Groups</div>
           <div className="flex gap-2">
+            {/* <Button className="text-violet-800 text-[13px] btn btn-gradient-slow hover:text-violet-500" variant="outline" onClick={clearSelection}>
+              Clear selection
+            </Button> */}
             <Button className="text-violet-800 hover:text-violet-500" size="sm" variant="secondary" onClick={refreshUnassigned} disabled={loading}>
               Reload
             </Button>
@@ -192,12 +195,6 @@ export default function GroupAssignControls({ courseId, assignment, onChanged, s
       </div>
 
       <Separator />
-
-      <div className="flex justify-end gap-2">
-        <Button className="text-violet-800 text-sm btn btn-gradient-slow hover:text-violet-500" variant="outline" onClick={clearSelection}>
-          Clear selection
-        </Button>
-      </div>
     </div>
   );
 }

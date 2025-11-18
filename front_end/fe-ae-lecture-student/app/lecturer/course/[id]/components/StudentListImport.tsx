@@ -101,16 +101,18 @@ export default function StudentList({
                         <TableHeader className="bg-slate-50 sticky top-0 z-20">
                             <TableRow className="border-b-slate-300">
                                 <TableHead className="text-center w-14">NO</TableHead>
-                                <TableHead className="text-center min-w-[140px]">
+                                <TableHead className="text-center min-w-[120px]">
+                                    Avatar
+                                </TableHead>
+                                <TableHead className="text-center min-w-[120px]">
                                     Student Name
                                 </TableHead>
                                 <TableHead className="text-center min-w-[140px]">
                                     Email
                                 </TableHead>
+                                <TableHead className="text-center w-[150px]">Student ID</TableHead>
+
                                 <TableHead className="text-center w-[150px]">Joined At</TableHead>
-                                <TableHead className="text-center w-[150px]">
-                                    Unenrolled At
-                                </TableHead>
                                 {/* <TableHead className="text-center w-[110px]">Status</TableHead> */}
                                 <TableHead className="text-center w-20">Action</TableHead>
                             </TableRow>
@@ -122,6 +124,27 @@ export default function StudentList({
                                     <TableCell className="text-center text-slate-500">
                                         {i + 1}
                                     </TableCell>
+                                    <TableCell className="text-center w-20 text-slate-600">
+                                        {s.profilePictureUrl ? (
+                                            <img
+                                                src={s.profilePictureUrl}
+                                                alt={s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()}
+                                                className="inline-block w-8 h-8 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-violet-100 text-violet-700 font-medium">
+                                                {(() => {
+                                                    const fn = (s.firstName ?? "").trim();
+                                                    const ln = (s.lastName ?? "").trim();
+                                                    if (fn && ln) return `${fn.charAt(0).toUpperCase()}${ln.charAt(0).toUpperCase()}`;
+                                                    if (fn) return fn.charAt(0).toUpperCase();
+                                                    if (ln) return ln.charAt(0).toUpperCase();
+                                                    const full = (s.fullName ?? "").trim();
+                                                    return (full ? full.charAt(0).toUpperCase() : "?");
+                                                })()}
+                                            </div>
+                                        )}
+                                    </TableCell>
                                     <TableCell className="font-medium text-slate-800">
                                         {s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()}
                                     </TableCell>
@@ -129,52 +152,49 @@ export default function StudentList({
                                         {s.email}
                                     </TableCell>
                                     <TableCell className="text-center text-slate-600">
+                                        {s.studentIdNumber}
+                                    </TableCell>
+                                    <TableCell className="text-center text-slate-600">
                                         {formatDate(s.joinedAt)}
                                     </TableCell>
                                     {/* <TableCell className="text-center">
                                         {getStatusBadge(s.status as EnrollmentStatus)}
                                     </TableCell> */}
-                                    <TableCell className="text-slate-500 text-sm">
-                                        {"-"}
-                                    </TableCell>
                                     <TableCell className="text-center">
-                                        {s.status === EnrollmentStatus.Active ? (
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <button
-                                                        className="p-2 rounded-md hover:bg-red-50 text-red-600"
-                                                        title="Unenroll student"
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <button
+                                                    className="p-2 cursor-pointer rounded-md hover:bg-red-50 text-red-600"
+                                                    title="Unenroll student"
+                                                >
+                                                    <UserMinus size={18} />
+                                                </button>
+                                            </AlertDialogTrigger>
+
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle className="font-normal">
+                                                        Unenroll <span className="font-bold">{s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()}</span> ?
+                                                    </AlertDialogTitle>
+                                                    <AlertDialogDescription className="flex gap-2 items-start text-yellow-600">
+                                                        <span className="flex gap-2 items-center text-xs"><TriangleAlert className="size-4" />This action cannot be undone. Remove this student from the course.</span>
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel className="border-slate-300 cursor-pointer">Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        variant="destructive"
+                                                        onClick={() =>
+                                                            handleUnenroll(s.studentId)
+                                                        }
+                                                        className="cursor-pointer"
                                                     >
-                                                        <UserMinus size={18} />
-                                                    </button>
-                                                </AlertDialogTrigger>
-
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>
-                                                            Unenroll {s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()}?
-                                                        </AlertDialogTitle>
-                                                        <AlertDialogDescription className="flex gap-2 items-start text-yellow-600">
-                                                            <span className="flex gap-2 items-center text-xs"><TriangleAlert className="size-4" />This action cannot be undone. Remove this student from the course.</span>
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            variant="destructive"
-                                                            onClick={() =>
-                                                                handleUnenroll(s.studentId)
-                                                            }
-                                                        >
-                                                            Unenroll
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        ) : (
-                                            <span className="text-slate-400 text-xs italic">-</span>
-                                        )}
+                                                        Unenroll
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
