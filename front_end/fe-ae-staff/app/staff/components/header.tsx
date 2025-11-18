@@ -1,5 +1,8 @@
 "use client";
 
+import { useAuth } from "@/contexts/AuthContext";
+import { useLogout } from "@/hooks/auth/useLogout";
+import Cookies from "js-cookie";
 import {
   Bell,
   ChevronDown,
@@ -9,9 +12,6 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useLogout } from "@/hooks/auth/useLogout";
-import { useAuth } from "@/contexts/AuthContext";
-import Cookies from "js-cookie";
 
 type Props = { onMenuClick?: () => void };
 
@@ -45,7 +45,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
             <Menu className="w-5 h-5 text-gray-700" />
           </button>
           <Link
-            href="/staff/manager/terms"
+            href="/staff/terms"
             className="inline-flex items-center gap-3 group transition-transform hover:scale-105"
             aria-label="AI Enhance"
           >

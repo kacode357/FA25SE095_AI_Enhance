@@ -5,49 +5,49 @@ import { clsx } from "clsx";
 import {
   BarChart3,
   ChevronRight,
+  FileSpreadsheet,
+  FileText,
   GraduationCap,
   Layers3,
   Settings,
-  FileText,
-  FileSpreadsheet,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export const mainNav = [
   {
-    href: "/staff/manager/terms",
+    href: "/staff/terms",
     label: "Terms",
     icon: GraduationCap,
     description: "Manage academic terms",
   },
   {
-    href: "/staff/manager/course-codes",
+    href: "/staff/course-codes",
     label: "Course Codes",
     icon: Layers3,
     description: "Manage your course codes",
   },
   {
-    href: "/staff/manager/course-requests",
+    href: "/staff/course-requests",
     label: "Course Requests",
     icon: FileText,
     description: "View and process course requests",
   },
   {
-    href: "/staff/manager/courses",
+    href: "/staff/courses",
     label: "Courses",
     icon: GraduationCap, 
     description: "Manage active courses and enrollments",
   },
   {
-    href: "/staff/manager/course-approvals",
+    href: "/staff/course-approvals",
     label: "Course Approvals",
     icon: FileText,
     description: "Review and approve pending courses",
   },
  
   {
-    href: "/staff/manager/enrollments",
+    href: "/staff/enrollments",
     label: "Import Enrollments",
     icon: FileSpreadsheet,
     description: "Bulk import students via Excel",
@@ -55,8 +55,8 @@ export const mainNav = [
 ];
 
 const secondaryNav = [
-  { href: "/staff/manager/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/staff/manager/settings", label: "Settings", icon: Settings },
+  { href: "/staff/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/staff/settings", label: "Settings", icon: Settings },
 ];
 
 type SidebarProps = {
@@ -86,7 +86,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
             <div>
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
                 <GraduationCap className="w-5 h-5 text-blue-600" />
-                Instructor
+                Staff Panel
               </h2>
               <p className="text-sm text-gray-500 mt-1">
                 Dashboard Management
@@ -95,11 +95,11 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
           )}
           <Button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 cursor-pointer rounded-md hover:bg-gray-100 transition-colors"
+            className="p-1.5 cursor-pointer rounded-md btn btn-gradient-slow text-white hover:bg-gray-100 transition-colors"
           >
             <ChevronRight
               className={clsx(
-                "w-4 h-4 text-gray-600 transition-transform", // Changed from text-white
+                "w-4 h-4 text-white transition-transform", // Changed from text-white
                 collapsed ? "rotate-0" : "rotate-180"
               )}
             />

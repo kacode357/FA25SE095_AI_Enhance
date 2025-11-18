@@ -1,63 +1,194 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  /* Light theme base */
+  --font-sans: 'Sansation', 'Roboto', sans-serif;
+
+  /* Core colors */
   --background: #ffffff;
-  --foreground: #0f172a; /* slate-900 */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  /* Brand palette: brighter emerald/green */
-  --color-brand: #22c55e; /* green-500 */
-  --color-brand-600: #16a34a; /* green-600 */
-  --color-brand-700: #15803d; /* green-700 */
-  --color-muted: #64748b; /* slate-500 */
-  --color-card: #ffffff;
-  --color-border: #e2e8f0; /* slate-200 */
+  --foreground: #0f172a;
+  --white: #ffffff;
+
+  /* Brand (tím / pink gradient accents) */
+  --brand: #7f71f4;
+  --brand-600: #6f60ee;
+  --brand-700: #5e4fe8;
+
+  /* Accent (cam) */
+  --accent: #f4a23b;
+  --accent-600: #ea961f;
+  --accent-700: #d9840c;
+
+  /* Neutral / surfaces */
+  --card: #ffffff;
+  --border: #e6e9f2;
+  --muted: #94a3b8;
+  --text-muted: #6b7280;
+
+  /* Hiệu ứng focus chung (dựa trên tím) */
+  --focus-ring: rgba(127, 113, 244, 0.28);
+
+  /* === NAV Colors (header menu) === */
+  --nav: #15157a;
+  --nav-active: #8b7cf8;
 }
 
-.dark {
-  --background: #0a0f0a;
-  --foreground: #f6f7f7;
+html,
+body {
+  height: 100%;
 }
 
-body { background: var(--background); color: var(--foreground); }
-/* Force dark foreground within auth scope root container */
-.auth-scope { color: #f8fafc; }
-
-/* Base resets and form elements */
-* { box-sizing: border-box; }
-a { color: var(--color-brand); text-decoration: none; }
-a:hover { color: var(--color-brand-600); }
-input, button { font-family: inherit; }
-
-/* Auth background styling (grid + vignette) */
-.auth-scope .auth-bg {
-  position: fixed;
-  inset: 0;
-  background-color: #0a0f0a; /* fallback */
-  background: radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent),
-    radial-gradient(900px 700px at 0% 100%, color-mix(in oklab, var(--color-brand) 20%, transparent), transparent),
-    linear-gradient(180deg, #0a0f0a, #020617);
+body {
+  margin: 0;
+  background: radial-gradient(
+      1400px 900px at 85% -10%,
+      color-mix(in oklab, var(--brand) 12%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      900px 700px at 0% 100%,
+      color-mix(in oklab, var(--brand) 8%, transparent),
+      transparent
+    ),
+    linear-gradient(180deg, #f7fafc, #f8fbff);
+  color: var(--foreground);
+  /* Global font for lecture-student app */
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-.auth-scope .auth-grid {
+
+/* Reset cơ bản */
+* {
+  box-sizing: border-box;
+}
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--brand-600);
+}
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
+}
+
+.text-brand {
+  color: var(--brand) !important;
+}
+.text-accent {
+  color: var(--accent) !important;
+}
+.bg-brand {
+  background-color: var(--brand) !important;
+}
+.bg-accent {
+  background-color: var(--accent) !important;
+}
+.border-brand {
+  border-color: var(--brand) !important;
+}
+.border-accent {
+  border-color: var(--accent) !important;
+}
+
+/* Nav (header menu) */
+.text-nav {
+  color: var(--nav) !important;
+}
+.text-nav-active {
+  color: var(--nav-active) !important;
+}
+.hover\:text-nav-active:hover {
+  color: var(--nav-active) !important;
+}
+.focus\:text-nav-active:focus {
+  color: var(--nav-active) !important;
+}
+.active\:text-nav-active:active {
+  color: var(--nav-active) !important;
+}
+.visited\:text-nav:visited {
+  color: var(--nav) !important;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(2, 6, 23, 0.06);
+}
+
+/* Glass-style card for auth pages */
+.glass-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.64));
+  border: 1px solid rgba(127,113,244,0.12);
+  border-radius: 18px;
+  box-shadow: 0 14px 40px rgba(11, 18, 39, 0.08);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  backdrop-filter: blur(8px) saturate(120%);
+}
+
+/* Decorative hero shapes used on auth pages */
+.auth-hero {
+  position: relative;
+  overflow: visible;
+}
+.auth-hero::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size: 32px 32px;
-  -webkit-mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
-  mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent);
+  inset: -60% -10% auto auto;
+  width: 720px;
+  height: 720px;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--brand) 36%, transparent), transparent 60%);
+  transform: translate(-10%, -10%) rotate(12deg);
+  filter: blur(28px) saturate(120%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.auth-hero .hero-title {
+  font-size: 2.25rem; /* 36px */
+  line-height: 1.02;
+  font-weight: 700;
+}
+.auth-hero .hero-sub {
+  color: var(--text-muted);
 }
 
-/* Card */
-.card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 6px 24px rgba(2,6,23,0.06); }
 
-.input { width: 100%; border: 1px solid var(--color-border); background: #ffffff; color: #0f172a; padding: 10px 12px; border-radius: 10px; outline: none; }
+/* Input theo brand tím */
+.input {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--foreground);
+  padding: 10px 12px;
+  border-radius: 10px;
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+.input::placeholder {
+  /* fallback for older browsers */
+  color: var(--text-muted);
+  /* modern browsers will apply a subtle mix with brand */
+  color: color-mix(in oklab, var(--brand) 35%, #94a3b8);
+}
 .input:focus {
-  border-color: var(--color-brand-600);
-  box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
+/* Button cơ bản */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -66,31 +197,166 @@ input, button { font-family: inherit; }
   border-radius: 12px;
   padding: 10px 14px;
   font-weight: 600;
+  transition: filter 0.15s ease, transform 0.02s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  border: 0;
 }
-.btn-primary { background: linear-gradient(180deg, var(--color-brand), var(--color-brand-700)); color: #ffffff; }
-.btn-primary:hover { filter: brightness(1.02) saturate(1.05); }
-.btn-ghost { background: transparent; color: #065f46; }
-.btn-ghost:hover { background: rgba(16,185,129,0.08); }
 
-/* Auth-scope color overrides: keep dark/green look */
-.auth-scope {
-  color-scheme: dark;
-  color: #e5f6ed;
+/* Gradient tím hồng (CTA) */
+.btn-gradient {
+  background: linear-gradient(135deg, #f4a7df 0%, #7f71f4 100%);
+  color: #ffffff;
+  border-radius: 7px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: color 0.7s ease-in-out;
 }
-.auth-scope .card {
-  --color-card: rgba(2, 6, 23, 0.65); /* slate-950 ~ */
-  --color-border: rgba(255, 255, 255, 0.12);
-  background: var(--color-card);
-  border-color: var(--color-border);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+
+.btn-gradient::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #13127d;
+  z-index: -1;
+  transition: clip-path 0.7s cubic-bezier(0.2, 1, 0.3, 1);
+  clip-path: circle(0% at 50% 50%);
 }
-.auth-scope .input {
-  background: rgba(255,255,255,0.06);
-  color: #f8fafc;
-  border-color: rgba(255,255,255,0.16);
+
+.btn-gradient:hover::after {
+  clip-path: circle(150% at 50% 50%);
 }
-.auth-scope .input::placeholder { color: rgba(248, 250, 252, 0.6); }
-.auth-scope .btn-ghost { color: #bbf7d0; }
-.auth-scope a { color: #34d399; }
-.auth-scope a:hover { color: #10b981; }
+
+/* Gradient tím-hồng kiểu pill (hover chậm hơn) */
+.btn-gradient-slow {
+  background: linear-gradient(135deg, #f6a9ff 0%, #8b7cf8 100%);
+  color: #ffffff;
+  /* border-radius: 9999px; */
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: color 1.2s ease-in-out, filter .2s, transform .02s, box-shadow .2s; /* chậm hơn */
+  box-shadow: 0 10px 22px rgba(127, 113, 244, 0.22);
+}
+.btn-gradient-slow::after {
+  content: "";
+  position: absolute;
+
+  inset: 0;
+  background: #13127d; /* overlay tím đậm */
+  z-index: -1;
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1); 
+  clip-path: circle(0% at 50% 50%);
+}
+.btn-gradient-slow:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
+
+/* === NÚT VÀNG (Accent Style) === */
+/* Dùng cho nút Warning, Premium, hoặc điểm nhấn thứ 2 */
+.btn-yellow-slow {
+  /* Gradient từ vàng sáng sang cam vàng */
+  background: linear-gradient(135deg, #ffe066 0%, #f4a23b 100%);
+  color: #ffffff; /* Chữ trắng cho nổi */
+  /* border-radius: 9999px; Bật cái này nếu muốn bo tròn hẳn */
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  
+  /* Transition y hệt nút tím */
+  transition: color 1.2s ease-in-out, filter .2s, transform .02s, box-shadow .2s;
+  
+  /* Bóng đổ màu vàng cam nhẹ */
+  box-shadow: 0 10px 22px rgba(244, 162, 59, 0.28);
+}
+
+.btn-yellow-slow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  
+  /* Màu overlay khi hover: Cam đậm/Nâu đất */
+  background: #d9840c; 
+  z-index: -1;
+  
+  /* Hiệu ứng lan tỏa chậm */
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1); 
+  clip-path: circle(0% at 50% 50%);
+}
+
+.btn-yellow-slow:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
+
+/* === NÚT XANH (Sub/Info Style) === */
+/* Dùng cho nút phụ, thông tin, hoặc hành động Sub */
+.btn-green-slow {
+  /* Gradient từ xanh lá nhạt sang xanh lá đậm */
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  color: #ffffff;
+  /* border-radius: 9999px; */
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  
+  transition: color 1.2s ease-in-out, filter .2s, transform .02s, box-shadow .2s;
+  
+  /* Bóng đổ màu xanh lá */
+  box-shadow: 0 10px 22px rgba(5, 150, 105, 0.28);
+}
+
+.btn-green-slow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  
+  /* Màu overlay khi hover: xanh lá đậm */
+  background: #064e3b;
+  z-index: -1;
+  
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1); 
+  clip-path: circle(0% at 50% 50%);
+}
+
+.btn-green-slow:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
+
+/* === NÚT XANH DƯƠNG (Blue / Primary Info) === */
+.btn-blue-slow {
+  /* Gradient từ xanh dương nhạt sang xanh dương đậm */
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+
+  transition: color 1.2s ease-in-out, filter .2s, transform .02s, box-shadow .2s;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
+}
+
+.btn-blue-slow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  /* Màu overlay khi hover: xanh dương đậm / navy */
+  background: #0b3b82;
+  z-index: -1;
+
+  transition: clip-path 1.6s cubic-bezier(0.2, 1, 0.3, 1);
+  clip-path: circle(0% at 50% 50%);
+}
+
+.btn-blue-slow:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
+/* Utility: keep scrollbar space to avoid layout shift (where supported) */
+@supports (scrollbar-gutter: stable) {
+  .scrollbar-stable {
+    scrollbar-gutter: stable;
+  }
+}
