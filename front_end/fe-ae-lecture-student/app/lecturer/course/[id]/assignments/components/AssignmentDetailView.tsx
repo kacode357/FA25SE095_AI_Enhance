@@ -240,6 +240,99 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                 )}
 
                 {/* ===== Description (TinyMCE read-only) ===== */}
+                {/* When overview is open, render it full-width above the description */}
+                {overviewMounted && openOverview && (
+                  <div className="rounded-md border border-slate-200 bg-white overflow-hidden transition-all duration-300">
+                    <div className="py-3 border-b border-slate-300 flex items-center justify-between px-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-[11px] h-8 px-2"
+                        onClick={() => setOpenOverview((s) => !s)}
+                      >
+                        <span className="flex items-center gap-1 text-[#000D83]">
+                          <Info className="size-4" />
+                          <ChevronDown className="size-4" />
+                          Overview
+                        </span>
+                      </Button>
+                    </div>
+
+                    <div className={`px-4 py-3 text-sm grid grid-cols-1 gap-5 transition-all duration-500 ease-out transform ${overviewEnter ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0 pointer-events-none'}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-slate-500">Course</span>
+                        <span className="font-medium text-right">{a.courseName}</span>
+                      </div>
+
+                      {a.topicName && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-slate-500">Topic</span>
+                          <span className="font-medium text-right">{a.topicName}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Type</span>
+                        <span className="font-medium">{a.isGroupAssignment ? "Group" : "Individual"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Max Points</span>
+                        <span className="font-medium">{a.maxPoints ?? 0}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Format</span>
+                        <span className="font-medium">{a.format?.trim() || "—"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Grading Criteria</span>
+                        <span className="font-medium">{a.gradingCriteria?.trim() || "—"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Start</span>
+                        <span className="font-medium">{fmt(a.startDate)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Due</span>
+                        <span className="font-medium">{fmt(a.dueDate)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Extended Due</span>
+                        <span className="font-medium">{fmt(a.extendedDueDate)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Created</span>
+                        <span className="font-medium">{fmt(a.createdAt)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Updated</span>
+                        <span className="font-medium">{fmt(a.updatedAt)}</span>
+                      </div>
+
+                      <div className="mt-2">
+                        <AssignmentActionsBar
+                          assignmentId={a.id}
+                          status={a.status}
+                          currentDue={a.dueDate}
+                          currentExtendedDue={a.extendedDueDate}
+                          onExtend={handleExtend}
+                          onClose={handleClose}
+                          defaultOpen
+                          loadingExtend={loadingExtend}
+                          loadingClose={loadingClose}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <section className="min-h-0 h-full flex flex-col lg:min-h-[65vh]">
                   <div className="mb-2 text-sm text-slate-500">Description</div>
                   <ScrollArea className="border border-slate-300 rounded-md bg-white/50 flex-1 min-h-0 w-full overflow-y-auto">
@@ -301,7 +394,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
               </div>
 
               {/* ===== Right column (Overview) ===== */}
-              {overviewMounted && (
+              {overviewMounted && !openOverview && (
                 <div className="lg:col-span-4">
                   <div className={`rounded-md border mt-6.5 border-slate-200 bg-white overflow-hidden transition-all duration-300`}>
                     <div className="py-3 border-b border-slate-300 flex items-center justify-between">

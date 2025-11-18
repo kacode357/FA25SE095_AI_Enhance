@@ -1,6 +1,7 @@
 // app/lecture/manager/course/[id]/assignments/components/NewAssignmentForm.tsx
 "use client";
 
+import DateTimePicker from "@/components/common/DateTimePicker";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -19,7 +20,8 @@ import { useGetTopicsDropdown } from "@/hooks/topic/useGetTopicsDropdown";
 import { AssignmentService } from "@/services/assignment.services";
 import type { CreateAssignmentPayload } from "@/types/assignments/assignment.payload";
 import { CircleAlert } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 function normalizeHtmlForSave(input?: string | null): string {
   if (!input) return "";
@@ -62,6 +64,11 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     format: "",
     gradingCriteria: "",
   });
+
+  // When creating a new assignment, we may create first then allow group assignment.
+  const [createdAssignmentId, setCreatedAssignmentId] = useState<string | null>(null);
+  const [createdAssignment, setCreatedAssignment] = useState<any | null>(null);
+  const checkboxSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (courseId) fetchByCourseId(courseId);
@@ -151,6 +158,18 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     if (!courseId) return;
     if (!form.title.trim()) return alert("Title is required");
     if (!form.startDate || !form.dueDate) return alert("Dates are required");
+    // Start must be at least 5 minutes from now
+    const nowMs = Date.now();
+    const startMs = new Date(form.startDate).getTime();
+    if (startMs < nowMs + 5 * 60 * 1000) return alert("Start Date/Time must be at least 5 minutes from now");
+    // Due date must be at least the next calendar day after start date (ignore time)
+    const start = new Date(form.startDate);
+    const due = new Date(form.dueDate);
+    const startDayUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+    const dueDayUtc = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate());
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    if (dueDayUtc < startDayUtc + oneDayMs)
+      return alert("Due Date must be at least the next calendar day after Start Date");
 
     const descriptionClean = normalizeHtmlForSave(form.description);
 
@@ -171,15 +190,11 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
     const res = await createAssignment(payload);
     if (res?.success) {
-      const createdHasAssignedGroups = !!res.assignment?.assignedGroups && res.assignment.assignedGroups.length > 0;
-      if (form.isGroupAssignment && form.groupIds.length > 0 && !createdHasAssignedGroups) {
-        try {
-          await assignGroups({ assignmentId: res.assignmentId, groupIds: form.groupIds });
-        } catch (err) {
-          // assignGroups hook toasts on success/failure; continue flow regardless
-        }
-      }
-      // If user wants automatic scheduling, call schedule hook
+      // store created assignment and id and DO NOT navigate back yet
+      setCreatedAssignmentId(res.assignmentId);
+      setCreatedAssignment(res.assignment ?? null);
+
+      // If autoSchedule requested, schedule now
       if (form.autoSchedule) {
         try {
           await scheduleAssignment(res.assignmentId, { schedule: true });
@@ -188,8 +203,11 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
         }
       }
 
-      resetForm();
-      onCreated?.();
+      // reveal group section and scroll to checkbox area
+      setTimeout(() => checkboxSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+
+      toast.success("Assignment created. You can now assign groups (if needed).");
+      // Do not reset form so user can select groups; navigation back will be done after confirm/back
     }
   };
 
@@ -208,19 +226,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             />
           </div>
 
-          <div>
-            <Label className="text-sm mb-1">Max Points</Label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="100"
-              value={form.maxPoints}
-              className="text-xs"
-              onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value }))}
-            />
-          </div>
-
-          <div>
+                    <div>
             <Label className="text-sm mb-1">Topic</Label>
             {loadingTopics ? (
               <div className="text-sm text-slate-500 p-2">Loading topics...</div>
@@ -242,28 +248,6 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               </select>
             )}
           </div>
-
-          <div className="flex gap-3 w-full">
-            <div className="flex-1">
-              <Label className="text-sm mb-1">Start Date *</Label>
-              <Input
-                type="datetime-local"
-                value={form.startDate}
-                className="text-xs"
-                onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
-              />
-            </div>
-
-            <div className="flex-1">
-              <Label className="text-sm mb-1">Due Date *</Label>
-              <Input
-                type="datetime-local"
-                className="text-xs"
-                value={form.dueDate}
-                onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
-              />
-            </div>
-          </div>
         </div>
 
         {/* Description */}
@@ -280,6 +264,49 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
         {/* Settings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+            <Label className="text-sm mb-1">Max Points</Label>
+            <Input
+              type="number"
+              inputMode="numeric"
+              placeholder="100"
+              value={form.maxPoints}
+              className="text-xs"
+              onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))}
+            />
+          </div>
+                    <div className="flex gap-3 w-full">
+            <div className="flex-1">
+              <Label className="text-sm mb-1">Start Date *</Label>
+              <DateTimePicker
+                value={form.startDate}
+                onChange={(iso: string) => setForm((p) => ({ ...p, startDate: iso }))}
+                placeholder="yyyy-MM-dd HH:mm"
+                minDate={new Date()}
+                // ensure start time is at least 5 minutes from now
+                minTime={new Date(Date.now() + 5 * 60 * 1000)}
+                timeIntervals={5}
+              />
+            </div>
+
+            <div className="flex-1">
+              <Label className="text-sm mb-1">Due Date *</Label>
+              <DateTimePicker
+                value={form.dueDate}
+                onChange={(iso: string) => setForm((p) => ({ ...p, dueDate: iso }))}
+                placeholder="yyyy-MM-dd HH:mm"
+                minDate={
+                  form.startDate
+                    ? (() => {
+                        const s = new Date(form.startDate);
+                        return new Date(s.getFullYear(), s.getMonth(), s.getDate() + 1);
+                      })()
+                    : new Date()
+                }
+                timeIntervals={5}
+              />
+            </div>
+          </div>
           <div>
             <Label className="text-sm mb-1">Format</Label>
             <Input
@@ -321,7 +348,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
         {/* Group assignment */}
         <div className="">
-          <div className="space-y-3">
+          <div ref={checkboxSectionRef} className="space-y-3">
             <div className="flex justify-between items-center gap-2">
               <div className="flex gap-2 items-center">
                 <Checkbox
@@ -355,7 +382,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               </div>
             </div>
 
-            {form.isGroupAssignment && (
+            {form.isGroupAssignment && createdAssignmentId && (
               <div className="rounded-lg border border-slate-300 p-3">
                 <div className="mb-2 text-sm font-medium">Select groups in this course</div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-h-60 overflow-auto pr-1">
@@ -407,19 +434,64 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                 </div>
               </div>
             )}
+
+            {/* After creation: confirm/back controls to finish assigning or go back */}
+            {createdAssignmentId && form.isGroupAssignment && (
+              <div className="flex items-center justify-end gap-3 mt-3">
+                <Button
+                  variant="outline"
+                  className="text-violet-800"
+                  onClick={() => {
+                    // Back: just navigate back to AssignmentsPanel (via onCreated)
+                    toast.success("Returning to assignments...");
+                    onCreated?.();
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  className="btn text-sm btn-gradient-slow"
+                  onClick={async () => {
+                    if (!createdAssignmentId) return toast.error("No assignment available to assign groups.");
+                    if ((form.groupIds?.length ?? 0) === 0) {
+                      // nothing to assign; just return
+                      toast.success("No groups selected. Returning to assignments.");
+                      onCreated?.();
+                      return;
+                    }
+                    try {
+                      await assignGroups({ assignmentId: createdAssignmentId, groupIds: form.groupIds });
+                      onCreated?.();
+                    } catch (err) {
+                      toast.error("Failed to assign groups.");
+                    }
+                  }}
+                  disabled={assigning}
+                >
+                  Assign Group
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
 
       <CardFooter className="flex items-center rounded-xl justify-end gap-2 bg-white py-3">
-        {onCancel && (
+        {!createdAssignmentId && onCancel && (
           <Button className="text-violet-800 hover:text-violet-500" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
         )}
-        <Button className="btn btn-gradient-slow" onClick={onSubmit} disabled={creating || scheduling || assigning}>
-          Create
-        </Button>
+
+        {!createdAssignmentId && (
+          <Button
+            className="btn btn-gradient-slow"
+            onClick={onSubmit}
+            disabled={creating || scheduling || assigning}
+          >
+            Create
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

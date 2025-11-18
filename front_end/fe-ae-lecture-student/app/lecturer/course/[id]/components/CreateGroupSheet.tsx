@@ -33,6 +33,8 @@ export default function CreateGroupSheet({
   const [isLocked, setIsLocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [maxMembersError, setMaxMembersError] = useState<string | null>(null);
 
   // Prefill when switching to edit mode/opening with initial data
   useEffect(() => {
@@ -55,6 +57,8 @@ export default function CreateGroupSheet({
       setMaxMembers("");
       setIsLocked(false);
       setError(null);
+      setNameError(null);
+      setMaxMembersError(null);
       setSubmitting(false);
     }
   }, [open, mode]);
@@ -67,9 +71,29 @@ export default function CreateGroupSheet({
   const canSubmit = !!effectiveCourseId && !!name && typeof maxMembers === "number" && maxMembers > 0;
 
   const handleSubmit = async () => {
-    if (!canSubmit || submitting) return;
-    setSubmitting(true);
+    if (submitting) return;
+    // clear previous errors
     setError(null);
+    setNameError(null);
+    setMaxMembersError(null);
+
+    // validate fields and show inline errors
+    let hasError = false;
+    if (!effectiveCourseId) {
+      setError("Course is required");
+      hasError = true;
+    }
+    if (!name || name.trim() === "") {
+      setNameError("Group name is required!");
+      hasError = true;
+    }
+    if (typeof maxMembers !== "number" || maxMembers <= 0) {
+      setMaxMembersError("Max members is required and must be greater than 0!");
+      hasError = true;
+    }
+    if (hasError) return;
+
+    setSubmitting(true);
     try {
       const payload: CreateGroupPayload = {
         courseId: effectiveCourseId,
@@ -132,7 +156,17 @@ export default function CreateGroupSheet({
           )}
           <div>
             <Label htmlFor="groupName" className="py-2">Group Name</Label>
-            <Input id="groupName" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Lab Team A" disabled={submitting} />
+            <Input
+              id="groupName"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError) setNameError(null);
+              }}
+              placeholder="e.g. Lab Team A"
+              disabled={submitting}
+            />
+            {nameError && <div className="text-sm text-red-600 mt-1">{nameError}</div>}
           </div>
           <div>
             <Label htmlFor="groupDescription" className="py-2">Description</Label>
@@ -145,10 +179,14 @@ export default function CreateGroupSheet({
               type="number"
               min={1}
               value={maxMembers}
-              onChange={(e) => setMaxMembers(e.target.value ? parseInt(e.target.value) : "")}
+              onChange={(e) => {
+                setMaxMembers(e.target.value ? parseInt(e.target.value) : "");
+                if (maxMembersError) setMaxMembersError(null);
+              }}
               placeholder="e.g. 5"
               disabled={submitting}
             />
+            {maxMembersError && <div className="text-sm text-red-600 mt-1">{maxMembersError}</div>}
           </div>
 
           <div className="flex items-center justify-start py-2 gap-3">
@@ -173,7 +211,7 @@ export default function CreateGroupSheet({
         </div>
 
         <SheetFooter className="flex flex-row justify-start gap-5">
-          <Button className="btn btn-gradient-slow" onClick={handleSubmit} disabled={!canSubmit || submitting}>
+          <Button className="btn btn-gradient-slow" onClick={handleSubmit} disabled={submitting}>
             {submitting ? (mode === "edit" ? "Saving..." : "Creating...") : mode === "edit" ? "Save changes" : "Create"}
           </Button>
           <Button className="text-violet-800 hover:text-violet-500" variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>

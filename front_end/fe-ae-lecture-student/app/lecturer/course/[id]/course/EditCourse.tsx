@@ -179,7 +179,7 @@ export default function EditCourse() {
                         <div className="flex items-center gap-2">
                             <Link href={id ? `/lecturer/course/${id}` : "#"} aria-label="Go to Course Detail Page" className={id ? "" : "pointer-events-none opacity-60"}>
                                 <Button size="sm" variant="outline" className="cursor-pointer btn btn-gradient-slow text-violet-800 hover:text-violet-600">
-                                    View Students
+                                    In Course
                                 </Button>
                             </Link>
                         </div>
