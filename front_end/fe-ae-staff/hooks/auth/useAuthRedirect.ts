@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { UserService } from "@/services/user.services";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export function useAuthRedirect() {
   const router = useRouter();
@@ -14,7 +14,7 @@ export function useAuthRedirect() {
 
     UserService.getProfile()
       .then(() => {
-        router.replace("/staff/manager/terms");
+        router.replace("/staff/terms");
       })
       .catch(() => {
    

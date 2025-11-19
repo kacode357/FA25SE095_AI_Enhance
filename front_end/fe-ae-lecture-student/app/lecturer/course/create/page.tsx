@@ -26,7 +26,7 @@ import { TermService } from "@/services/term.services";
 import { CourseCodeOption } from "@/types/course-codes/course-codes.response";
 import { CreateCoursePayload } from "@/types/courses/course.payload";
 import { TermResponse } from "@/types/term/term.response";
-import UploadCourseImageCard from "./components/UploadCourseImageCard";
+// image upload removed per design request: full-width form
 
 function BreadcrumbCreate({ router }: { router: ReturnType<typeof useRouter> }) {
     return (
@@ -119,10 +119,8 @@ export default function CreateCoursePage() {
             };
             const res = await CourseService.createCourse(payload);
             if (res?.success) {
-                // Invalidate cached course lists so CoursesPage fetches fresh data
                 try { invalidateMyCoursesCache(); } catch { }
-                // Keep user on this page and enable image upload by storing the newly created courseId
-                setCreatedCourseId(res.courseId);
+                router.push("/lecturer/course");
             }
         } finally {
             setSubmitting(false);
@@ -131,14 +129,13 @@ export default function CreateCoursePage() {
 
     return (
         <div className="p-3 mr-3 min-h-screen overflow-auto">
-            {/* Top bar header to match CoursesPage */}
             <div className="sticky top-0 z-30 backdrop-blur w-full pb-3 pt-1 flex items-center justify-between">
                 <h1 className="text-sm font-semibold uppercase tracking-wide whitespace-nowrap mr-4">Create Course</h1>
                 <BreadcrumbCreate router={router} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                <div className="lg:col-span-2 flex flex-col gap-3">
+            <div className="grid grid-cols-1 gap-3">
+                <div className="flex flex-col gap-3">
                     <Card className="p-6 border-slate-200 shadow-sm relative overflow-hidden">
                         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
@@ -178,21 +175,6 @@ export default function CreateCoursePage() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                </div>
-                            </div>
-
-                            {/* Year */}
-                            <div>
-                                <Label className="text-lg mb-2">Year</Label>
-                                <div className="mt-1 flex items-center gap-2">
-                                    <Input
-                                        type="number"
-                                        value={form.year}
-                                        onChange={(e) => setForm((f) => ({ ...f, year: Number(e.target.value) }))}
-                                        className="h-9"
-                                        placeholder="e.g., 2025"
-                                        disabled={formDisabled}
-                                    />
                                 </div>
                             </div>
 
@@ -281,25 +263,16 @@ export default function CreateCoursePage() {
                     </Card>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-3">
-                    <div className="">
-                            <UploadCourseImageCard courseId={createdCourseId ?? undefined} />
-                        </div>
-                    <Card className="p-4 border-slate-200 shadow-sm">
-                        <div className="flex flex-col gap-2">
-                            {!createdCourseId ? (
-                                <Button
-                                    onClick={handleSubmit}
-                                    loading={submitting}
-                                    className="btn btn-gradient text-white"
-                                    disabled={!isValid || submitting}
-                                >
-                                    Create Course
-                                </Button>
-                            ) : (
-                                <div className="text-sm text-green-700">Course created — you can now upload an image.</div>
-                            )}
+                {/* Actions - full width beneath the form */}
+                <Card className="p-4 border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        {!isValid ? (
+                            <div className="text-xs text-amber-600">Please complete all required fields.</div>
+                        ) : (
+                            <div />
+                        )}
+
+                        <div className="flex items-center gap-3 justify-end">
                             <Button
                                 variant="ghost"
                                 className="text-violet-800 hover:text-violet-500"
@@ -307,12 +280,22 @@ export default function CreateCoursePage() {
                             >
                                 Cancel
                             </Button>
-                            {!isValid && (
-                                <div className="text-xs mt-2.5 text-amber-600">Please complete all required fields.</div>
+
+                            {!createdCourseId ? (
+                                <Button
+                                    onClick={handleSubmit}
+                                    loading={submitting}
+                                    className="btn btn-gradient text-sm text-white"
+                                    disabled={!isValid || submitting}
+                                >
+                                    Create
+                                </Button>
+                            ) : (
+                                <div className="text-sm text-green-700">Course created.</div>
                             )}
                         </div>
-                    </Card>
-                </div>
+                    </div>
+                </Card>
             </div>
         </div>
     );

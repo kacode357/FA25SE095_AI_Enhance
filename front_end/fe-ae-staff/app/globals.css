@@ -360,3 +360,44 @@ select {
     scrollbar-gutter: stable;
   }
 }
+
+/* DateTimePicker: enable smooth touchpad/touch scrolling in small scrollable lists */
+.dtp-scroll {
+  -webkit-overflow-scrolling: touch; /* smoother scrolling on iOS / WebKit */
+  touch-action: pan-y; /* allow vertical two-finger swipes on touchpads */
+  overscroll-behavior: contain; /* prevent parent scroll from interfering */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(2,6,23,0.12) transparent; /* subtle thumb */
+  --dtp-scroll-thumb-bg: rgba(2,6,23,0.12);
+}
+
+/* WebKit / Blink scrollbar styling (Chrome, Edge, Safari) */
+.dtp-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.dtp-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dtp-scroll::-webkit-scrollbar-thumb {
+  background: var(--dtp-scroll-thumb-bg);
+  border-radius: 9999px;
+  min-height: 28px;
+}
+.dtp-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(2,6,23,0.18);
+}
+
+/* Make the thumb very subtle (almost invisible) until the user interacts, to avoid the large overlay thumb feeling */
+.dtp-scroll {
+  --dtp-scroll-thumb-opacity: 0.0;
+}
+.dtp-scroll::-webkit-scrollbar-thumb {
+  opacity: var(--dtp-scroll-thumb-opacity);
+  transition: opacity 120ms ease;
+}
+.dtp-scroll:active::-webkit-scrollbar-thumb,
+.dtp-scroll:focus-within::-webkit-scrollbar-thumb,
+.dtp-scroll:hover::-webkit-scrollbar-thumb {
+  --dtp-scroll-thumb-opacity: 1.0;
+}

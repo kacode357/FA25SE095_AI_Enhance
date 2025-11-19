@@ -1,10 +1,10 @@
 // hooks/term/useCreateTerm.ts
 "use client";
 
-import { useState } from "react";
 import { TermService } from "@/services/terms.services";
 import { CreateTermPayload } from "@/types/terms/terms.payload";
 import { CreateTermResponse } from "@/types/terms/terms.response";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export function useCreateTerm() {
@@ -16,7 +16,7 @@ export function useCreateTerm() {
     setLoading(true);
     try {
       const res = await TermService.create(payload);
-      toast.success(res.message || "Tạo term thành công");
+      toast.success(res.message || "Term created successfully.");
       return res;
     } catch {
       // lỗi đã có interceptor xử lý

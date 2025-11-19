@@ -16,14 +16,18 @@ type ButtonProps = MotionButtonBase & {
   children?: React.ReactNode;
 };
 
-export function Button({
-  variant = "primary",
-  size = "md",
-  loading = false,
-  className = "",
-  children,
-  ...props
-}: ButtonProps) {
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      variant = "primary",
+      size = "md",
+      loading = false,
+      className = "",
+      children,
+      ...props
+    },
+    ref
+  ) => {
   // Size styles
   const sizeClasses =
     size === "sm"
@@ -52,28 +56,32 @@ export function Button({
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-300 " +
     "disabled:opacity-60 disabled:pointer-events-none";
 
-  return (
-    <motion.button
-      whileHover={{ y: -1 }}
-      whileTap={{ scale: 0.98 }}
-      disabled={loading || props.disabled}
-      aria-busy={loading}
-      aria-disabled={loading || props.disabled ? true : undefined}
-      className={`${base} ${variantClasses} ${sizeClasses} ${
-        loading ? "opacity-90" : ""
-      } ${className}`}
-      {...props}
-    >
-      {loading ? (
-        <span className="inline-flex items-center justify-center gap-2">
-          <LogoLoader size={18} />
-          {children}
-        </span>
-      ) : (
-        children
-      )}
-    </motion.button>
-  );
-}
+    return (
+      <motion.button
+        ref={ref}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.98 }}
+        disabled={loading || props.disabled}
+        aria-busy={loading}
+        aria-disabled={loading || props.disabled ? true : undefined}
+        className={`${base} ${variantClasses} ${sizeClasses} ${
+          loading ? "opacity-90" : ""
+        } ${className}`}
+        {...props}
+      >
+        {loading ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <LogoLoader size={18} />
+            {children}
+          </span>
+        ) : (
+          children
+        )}
+      </motion.button>
+    );
+  }
+);
+
+Button.displayName = "Button";
 
 export default Button;

@@ -1,8 +1,8 @@
 // components/ui/date-time-picker.tsx
 "use client";
 
-import * as React from "react";
 import { ChevronDownIcon } from "lucide-react";
+import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -82,23 +82,23 @@ function TimeSelector({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           className={
             buttonClassName ??
-            "h-8 w-24 justify-between px-2 text-xs font-normal"
+            "h-9 w-28 justify-between px-3 text-xs font-normal text-slate-700"
           }
         >
           {timeStr || placeholder}
-          <ChevronDownIcon className="h-3 w-3" />
+          <ChevronDownIcon className="h-3 w-3 text-slate-400" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
         className="w-auto p-2 bg-white border border-slate-200 rounded-md shadow-sm"
       >
-        <div className="flex gap-2 text-xs">
+        <div className="flex gap-2 text-sm">
           {/* Hours */}
-          <div className="max-h-40 w-10 overflow-auto pr-1">
+            <div className="max-h-40 w-12 overflow-auto pr-1">
             {hours.map((h) => {
               const label = h.toString().padStart(2, "0");
               const active = h === curH;
@@ -119,7 +119,7 @@ function TimeSelector({
             })}
           </div>
           {/* Minutes */}
-          <div className="max-h-40 w-10 overflow-auto pr-1">
+            <div className="max-h-40 w-12 overflow-auto pr-1">
             {minutes.map((m) => {
               const label = m.toString().padStart(2, "0");
               const active = m === curM;
@@ -160,15 +160,15 @@ export function Calendar24() {
         </Label>
         <Popover open={openDate} onOpenChange={setOpenDate}>
           <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              id="date-picker"
-              className="h-8 w-32 justify-between px-2 text-xs font-normal"
-            >
-              {date ? date.toLocaleDateString() : "Select date"}
-              <ChevronDownIcon className="h-3 w-3" />
-            </Button>
-          </PopoverTrigger>
+                <Button
+                  variant="outline"
+                  id="date-picker"
+                  className="h-10 w-40 justify-between px-3 text-sm font-normal rounded-lg border-slate-200"
+                >
+                  {date ? date.toLocaleDateString() : "Select date"}
+                  <ChevronDownIcon className="h-3 w-3" />
+                </Button>
+              </PopoverTrigger>
           <PopoverContent
             className="w-auto p-2 bg-white border border-slate-200 rounded-md shadow-sm"
             align="start"
@@ -181,7 +181,7 @@ export function Calendar24() {
                 setDate(d);
                 setOpenDate(false);
               }}
-              className="rounded-md border border-slate-100 text-xs"
+              className="rounded-md border border-slate-100 text-sm"
             />
           </PopoverContent>
         </Popover>
@@ -283,17 +283,21 @@ export function DateTimePicker({
   };
 
   return (
-    <div className={`flex gap-3 ${className ?? ""}`}>
-      {/* Date */}
-      <div className="flex flex-col gap-2">
+    <div
+      className={`flex items-center border border-slate-200 rounded-lg bg-white ${
+        className ?? ""
+      }`}
+    >
+      {/* Date - expand to take available space */}
+      <div className="flex-1">
         <Popover open={openDate} onOpenChange={setOpenDate}>
           <PopoverTrigger asChild>
             <Button
-              variant="outline"
-              className="h-8 w-32 justify-between px-2 text-xs font-normal"
-            >
+                  variant="ghost"
+                  className="h-10 w-full justify-between text-xs font-normal bg-white text-slate-700 text-left"
+                >
               {date ? date.toLocaleDateString() : "Select date"}
-              <ChevronDownIcon className="h-3 w-3" />
+              <ChevronDownIcon className="h-4 w-4 text-slate-400" />
             </Button>
           </PopoverTrigger>
           <PopoverContent
@@ -305,7 +309,7 @@ export function DateTimePicker({
               selected={date}
               captionLayout="dropdown"
               onSelect={handleSelectDate}
-              className="rounded-md border border-slate-100 text-xs"
+              className="rounded-md border border-slate-100 text-sm"
               disabled={(d) => {
                 if (!minDate) return false;
                 const md = new Date(
@@ -313,11 +317,7 @@ export function DateTimePicker({
                   minDate.getMonth(),
                   minDate.getDate()
                 );
-                const curr = new Date(
-                  d.getFullYear(),
-                  d.getMonth(),
-                  d.getDate()
-                );
+                const curr = new Date(d.getFullYear(), d.getMonth(), d.getDate());
                 return curr < md;
               }}
             />
@@ -325,22 +325,16 @@ export function DateTimePicker({
         </Popover>
       </div>
 
-      {/* Time */}
-      <div className="flex flex-col gap-2">
-        {/* giữ Input nếu muốn user thấy format placeholder */}
-        <Input
-          type="text"
-          readOnly
-          value={timeStr}
-          placeholder={placeholder}
-          className="hidden"
-        />
+      {/* Time - fixed width so both controls sit nicely */}
+      <div className="flex-none">
+        {/* keep Input if we want user to see format placeholder */}
+        <Input type="text" readOnly value={timeStr} placeholder={placeholder} className="hidden" />
         <TimeSelector
           timeStr={timeStr}
           onChange={handleTimeSelectorChange}
           timeIntervals={timeIntervals}
           placeholder="Select time"
-          buttonClassName="h-8 w-24 justify-between px-2 text-xs font-normal"
+          buttonClassName="h-10 w-28 justify-between bg-white px-2 text-xs font-normal text-slate-700"
         />
       </div>
     </div>

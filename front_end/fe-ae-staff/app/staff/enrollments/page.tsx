@@ -1,4 +1,4 @@
-// app/(staff)/staff/manager/enrollments/page.tsx
+// app/(staff)/staff/enrollments/page.tsx
 "use client";
 
 import { Badge } from "@/components/ui/badge";

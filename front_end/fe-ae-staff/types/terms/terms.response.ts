@@ -1,9 +1,10 @@
 // types/terms/terms.response.ts
-
 export interface Term {
   id: string;
   name: string;
   description: string;
+  startDate: string;
+  endDate: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

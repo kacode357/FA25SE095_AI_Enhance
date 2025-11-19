@@ -10,7 +10,7 @@ import type { LoginPayload } from "@/types/auth/auth.payload";
 import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
 import { saveTokensFromLogin } from "@/utils/auth/access-token";
-import { saveEncodedUser } from "@/utils/secure-user";
+import { useState } from "react";
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
@@ -31,29 +31,18 @@ export function useLogin() {
       // 2. Tạm lưu token để call getProfile (interceptor cần token này)
       saveTokensFromLogin(data.accessToken, data.refreshToken, rememberMe);
 
-      // 3. Lấy Profile
-      const profileRes = await UserService.getProfile();
-      const profile: UserProfile = profileRes.data;
+        // Lấy profile -> mã hoá & lưu theo remember (session/cookie)
+        const profileRes = await UserService.getProfile();
+        const profile: UserProfile = profileRes.data;
+        await saveEncodedUser(profile, rememberMe);
 
-      // 4. Kiểm tra quyền Staff
-      // Giả sử UserServiceRole[ROLE_STAFF] trả về chuỗi "Staff" (check lại config của mày nhé)
-      const isStaff = profile.role === UserServiceRole[ROLE_STAFF];
+        // Điều hướng theo role Staff
+        const STAFF = UserServiceRole[ROLE_STAFF]; // ví dụ: "Staff"
 
-      // ❌ Nếu không phải Staff -> Đuổi ra
-      if (!isStaff) {
-        // Xóa sạch token vừa lưu (overwrite bằng rỗng)
-        saveTokensFromLogin("", "", false);
-        
-        // Báo lỗi
-        toast.error("Access denied. You are not authorized as Staff.");
-        
-        return { ok: false, data: null, role: profile.role } as const;
-      }
-
-      // ✅ Nếu đúng là Staff -> Lưu user & Redirect
-      await saveEncodedUser(profile, rememberMe);
-
-      const target = "/staff/courses";
+        let target = "/";
+        if (profile.role === STAFF) {
+          target = "/staff/manager/courses";
+        }
 
       if (typeof window !== "undefined") {
         window.location.href = target;
