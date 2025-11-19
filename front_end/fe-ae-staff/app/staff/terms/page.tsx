@@ -15,7 +15,7 @@ import { Term } from "@/types/terms/terms.response";
 import PaginationBar from "@/components/common/PaginationBar";
 import CreateDialog from "./components/CreateDialog";
 import EditDialog from "./components/EditDialog";
-import FilterRow from "./components/FilterRow";
+import FilterControls from "./components/FilterControls";
 
 export default function TermsPage() {
   const { listData, totalPages, totalCount, page, pageSize, loading, fetchTerms } = useTerms();
@@ -107,9 +107,28 @@ export default function TermsPage() {
       {/* Table */}
       <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
         <CardHeader>
-          <CardTitle className="text-base text-slate-800">
-            Term List <span className="text-slate-500">({totalCount})</span>
-          </CardTitle>
+          <div className="flex items-start justify-between gap-4">
+            <CardTitle className="text-base text-slate-800">
+              Term List <span className="text-slate-500">({totalCount})</span>
+            </CardTitle>
+            <div className="ml-auto">
+              <FilterControls
+                filterActive={filterActive}
+                setFilterActive={setFilterActive}
+                fetchAll={() => fetchAll(currentPage)}
+                clearAll={() => {
+                  setFilterActive("");
+                  setFilterStart(undefined);
+                  setFilterEnd(undefined);
+                  fetchAll(1);
+                }}
+                filterStart={filterStart}
+                setFilterStart={setFilterStart}
+                filterEnd={filterEnd}
+                setFilterEnd={setFilterEnd}
+              />
+            </div>
+          </div>
         </CardHeader>
 
         <CardContent className="px-0 flex-1 overflow-hidden">
@@ -126,22 +145,6 @@ export default function TermsPage() {
                   <TableHead className="w-36 text-center font-bold">Updated At</TableHead>
                   <TableHead className="w-36 text-center font-bold">Actions</TableHead>
                 </TableRow>
-
-                <FilterRow
-                  filterActive={filterActive}
-                  setFilterActive={setFilterActive}
-                  fetchAll={() => fetchAll(currentPage)}
-                  clearAll={() => {
-                    setFilterActive("");
-                    setFilterStart(undefined);
-                    setFilterEnd(undefined);
-                    fetchAll(1);
-                  }}
-                  filterStart={filterStart}
-                  setFilterStart={setFilterStart}
-                  filterEnd={filterEnd}
-                  setFilterEnd={setFilterEnd}
-                />
               </TableHeader>
 
               <TableBody>
@@ -155,8 +158,8 @@ export default function TermsPage() {
                   >
                     <TableCell className="text-left pl-5">{t.name}</TableCell>
                     <TableCell className="text-left">{t.description}</TableCell>
-                    <TableCell className="text-center text-xs">{formatDateTime(t.startDate)}</TableCell>
-                    <TableCell className="text-center text-xs">{formatDateTime(t.endDate)}</TableCell>
+                    <TableCell className="text-center">{formatDateTime(t.startDate)}</TableCell>
+                    <TableCell className="text-center">{formatDateTime(t.endDate)}</TableCell>
                     <TableCell className="text-center">
                       {t.isActive ? (
                         <span className="text-emerald-600 font-semibold">Active</span>
@@ -164,8 +167,8 @@ export default function TermsPage() {
                         <span className="text-slate-500">Inactive</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center text-xs whitespace-nowrap">{formatDateTime(t.createdAt)}</TableCell>
-                    <TableCell className="text-center text-xs whitespace-nowrap">{formatDateTime(t.updatedAt)}</TableCell>
+                    <TableCell className="text-center whitespace-nowrap">{formatDateTime(t.createdAt)}</TableCell>
+                    <TableCell className="text-center whitespace-nowrap">{formatDateTime(t.updatedAt)}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         {/* Edit */}
