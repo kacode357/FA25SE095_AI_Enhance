@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner"; // Nhớ import cái này để hiện thông báo
+
 import { ROLE_STAFF, UserServiceRole } from "@/config/user-service/user-role";
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
@@ -8,7 +11,6 @@ import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
 import { saveTokensFromLogin } from "@/utils/auth/access-token";
 import { saveEncodedUser } from "@/utils/secure-user";
-import { useState } from "react";
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
@@ -29,18 +31,29 @@ export function useLogin() {
       // 2. Tạm lưu token để call getProfile (interceptor cần token này)
       saveTokensFromLogin(data.accessToken, data.refreshToken, rememberMe);
 
-        // Lấy profile -> mã hoá & lưu theo remember (session/cookie)
-        const profileRes = await UserService.getProfile();
-        const profile: UserProfile = profileRes.data;
-        await saveEncodedUser(profile, rememberMe);
+      // 3. Lấy profile để check role
+      const profileRes = await UserService.getProfile();
+      const profile: UserProfile = profileRes.data;
 
-        // Điều hướng theo role Staff
-        const STAFF = UserServiceRole[ROLE_STAFF]; // ví dụ: "Staff"
+      // Logic kiểm tra quyền Staff
+      const STAFF_ROLE_NAME = UserServiceRole[ROLE_STAFF]; // "Staff" (hoặc tên role bên BE trả về)
+      const isStaff = profile.role === STAFF_ROLE_NAME;
 
-        let target = "/";
-        if (profile.role === STAFF) {
-          target = "/staff/manager/courses";
-        }
+      // ❌ Sai role -> Cút
+      if (!isStaff) {
+        // Xóa token vừa lưu tạm đi
+        saveTokensFromLogin("", "", false);
+        
+        // Báo lỗi cho user biết
+        toast.error("You don't have permission to access the Staff system.");
+        
+        return { ok: false, data: null, role: profile.role } as const;
+      }
+
+      // ✅ Đúng role -> Lưu user & Điều hướng
+      await saveEncodedUser(profile, rememberMe);
+
+      const target = "/staff/courses"; // Trang chủ của Staff
 
       if (typeof window !== "undefined") {
         window.location.href = target;
