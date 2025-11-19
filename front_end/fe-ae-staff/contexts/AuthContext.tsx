@@ -2,8 +2,8 @@
 "use client";
 
 import type { UserProfile } from "@/types/user/user.response";
-import { clearEncodedUser, loadDecodedUser } from "@/utils/secure-user";
 import { clearAuthTokens } from "@/utils/auth/access-token";
+import { clearEncodedUser, loadDecodedUser } from "@/utils/secure-user";
 import { usePathname } from "next/navigation";
 import {
   createContext,
@@ -29,7 +29,7 @@ const AuthContext = createContext<AuthContextType>({
 
 // helper: home theo role (giờ chỉ còn Staff)
 function homeByRole(role?: string) {
-  if (role === "Staff") return "/staff/manager/courses";
+  if (role === "Staff") return "/staff/courses";
   return "/";
 }
 

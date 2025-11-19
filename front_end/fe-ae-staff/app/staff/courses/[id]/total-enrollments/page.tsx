@@ -1,4 +1,4 @@
-// app/(staff)/staff/manager/courses/[id]/total-enrollments/page.tsx
+// app/(staff)/staff//courses/[id]/total-enrollments/page.tsx
 "use client";
 
 import PaginationBar from "@/components/common/PaginationBar";

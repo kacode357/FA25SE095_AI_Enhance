@@ -1,4 +1,4 @@
-// app/staff/manager/courses/[id]/chat-messages/page.tsx
+// app/staff/courses/[id]/chat-messages/page.tsx
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

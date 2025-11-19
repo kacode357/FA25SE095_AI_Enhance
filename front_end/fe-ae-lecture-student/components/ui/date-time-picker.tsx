@@ -297,7 +297,7 @@ export function DateTimePicker({
                   className="h-10 w-full justify-between text-xs font-normal bg-white text-slate-700 text-left"
                 >
               {date ? date.toLocaleDateString() : "Select date"}
-              <ChevronDownIcon className="h-4 w-4 text-slate-400 bg-white" />
+              <ChevronDownIcon className="h-4 w-4 text-slate-400" />
             </Button>
           </PopoverTrigger>
           <PopoverContent

@@ -7,8 +7,8 @@ import { UserService } from "@/services/user.services";
 import type { LoginPayload } from "@/types/auth/auth.payload";
 import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
-import { saveEncodedUser } from "@/utils/secure-user";
 import { saveTokensFromLogin } from "@/utils/auth/access-token";
+import { saveEncodedUser } from "@/utils/secure-user";
 import { useState } from "react";
 
 export function useLogin() {
@@ -36,7 +36,7 @@ export function useLogin() {
 
         let target = "/";
         if (profile.role === STAFF) {
-          target = "/staff/manager/courses";
+          target = "/staff/courses";
         }
 
         if (typeof window !== "undefined") {

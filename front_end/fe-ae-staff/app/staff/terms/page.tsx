@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
-import { Pencil, Plus, Power } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useTerms } from "@/hooks/term/useTerms";
@@ -24,6 +24,8 @@ export default function TermsPage() {
   const [openCreate, setOpenCreate] = useState(false);
   const [openEditId, setOpenEditId] = useState<string | null>(null);
   const [filterActive, setFilterActive] = useState("");
+  const [filterStart, setFilterStart] = useState<string | undefined>(undefined);
+  const [filterEnd, setFilterEnd] = useState<string | undefined>(undefined);
   const [terms, setTerms] = useState<Term[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -31,8 +33,10 @@ export default function TermsPage() {
   const fetchAll = async (pageNum = 1) => {
     await fetchTerms({
       activeOnly: filterActive === "" ? undefined : filterActive === "true",
+      startDate: filterStart,
+      endDate: filterEnd,
       page: pageNum,
-      pageSize:10,
+      pageSize: 10,
       sortBy: "CreatedAt",
       sortDirection: "desc",
     });
@@ -48,12 +52,27 @@ export default function TermsPage() {
 
   const filtered = useMemo(() => terms, [terms]);
 
+  const formatDateTime = (iso?: string) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   // Toggle Active
   const handleToggleActive = async (term: Term) => {
     await updateTerm(term.id, {
       name: term.name,
       description: term.description,
       isActive: !term.isActive,
+      startDate: term.startDate,
+      endDate: term.endDate,
     });
     await fetchAll(currentPage);
   };
@@ -100,8 +119,11 @@ export default function TermsPage() {
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
                   <TableHead className="w-56 text-left font-bold pl-5">Name</TableHead>
                   <TableHead className="text-left font-bold">Description</TableHead>
+                  <TableHead className="w-36 text-center font-bold">Start Date</TableHead>
+                  <TableHead className="w-36 text-center font-bold">End Date</TableHead>
                   <TableHead className="w-28 text-center font-bold">Active</TableHead>
                   <TableHead className="w-36 text-center font-bold">Created At</TableHead>
+                  <TableHead className="w-36 text-center font-bold">Updated At</TableHead>
                   <TableHead className="w-36 text-center font-bold">Actions</TableHead>
                 </TableRow>
 
@@ -111,8 +133,14 @@ export default function TermsPage() {
                   fetchAll={() => fetchAll(currentPage)}
                   clearAll={() => {
                     setFilterActive("");
+                    setFilterStart(undefined);
+                    setFilterEnd(undefined);
                     fetchAll(1);
                   }}
+                  filterStart={filterStart}
+                  setFilterStart={setFilterStart}
+                  filterEnd={filterEnd}
+                  setFilterEnd={setFilterEnd}
                 />
               </TableHeader>
 
@@ -127,6 +155,8 @@ export default function TermsPage() {
                   >
                     <TableCell className="text-left pl-5">{t.name}</TableCell>
                     <TableCell className="text-left">{t.description}</TableCell>
+                    <TableCell className="text-center text-xs">{formatDateTime(t.startDate)}</TableCell>
+                    <TableCell className="text-center text-xs">{formatDateTime(t.endDate)}</TableCell>
                     <TableCell className="text-center">
                       {t.isActive ? (
                         <span className="text-emerald-600 font-semibold">Active</span>
@@ -134,9 +164,8 @@ export default function TermsPage() {
                         <span className="text-slate-500">Inactive</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center text-xs whitespace-nowrap">
-                      {new Date(t.createdAt).toLocaleDateString("en-GB")}
-                    </TableCell>
+                    <TableCell className="text-center text-xs whitespace-nowrap">{formatDateTime(t.createdAt)}</TableCell>
+                    <TableCell className="text-center text-xs whitespace-nowrap">{formatDateTime(t.updatedAt)}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         {/* Edit */}
@@ -144,7 +173,7 @@ export default function TermsPage() {
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
-                              className="h-8 px-2 text-emerald-600 hover:bg-emerald-50"
+                              className="h-8 -mx-2 cursor-pointer text-emerald-600 bg-violet-50 rounded-lg hover:bg-emerald-50"
                             >
                               <Pencil className="size-4" />
                             </Button>
@@ -163,7 +192,7 @@ export default function TermsPage() {
                         </Dialog>
 
                         {/* Toggle Active */}
-                        <Button
+                        {/* <Button
                           variant="ghost"
                           className={`h-8 px-2 ${t.isActive ? "text-slate-500 hover:bg-slate-100" : "text-emerald-600 hover:bg-emerald-50"}`}
                           onClick={() => handleToggleActive(t)}
@@ -171,7 +200,7 @@ export default function TermsPage() {
                           title={t.isActive ? "Deactivate Term" : "Activate Term"}
                         >
                           <Power className="size-4" />
-                        </Button>
+                        </Button> */}
                       </div>
                     </TableCell>
                   </motion.tr>
@@ -179,14 +208,14 @@ export default function TermsPage() {
 
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-500">
+                    <td colSpan={8} className="py-10 text-center text-slate-500">
                       No terms found.
                     </td>
                   </tr>
                 )}
                 {loading && (
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-500">
+                    <td colSpan={8} className="py-10 text-center text-slate-500">
                       Loading...
                     </td>
                   </tr>
