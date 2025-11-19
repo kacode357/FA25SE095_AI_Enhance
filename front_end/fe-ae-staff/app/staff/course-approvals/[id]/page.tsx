@@ -54,13 +54,13 @@ export default function CourseApprovalDetailPage() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       {/* Top bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
         <Button
           variant="ghost"
           className="text-sm btn btn-gradient-slow"
           onClick={() => router.push("/staff/course-approvals")}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
       </div>
@@ -102,7 +102,6 @@ export default function CourseApprovalDetailPage() {
             <Field label="Department" value={course.department} />
             <Field label="Created At" value={fmtDate(course.createdAt)} />
             <Field label="Term" value={course.term} />
-            <Field label="Year" value={String(course.year)} />
           </section>
 
           <div className="h-px bg-slate-200/80" />

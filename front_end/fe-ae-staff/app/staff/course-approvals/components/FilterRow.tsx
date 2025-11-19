@@ -46,9 +46,6 @@ export default function FilterRow({
       {/* Term */}
       <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
 
-      {/* Year */}
-      <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
-
       {/* Created At */}
       <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
 

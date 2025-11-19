@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner"; // Nhớ import cái này để báo lỗi
-
 import { ROLE_STAFF, UserServiceRole } from "@/config/user-service/user-role";
 import { AuthService } from "@/services/auth.services";
 import { UserService } from "@/services/user.services";
@@ -10,6 +7,7 @@ import type { LoginPayload } from "@/types/auth/auth.payload";
 import type { ApiResponse, LoginResponse } from "@/types/auth/auth.response";
 import type { UserProfile } from "@/types/user/user.response";
 import { saveTokensFromLogin } from "@/utils/auth/access-token";
+import { saveEncodedUser } from "@/utils/secure-user";
 import { useState } from "react";
 
 export function useLogin() {

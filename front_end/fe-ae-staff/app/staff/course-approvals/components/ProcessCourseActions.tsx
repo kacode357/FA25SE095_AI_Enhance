@@ -59,7 +59,7 @@ export default function ProcessCourseActions({
   const busy = approving || rejecting;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-5">
       {/* Approve */}
       <Button
         variant="primary"
@@ -73,7 +73,7 @@ export default function ProcessCourseActions({
       {/* Reject */}
       <Button
         variant="outline"
-        className="px-5 whitespace-nowrap shadow-lg rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-slate-300"
+        className="px-5 whitespace-nowrap shadow-lg rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-none"
         onClick={() => openWith("reject")}
         disabled={busy}
       >
@@ -105,17 +105,17 @@ export default function ProcessCourseActions({
           />
 
           <DialogFooter className="mt-5 flex gap-2 sm:justify-end">
-            <Button
+            {/* <Button
               variant="outline"
               className="h-10 px-5 rounded-xl"
               onClick={() => setOpen(false)}
               disabled={busy}
             >
               Cancel
-            </Button>
+            </Button> */}
             <Button
               variant={action === "reject" ? "danger" : "primary"}
-              className="h-10 px-5 rounded-xl"
+              className="h-10 px-5 btn btn-gradient-slow rounded-xl"
               onClick={handleSubmit}
               disabled={busy}
             >

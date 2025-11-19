@@ -80,7 +80,7 @@ export default function CourseApprovalsPage() {
                   <TableHead className="pl-4 font-bold w-1/4 text-left">Course Name</TableHead>
                   <TableHead className="font-bold w-1/5 text-left">Lecturer</TableHead>
                   <TableHead className="font-bold w-1/6 text-center">Term</TableHead>
-                  <TableHead className="font-bold w-1/6 text-center">Year</TableHead>
+                  {/* <TableHead className="font-bold w-1/6 text-center">Year</TableHead> */}
                   <TableHead className="font-bold w-1/6 text-center">Created At</TableHead>
                   <TableHead className="font-bold w-[120px] text-center">Action</TableHead>
                 </TableRow>
@@ -113,7 +113,7 @@ export default function CourseApprovalsPage() {
                       <TableCell className="pl-4 text-left">{c.courseCodeTitle}</TableCell>
                       <TableCell className="text-left">{c.lecturerName}</TableCell>
                       <TableCell className="text-center">{c.term}</TableCell>
-                      <TableCell className="text-center">{c.year}</TableCell>
+                      {/* <TableCell className="text-center">{c.year}</TableCell> */}
                       <TableCell className="text-center text-xs whitespace-nowrap">
                         {new Date(c.createdAt).toLocaleDateString("en-GB")}
                       </TableCell>
