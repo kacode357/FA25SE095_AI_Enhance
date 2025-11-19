@@ -47,7 +47,7 @@ export function useLogin() {
       if (!isAllowed) {
         // clear token tạm (overwrite bằng rỗng)
         saveTokensFromLogin("", "", false);
-        toast.error("Bạn không có quyền truy cập vào hệ thống này.");
+        toast.error("You don't have permission to access this system.");
         return { ok: false, data: null, role: profile.role } as const;
       }
 
