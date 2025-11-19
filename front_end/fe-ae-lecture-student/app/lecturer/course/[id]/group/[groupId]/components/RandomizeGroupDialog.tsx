@@ -55,11 +55,11 @@ export default function RandomizeGroupDialog({ courseId, onClose, onRandomized }
 
     return (
         <>
-            <DialogHeader>
+            <DialogHeader className="border-slate-200">
                 <DialogTitle>Randomize Students into Groups</DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-4 py-2">
+            <form onSubmit={handleSubmit} className="space-y-4 py-2 border-slate-200">
                 {!result && (
                     <div>
                         <Label className="mb-2 cursor-text">Group Size</Label>
@@ -108,19 +108,19 @@ export default function RandomizeGroupDialog({ courseId, onClose, onRandomized }
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="cursor-pointer bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400"
+                            className="cursor-pointer btn btn-gradient-slow bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400"
                         >
                             {loading ? "Randomizing..." : "Randomize"}
                         </Button>
                     )}
-                    <Button
+                    {/* <Button
                         type="button"
                         variant="ghost"
                         onClick={onClose}
                         className="cursor-pointer"
                     >
                         Close
-                    </Button>
+                    </Button> */}
                 </DialogFooter>
             </form>
         </>

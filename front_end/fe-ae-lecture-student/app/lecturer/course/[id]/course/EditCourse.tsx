@@ -310,7 +310,7 @@ export default function EditCourse() {
                                     </select>
                                 </div>
 
-                                <div className="flex flex-col">
+                                {/* <div className="flex flex-col">
                                     <label className="text-slate-500 cursor-text text-xs uppercase mb-1">
                                         Year
                                     </label>
@@ -321,7 +321,7 @@ export default function EditCourse() {
                                         placeholder="Enter year"
                                         className="focus:ring-2 focus:ring-emerald-500"
                                     />
-                                </div>
+                                </div> */}
 
                                 <div className="flex flex-col col-span-2">
                                     <label className="text-slate-500 cursor-text text-xs uppercase mb-1">

@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { GroupService } from "@/services/group.services";
+import { useCreateGroup } from "@/hooks/group/useCreateGroup";
+import { useUpdateGroup } from "@/hooks/group/useUpdateGroup";
 import { CreateGroupPayload, UpdateGroupPayload } from "@/types/group/group.payload";
 import { GroupDetail } from "@/types/group/group.response";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function CreateGroupSheet({
   open,
@@ -32,9 +34,10 @@ export default function CreateGroupSheet({
   const [maxMembers, setMaxMembers] = useState<number | "">("");
   const [isLocked, setIsLocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [maxMembersError, setMaxMembersError] = useState<string | null>(null);
+  // we show validation messages via toast instead of inline errors
+
+  const { createGroup } = useCreateGroup();
+  const { updateGroup } = useUpdateGroup();
 
   // Prefill when switching to edit mode/opening with initial data
   useEffect(() => {
@@ -45,7 +48,6 @@ export default function CreateGroupSheet({
         typeof initialData.maxMembers === "number" ? initialData.maxMembers : ""
       );
       setIsLocked(!!initialData.isLocked);
-      setError(null);
     }
   }, [open, mode, initialData]);
 
@@ -56,9 +58,6 @@ export default function CreateGroupSheet({
       setDescription("");
       setMaxMembers("");
       setIsLocked(false);
-      setError(null);
-      setNameError(null);
-      setMaxMembersError(null);
       setSubmitting(false);
     }
   }, [open, mode]);
@@ -72,26 +71,17 @@ export default function CreateGroupSheet({
 
   const handleSubmit = async () => {
     if (submitting) return;
-    // clear previous errors
-    setError(null);
-    setNameError(null);
-    setMaxMembersError(null);
 
-    // validate fields and show inline errors
-    let hasError = false;
-    if (!effectiveCourseId) {
-      setError("Course is required");
-      hasError = true;
+    const validationErrors: string[] = [];
+    if (!effectiveCourseId) validationErrors.push("Course is required");
+    if (!name || name.trim() === "") validationErrors.push("Group name is required");
+    if (typeof maxMembers !== "number" || maxMembers <= 0) validationErrors.push("Max members is required and must be greater than 0");
+
+    if (validationErrors.length > 0) {
+      // show single toast with all validation messages to avoid stacked toasts hiding each other
+      toast.error(validationErrors.join(" — "));
+      return;
     }
-    if (!name || name.trim() === "") {
-      setNameError("Group name is required!");
-      hasError = true;
-    }
-    if (typeof maxMembers !== "number" || maxMembers <= 0) {
-      setMaxMembersError("Max members is required and must be greater than 0!");
-      hasError = true;
-    }
-    if (hasError) return;
 
     setSubmitting(true);
     try {
@@ -113,31 +103,60 @@ export default function CreateGroupSheet({
           maxMembers: payload.maxMembers,
           isLocked: payload.isLocked,
         };
-
-        const res = await GroupService.updateGroup(initialData.id, updatePayload);
-        if (res?.success) {
-          // Prefer group on response if available; otherwise pass through current values
-          onUpdated?.((res as any).group || (initialData as GroupDetail));
-          onOpenChange(false);
+        const res = await updateGroup(updatePayload);
+        if (res) {
+          if (res.success) {
+            toast.success(res.message || "Group updated");
+            // response may return an array of groups or a single group
+            let updatedGroup: GroupDetail | undefined;
+            if (res.group) {
+              // @ts-ignore - group can be GroupDetail | GroupDetail[] depending on API
+              if (Array.isArray(res.group)) {
+                // try to find by id, fallback to first
+                // @ts-ignore
+                updatedGroup = (res.group as GroupDetail[]).find((g) => g.id === updatePayload.groupId) || (res.group as GroupDetail[])[0];
+              } else {
+                // @ts-ignore
+                updatedGroup = res.group as GroupDetail;
+              }
+            }
+            if (updatedGroup) {
+              onUpdated?.(updatedGroup);
+            } else {
+              onUpdated?.(initialData as GroupDetail);
+            }
+            onOpenChange(false);
+          } else {
+            // show backend message in toast instead of top-level error box
+            toast.error(res.message || "Failed to update group");
+          }
         } else {
-          setError((res as any)?.message || "Failed to update group");
+          toast.error("Failed to update group");
         }
       } else {
-        const res = await GroupService.create(payload);
-        if (res?.success) {
-          onCreated?.(res.group);
-          // reset form and close
-          setName("");
-          setDescription("");
-          setMaxMembers("");
-          setIsLocked(false);
-          onOpenChange(false);
+        const res = await createGroup(payload);
+        if (res) {
+          if (res.success) {
+            toast.success(res.message || "Group created");
+            // handle either array or single
+            // @ts-ignore
+            const created = Array.isArray(res.group) ? (res.group as GroupDetail[])[0] : (res.group as GroupDetail);
+            if (created) onCreated?.(created as GroupDetail);
+            // reset form and close
+            setName("");
+            setDescription("");
+            setMaxMembers("");
+            setIsLocked(false);
+            onOpenChange(false);
+          } else {
+            toast.error(res.message || "Failed to create group");
+          }
         } else {
-          setError(res?.message || "Failed to create group");
+          toast.error("Failed to create group");
         }
       }
     } catch (e: any) {
-      setError(e?.message || (mode === "edit" ? "Failed to update group" : "Failed to create group"));
+      toast.error(e?.message || (mode === "edit" ? "Failed to update group" : "Failed to create group"));
     } finally {
       setSubmitting(false);
     }
@@ -151,9 +170,7 @@ export default function CreateGroupSheet({
         </SheetHeader>
 
         <div className="px-4 pb-4 space-y-3">
-          {error && (
-            <div className="p-2 text-sm text-red-600 border border-red-200 rounded bg-red-50">{error}</div>
-          )}
+          {/* top-level server errors are shown as toasts; keep field-level inline errors */}
           <div>
             <Label htmlFor="groupName" className="py-2">Group Name</Label>
             <Input
@@ -161,12 +178,11 @@ export default function CreateGroupSheet({
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                if (nameError) setNameError(null);
               }}
               placeholder="e.g. Lab Team A"
               disabled={submitting}
             />
-            {nameError && <div className="text-sm text-red-600 mt-1">{nameError}</div>}
+            {/* field-level errors are shown as toasts */}
           </div>
           <div>
             <Label htmlFor="groupDescription" className="py-2">Description</Label>
@@ -181,12 +197,11 @@ export default function CreateGroupSheet({
               value={maxMembers}
               onChange={(e) => {
                 setMaxMembers(e.target.value ? parseInt(e.target.value) : "");
-                if (maxMembersError) setMaxMembersError(null);
               }}
               placeholder="e.g. 5"
               disabled={submitting}
             />
-            {maxMembersError && <div className="text-sm text-red-600 mt-1">{maxMembersError}</div>}
+            {/* field-level errors are shown as toasts */}
           </div>
 
           <div className="flex items-center justify-start py-2 gap-3">

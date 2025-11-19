@@ -2,7 +2,7 @@
 "use client";
 
 import { Editor } from "@tinymce/tinymce-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
   /** HTML ban đầu khi mount editor (không dùng để control từng keystroke) */
@@ -30,8 +30,8 @@ export default function LiteRichTextEditor({
   onInit,
 }: Props) {
   const editorRef = useRef<any>(null);
-
   const lastEmittedRef = useRef<string>(normalize(value || ""));
+  const initialValueRef = useRef<string>(normalize(value || ""));
   const debounceTimer = useRef<number | null>(null);
 
   const emit = (html: string) => {
@@ -59,6 +59,10 @@ export default function LiteRichTextEditor({
     lastEmittedRef.current = v;
   };
 
+  useEffect(() => {
+    pushContentFromOutside(value || "");
+  }, [value]);
+
   const apiKey = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key";
   const cdnBase = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/6`;
   const tinymceScriptSrc = `${cdnBase}/tinymce.min.js`;
@@ -66,7 +70,7 @@ export default function LiteRichTextEditor({
   return (
     <div className={className}>
       <Editor
-        initialValue={value}
+        initialValue={initialValueRef.current}
         apiKey={apiKey}
         tinymceScriptSrc={tinymceScriptSrc}
         disabled={readOnly}

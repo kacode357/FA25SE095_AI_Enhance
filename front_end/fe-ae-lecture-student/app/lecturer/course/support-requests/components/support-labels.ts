@@ -38,6 +38,20 @@ export const priorityLabelMap: Record<number, string> = {
   [SupportRequestPriority.Urgent]: "Urgent",
 };
 
+export const categoryColorMap: Record<number, string> = {
+  [SupportRequestCategory.Technical]: "bg-indigo-100 text-indigo-800",
+  [SupportRequestCategory.Academic]: "bg-blue-100 text-blue-800",
+  [SupportRequestCategory.Administrative]: "bg-amber-100 text-amber-800",
+  [SupportRequestCategory.Other]: "bg-gray-100 text-gray-800",
+};
+
+export const priorityColorMap: Record<number, string> = {
+  [SupportRequestPriority.Low]: "bg-green-100 text-green-800",
+  [SupportRequestPriority.Medium]: "bg-sky-100 text-sky-800",
+  [SupportRequestPriority.High]: "bg-yellow-100 text-yellow-800",
+  [SupportRequestPriority.Urgent]: "bg-red-100 text-red-800",
+};
+
 export function statusLabel(status: number) {
   return statusLabelMap[status] ?? `Unknown (${status})`;
 }
@@ -53,6 +67,14 @@ export function categoryLabel(category: number) {
 
 export function priorityLabel(priority: number) {
   return priorityLabelMap[priority] ?? `Unknown (${priority})`;
+}
+
+export function categoryColor(category: number) {
+  return categoryColorMap[category] ?? "bg-gray-100 text-gray-700";
+}
+
+export function priorityColor(priority: number) {
+  return priorityColorMap[priority] ?? "bg-gray-100 text-gray-700";
 }
 
 export const formatDateTime = (s?: string | null) => {

@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { SupportRequestItem } from "@/types/support/support-request.response";
 
+import {
+    Dialog,
+    DialogClose,
+    DialogContent
+} from "@/components/ui/dialog";
+import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 import { useAcceptSupportRequest } from "@/hooks/support-requests/useAcceptSupportRequest";
@@ -13,6 +19,7 @@ import { useMySupportRequests } from "@/hooks/support-requests/useMySupportReque
 import { useResolveSupportRequest } from "@/hooks/support-requests/useResolveSupportRequest";
 import { Check, Loader2, MessageSquare, Wrench, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import CancelSupportRequestDialog from "./components/CancelSupportRequestDialog";
 
 import {
     categoryLabel,
@@ -21,6 +28,8 @@ import {
     statusColor,
     statusLabel
 } from "./components/support-labels"; // <-- added statusColor
+
+import { categoryColor, priorityColor } from "./components/support-labels";
 
 type Props = {
     courseId?: string;
@@ -71,11 +80,38 @@ export default function SupportRequestsList({ courseId }: Props) {
         }
     };
 
-    const handleCancel = async (id: string) => {
-        if (!confirm("Cancel this support request?")) return;
+    const handleCancel = async (
+        id: string,
+        subject?: string | null,
+        courseName?: string | null,
+        requesterName?: string | null,
+        requestedAt?: string | null,
+        description?: string | null
+    ) => {
+        // Open confirmation modal instead of using native confirm
+        setCancelTargetId(id);
+        setCancelTargetSubject(subject ?? null);
+        setCancelTargetCourse(courseName ?? null);
+        setCancelTargetRequester(requesterName ?? null);
+        setCancelTargetRequestedAt(requestedAt ?? null);
+        setCancelTargetDescription(description ?? null);
+        setCancelModalOpen(true);
+    };
+
+    // Modal state for cancel confirmation
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+    const [cancelTargetSubject, setCancelTargetSubject] = useState<string | null>(null);
+    const [cancelTargetCourse, setCancelTargetCourse] = useState<string | null>(null);
+    const [cancelTargetRequester, setCancelTargetRequester] = useState<string | null>(null);
+    const [cancelTargetRequestedAt, setCancelTargetRequestedAt] = useState<string | null>(null);
+    const [cancelTargetDescription, setCancelTargetDescription] = useState<string | null>(null);
+
+    const handleConfirmCancel = async () => {
+        if (!cancelTargetId) return;
         try {
-            setActionLoading(id);
-            await cancelSupportRequest(id);
+            setActionLoading(cancelTargetId);
+            await cancelSupportRequest(cancelTargetId);
 
             const current = selectedCourseId === "all" ? undefined : selectedCourseId;
             const params: any = { pageNumber: 1, pageSize: 30 };
@@ -84,6 +120,13 @@ export default function SupportRequestsList({ courseId }: Props) {
             await fetchMySupportRequests(params);
         } finally {
             setActionLoading(null);
+            setCancelModalOpen(false);
+            setCancelTargetId(null);
+            setCancelTargetSubject(null);
+            setCancelTargetCourse(null);
+            setCancelTargetRequester(null);
+            setCancelTargetRequestedAt(null);
+            setCancelTargetDescription(null);
         }
     };
 
@@ -185,11 +228,11 @@ export default function SupportRequestsList({ courseId }: Props) {
                                         {/* ⭐ UPDATED — status có màu */}
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm text-slate-600">Category:</span>
-                                            <span items-start gap-4 className="text-xs px-2 mr-5 py-1 bg-slate-100 text-slate-700 rounded-full">
+                                            <span className={`text-xs px-2 mr-5 py-1 rounded-full items-start gap-4 ${categoryColor(item.category)}`}>
                                                 {categoryLabel(item.category) || "-"}
                                             </span>
                                             <span className="text-sm text-slate-600">Priority:</span>
-                                            <span className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded-full">
+                                            <span className={`text-xs px-2 py-1 rounded-full ${priorityColor(item.priority)}`}>
                                                 {priorityLabel(item.priority) || "-"}
                                             </span>
                                         </div>
@@ -238,6 +281,7 @@ export default function SupportRequestsList({ courseId }: Props) {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
+                                                    className="text-violet-800 hover:text-violet-500"
                                                     onClick={() => {
                                                         const messageCourseId =
                                                             selectedCourseId === "all"
@@ -250,7 +294,7 @@ export default function SupportRequestsList({ courseId }: Props) {
                                                         );
                                                     }}
                                                 >
-                                                    <MessageSquare className="mr-2 h-4 w-4" /> Chat
+                                                    <MessageSquare className="h-4 w-4" /> Chat
                                                 </Button>
                                             )}
                                         </div>
@@ -259,41 +303,47 @@ export default function SupportRequestsList({ courseId }: Props) {
 
                             </div>
                             <div className="flex justify-end">
-                                {/* Accept */}
-                                {item.status === 0 && (
-                                    <Button
-                                        size="sm"
-                                        onClick={() => handleAccept(item.id)}
-                                        disabled={actionLoading !== null}
-                                    >
-                                        <Check className="mr-2 h-4 w-4" /> Accept
-                                    </Button>
-                                )}
-
-                                {/* Resolve */}
-                                {(item.status === 1 || item.status === 2) && (
+                                {item.status === SupportRequestStatus.InProgress && (
                                     <Button
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => handleResolve(item.id)}
                                         disabled={actionLoading !== null}
+                                        className="shadow-lg text-green-600"
                                     >
-                                        <Check className="mr-2 h-4 w-4" /> Resolve
+                                        <Check className="h-4 w-4" /> Resolve
                                     </Button>
                                 )}
 
-                                {/* Cancel */}
-                                {item.requesterId === userId && item.status !== 4 && (
+                                {item.status === SupportRequestStatus.Pending && (
                                     <Button
                                         size="sm"
                                         variant="destructive"
-                                        onClick={() => handleCancel(item.id)}
+                                        onClick={() => handleCancel(item.id, item.subject, item.courseName, item.requesterName, item.requestedAt, item.description)}
                                         disabled={actionLoading !== null}
+                                        className="shadow-lg text-red-600"
                                     >
-                                        <X className="mr-2 h-4 w-4" /> Cancel
+                                        <X className=" h-4 w-4" /> Cancel
                                     </Button>
                                 )}
                             </div>
+                            {/* Cancel confirmation modal (reusable component) */}
+                            <Dialog open={cancelModalOpen} onOpenChange={(open) => setCancelModalOpen(open)}>
+                                <DialogContent>
+                                    <CancelSupportRequestDialog
+                                        open={cancelModalOpen}
+                                        onOpenChange={(open) => setCancelModalOpen(open)}
+                                        subject={cancelTargetSubject}
+                                        courseName={cancelTargetCourse}
+                                        requesterName={cancelTargetRequester}
+                                        requestedAt={cancelTargetRequestedAt}
+                                        description={cancelTargetDescription}
+                                        loading={actionLoading !== null}
+                                        onConfirm={handleConfirmCancel}
+                                    />
+                                    <DialogClose />
+                                </DialogContent>
+                            </Dialog>
                         </div>
                     ))}
                 </CardContent>

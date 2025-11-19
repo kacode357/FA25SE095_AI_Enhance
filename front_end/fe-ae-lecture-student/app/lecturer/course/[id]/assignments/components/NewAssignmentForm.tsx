@@ -1,15 +1,15 @@
 // app/lecturer/course/[id]/assignments/components/NewAssignmentForm.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleAlert } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { DateTimePicker } from "@/components/ui/date-time-picker";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -155,8 +155,15 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
   const onSubmit = async () => {
     if (!courseId) return;
-    if (!form.title.trim()) return alert("Title is required");
-    if (!form.startDate || !form.dueDate) return alert("Dates are required");
+    if (!form.title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+
+    if (!form.startDate || !form.dueDate) {
+      toast.error("Start Date and Due Date are required");
+      return;
+    }
 
     const nowMs = Date.now();
     const startMs = new Date(form.startDate).getTime();
@@ -171,7 +178,8 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     const dueDayUtc = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate());
     const oneDayMs = 24 * 60 * 60 * 1000;
     if (dueDayUtc < startDayUtc + oneDayMs) {
-      return alert("Due Date must be at least the next calendar day after Start Date");
+      toast.error("Due Date must be at least the next calendar day after Start Date");
+      return;
     }
 
     const descriptionClean = normalizeHtmlForSave(form.description);
@@ -190,8 +198,15 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
       groupIds: form.isGroupAssignment && form.groupIds.length > 0 ? form.groupIds : undefined,
     };
 
-    const res = await createAssignment(payload);
-    if (res?.success) {
+    try {
+      const res = await createAssignment(payload);
+      // If the backend returned a non-success response, show its message (not a generic error)
+      if (res && !res.success) {
+        toast(res.message || "Failed to create assignment");
+        return;
+      }
+
+      if (res?.success) {
       setCreatedAssignmentId(res.assignmentId);
       setCreatedAssignment(res.assignment ?? null);
 
@@ -210,6 +225,11 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
       toast.success("Assignment created. You can now assign groups (if needed).");
       // Không reset form để user chọn groups
+      }
+    } catch (err) {
+      // Unexpected/network error
+      toast.error("Failed to create assignment. Please try again.");
+      return;
     }
   };
 
@@ -273,7 +293,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               inputMode="numeric"
               placeholder="100"
               value={form.maxPoints}
-              className="text-xs"
+              className="text-xs !py-3"
               onChange={(e) =>
                 setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))
               }
@@ -284,7 +304,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             <div className="flex-1">
               <Label className="text-sm mb-1">Start Date *</Label>
               <DateTimePicker
-                className="placeholder:text-slate-100 border-slate-100"
+                className="placeholder:text-slate-100  border-slate-100"
                 value={form.startDate}
                 onChange={(iso: string) => setForm((p) => ({ ...p, startDate: iso }))}
                 placeholder="yyyy-MM-dd HH:mm"
