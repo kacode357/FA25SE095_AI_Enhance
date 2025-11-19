@@ -29,7 +29,7 @@ const AuthContext = createContext<AuthContextType>({
 
 // helper: home theo role (giờ chỉ còn Staff)
 function homeByRole(role?: string) {
-  if (role === "Staff") return "/staff/manager/courses";
+  if (role === "Staff") return "/staff/courses";
   return "/";
 }
 

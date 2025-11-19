@@ -1,0 +1,140 @@
+// app/staff/support-requests/components/SupportRequestsPage.tsx
+"use client";
+
+import { useState } from "react";
+import { ClipboardList } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+import SupportRequestList from "./SupportRequestList";
+import type { SupportRequestItem } from "@/types/support/support-request.response";
+
+type PaginationState = {
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+};
+
+type ListProps = {
+  items: SupportRequestItem[];
+  loading: boolean;
+  pagination: PaginationState;
+  actionLoading: boolean;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
+};
+
+type PendingProps = ListProps & {
+  onAccept: (id: string) => Promise<void>;
+};
+
+type AssignedProps = ListProps & {
+  onResolve: (id: string) => Promise<void>;
+};
+
+type Props = {
+  pending: PendingProps;
+  assigned: AssignedProps;
+};
+
+export default function SupportRequestsPage({ pending, assigned }: Props) {
+  const [tab, setTab] = useState<"pending" | "assigned">("pending");
+
+  const handleRefreshClick = () => {
+    window?.location?.reload();
+  };
+
+  return (
+    <div className="h-full flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-50 p-2.5">
+            <ClipboardList className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              Support Requests
+            </h1>
+            <p className="text-sm text-gray-500">
+              Review pending tickets and manage your assigned support requests.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="text-sm border-gray-200"
+            onClick={handleRefreshClick}
+          >
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <Card className="card rounded-2xl flex-1 flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold text-gray-900">
+            Support Center
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 flex-1 flex flex-col min-h-0">
+          <Tabs
+            value={tab}
+            onValueChange={(v) => setTab(v as "pending" | "assigned")}
+            className="flex flex-col h-full min-h-0"
+          >
+            <TabsList className="mb-4 w-fit">
+              <TabsTrigger value="pending" className="px-4 py-1.5 text-sm">
+                Pending requests
+              </TabsTrigger>
+              <TabsTrigger value="assigned" className="px-4 py-1.5 text-sm">
+                My assigned
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="flex-1 min-h-0">
+              <TabsContent value="pending" className="h-full m-0">
+                <SupportRequestList
+                  title="Pending support requests"
+                  subtitle="New tickets waiting for staff to accept."
+                  type="pending"
+                  items={pending.items}
+                  loading={pending.loading}
+                  actionLoading={pending.actionLoading}
+                  pagination={pending.pagination}
+                  onPreviousPage={pending.onPreviousPage}
+                  onNextPage={pending.onNextPage}
+                  onAccept={pending.onAccept} // now matches (id) => Promise<void>
+                />
+              </TabsContent>
+
+              <TabsContent value="assigned" className="h-full m-0">
+                <SupportRequestList
+                  title="My assigned requests"
+                  subtitle="Tickets that are currently assigned to you."
+                  type="assigned"
+                  items={assigned.items}
+                  loading={assigned.loading}
+                  actionLoading={assigned.actionLoading}
+                  pagination={assigned.pagination}
+                  onPreviousPage={assigned.onPreviousPage}
+                  onNextPage={assigned.onNextPage}
+                  onResolve={assigned.onResolve} // (id) => Promise<void>
+                />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
