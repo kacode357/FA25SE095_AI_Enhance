@@ -48,7 +48,9 @@ export default function SupportRequestChatWindow({
     // control when heavy work (REST + SignalR connect) starts so UI can render first
     const [started, setStarted] = useState(false);
 
-    const pendingRef = useRef(new Map<string, { createdAt: number; message: string; receiverId: string }>());
+    const pendingRef = useRef(
+        new Map<string, { createdAt: number; message: string; receiverId: string }>(),
+    );
     // recent sends to prevent duplicate send calls (signature -> timestamp)
     const recentSendsRef = useRef(new Map<string, number>());
 
@@ -56,7 +58,9 @@ export default function SupportRequestChatWindow({
     const { getConversationMessages } = useGetConversationMessages();
     const { deleteMessage, loading: deleting } = useDeleteMessage();
 
-    const [conversationId, setConversationId] = useState<string | null>(initialConvId ?? null);
+    const [conversationId, setConversationId] = useState<string | null>(
+        initialConvId ?? null,
+    );
 
     const tokenProvider = useCallback(() => getSavedAccessToken() || "", []);
 
@@ -67,22 +71,33 @@ export default function SupportRequestChatWindow({
             const byId = new Map(prev.map((m) => [m.id, m]));
             const sigSet = new Set<string>();
             for (const m of prev) {
-                const sig = `${m.senderId}|${m.receiverId}|${m.message}|${Math.round(new Date(m.sentAt).getTime() / 1000)}`;
+                const sig = `${m.senderId}|${m.receiverId}|${m.message}|${Math.round(
+                    new Date(m.sentAt).getTime() / 1000,
+                )}`;
                 sigSet.add(sig);
             }
 
             for (const it of batch) {
                 // compute signature for dedupe
-                const sig = `${it.senderId}|${it.receiverId}|${it.message}|${Math.round(new Date(it.sentAt).getTime() / 1000)}`;
+                const sig = `${it.senderId}|${it.receiverId}|${it.message}|${Math.round(
+                    new Date(it.sentAt).getTime() / 1000,
+                )}`;
 
                 // replace temp if possible
                 let replacedTemp = false;
                 for (const [tempId, p] of pendingRef.current) {
                     const within7s = Date.now() - p.createdAt <= 7000;
-                    if (within7s && p.receiverId === it.receiverId && p.message === it.message && byId.has(tempId)) {
+                    if (
+                        within7s &&
+                        p.receiverId === it.receiverId &&
+                        p.message === it.message &&
+                        byId.has(tempId)
+                    ) {
                         // remove temp message and its signature
                         const temp = byId.get(tempId)!;
-                        const tempSig = `${temp.senderId}|${temp.receiverId}|${temp.message}|${Math.round(new Date(temp.sentAt).getTime() / 1000)}`;
+                        const tempSig = `${temp.senderId}|${temp.receiverId}|${temp.message}|${Math.round(
+                            new Date(temp.sentAt).getTime() / 1000,
+                        )}`;
                         if (sigSet.has(tempSig)) sigSet.delete(tempSig);
                         byId.delete(tempId);
                         byId.set(it.id, it);
@@ -104,7 +119,11 @@ export default function SupportRequestChatWindow({
                 }
             }
 
-            const next = Array.from(byId.values()).sort((a, b) => parseServerDate(a.sentAt).getTime() - parseServerDate(b.sentAt).getTime());
+            const next = Array.from(byId.values()).sort(
+                (a, b) =>
+                    parseServerDate(a.sentAt).getTime() -
+                    parseServerDate(b.sentAt).getTime(),
+            );
             return next.length > 500 ? next.slice(-500) : next;
         });
     }, []);
@@ -118,38 +137,72 @@ export default function SupportRequestChatWindow({
         }
     }, []);
 
-    // local typing debounce (for sending StartTyping/StopTyping)
-    const localTypingTimerRef = useRef<number | null>(null);
-    const clearLocalTypingTimer = useCallback(() => {
-        if (localTypingTimerRef.current) {
-            clearTimeout(localTypingTimerRef.current);
-            localTypingTimerRef.current = null;
-        }
-    }, []);
-
-    const handleTyping = useCallback((payload?: { userId: string; isTyping: boolean }) => {
-        if (!payload || !payload.userId) return;
-        // only consider typing events from the peer
-        if (payload.userId !== peerId) return;
-        if (payload.isTyping) {
-            setPeerTyping(true);
-            clearTypingSignalTimer();
-            // clear after 2.5s if no further typing signal
-            typingSignalTimerRef.current = window.setTimeout(() => {
+    const handleTyping = useCallback(
+        (payload?: { userId: string; isTyping: boolean }) => {
+            if (!payload || !payload.userId) return;
+            // only consider typing events from the peer
+            if (payload.userId !== peerId) return;
+            if (payload.isTyping) {
+                setPeerTyping(true);
+                clearTypingSignalTimer();
+                // clear after 2.5s if no further typing signal
+                typingSignalTimerRef.current = window.setTimeout(() => {
+                    setPeerTyping(false);
+                    typingSignalTimerRef.current = null;
+                }, 2500);
+            } else {
                 setPeerTyping(false);
-                typingSignalTimerRef.current = null;
-            }, 2500);
-        } else {
-            setPeerTyping(false);
-            clearTypingSignalTimer();
-        }
-    }, [peerId, clearTypingSignalTimer]);
+                clearTypingSignalTimer();
+            }
+        },
+        [peerId, clearTypingSignalTimer],
+    );
 
-    const { connect, disconnect, sendMessage, startTyping, stopTyping } = useChatHub({
-        getAccessToken: tokenProvider,
-        onReceiveMessagesBatch: handleReceiveMessagesBatch,
-        onTyping: handleTyping,
-    });
+    const { connect, disconnect, sendMessage, startTyping, stopTyping } =
+        useChatHub({
+            getAccessToken: tokenProvider,
+            onReceiveMessagesBatch: handleReceiveMessagesBatch,
+            onTyping: handleTyping,
+        });
+
+    // ===== TYPING LOGIC (sửa lại gọn như page cũ) =====
+    const prevNonEmptyRef = useRef(false);
+    useEffect(() => {
+        if (!peerId) return;
+        const nonEmpty = !!input.trim();
+
+        // from empty -> has text: startTyping
+        if (!prevNonEmptyRef.current && nonEmpty) {
+            try {
+                void startTyping(peerId);
+            } catch {
+                // ignore
+            }
+        }
+
+        // from has text -> empty: stopTyping
+        if (prevNonEmptyRef.current && !nonEmpty) {
+            try {
+                void stopTyping(peerId);
+            } catch {
+                // ignore
+            }
+        }
+
+        prevNonEmptyRef.current = nonEmpty;
+
+        return () => {
+            // cleanup khi unmount / đổi peerId
+            if (prevNonEmptyRef.current && peerId) {
+                try {
+                    void stopTyping(peerId);
+                } catch {
+                    // ignore
+                }
+            }
+            prevNonEmptyRef.current = false;
+        };
+    }, [input, peerId, startTyping, stopTyping]);
 
     // load conversation id & messages (deferred until UI shows)
     useEffect(() => {
@@ -157,23 +210,42 @@ export default function SupportRequestChatWindow({
         let cancelled = false;
         (async () => {
             try {
-                if (!conversationId) {
+                let convId = conversationId;
+
+                if (!convId) {
                     const convs: any = await getConversations({ courseId });
-                    // eslint-disable-next-line no-console
-                    const list = Array.isArray(convs) ? convs : convs?.conversations ?? [];
-                    const conv = list.find((c: any) => c.otherUserId === peerId && c.courseId === courseId) ?? null;
-                    if (conv) setConversationId(conv.id);
-                    else setConversationId(null);
+                    const list = Array.isArray(convs)
+                        ? convs
+                        : convs?.conversations ?? [];
+                    const conv =
+                        list.find(
+                            (c: any) =>
+                                c.otherUserId === peerId && c.courseId === courseId,
+                        ) ?? null;
+                    if (conv) {
+                        convId = conv.id;
+                        setConversationId(conv.id);
+                    } else {
+                        setConversationId(null);
+                    }
                 }
 
-                if (!conversationId) return;
-                const raw: any = await getConversationMessages(conversationId, { pageNumber: 1, pageSize: 50 });
-                const msgs: ChatMessage[] = Array.isArray(raw) ? raw : (raw?.messages ?? []);
+                if (!convId) return;
+
+                const raw: any = await getConversationMessages(convId, {
+                    pageNumber: 1,
+                    pageSize: 50,
+                });
+                const msgs: ChatMessage[] = Array.isArray(raw)
+                    ? raw
+                    : raw?.messages ?? [];
                 if (!cancelled)
                     setMessages(
-                        msgs.sort((a: ChatMessage, b: ChatMessage) =>
-                            parseServerDate(a.sentAt).getTime() - parseServerDate(b.sentAt).getTime()
-                        )
+                        msgs.sort(
+                            (a: ChatMessage, b: ChatMessage) =>
+                                parseServerDate(a.sentAt).getTime() -
+                                parseServerDate(b.sentAt).getTime(),
+                        ),
                     );
             } catch (e) {
                 // eslint-disable-next-line no-console
@@ -184,7 +256,6 @@ export default function SupportRequestChatWindow({
         return () => {
             cancelled = true;
         };
-        // intentionally exclude stable hook functions from deps to avoid re-running
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [started, courseId, peerId, conversationId]);
 
@@ -204,7 +275,9 @@ export default function SupportRequestChatWindow({
             cancelled = true;
             try {
                 disconnect();
-            } catch { }
+            } catch {
+                // ignore
+            }
         };
     }, [started, connect, disconnect]);
 
@@ -218,6 +291,7 @@ export default function SupportRequestChatWindow({
         if (!peerId || !courseId || !currentUserId) return;
         const message = input.trim();
         if (!message) return;
+
         const sig = `${courseId}|${peerId}|${message}`;
         const now = Date.now();
         const last = recentSendsRef.current.get(sig) ?? 0;
@@ -242,19 +316,23 @@ export default function SupportRequestChatWindow({
             sentAt: new Date().toISOString(),
             isDeleted: false,
         } as unknown as ChatMessage;
-        pendingRef.current.set(tempId, { createdAt: Date.now(), message, receiverId: peerId });
+
+        pendingRef.current.set(tempId, {
+            createdAt: Date.now(),
+            message,
+            receiverId: peerId,
+        });
         setMessages((prev) => {
             const next = [...prev, local];
             return next.length > 500 ? next.slice(-500) : next;
         });
+
         try {
             setSending(true);
             const dto: SendMessagePayload = { courseId, receiverId: peerId, message };
             await sendMessage(dto);
             setInput("");
-            // stop typing immediately after send
-            try { if (peerId) void stopTyping(peerId); } catch { }
-            clearLocalTypingTimer();
+            // sau khi send thì coi như hết typing (input rỗng -> effect sẽ tự gọi stopTyping)
         } finally {
             setSending(false);
         }
@@ -275,7 +353,8 @@ export default function SupportRequestChatWindow({
     useEffect(() => {
         const el = messagesRef.current;
         if (!el) return;
-        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        const distanceFromBottom =
+            el.scrollHeight - el.scrollTop - el.clientHeight;
         if (distanceFromBottom > 200) {
             // user scrolled up, don't auto-scroll
             shouldAutoScrollRef.current = false;
@@ -297,7 +376,8 @@ export default function SupportRequestChatWindow({
     const onMessagesScroll = useCallback(() => {
         const el = messagesRef.current;
         if (!el) return;
-        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        const distanceFromBottom =
+            el.scrollHeight - el.scrollTop - el.clientHeight;
         shouldAutoScrollRef.current = distanceFromBottom <= 200;
     }, []);
 
@@ -309,10 +389,17 @@ export default function SupportRequestChatWindow({
             const header = headerRef.current;
             if (!root) return;
             const r = root.getBoundingClientRect();
-            if (footer) setFooterHeight(Math.ceil(footer.getBoundingClientRect().height));
+            if (footer)
+                setFooterHeight(Math.ceil(footer.getBoundingClientRect().height));
             if (footer) setFooterRect({ left: Math.max(r.left, 0), width: r.width });
-            if (header) setHeaderHeight(Math.ceil(header.getBoundingClientRect().height));
-            if (header) setHeaderRect({ top: Math.max(r.top, 0), left: Math.max(r.left, 0), width: r.width });
+            if (header)
+                setHeaderHeight(Math.ceil(header.getBoundingClientRect().height));
+            if (header)
+                setHeaderRect({
+                    top: Math.max(r.top, 0),
+                    left: Math.max(r.left, 0),
+                    width: r.width,
+                });
         };
 
         recompute();
@@ -330,13 +417,17 @@ export default function SupportRequestChatWindow({
         };
     }, []);
 
-    // cleanup timers and typing signal on unmount
+    // cleanup timers + typing signal from peer
     useEffect(() => {
         return () => {
-            clearLocalTypingTimer();
             clearTypingSignalTimer();
-            try { if (peerId) void stopTyping(peerId); } catch { }
-            try { if (peerId) void stopTyping(peerId); } catch { }
+            if (peerId) {
+                try {
+                    void stopTyping(peerId);
+                } catch {
+                    // ignore
+                }
+            }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -346,20 +437,30 @@ export default function SupportRequestChatWindow({
             <div
                 ref={headerRef}
                 className="flex-none bg-white z-30 flex flex-col justify-center px-4 py-3 border-b shadow-sm"
-                style={headerRect ? { position: "fixed", top: headerRect.top, left: headerRect.left, width: headerRect.width } : {}}
+                style={
+                    headerRect
+                        ? {
+                            position: "fixed",
+                            top: headerRect.top,
+                            left: headerRect.left,
+                            width: headerRect.width,
+                        }
+                        : {}
+                }
             >
                 <div className="flex items-center justify-between w-full">
-                    <div className="text-lg font-semibold">Chat with {peerName || "User"}</div>
+                    <div className="text-lg font-semibold">
+                        Chat with {peerName || "User"}
+                    </div>
                     <div>
-                        <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+                        <Button size="sm" variant="ghost" onClick={onClose}>
+                            Close
+                        </Button>
                     </div>
                 </div>
                 <div className="mt-1">
-                    {peerTyping ? (
-                        <div className="text-xs text-muted-foreground">{peerName || "User"} is typing…</div>
-                    ) : (
-                        <div className="text-xs text-muted-foreground opacity-0">&nbsp;</div>
-                    )}
+                    {/* reserved space so header height stays stable when typing indicator is shown in messages area */}
+                    <div className="text-xs text-muted-foreground opacity-0">&nbsp;</div>
                 </div>
             </div>
 
@@ -367,27 +468,56 @@ export default function SupportRequestChatWindow({
                 ref={messagesRef}
                 onScroll={onMessagesScroll}
                 className="flex-1 overflow-y-auto px-6 pt-4 space-y-6 bg-[linear-gradient(transparent,transparent)]"
-                style={{ paddingTop: headerHeight ? headerHeight + 12 : undefined, paddingBottom: footerHeight ? footerHeight + 20 : undefined }}
+                style={{
+                    paddingTop: headerHeight ? headerHeight + 12 : undefined,
+                    paddingBottom: footerHeight ? footerHeight + 20 : undefined,
+                }}
             >
                 {rendered.length === 0 ? (
                     <div className="text-xs text-muted-foreground">No messages yet.</div>
                 ) : (
                     rendered.map((m) => (
-                        <div key={m.id} className={`flex ${m.senderId === currentUserId ? "justify-end" : "justify-start"}`}>
-                            <div className={`rounded-2xl px-5 py-4 text-sm leading-relaxed ${m.senderId === currentUserId ? "bg-linear-to-br from-blue-500 to-blue-600 text-white shadow-md max-w-[45%] ml-auto" : "bg-white border max-w-[60%] shadow-sm"}`}>
+                        <div
+                            key={m.id}
+                            className={`flex ${m.senderId === currentUserId ? "justify-end" : "justify-start"}`}
+                        >
+                            <div
+                                className={`rounded-2xl px-5 py-4 text-sm leading-relaxed ${m.senderId === currentUserId
+                                        ? "bg-linear-to-br from-blue-500 to-blue-600 text-white shadow-md max-w-[45%] ml-auto"
+                                        : "bg-white border max-w-[60%] shadow-sm"
+                                    }`}
+                            >
                                 {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
-                                <div className="text-[11px] text-muted-foreground mt-2">{new Date(m.sentAt).toLocaleString()}</div>
+                                <div className="text-[11px] text-muted-foreground mt-2">
+                                    {new Date(m.sentAt).toLocaleString()}
+                                </div>
                             </div>
                         </div>
                     ))
                 )}
+
+                {/* typing indicator shown inside messages container (below messages) */}
+                {peerTyping && (
+                    <div className="px-6 pt-1 text-[11px] text-muted-foreground">
+                        {peerName || "User"} is typing…
+                    </div>
+                )}
             </div>
-            {/* footer is visually inside the chat container but fixed to viewport bottom
-                We measure the container to align the fixed footer horizontally */}
+
+            {/* footer is visually inside the chat container but fixed to viewport bottom */}
             <div
                 ref={footerRef}
                 className="flex-none border-t px-4 py-3 bg-white z-40 shadow-md"
-                style={footerRect ? { position: "fixed", bottom: 0, left: footerRect.left, width: footerRect.width } : {}}
+                style={
+                    footerRect
+                        ? {
+                            position: "fixed",
+                            bottom: 0,
+                            left: footerRect.left,
+                            width: footerRect.width,
+                        }
+                        : {}
+                }
             >
                 <div className="flex items-end gap-3">
                     <textarea
@@ -395,31 +525,22 @@ export default function SupportRequestChatWindow({
                         rows={2}
                         value={input}
                         onChange={(e) => {
-                            const v = e.target.value;
-                            setInput(v);
-                            try { if (peerId) void startTyping(peerId); } catch { }
-                            clearLocalTypingTimer();
-                            localTypingTimerRef.current = window.setTimeout(() => {
-                                try { if (peerId) void stopTyping(peerId); } catch { }
-                                localTypingTimerRef.current = null;
-                            }, 1500);
+                            setInput(e.target.value);
                         }}
                         onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
                                 void onSend();
-                            } else {
-                                try { if (peerId) void startTyping(peerId); } catch { }
-                                clearLocalTypingTimer();
-                                localTypingTimerRef.current = window.setTimeout(() => {
-                                    try { if (peerId) void stopTyping(peerId); } catch { }
-                                    localTypingTimerRef.current = null;
-                                }, 1500);
                             }
                         }}
                         placeholder="Type a message..."
                     />
-                    <Button size="sm" className="rounded-md" onClick={onSend} disabled={sending || !input.trim()}>
+                    <Button
+                        size="sm"
+                        className="rounded-md"
+                        onClick={onSend}
+                        disabled={sending || !input.trim()}
+                    >
                         {sending ? "Sending…" : "Send"}
                     </Button>
                 </div>
