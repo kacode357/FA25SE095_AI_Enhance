@@ -57,6 +57,7 @@ export default function StudentsList({
 
   return (
     <aside className="col-span-12 md:col-span-6 lg:col-span-5 xl:col-span-4">
+      {/* Cố định chiều cao card, bên trong sẽ cuộn */}
       <Card className="border-[var(--border)] bg-[var(--card)] shadow-sm h-[520px] flex flex-col">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
@@ -77,7 +78,8 @@ export default function StudentsList({
         </CardHeader>
 
         <CardContent className="pt-0 flex-1">
-          <ScrollArea className="h-full pr-1 scrollbar-stable">
+          {/* Chiều cao cố định, nội dung dài thì cuộn */}
+          <ScrollArea className="h-[400px] pr-1 scrollbar-stable">
             <div className="divide-y divide-[var(--border)]">
               {loading && (
                 <div className="space-y-2 p-3">
@@ -147,3 +149,4 @@ export default function StudentsList({
     </aside>
   );
 }
+  

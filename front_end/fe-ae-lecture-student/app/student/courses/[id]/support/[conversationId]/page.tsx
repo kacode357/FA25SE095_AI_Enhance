@@ -1,16 +1,11 @@
-// app/student/courses/[id]/chat/components/ChatWindow.tsx
+// app/student/courses/[id]/support/[conversationId]/page.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useChatHub } from "@/hooks/hubchat/useChatHub";
-import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
-import { useGetConversations } from "@/hooks/chat/useGetConversations";
-import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
-import type { SendMessagePayload } from "@/types/chat/chat.payload";
-import type {
-  ChatMessageItemResponse as ChatMessage,
-  CourseChatUserItemResponse as ChatUser,
-} from "@/types/chat/chat.response";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,21 +16,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton"; // 👈 THÊM DÒNG NÀY
+import { useAuth } from "@/contexts/AuthContext";
+import { useChatHub } from "@/hooks/hubchat/useChatHub";
+import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
+import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
+
+import type { SendMessagePayload } from "@/types/chat/chat.payload";
+import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.response";
+
+import { getSavedAccessToken } from "@/utils/auth/access-token";
+
+import { ArrowLeft, MessageCircle } from "lucide-react";
 
 /* ===== Utils ===== */
-const cx = (...a: Array<string | false | undefined>) => a.filter(Boolean).join(" ");
+const cx = (...a: Array<string | false | undefined>) =>
+  a.filter(Boolean).join(" ");
+
 const uuid = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `temp-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
 /** Parse datetime từ BE:
- * - Nếu thiếu timezone => coi là UTC, gắn 'Z'
- * - Clamp phần nghìn giây về 3 chữ số để Date parse ổn định
+ * - Nếu thiếu timezone => coi là UTC
+ * - Clamp phần nghìn giây về 3 chữ số cho ổn định
  */
 function parseServerDate(ts: string): Date {
   if (!ts) return new Date(NaN);
@@ -45,41 +51,31 @@ function parseServerDate(ts: string): Date {
   return new Date(iso);
 }
 
-const sameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const initial = (name?: string) =>
+  name?.trim()?.[0]?.toUpperCase() ?? "?";
 
-const mins = (a: Date, b: Date) => Math.abs(a.getTime() - b.getTime()) / 60000;
+/* ===== Page ===== */
+export default function SupportChatPage() {
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
 
-const timeHHmm = (d: Date) =>
-  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const courseId = useMemo(() => {
+    const id = params?.id;
+    return typeof id === "string" ? id : Array.isArray(id) ? id[0] : "";
+  }, [params]);
 
-const dayLabel = (d: Date) => {
-  const now = new Date();
-  const y = new Date(now);
-  y.setDate(now.getDate() - 1);
-  if (sameDay(d, now)) return "Today";
-  if (sameDay(d, y)) return "Yesterday";
-  return `${String(d.getDate()).padStart(2, "0")} ${d.toLocaleString(undefined, {
-    month: "short",
-  })} ${d.getFullYear()}`;
-};
+  const conversationId = useMemo(() => {
+    const cid = (params as any)?.conversationId;
+    return typeof cid === "string" ? cid : Array.isArray(cid) ? cid[0] : "";
+  }, [params]);
 
-const initial = (name?: string) => (name?.trim()?.[0]?.toUpperCase() ?? "?");
+  const peerId = searchParams.get("peerId");
+  const peerName = searchParams.get("peerName") ?? "Support Staff";
 
-/* ===== Props ===== */
-type Props = {
-  courseId: string;
-  currentUserId: string | null;
-  selectedUser: ChatUser | null;
-  getAccessToken: () => string;
-};
+  const currentUserId = user?.id ?? null;
 
-export default function ChatWindow({
-  courseId,
-  currentUserId,
-  selectedUser,
-  getAccessToken,
-}: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -91,152 +87,153 @@ export default function ChatWindow({
   const listRef = useRef<HTMLDivElement | null>(null);
   const scrollBottom = () =>
     requestAnimationFrame(() => {
-      if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+      if (listRef.current)
+        listRef.current.scrollTop = listRef.current.scrollHeight;
     });
 
-  // hooks
-  const { getConversations, loading: loadingConvs } = useGetConversations();
-  const { getConversationMessages, loading: loadingMsgs } = useGetConversationMessages();
+  const { getConversationMessages, loading: loadingMsgs } =
+    useGetConversationMessages();
   const { deleteMessage, loading: deleting } = useDeleteMessage();
-  const loadingHistory = loadingConvs || loadingMsgs;
+  const loadingHistory = loadingMsgs;
 
   // optimistic map
   const pendingRef = useRef<
     Map<string, { createdAt: number; message: string; receiverId: string }>
   >(new Map());
 
+  // tránh spam load history
+  const lastLoadedConvRef = useRef<string | null>(null);
+
   // Hub
-  const { connect, disconnect, sendMessage, startTyping, stopTyping, deleteMessageHub } =
-    useChatHub({
-      getAccessToken,
-      onReceiveMessagesBatch: (batch) => {
-        if (!batch?.length) return;
-        setMessages((prev) => {
-          const byId = new Map(prev.map((m) => [m.id, m]));
-          for (const it of batch) {
-            if (currentUserId && it.senderId === currentUserId) {
-              // replace temp by server echo
-              for (const [tempId, p] of pendingRef.current) {
-                const within7s = Date.now() - p.createdAt <= 7000;
-                if (
-                  within7s &&
-                  p.receiverId === it.receiverId &&
-                  p.message === it.message &&
-                  byId.has(tempId)
-                ) {
-                  byId.delete(tempId);
-                  byId.set(it.id, it);
-                  pendingRef.current.delete(tempId);
-                  break;
-                }
+  const {
+    connect,
+    sendMessage,
+    startTyping,
+    stopTyping,
+    deleteMessageHub,
+  } = useChatHub({
+    getAccessToken: () => getSavedAccessToken() ?? "",
+    onReceiveMessagesBatch: (batch) => {
+      if (!batch?.length) return;
+      setMessages((prev) => {
+        const byId = new Map(prev.map((m) => [m.id, m]));
+
+        for (const it of batch) {
+          if (currentUserId && it.senderId === currentUserId) {
+            // replace temp message bằng server echo nếu match
+            for (const [tempId, p] of pendingRef.current) {
+              const within7s = Date.now() - p.createdAt <= 7000;
+              if (
+                within7s &&
+                p.receiverId === it.receiverId &&
+                p.message === it.message &&
+                byId.has(tempId)
+              ) {
+                byId.delete(tempId);
+                byId.set(it.id, it);
+                pendingRef.current.delete(tempId);
+                break;
               }
-              if (!byId.has(it.id)) byId.set(it.id, it);
-            } else {
-              byId.set(it.id, it);
             }
+            if (!byId.has(it.id)) byId.set(it.id, it);
+          } else {
+            byId.set(it.id, it);
           }
-          const next = Array.from(byId.values()).sort(
-            (a, b) =>
-              parseServerDate(a.sentAt).getTime() -
-              parseServerDate(b.sentAt).getTime(),
-          );
-          return next.length > 500 ? next.slice(-500) : next;
-        });
-        scrollBottom();
-      },
-      onTyping: ({ userId, isTyping }) =>
-        setTypingMap((prev) =>
-          prev[userId] === isTyping ? prev : { ...prev, [userId]: isTyping },
+        }
+
+        const next = Array.from(byId.values()).sort(
+          (a, b) =>
+            parseServerDate(a.sentAt).getTime() -
+            parseServerDate(b.sentAt).getTime(),
+        );
+        return next.length > 500 ? next.slice(-500) : next;
+      });
+      scrollBottom();
+    },
+    onTyping: ({ userId, isTyping }) =>
+      setTypingMap((prev) =>
+        prev[userId] === isTyping ? prev : { ...prev, [userId]: isTyping },
+      ),
+    onMessageDeleted: (id) =>
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
         ),
-      onMessageDeleted: (id) =>
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
-          ),
-        ),
-      debounceMs: 500,
-    });
+      ),
+    debounceMs: 500,
+  });
 
-  /* ===== Load history (normalize cả conversations & messages) ===== */
-  const loadHistory = useRef(async (peerId: string) => {
-    if (!courseId) return;
+  /* ===== Load history (mỗi conversation 1 lần) ===== */
+  const loadHistory = useRef(
+    async (convId: string | null | undefined) => {
+      if (!convId) return;
+      if (lastLoadedConvRef.current === convId) return;
+      lastLoadedConvRef.current = convId;
 
-    // 1) Conversations
-    const rawConvs: any = await getConversations({ courseId });
-    const conversations = Array.isArray(rawConvs)
-      ? rawConvs
-      : rawConvs?.conversations ?? [];
+      const rawMsgs: any = await getConversationMessages(convId, {
+        pageNumber: 1,
+        pageSize: 50,
+      });
+      const msgs: ChatMessage[] = Array.isArray(rawMsgs)
+        ? rawMsgs
+        : rawMsgs?.messages ?? [];
+      const sorted = msgs.sort(
+        (a, b) =>
+          parseServerDate(a.sentAt).getTime() -
+          parseServerDate(b.sentAt).getTime(),
+      );
+      setMessages(sorted);
+      scrollBottom();
+    },
+  ).current;
 
-    const conv =
-      conversations.find(
-        (c: any) => c.otherUserId === peerId && c.courseId === courseId,
-      ) ??
-      conversations.find((c: any) => c.otherUserId === peerId) ??
-      null;
-
-    if (!conv) {
+  // connect & load history
+  useEffect(() => {
+    if (!peerId || !conversationId) {
       setMessages([]);
+      pendingRef.current.clear();
+      lastLoadedConvRef.current = null;
       return;
     }
 
-    // 2) Messages
-    const rawMsgs: any = await getConversationMessages(conv.id, {
-      pageNumber: 1,
-      pageSize: 50,
-    });
-    const msgs: ChatMessage[] = Array.isArray(rawMsgs)
-      ? rawMsgs
-      : rawMsgs?.messages ?? [];
+    lastLoadedConvRef.current = null;
 
-    const sorted = msgs.sort(
-      (a, b) =>
-        parseServerDate(a.sentAt).getTime() -
-        parseServerDate(b.sentAt).getTime(),
-    );
-    setMessages(sorted);
-    scrollBottom();
-  }).current;
-
-  // connect & switch peer
-  useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!selectedUser) {
-        await disconnect();
-        setMessages([]);
-        pendingRef.current.clear();
-        return;
-      }
       try {
         await connect();
-        if (!cancelled) await loadHistory(selectedUser.id);
+        if (!cancelled) {
+          await loadHistory(conversationId);
+        }
       } catch {
-        /* ignore */
+        // ignore
       }
     })();
+
     return () => {
       cancelled = true;
+      // không disconnect ở đây để tránh lỗi HttpConnection
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser]);
+  }, [peerId, conversationId]);
 
   // typing edge-based
   const prevNonEmpty = useRef(false);
   useEffect(() => {
-    if (!selectedUser) return;
+    if (!peerId) return;
     const nonEmpty = !!input.trim();
-    if (!prevNonEmpty.current && nonEmpty) void startTyping(selectedUser.id);
-    else if (prevNonEmpty.current && !nonEmpty) void stopTyping(selectedUser.id);
+    if (!prevNonEmpty.current && nonEmpty) void startTyping(peerId);
+    else if (prevNonEmpty.current && !nonEmpty) void stopTyping(peerId);
     prevNonEmpty.current = nonEmpty;
     return () => {
-      if (prevNonEmpty.current && selectedUser) void stopTyping(selectedUser.id);
+      if (prevNonEmpty.current && peerId) void stopTyping(peerId);
       prevNonEmpty.current = false;
     };
-  }, [input, selectedUser, startTyping, stopTyping]);
+  }, [input, peerId, startTyping, stopTyping]);
 
   // send
   const onSend = async () => {
-    if (!selectedUser || !courseId || !currentUserId) return;
+    if (!peerId || !courseId || !currentUserId) return;
     const message = input.trim();
     if (!message) return;
 
@@ -245,8 +242,8 @@ export default function ChatWindow({
       id: tempId,
       senderId: currentUserId,
       senderName: "Me",
-      receiverId: selectedUser.id,
-      receiverName: selectedUser.fullName,
+      receiverId: peerId,
+      receiverName: peerName,
       message,
       sentAt: new Date().toISOString(),
       isDeleted: false,
@@ -254,7 +251,7 @@ export default function ChatWindow({
     pendingRef.current.set(tempId, {
       createdAt: Date.now(),
       message,
-      receiverId: selectedUser.id,
+      receiverId: peerId,
     });
     setMessages((prev) => {
       const next = [...prev, local];
@@ -266,7 +263,7 @@ export default function ChatWindow({
       setSending(true);
       const dto: SendMessagePayload = {
         courseId,
-        receiverId: selectedUser.id,
+        receiverId: peerId,
         message,
       };
       await sendMessage(dto);
@@ -320,65 +317,62 @@ export default function ChatWindow({
     }
   };
 
-  // render: day separators + clusters
-  const rendered = useMemo(() => {
-    const out: Array<
-      | { kind: "sep"; id: string; label: string }
-      | { kind: "msg"; m: ChatMessage; isMine: boolean; showTime: boolean }
-    > = [];
-    for (let i = 0; i < messages.length; i++) {
-      const m = messages[i];
-      const d = parseServerDate(m.sentAt);
-      if (i === 0 || !sameDay(parseServerDate(messages[i - 1].sentAt), d)) {
-        out.push({
-          kind: "sep",
-          id: `sep-${d.toDateString()}`,
-          label: dayLabel(d),
-        });
-      }
-      const next = messages[i + 1];
-      const showTime = !(
-        next &&
-        next.senderId === m.senderId &&
-        mins(parseServerDate(next.sentAt), d) <= 5
-      );
-      const isMine = !!currentUserId && m.senderId === currentUserId;
-      out.push({ kind: "msg", m, isMine, showTime });
-    }
-    return out;
-  }, [messages, currentUserId]);
-
   const typingText =
-    selectedUser && typingMap[selectedUser.id]
-      ? `${selectedUser.fullName} is typing…`
-      : "";
+    peerId && typingMap[peerId] ? `${peerName} is typing…` : "";
+
+  if (!courseId || !conversationId) {
+    return (
+      <div className="p-4 text-sm text-red-500">
+        Missing courseId or conversationId.
+      </div>
+    );
+  }
 
   return (
-    <section className="col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8">
+    <div className="p-4">
+      {/* Back + title */}
+      <div className="mb-3 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white text-slate-700"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div>
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-[var(--brand)]" />
+            <h1 className="text-base font-semibold text-nav">
+              Support conversation
+            </h1>
+          </div>
+          <p className="text-xs text-[var(--text-muted)]">
+            Chat with <span className="font-medium">{peerName}</span>
+          </p>
+        </div>
+      </div>
+
       <Card className="border-[var(--border)] bg-[var(--card)] h-[520px] flex flex-col shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
-          {!selectedUser ? (
+          {!peerId ? (
             <div className="text-xs font-medium text-[var(--text-muted)]">
-              Select a user to start chatting
+              Missing staff information.
             </div>
           ) : (
             <div className="flex items-center gap-3">
               <Avatar className="h-9 w-9 border border-[var(--border)] shadow-sm">
-                <AvatarImage
-                  src={selectedUser.profilePictureUrl || undefined}
-                  alt={selectedUser.fullName || "avatar"}
-                />
+                <AvatarImage src={undefined} alt={peerName || "Support"} />
                 <AvatarFallback className="bg-[var(--background)] text-[var(--brand-700)] text-xs font-semibold">
-                  {initial(selectedUser.fullName)}
+                  {initial(peerName)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-nav truncate">
-                  {selectedUser.fullName || "Unknown user"}
+                  {peerName}
                 </div>
                 <div className="text-[11px] text-[var(--text-muted)] truncate">
-                  {selectedUser.email}
+                  Support staff
                 </div>
               </div>
             </div>
@@ -386,9 +380,9 @@ export default function ChatWindow({
         </div>
 
         {/* Body */}
-        {!selectedUser ? (
+        {!peerId ? (
           <div className="flex flex-1 items-center justify-center px-6 py-4 text-xs text-[var(--text-muted)]">
-            Pick someone on the left to start chatting.
+            Cannot open support chat. Please go back and try again.
           </div>
         ) : (
           <>
@@ -396,7 +390,7 @@ export default function ChatWindow({
               ref={listRef}
               className="relative flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-stable"
             >
-              {/* 🔥 Loading skeleton thay vì chữ "Loading history…" */}
+              {/* Loading skeleton */}
               {loadingHistory && (
                 <div className="space-y-3">
                   {Array.from({ length: 4 }).map((_, i) => (
@@ -423,73 +417,68 @@ export default function ChatWindow({
               )}
 
               {!loadingHistory &&
-                rendered.map((it) =>
-                  it.kind === "sep" ? (
-                    <div key={it.id} className="relative my-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-px flex-1 bg-[var(--border)]" />
-                        <div className="rounded-full bg-[var(--background)] px-3 py-0.5 text-[10px] font-medium text-[var(--text-muted)] shadow-sm">
-                          {it.label}
-                        </div>
-                        <div className="h-px flex-1 bg-[var(--border)]" />
-                      </div>
-                    </div>
-                  ) : (
+                messages.map((m) => {
+                  const isMine = !!currentUserId && m.senderId === currentUserId;
+                  const sentTime = parseServerDate(m.sentAt);
+                  const timeLabel = Number.isNaN(sentTime.getTime())
+                    ? ""
+                    : sentTime.toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
+
+                  return (
                     <div
-                      key={it.m.id}
+                      key={m.id}
                       className={cx(
                         "flex",
-                        it.isMine ? "justify-end" : "justify-start",
+                        isMine ? "justify-end" : "justify-start",
                       )}
                     >
                       <div
                         className={cx(
                           "group relative w-fit max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
-                          it.isMine
+                          isMine
                             ? "bg-[var(--brand)] text-white"
                             : "bg-white border border-[var(--border)] text-slate-900",
                         )}
-                        title={
-                          it.showTime
-                            ? timeHHmm(parseServerDate(it.m.sentAt))
-                            : undefined
-                        }
                       >
                         {/* ⋮ menu */}
-                        {it.isMine && !it.m.isDeleted && (
+                        {isMine && !m.isDeleted && (
                           <div className="absolute left-[-30px] top-1/2 -translate-y-1/2">
                             <button
-                              data-trigger-id={it.m.id}
+                              data-trigger-id={m.id}
                               className={cx(
                                 "flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[11px] text-slate-700 transition-opacity shadow-sm",
-                                openMenuId === it.m.id
+                                openMenuId === m.id
                                   ? "opacity-100"
                                   : "opacity-0 group-hover:opacity-100",
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenMenuId((id) =>
-                                  id === it.m.id ? null : it.m.id,
+                                  id === m.id ? null : m.id,
                                 );
                               }}
                               aria-label="Message actions"
-                              aria-expanded={openMenuId === it.m.id}
+                              aria-expanded={openMenuId === m.id}
                               title="More"
                             >
                               ⋮
                             </button>
 
-                            {openMenuId === it.m.id && (
+                            {openMenuId === m.id && (
                               <div
-                                data-menu-id={it.m.id}
-                                className="absolute bottom-full left-1/2 z-50 mb-2 w-40 -translate-x-1/2 rounded-lg border border-[var(--border)] bg-white py-1 text-xs text-slate-700 shadow-xl"
+                                data-menu-id={m.id}
+                                // 🔥 MỞ XUỐNG DƯỚI, KHÔNG CHUI LÊN ĐỤNG HEADER NỮA
+                                className="absolute top-full right-0 z-50 mt-2 w-40 rounded-lg border border-[var(--border)] bg-white py-1 text-xs text-slate-700 shadow-xl"
                               >
                                 <button
                                   className="w-full px-3 py-1.5 text-left hover:bg-slate-50"
                                   disabled={deleting}
                                   onClick={() => {
                                     setOpenMenuId(null);
-                                    setConfirmId(it.m.id);
+                                    setConfirmId(m.id);
                                   }}
                                 >
                                   Delete
@@ -502,15 +491,21 @@ export default function ChatWindow({
                         <div
                           className={cx(
                             "whitespace-pre-wrap break-words",
-                            it.m.isDeleted && "italic opacity-70",
+                            m.isDeleted && "italic opacity-70",
                           )}
                         >
-                          {it.m.message}
+                          {m.message}
                         </div>
+
+                        {timeLabel && (
+                          <div className="mt-1 text-[10px] opacity-70 text-right">
+                            {timeLabel}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ),
-                )}
+                  );
+                })}
             </div>
 
             {/* typing dưới input */}
@@ -569,7 +564,8 @@ export default function ChatWindow({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white"
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
               onClick={onConfirmDelete}
             >
               Delete
@@ -577,6 +573,6 @@ export default function ChatWindow({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+    </div>
   );
 }

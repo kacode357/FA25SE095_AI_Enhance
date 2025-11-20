@@ -1,7 +1,7 @@
-// app/student/courses/[id]/support/components/SupportRequestList.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, Loader2, MessageCircle } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,8 @@ type Props = {
 };
 
 export function SupportRequestList({ courseId, refreshKey }: Props) {
+  const router = useRouter();
+
   const {
     fetchMySupportRequests,
     loading: loadingList,
@@ -41,6 +43,23 @@ export function SupportRequestList({ courseId, refreshKey }: Props) {
       pageSize: 20,
     });
   }, [courseId, fetchMySupportRequests, refreshKey]);
+
+  const handleOpenChat = useCallback(
+    (item: SupportRequestItem) => {
+      if (!item.conversationId) return;
+
+      // peerId / peerName dùng cho page chat để biết đang nói chuyện với ai
+      const peerId = item.assignedStaffId ?? "";
+      const peerName = item.assignedStaffName ?? "Support Staff";
+
+      const url = `/student/courses/${courseId}/support/${item.conversationId}?peerId=${encodeURIComponent(
+        peerId,
+      )}&peerName=${encodeURIComponent(peerName)}`;
+
+      router.push(url);
+    },
+    [router, courseId],
+  );
 
   return (
     <Card className="card rounded-2xl">
@@ -127,8 +146,11 @@ export function SupportRequestList({ courseId, refreshKey }: Props) {
                 {item.status === SupportRequestStatus.InProgress && (
                   <button
                     type="button"
+                    onClick={() => handleOpenChat(item)}
+                    disabled={!item.conversationId || !item.assignedStaffId}
                     className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium shadow-sm
-                               bg-[var(--brand)] text-white hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--brand)]"
+                               bg-[var(--brand)] text-white hover:brightness-105 disabled:opacity-60 disabled:cursor-not-allowed
+                               focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--brand)]"
                     aria-label="Open support chat"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
