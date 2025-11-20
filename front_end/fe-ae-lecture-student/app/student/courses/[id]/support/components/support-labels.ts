@@ -13,10 +13,10 @@ export enum SupportRequestPriority {
 /** Never show raw enum numbers in UI, only English labels */
 export const statusLabelMap: Record<number, string> = {
   [SupportRequestStatus.Pending]: "Pending",
-  [SupportRequestStatus.Accepted]: "Accepted",
   [SupportRequestStatus.InProgress]: "In Progress",
   [SupportRequestStatus.Resolved]: "Resolved",
   [SupportRequestStatus.Cancelled]: "Cancelled",
+  [SupportRequestStatus.Rejected]: "Rejected",
 };
 
 export const categoryLabelMap: Record<number, string> = {

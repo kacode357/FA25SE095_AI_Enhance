@@ -7,6 +7,7 @@ import type {
   GetMySupportRequestsQuery,
   GetPendingSupportRequestsQuery,
   GetAssignedSupportRequestsQuery,
+  RejectSupportRequestPayload,
 } from "@/types/support/support-request.payload";
 
 import type {
@@ -17,6 +18,7 @@ import type {
   AcceptSupportRequestResponse,
   CancelSupportRequestResponse,
   ResolveSupportRequestResponse,
+  RejectSupportRequestResponse,
 } from "@/types/support/support-request.response";
 
 export const SupportRequestService = {
@@ -46,10 +48,11 @@ export const SupportRequestService = {
   getPendingSupportRequests: async (
     params?: GetPendingSupportRequestsQuery
   ): Promise<GetPendingSupportRequestsResponse> => {
-    const res = await courseAxiosInstance.get<GetPendingSupportRequestsResponse>(
-      "/SupportRequests/pending",
-      { params }
-    );
+    const res =
+      await courseAxiosInstance.get<GetPendingSupportRequestsResponse>(
+        "/SupportRequests/pending",
+        { params }
+      );
     return res.data;
   },
 
@@ -57,14 +60,15 @@ export const SupportRequestService = {
   getAssignedSupportRequests: async (
     params?: GetAssignedSupportRequestsQuery
   ): Promise<GetAssignedSupportRequestsResponse> => {
-    const res = await courseAxiosInstance.get<GetAssignedSupportRequestsResponse>(
-      "/SupportRequests/assigned",
-      { params }
-    );
+    const res =
+      await courseAxiosInstance.get<GetAssignedSupportRequestsResponse>(
+        "/SupportRequests/assigned",
+        { params }
+      );
     return res.data;
   },
 
-  /** POST /api/SupportRequests/{id}/accept – staff nhận xử lý 1 request */
+  /** POST /api/SupportRequests/{id}/accept – staff nhận xử lý 1 request (Pending → InProgress) */
   acceptSupportRequest: async (
     id: string
   ): Promise<AcceptSupportRequestResponse> => {
@@ -74,7 +78,7 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /** PATCH /api/SupportRequests/{id} – requester cancel 1 request */
+  /** PATCH /api/SupportRequests/{id} – requester cancel 1 request (Pending → Cancelled) */
   cancelSupportRequest: async (
     id: string
   ): Promise<CancelSupportRequestResponse> => {
@@ -84,7 +88,31 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /** POST /api/SupportRequests/{id}/resolve – staff hoặc requester đánh dấu resolved */
+  /**
+   * POST /api/SupportRequests/{id}/reject – staff reject 1 request (Pending → Rejected)
+   * Truyền reason + optional comments
+   */
+  rejectSupportRequest: async (
+    id: string,
+    payload: Omit<RejectSupportRequestPayload, "supportRequestId">
+  ): Promise<RejectSupportRequestResponse> => {
+    const body: RejectSupportRequestPayload = {
+      supportRequestId: id,
+      rejectionReason: payload.rejectionReason,
+      rejectionComments: payload.rejectionComments,
+    };
+
+    const res = await courseAxiosInstance.post<RejectSupportRequestResponse>(
+      `/SupportRequests/${id}/reject`,
+      body
+    );
+    return res.data;
+  },
+
+  /**
+   * POST /api/SupportRequests/{id}/resolve – requester đánh dấu resolved (InProgress → Resolved)
+   * Đóng conversation, không gửi thêm message được nữa
+   */
   resolveSupportRequest: async (
     id: string
   ): Promise<ResolveSupportRequestResponse> => {

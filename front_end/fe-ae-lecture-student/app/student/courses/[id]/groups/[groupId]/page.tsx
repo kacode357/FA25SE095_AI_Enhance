@@ -16,15 +16,7 @@ import {
   ArrowLeft,
   AlertCircle,
 } from "lucide-react";
-
-/** ====== BE enum mapping ====== */
-const ROLE_MAP: Record<number, string> = {
-  1: "Member",
-  2: "Leader",
-  3: "Presenter",
-  4: "Researcher",
-  5: "Writer",
-};
+import { GroupMemberRole } from "@/config/classroom-service/group-member-role.enum";
 
 /** ====== Types (đồng bộ field từ BE) ====== */
 type MemberLike = {
@@ -38,20 +30,61 @@ type MemberLike = {
   groupName?: string;
 };
 
-/** ====== Helpers ====== */
-function getRoleLabel(m: MemberLike) {
-  if (m.roleDisplay && m.roleDisplay.trim().length > 0) return m.roleDisplay.trim();
-  if (typeof m.role === "number" && ROLE_MAP[m.role]) return ROLE_MAP[m.role];
-  if (m.isLeader) return "Leader";
-  return "Member";
+/** ====== Role helpers dùng enum + CSS badge ====== */
+
+const ROLE_LABEL_MAP: Record<GroupMemberRole, string> = {
+  [GroupMemberRole.Member]: "Member",
+  [GroupMemberRole.Leader]: "Leader",
+  [GroupMemberRole.Presenter]: "Presenter",
+  [GroupMemberRole.Researcher]: "Researcher",
+  [GroupMemberRole.Writer]: "Writer",
+};
+
+const ROLE_CLASS_MAP: Record<GroupMemberRole, string> = {
+  [GroupMemberRole.Member]: "badge-group-role--member",
+  [GroupMemberRole.Leader]: "badge-group-role--leader",
+  [GroupMemberRole.Presenter]: "badge-group-role--presenter",
+  [GroupMemberRole.Researcher]: "badge-group-role--researcher",
+  [GroupMemberRole.Writer]: "badge-group-role--writer",
+};
+
+function detectRole(m: MemberLike): GroupMemberRole {
+  // Ưu tiên numeric từ BE
+  if (typeof m.role === "number" && m.role >= 1 && m.role <= 5) {
+    return m.role as GroupMemberRole;
+  }
+
+  // Text từ BE
+  if (typeof m.roleDisplay === "string" && m.roleDisplay.trim().length > 0) {
+    const text = m.roleDisplay.trim().toLowerCase();
+    if (text === "leader") return GroupMemberRole.Leader;
+    if (text === "presenter") return GroupMemberRole.Presenter;
+    if (text === "researcher") return GroupMemberRole.Researcher;
+    if (text === "writer") return GroupMemberRole.Writer;
+    return GroupMemberRole.Member;
+  }
+
+  // Flag cũ isLeader
+  if (m.isLeader) {
+    return GroupMemberRole.Leader;
+  }
+
+  // Fallback
+  return GroupMemberRole.Member;
 }
 
-function isLeaderLike(m: MemberLike) {
-  const byNumber = typeof m.role === "number" && m.role === 2;
-  const byText =
-    typeof m.roleDisplay === "string" &&
-    m.roleDisplay.toLowerCase().trim() === "leader";
-  return Boolean(m.isLeader || byNumber || byText);
+function getRoleLabel(m: MemberLike) {
+  const role = detectRole(m);
+  return ROLE_LABEL_MAP[role] ?? "Member";
+}
+
+function getRoleBadgeClass(m: MemberLike) {
+  const role = detectRole(m);
+  return ROLE_CLASS_MAP[role] ?? ROLE_CLASS_MAP[GroupMemberRole.Member];
+}
+
+function isLeaderRole(m: MemberLike) {
+  return detectRole(m) === GroupMemberRole.Leader;
 }
 
 function initials(full?: string) {
@@ -132,7 +165,7 @@ export default function GroupMembersPage() {
           <p className="text-sm text-[var(--text-muted)] mt-0.5">
             {groupName ? (
               <>
-                Group: <b className="text-foreground">{groupName}</b> 
+                Group: <b className="text-foreground">{groupName}</b>
               </>
             ) : (
               <>
@@ -195,7 +228,8 @@ export default function GroupMembersPage() {
             <ul className="divide-y divide-[var(--border)]">
               {members.map((m: MemberLike) => {
                 const roleLabel = getRoleLabel(m);
-                const leaderBadge = isLeaderLike(m);
+                const isLeader = isLeaderRole(m);
+                const badgeClass = getRoleBadgeClass(m);
 
                 return (
                   <li
@@ -215,24 +249,21 @@ export default function GroupMembersPage() {
                       </div>
 
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-foreground">
                             {m.studentName}
                           </span>
 
-                          {leaderBadge && (
-                            <span
-                              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-accent text-accent"
-                              style={{
-                                background:
-                                  "color-mix(in oklab, var(--accent) 16%, #fff)",
-                              }}
-                              title="Group Leader"
-                            >
-                              <Shield className="w-3 h-3" />
-                              Leader
-                            </span>
-                          )}
+                          {/* Role badge – dùng màu mới */}
+                          <span
+                            className={`badge-group-role ${badgeClass}`}
+                            title={roleLabel}
+                          >
+                            {isLeader && (
+                              <Shield className="w-3 h-3" aria-hidden />
+                            )}
+                            {roleLabel}
+                          </span>
                         </div>
 
                         <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">

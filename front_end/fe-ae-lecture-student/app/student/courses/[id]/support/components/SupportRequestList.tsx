@@ -17,9 +17,11 @@ import {
 
 type Props = {
   courseId: string;
+  /** Dùng để trigger reload từ bên ngoài (tăng số là fetch lại) */
+  refreshKey?: number;
 };
 
-export function SupportRequestList({ courseId }: Props) {
+export function SupportRequestList({ courseId, refreshKey }: Props) {
   const {
     fetchMySupportRequests,
     loading: loadingList,
@@ -34,21 +36,25 @@ export function SupportRequestList({ courseId }: Props) {
       pageNumber: 1,
       pageSize: 20,
     });
-  }, [courseId, fetchMySupportRequests]);
+  }, [courseId, fetchMySupportRequests, refreshKey]);
 
   return (
     <Card className="card rounded-2xl">
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <span>My Support Requests</span>
-          {loadingList && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
+          {loadingList && (
+            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 max-h-[420px] overflow-y-auto">
         {items.length === 0 && !loadingList && (
           <div className="flex items-center gap-2 rounded-lg border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <span>You have not submitted any support requests for this course yet.</span>
+            <span>
+              You have not submitted any support requests for this course yet.
+            </span>
           </div>
         )}
 

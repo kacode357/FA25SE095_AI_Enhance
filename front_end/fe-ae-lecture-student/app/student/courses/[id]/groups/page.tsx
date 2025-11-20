@@ -39,7 +39,6 @@ export default function CourseGroupsPage() {
   useEffect(() => {
     if (!courseId) return;
     fetchByCourseId(courseId);
-    // nếu hook chưa tự fetch, gọi thủ công:
     fetchCourseStudents(courseId);
   }, [courseId, fetchByCourseId, fetchCourseStudents]);
 
@@ -89,7 +88,10 @@ export default function CourseGroupsPage() {
             Groups
           </h1>
           <p className="text-xs text-[color:var(--text-muted)] mt-1">
-            Course: <b className="text-[color:var(--foreground)]">{courseName || "—"}</b>
+            Course:{" "}
+            <b className="text-[color:var(--foreground)]">
+              {courseName || "—"}
+            </b>
           </p>
         </div>
 
@@ -139,7 +141,8 @@ export default function CourseGroupsPage() {
                   Group List
                 </CardTitle>
                 <p className="text-xs text-[color:var(--text-muted)]">
-                  {listData.length} group{listData.length > 1 ? "s" : ""} • Click to view members
+                  {listData.length} group
+                  {listData.length > 1 ? "s" : ""} • Click to view members
                 </p>
               </CardHeader>
 
@@ -150,7 +153,9 @@ export default function CourseGroupsPage() {
 
                     const memberLabel =
                       g.maxMembers == null
-                        ? `${g.memberCount} ${g.memberCount === 1 ? "member" : "members"}`
+                        ? `${g.memberCount} ${
+                            g.memberCount === 1 ? "member" : "members"
+                          }`
                         : `${g.memberCount}/${g.maxMembers} ${
                             g.maxMembers === 1 ? "member" : "members"
                           }`;
@@ -160,7 +165,7 @@ export default function CourseGroupsPage() {
                         key={g.id}
                         className="group flex items-start gap-4 py-4 px-1 rounded-lg transition-colors hover:bg-[color:var(--brand)]/3"
                       >
-                        {/* Status chip */}
+                        {/* Status chip (open/locked) */}
                         <div className="mt-1 shrink-0">
                           <span
                             className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${
@@ -192,13 +197,16 @@ export default function CourseGroupsPage() {
 
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-[color:var(--text-muted)]">
-                                Created: {new Date(g.createdAt).toLocaleString("en-GB")}
+                                Created:{" "}
+                                {new Date(g.createdAt).toLocaleString("en-GB")}
                               </span>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() =>
-                                  router.push(`/student/courses/${courseId}/groups/${g.id}`)
+                                  router.push(
+                                    `/student/courses/${courseId}/groups/${g.id}`
+                                  )
                                 }
                                 className="shrink-0 border-brand text-brand hover:bg-[color:var(--brand)]/5"
                               >
@@ -216,10 +224,12 @@ export default function CourseGroupsPage() {
                             </span>
 
                             {g.leaderName && (
-                              <span className="flex items-center gap-1 text-[color:var(--text-muted)]">
+                              <span className="flex items-center gap-2 text-[color:var(--text-muted)]">
                                 <User className="w-4 h-4 text-[color:var(--muted)]" />
-                                Lead:{" "}
-                                <b className="ml-1 text-[color:var(--foreground)]">
+                                <span className="badge-group-role badge-group-role--leader">
+                                  Leader
+                                </span>
+                                <b className="text-[color:var(--foreground)]">
                                   {g.leaderName}
                                 </b>
                               </span>
@@ -332,7 +342,8 @@ export default function CourseGroupsPage() {
                         <div className="flex items-center justify-between text-[11px] text-[color:var(--text-muted)]">
                           <span>ID: {s.studentIdNumber || "—"}</span>
                           <span>
-                            Joined: {new Date(s.joinedAt).toLocaleDateString("en-GB")}
+                            Joined:{" "}
+                            {new Date(s.joinedAt).toLocaleDateString("en-GB")}
                           </span>
                         </div>
                       </div>

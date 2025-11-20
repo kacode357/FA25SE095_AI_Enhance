@@ -1,7 +1,7 @@
 // app/student/courses/[id]/support/page.tsx
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Headset } from "lucide-react";
 
@@ -14,6 +14,12 @@ export default function CourseSupportPage() {
     const id = params?.id;
     return typeof id === "string" ? id : Array.isArray(id) ? id[0] : "";
   }, [params]);
+
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleCreated = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, []);
 
   if (!courseId) {
     // In theory this shouldn't happen if route is /student/courses/[id]/support
@@ -32,12 +38,14 @@ export default function CourseSupportPage() {
           <Headset className="h-5 w-5 text-blue-600" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Course Support</h1>
+          <h1 className="text-xl font-semibold text-slate-900">
+            Course Support
+          </h1>
           <p className="text-sm text-slate-500">
             Submit and track support requests for this course.{" "}
             <span className="font-medium">
-              All status / category / priority values are shown as English labels only,
-              never as raw numbers.
+              All status / category / priority values are shown as English
+              labels only, never as raw numbers.
             </span>
           </p>
         </div>
@@ -45,12 +53,8 @@ export default function CourseSupportPage() {
 
       {/* Create + List */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <SupportRequestCreate
-          courseId={courseId}
-          // Optional: when a request is created, you can pass a callback to refresh list from outside
-          // but currently list component manages its own fetching, so we don't need this.
-        />
-        <SupportRequestList courseId={courseId} />
+        <SupportRequestCreate courseId={courseId} onCreated={handleCreated} />
+        <SupportRequestList courseId={courseId} refreshKey={refreshKey} />
       </div>
     </div>
   );

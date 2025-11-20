@@ -2,6 +2,7 @@
 "use client";
 
 import { Loader2, MessageCircle } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -13,10 +14,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import SupportRequestStatusBadge from "./SupportRequestStatusBadge";
 import SupportRequestCategoryBadge from "./SupportRequestCategoryBadge";
 import SupportRequestPriorityBadge from "./SupportRequestPriorityBadge";
+import SupportRequestRejectButton from "./SupportRequestRejectButton";
+
 import type { SupportRequestItem } from "@/types/support/support-request.response";
+import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
 
 type PaginationState = {
   totalCount: number;
@@ -39,6 +44,8 @@ type Props = {
   onNextPage?: () => void;
   onAccept?: (id: string) => Promise<void>;
   onResolve?: (id: string) => Promise<void>;
+  /** Reload cả list từ bên ngoài (sau accept / reject / resolve) */
+  onReload?: () => Promise<void> | void;
 };
 
 const dt = (s?: string | null) => {
@@ -59,6 +66,7 @@ export default function SupportRequestList({
   onNextPage,
   onAccept,
   onResolve,
+  onReload,
 }: Props) {
   const showEmpty = !loading && items.length === 0;
 
@@ -108,15 +116,21 @@ export default function SupportRequestList({
                   <TableHead className="w-[22%]">Subject</TableHead>
                   <TableHead className="w-[18%]">Course</TableHead>
                   <TableHead className="w-[18%]">Requester</TableHead>
-                  <TableHead className="w-[16%]">Category &amp; Priority</TableHead>
-                  <TableHead className="w-[16%]">Status &amp; Timeline</TableHead>
+                  <TableHead className="w-[16%]">
+                    Category &amp; Priority
+                  </TableHead>
+                  <TableHead className="w-[16%]">
+                    Status &amp; Timeline
+                  </TableHead>
                   <TableHead className="w-[10%]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((item) => {
-                  const isResolvedOrCancelled =
-                    item.status === 3 || item.status === 4;
+                  const isClosed =
+                    item.status === SupportRequestStatus.Resolved ||
+                    item.status === SupportRequestStatus.Cancelled ||
+                    item.status === SupportRequestStatus.Rejected;
 
                   return (
                     <TableRow key={item.id} className="align-top">
@@ -198,18 +212,28 @@ export default function SupportRequestList({
                       {/* Actions */}
                       <TableCell className="text-right">
                         <div className="flex flex-col items-end gap-1">
-                          {type === "pending" && onAccept && (
-                            <Button
-                              size="sm"
-                              disabled={actionLoading}
-                              className="btn btn-blue-slow px-3 py-1 text-xs"
-                              onClick={() => onAccept(item.id)}
-                            >
-                              {actionLoading && (
-                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          {type === "pending" && (
+                            <div className="flex gap-1">
+                              {onAccept && (
+                                <Button
+                                  size="sm"
+                                  disabled={actionLoading}
+                                  className="btn btn-blue-slow px-3 py-1 text-xs"
+                                  onClick={() => onAccept(item.id)}
+                                >
+                                  {actionLoading && (
+                                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                  )}
+                                  Accept
+                                </Button>
                               )}
-                              Accept
-                            </Button>
+
+                              <SupportRequestRejectButton
+                                requestId={item.id}
+                                disabled={actionLoading}
+                                onRejected={onReload}
+                              />
+                            </div>
                           )}
 
                           {type === "assigned" && onResolve && (
@@ -217,13 +241,13 @@ export default function SupportRequestList({
                               size="sm"
                               variant="outline"
                               className="px-3 py-1 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                              disabled={actionLoading || isResolvedOrCancelled}
+                              disabled={actionLoading || isClosed}
                               onClick={() => onResolve(item.id)}
                             >
                               {actionLoading && (
                                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                               )}
-                              {isResolvedOrCancelled ? "Completed" : "Mark resolved"}
+                              {isClosed ? "Completed" : "Mark resolved"}
                             </Button>
                           )}
 

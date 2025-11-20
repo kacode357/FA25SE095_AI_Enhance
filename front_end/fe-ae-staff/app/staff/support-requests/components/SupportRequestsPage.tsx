@@ -40,9 +40,15 @@ type AssignedProps = ListProps & {
 type Props = {
   pending: PendingProps;
   assigned: AssignedProps;
+  /** Reload cả 2 list (pending + assigned) */
+  onReloadAll: () => Promise<void> | void;
 };
 
-export default function SupportRequestsPage({ pending, assigned }: Props) {
+export default function SupportRequestsPage({
+  pending,
+  assigned,
+  onReloadAll,
+}: Props) {
   const [tab, setTab] = useState<"pending" | "assigned">("pending");
 
   const handleRefreshClick = () => {
@@ -113,7 +119,8 @@ export default function SupportRequestsPage({ pending, assigned }: Props) {
                   pagination={pending.pagination}
                   onPreviousPage={pending.onPreviousPage}
                   onNextPage={pending.onNextPage}
-                  onAccept={pending.onAccept} // now matches (id) => Promise<void>
+                  onAccept={pending.onAccept}
+                  onReload={onReloadAll}
                 />
               </TabsContent>
 
@@ -128,7 +135,8 @@ export default function SupportRequestsPage({ pending, assigned }: Props) {
                   pagination={assigned.pagination}
                   onPreviousPage={assigned.onPreviousPage}
                   onNextPage={assigned.onNextPage}
-                  onResolve={assigned.onResolve} // (id) => Promise<void>
+                  onResolve={assigned.onResolve}
+                  onReload={onReloadAll}
                 />
               </TabsContent>
             </div>

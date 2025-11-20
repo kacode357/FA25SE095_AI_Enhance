@@ -30,15 +30,10 @@ export default function SupportRequestsPageRoute() {
   } = useAssignedSupportRequests();
 
   // Actions
-  const {
-    acceptSupportRequest,
-    loading: acceptLoading,
-  } = useAcceptSupportRequest();
-
-  const {
-    resolveSupportRequest,
-    loading: resolveLoading,
-  } = useResolveSupportRequest();
+  const { acceptSupportRequest, loading: acceptLoading } =
+    useAcceptSupportRequest();
+  const { resolveSupportRequest, loading: resolveLoading } =
+    useResolveSupportRequest();
 
   // Initial load
   useEffect(() => {
@@ -52,7 +47,7 @@ export default function SupportRequestsPageRoute() {
     });
   }, [fetchPendingSupportRequests, fetchAssignedSupportRequests]);
 
-  // Reload both lists (after accept/resolve)
+  // Reload both lists (after accept/resolve/reject)
   const reloadLists = useCallback(async () => {
     await Promise.all([
       fetchPendingSupportRequests({
@@ -136,6 +131,7 @@ export default function SupportRequestsPageRoute() {
         onNextPage: handleAssignedNext,
         onResolve: handleResolve,
       }}
+      onReloadAll={reloadLists}
     />
   );
 }

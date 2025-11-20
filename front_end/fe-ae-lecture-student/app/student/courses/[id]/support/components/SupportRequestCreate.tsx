@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,14 +18,12 @@ import {
 } from "@/components/ui/select";
 
 import { useCreateSupportRequest } from "@/hooks/support-requests/useCreateSupportRequest";
-import {
-  SupportRequestPriority,
-} from "./support-labels";
+import { SupportRequestPriority } from "./support-labels";
 import { SupportRequestCategory } from "@/config/classroom-service/support-request-category.enum";
 
 type Props = {
   courseId: string;
-  /** Optional: callback to refresh list after create */
+  /** Callback để reload list sau khi tạo */
   onCreated?: () => Promise<void> | void;
 };
 
@@ -52,12 +51,15 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
       description: description.trim(),
     });
 
+    
+
     // Reset basic fields
     setSubject("");
     setDescription("");
     setPriority(SupportRequestPriority.Medium);
     setCategory(SupportRequestCategory.Technical);
 
+    // Gọi callback để reload list
     if (onCreated) {
       await onCreated();
     }
@@ -73,7 +75,9 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
           {/* Priority + Category */}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-700">Priority</label>
+              <label className="text-xs font-medium text-slate-700">
+                Priority
+              </label>
               <Select
                 value={String(priority)}
                 onValueChange={(v) =>
@@ -84,15 +88,23 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={String(SupportRequestPriority.Low)}>Low</SelectItem>
-                  <SelectItem value={String(SupportRequestPriority.Medium)}>Medium</SelectItem>
-                  <SelectItem value={String(SupportRequestPriority.High)}>High</SelectItem>
+                  <SelectItem value={String(SupportRequestPriority.Low)}>
+                    Low
+                  </SelectItem>
+                  <SelectItem value={String(SupportRequestPriority.Medium)}>
+                    Medium
+                  </SelectItem>
+                  <SelectItem value={String(SupportRequestPriority.High)}>
+                    High
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-700">Category</label>
+              <label className="text-xs font-medium text-slate-700">
+                Category
+              </label>
               <Select
                 value={String(category)}
                 onValueChange={(v) =>
@@ -109,7 +121,9 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                   <SelectItem value={String(SupportRequestCategory.Academic)}>
                     Academic
                   </SelectItem>
-                  <SelectItem value={String(SupportRequestCategory.Administrative)}>
+                  <SelectItem
+                    value={String(SupportRequestCategory.Administrative)}
+                  >
                     Administrative
                   </SelectItem>
                   <SelectItem value={String(SupportRequestCategory.Other)}>
@@ -122,7 +136,9 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
 
           {/* Subject */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700">Subject</label>
+            <label className="text-xs font-medium text-slate-700">
+              Subject
+            </label>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
@@ -134,7 +150,9 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
 
           {/* Description */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700">Description</label>
+            <label className="text-xs font-medium text-slate-700">
+              Description
+            </label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}

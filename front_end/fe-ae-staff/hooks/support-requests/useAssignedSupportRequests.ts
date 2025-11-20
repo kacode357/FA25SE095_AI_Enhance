@@ -4,9 +4,7 @@
 import { useCallback, useState } from "react";
 
 import { SupportRequestService } from "@/services/support-request.services";
-import type {
-  GetAssignedSupportRequestsQuery,
-} from "@/types/support/support-request.payload";
+import type { GetAssignedSupportRequestsQuery } from "@/types/support/support-request.payload";
 import type {
   GetAssignedSupportRequestsResponse,
   SupportRequestItem,
@@ -33,13 +31,17 @@ const defaultPagination: PaginationState = {
 export function useAssignedSupportRequests() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<SupportRequestItem[]>([]);
-  const [pagination, setPagination] = useState<PaginationState>(defaultPagination);
+  const [pagination, setPagination] =
+    useState<PaginationState>(defaultPagination);
 
   const fetchAssignedSupportRequests = useCallback(
-    async (params?: GetAssignedSupportRequestsQuery): Promise<GetAssignedSupportRequestsResponse> => {
+    async (
+      params?: GetAssignedSupportRequestsQuery
+    ): Promise<GetAssignedSupportRequestsResponse> => {
       setLoading(true);
       try {
-        const res = await SupportRequestService.getAssignedSupportRequests(params);
+        const res =
+          await SupportRequestService.getAssignedSupportRequests(params);
         const page = res.data;
 
         setItems(page.data || []);

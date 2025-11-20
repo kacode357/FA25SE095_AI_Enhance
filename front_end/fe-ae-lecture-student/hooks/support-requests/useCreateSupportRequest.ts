@@ -11,7 +11,9 @@ export function useCreateSupportRequest() {
   const [loading, setLoading] = useState(false);
 
   const createSupportRequest = useCallback(
-    async (payload: CreateSupportRequestPayload): Promise<CreateSupportRequestResponse> => {
+    async (
+      payload: CreateSupportRequestPayload
+    ): Promise<CreateSupportRequestResponse> => {
       setLoading(true);
       try {
         const res = await SupportRequestService.createSupportRequest(payload);

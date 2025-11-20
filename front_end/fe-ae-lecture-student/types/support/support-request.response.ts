@@ -1,15 +1,15 @@
 // types/support/support-request.response.ts
 
-/** Item support request trả về từ API */
-
+/** Status enum cho support request */
 export enum SupportRequestStatus {
   Pending = 0,
-  Accepted = 1,
-  InProgress = 2,
-  Resolved = 3,
-  Cancelled = 4,
+  InProgress = 1,
+  Resolved = 2,
+  Cancelled = 3,
+  Rejected = 4,
 }
 
+/** Item support request trả về từ API */
 export interface SupportRequestItem {
   id: string;
   courseId: string;
@@ -32,7 +32,11 @@ export interface SupportRequestItem {
   category: number;
 
   subject: string;
-  /** Có thể không có trong một số API (pending) nên để optional */
+  /**
+   * Mô tả – trong một số API (pending) có thể không trả về nên để optional
+   * /my, /assigned: có description
+   * /pending: swagger ví dụ không có description
+   */
   description?: string;
 
   /** Id conversation trong hệ thống chat (nếu đã tạo) */
@@ -94,6 +98,12 @@ export interface AcceptSupportRequestResponse {
 
 /** PATCH /api/SupportRequests/{id} (cancel) */
 export interface CancelSupportRequestResponse {
+  success: boolean;
+  message: string;
+}
+
+/** POST /api/SupportRequests/{id}/reject */
+export interface RejectSupportRequestResponse {
   success: boolean;
   message: string;
 }

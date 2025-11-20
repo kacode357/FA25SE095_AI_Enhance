@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
-
+@import "../styles/assignment-status.css"; 
+@import "../styles/group-member-role.css";
 :root {
   --font-sans: 'Sansation', 'Roboto', sans-serif;
 
