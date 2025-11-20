@@ -1,0 +1,33 @@
+/* app/styles/support-request-priority.css */
+/* === SUPPORT REQUEST PRIORITY BADGES (SupportRequestPriority) === */
+
+/* Base badge */
+.badge-support-priority {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* Low = 0 (xám dịu – ưu tiên thấp, không cạnh tranh với status) */
+.badge-support-priority--low {
+  background: rgba(148, 163, 184, 0.10); /* slate-400 */
+  color: #64748b; /* slate-500 */
+}
+
+/* Medium = 1 (cam – ưu tiên trung bình, dùng accent chung hệ thống) */
+.badge-support-priority--medium {
+  background: rgba(244, 162, 59, 0.12);
+  color: var(--accent);
+}
+
+/* High = 2 (đỏ – ưu tiên cao, rõ ràng) */
+.badge-support-priority--high {
+  background: rgba(220, 38, 38, 0.10);
+  color: #b91c1c;
+}

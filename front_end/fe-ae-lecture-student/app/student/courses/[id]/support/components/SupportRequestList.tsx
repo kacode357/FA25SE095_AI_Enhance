@@ -2,18 +2,22 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, MessageCircle } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SupportRequestItem } from "@/types/support/support-request.response";
 
 import { useMySupportRequests } from "@/hooks/support-requests/useMySupportRequests";
 import {
+  categoryBadgeClass,
   categoryLabel,
   formatDateTime,
+  priorityBadgeClass,
   priorityLabel,
+  statusBadgeClass,
   statusLabel,
 } from "./support-labels";
+import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
 
 type Props = {
   courseId: string;
@@ -48,6 +52,7 @@ export function SupportRequestList({ courseId, refreshKey }: Props) {
           )}
         </CardTitle>
       </CardHeader>
+
       <CardContent className="space-y-3 max-h-[420px] overflow-y-auto">
         {items.length === 0 && !loadingList && (
           <div className="flex items-center gap-2 rounded-lg border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500">
@@ -61,41 +66,76 @@ export function SupportRequestList({ courseId, refreshKey }: Props) {
         {items.map((item: SupportRequestItem) => (
           <div
             key={item.id}
-            className="border border-slate-200 rounded-lg p-3 bg-white flex flex-col gap-1.5 text-xs"
+            className="border border-slate-200 rounded-lg p-3 bg-white text-xs"
           >
-            <div className="flex items-center justify-between gap-2">
-              <div className="font-semibold text-slate-900 line-clamp-1">
-                {item.subject}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
-                  {priorityLabel(item.priority)}
-                </span>
-                <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
-                  {statusLabel(item.status)}
-                </span>
-              </div>
-            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              {/* LEFT SIDE: subject, category, priority, description, requested */}
+              <div className="flex-1 min-w-0 space-y-1.5">
+                {/* Subject */}
+                <div className="text-slate-900">
+                  <span className="text-[11px] font-medium text-slate-500 mr-1.5">
+                    Subject:
+                  </span>
+                  <span className="font-semibold">{item.subject}</span>
+                </div>
 
-            <div className="text-[11px] text-slate-500 line-clamp-2">
-              {item.description || "No description provided."}
-            </div>
+                {/* Category ngay dưới Subject */}
+                <div className="flex items-center gap-1 text-[11px] text-slate-600">
+                  <span className="font-medium text-slate-500">Category:</span>
+                  <span className={categoryBadgeClass(item.category)}>
+                    {categoryLabel(item.category)}
+                  </span>
+                </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-              <div className="flex flex-wrap gap-2 text-[10px] text-slate-500">
-                <span>Category: {categoryLabel(item.category)}</span>
+                {/* Priority */}
+                <div className="flex items-center gap-1 text-[11px] text-slate-600">
+                  <span className="font-medium text-slate-500">Priority:</span>
+                  <span className={priorityBadgeClass(item.priority)}>
+                    {priorityLabel(item.priority)}
+                  </span>
+                </div>
+
+                {/* Description */}
+                <div className="text-[11px] text-slate-600">
+                  <span className="font-medium text-slate-500 mr-1">
+                    Description:
+                  </span>
+                  <span className="line-clamp-2">
+                    {item.description || "No description provided."}
+                  </span>
+                </div>
+
+                {/* Requested: góc phải dưới */}
                 {item.requestedAt && (
-                  <span>Requested: {formatDateTime(item.requestedAt)}</span>
-                )}
-                {item.resolvedAt && (
-                  <span>Resolved: {formatDateTime(item.resolvedAt)}</span>
+                  <div className="flex justify-end pt-1 text-[10px] text-slate-500">
+                    <span>Requested: {formatDateTime(item.requestedAt)}</span>
+                  </div>
                 )}
               </div>
-              {item.requesterName && (
-                <span className="text-[10px] text-slate-400">
-                  By {item.requesterName} ({item.requesterRole})
-                </span>
-              )}
+
+              {/* RIGHT SIDE: status + open chat */}
+              <div className="flex flex-col items-end gap-2 sm:pl-4">
+                {/* Status ở góc phải trên */}
+                <div className="flex items-center gap-1 text-[11px] text-slate-600">
+                  <span className="font-medium text-slate-500">Status:</span>
+                  <span className={statusBadgeClass(item.status)}>
+                    {statusLabel(item.status)}
+                  </span>
+                </div>
+
+                {/* Open chat dưới status – chỉ khi In Progress */}
+                {item.status === SupportRequestStatus.InProgress && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium shadow-sm
+                               bg-[var(--brand)] text-white hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--brand)]"
+                    aria-label="Open support chat"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    <span>Open chat</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}

@@ -3,6 +3,11 @@
 @import "../styles/assignment-status.css"; 
 @import "../styles/group-member-role.css";
 @import "../styles/report-status.css";
+@import "../styles/support-request-category.css";
+@import "../styles/support-request-rejection-reason.css";
+@import "../styles/support-request-status.css";
+@import "../styles/support-request-priority.css";
+
 :root {
   --font-sans: 'Sansation', 'Roboto', sans-serif;
 

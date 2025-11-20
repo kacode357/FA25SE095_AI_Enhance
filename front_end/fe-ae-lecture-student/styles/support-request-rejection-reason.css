@@ -1,0 +1,45 @@
+/* app/styles/support-request-rejection-reason.css */
+/* === SUPPORT REQUEST REJECTION REASON BADGES (SupportRequestRejectionReason) === */
+
+/* Base badge */
+.badge-support-rejection {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* InsufficientPermissions = 1 (đỏ mạnh) */
+.badge-support-rejection--insufficient-permissions {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+
+/* RequireHigherAuth = 2 (tím đậm – cần quyền cao hơn) */
+.badge-support-rejection--require-higher-auth {
+  background: rgba(109, 40, 217, 0.12);
+  color: #6d28d9;
+}
+
+/* OutOfScope = 3 (xám / ngoài phạm vi) */
+.badge-support-rejection--out-of-scope {
+  background: rgba(148, 163, 184, 0.12);
+  color: #475569;
+}
+
+/* DuplicateRequest = 4 (xanh dương nhạt) */
+.badge-support-rejection--duplicate-request {
+  background: rgba(59, 130, 246, 0.10);
+  color: #1d4ed8;
+}
+
+/* Other = 5 (cam nhẹ) */
+.badge-support-rejection--other {
+  background: rgba(244, 162, 59, 0.12);
+  color: var(--accent);
+}

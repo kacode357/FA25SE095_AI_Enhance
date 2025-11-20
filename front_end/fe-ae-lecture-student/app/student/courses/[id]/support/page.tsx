@@ -41,13 +41,7 @@ export default function CourseSupportPage() {
           <h1 className="text-xl font-semibold text-slate-900">
             Course Support
           </h1>
-          <p className="text-sm text-slate-500">
-            Submit and track support requests for this course.{" "}
-            <span className="font-medium">
-              All status / category / priority values are shown as English
-              labels only, never as raw numbers.
-            </span>
-          </p>
+       
         </div>
       </div>
 

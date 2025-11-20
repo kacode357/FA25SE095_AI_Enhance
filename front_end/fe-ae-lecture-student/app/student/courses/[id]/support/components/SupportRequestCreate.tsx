@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ import {
 } from "@/components/ui/select";
 
 import { useCreateSupportRequest } from "@/hooks/support-requests/useCreateSupportRequest";
-import { SupportRequestPriority } from "./support-labels";
+import { SupportRequestPriority } from "@/config/classroom-service/support-request-priority.enum";
 import { SupportRequestCategory } from "@/config/classroom-service/support-request-category.enum";
 
 type Props = {
@@ -50,8 +49,6 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
       subject: subject.trim(),
       description: description.trim(),
     });
-
-    
 
     // Reset basic fields
     setSubject("");
