@@ -11,6 +11,7 @@ import type {
 } from "@/types/chat/chat.response";
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import SupportRequestResolved from "./SupportRequestResolved";
 
 type Props = {
     courseId: string;
@@ -19,6 +20,12 @@ type Props = {
     peerName: string;
     conversationId?: string | null;
     onClose?: () => void;
+    // optional id of the support request associated with this chat
+    supportRequestId?: string;
+    // initial resolved flag; when true, UI will show resolved state
+    isResolved?: boolean;
+    // optional callback called when marking resolved (receives supportRequestId if available)
+    onResolve?: (id?: string) => Promise<void> | void;
 };
 
 const uuid = () =>
@@ -41,6 +48,9 @@ export default function SupportRequestChatWindow({
     peerName,
     conversationId: initialConvId,
     onClose,
+    supportRequestId,
+    isResolved: initialResolved = false,
+    onResolve,
 }: Props) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
@@ -164,6 +174,34 @@ export default function SupportRequestChatWindow({
             onReceiveMessagesBatch: handleReceiveMessagesBatch,
             onTyping: handleTyping,
         });
+
+    // resolved status for the associated support request (local state)
+    const [resolved, setResolved] = useState<boolean>(!!initialResolved);
+    const [resolving, setResolving] = useState(false);
+
+    const handleMarkResolved = useCallback(async () => {
+        if (resolved) return;
+        setResolving(true);
+        try {
+            if (onResolve) {
+                await onResolve(supportRequestId);
+            } else if (supportRequestId) {
+                try {
+                    const svc = await import("@/services/support-request.services");
+                    const fn = (svc as any)?.SupportRequestService?.resolveSupportRequest;
+                    if (typeof fn === "function") {
+                        await fn(supportRequestId);
+                    }
+                } catch (e) {
+                    // eslint-disable-next-line no-console
+                    console.error("resolve: failed to call service", e);
+                }
+            }
+        } finally {
+            setResolved(true);
+            setResolving(false);
+        }
+    }, [onResolve, supportRequestId, resolved]);
 
     // ===== TYPING LOGIC (sửa lại gọn như page cũ) =====
     const prevNonEmptyRef = useRef(false);
@@ -408,12 +446,12 @@ export default function SupportRequestChatWindow({
             cancelAnimationFrame(raf);
             raf = requestAnimationFrame(recompute);
         };
+        // only listen to resize — do not update on page scroll so header stays
+        // pinned under the global header instead of following container movement
         window.addEventListener("resize", onResize);
-        window.addEventListener("scroll", onResize, true);
         return () => {
             cancelAnimationFrame(raf);
             window.removeEventListener("resize", onResize);
-            window.removeEventListener("scroll", onResize, true);
         };
     }, []);
 
@@ -433,10 +471,10 @@ export default function SupportRequestChatWindow({
     }, []);
 
     return (
-        <div ref={rootRef} className="w-full h-screen flex flex-col">
+        <div ref={rootRef} className="w-full h-full flex flex-col">
             <div
                 ref={headerRef}
-                className="flex-none bg-white z-30 flex flex-col justify-center px-4 py-3 border-b shadow-sm"
+                className="flex-none bg-white z-30 flex flex-col justify-center px-4 py-3 shadow-sm"
                 style={
                     headerRect
                         ? {
@@ -449,19 +487,19 @@ export default function SupportRequestChatWindow({
                 }
             >
                 <div className="flex items-center justify-between w-full">
-                    <div className="text-lg font-semibold">
-                        Chat with {peerName || "User"}
-                    </div>
+                    <div className="text-lg font-semibold">Chat with {peerName || "User"}</div>
                     <div>
                         <Button size="sm" variant="ghost" onClick={onClose}>
                             Close
                         </Button>
                     </div>
                 </div>
-                <div className="mt-1">
-                    {/* reserved space so header height stays stable when typing indicator is shown in messages area */}
-                    <div className="text-xs text-muted-foreground opacity-0">&nbsp;</div>
-                </div>
+                <SupportRequestResolved
+                    resolved={resolved}
+                    resolving={resolving}
+                    onResolve={handleMarkResolved}
+                    supportRequestId={supportRequestId}
+                />
             </div>
 
             <div
@@ -483,8 +521,8 @@ export default function SupportRequestChatWindow({
                         >
                             <div
                                 className={`rounded-2xl px-5 py-4 text-sm leading-relaxed ${m.senderId === currentUserId
-                                        ? "bg-linear-to-br from-blue-500 to-blue-600 text-white shadow-md max-w-[45%] ml-auto"
-                                        : "bg-white border max-w-[60%] shadow-sm"
+                                    ? "bg-linear-to-br from-blue-500 to-blue-600 text-white shadow-md max-w-[45%] ml-auto"
+                                    : "bg-white max-w-[60%] shadow-sm"
                                     }`}
                             >
                                 {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
@@ -507,7 +545,7 @@ export default function SupportRequestChatWindow({
             {/* footer is visually inside the chat container but fixed to viewport bottom */}
             <div
                 ref={footerRef}
-                className="flex-none border-t px-4 py-3 bg-white z-40 shadow-md"
+                className="flex-none px-4 py-3 bg-white z-40 shadow-md"
                 style={
                     footerRect
                         ? {

@@ -1,15 +1,15 @@
 // app/staff/support-requests/components/SupportRequestsPage.tsx
 "use client";
 
-import { useState } from "react";
 import { ClipboardList } from "lucide-react";
+import { useState } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import SupportRequestList from "./SupportRequestList";
 import type { SupportRequestItem } from "@/types/support/support-request.response";
+import SupportRequestList from "./SupportRequestList";
 
 type PaginationState = {
   totalCount: number;
@@ -56,7 +56,7 @@ export default function SupportRequestsPage({
   };
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className="h-full p-4 flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">

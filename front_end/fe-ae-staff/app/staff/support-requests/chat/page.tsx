@@ -17,7 +17,7 @@ export default function ChatPage() {
     const conversationId = search.get("conversationId") ?? null;
 
     return (
-        <div className="p-4 h-screen flex flex-col">
+        <div className="p-4 h-screen flex flex-col overflow-hidden">
             <div className="mb-4 flex items-center gap-3">
                 <Button variant="ghost" size="sm" onClick={() => router.back()}>
                     <ArrowLeft className="w-4 h-4" /> Back
@@ -26,7 +26,7 @@ export default function ChatPage() {
             </div>
 
             {peerId ? (
-                <div className="flex-1">
+                <div className="flex-1 overflow-hidden">
                     <SupportRequestChatWindow
                         courseId={courseId}
                         currentUserId={user?.id ?? null}

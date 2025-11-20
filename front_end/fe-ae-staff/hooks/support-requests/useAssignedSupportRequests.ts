@@ -67,5 +67,9 @@ export function useAssignedSupportRequests() {
     items,
     pagination,
     fetchAssignedSupportRequests,
+    // allow updating an item's status locally (e.g., mark resolved so it remains visible)
+    updateItemStatus: (id: string, status: number) => {
+      setItems((prev) => prev.map((it) => (it.id === id ? { ...it, status } : it)));
+    },
   };
 }
