@@ -23,6 +23,9 @@ import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+// enum status report FE
+import { ReportStatus } from "@/config/classroom-service/report-status.enum";
+
 // ===== helpers =====
 const dt = (s?: string | null) => {
   if (!s) return "";
@@ -38,6 +41,95 @@ type UIReportItem = {
   updatedAt: string | null;
   grade: number | null;
 };
+
+/** Convert value (number/string) -> ReportStatus enum hoặc null */
+function toReportStatus(value: number | string): ReportStatus | null {
+  if (typeof value === "number") {
+    if (value >= 1 && value <= 8) return value as ReportStatus;
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  switch (normalized) {
+    case "draft":
+      return ReportStatus.Draft;
+    case "submitted":
+      return ReportStatus.Submitted;
+    case "underreview":
+    case "under review":
+      return ReportStatus.UnderReview;
+    case "requiresrevision":
+    case "requires revision":
+      return ReportStatus.RequiresRevision;
+    case "resubmitted":
+      return ReportStatus.Resubmitted;
+    case "graded":
+      return ReportStatus.Graded;
+    case "late":
+      return ReportStatus.Late;
+    case "rejected":
+      return ReportStatus.Rejected;
+    default:
+      return null;
+  }
+}
+
+/** Label text hiển thị cho UI */
+function reportStatusLabel(value: number | string): string {
+  const status = toReportStatus(value);
+  if (!status) {
+    // fallback: nếu BE trả string lạ thì show nguyên string
+    return String(value);
+  }
+
+  switch (status) {
+    case ReportStatus.Draft:
+      return "Draft";
+    case ReportStatus.Submitted:
+      return "Submitted";
+    case ReportStatus.UnderReview:
+      return "Under review";
+    case ReportStatus.RequiresRevision:
+      return "Requires revision";
+    case ReportStatus.Resubmitted:
+      return "Resubmitted";
+    case ReportStatus.Graded:
+      return "Graded";
+    case ReportStatus.Late:
+      return "Late";
+    case ReportStatus.Rejected:
+      return "Rejected";
+    default:
+      return String(value);
+  }
+}
+
+/** CSS class badge, match với styles/report-status.css */
+function reportStatusBadgeClass(value: number | string): string {
+  const status = toReportStatus(value);
+  if (!status) return "badge-report";
+
+  switch (status) {
+    case ReportStatus.Draft:
+      return "badge-report badge-report--draft";
+    case ReportStatus.Submitted:
+      return "badge-report badge-report--submitted";
+    case ReportStatus.UnderReview:
+      return "badge-report badge-report--under-review";
+    case ReportStatus.RequiresRevision:
+      return "badge-report badge-report--requires-revision";
+    case ReportStatus.Resubmitted:
+      return "badge-report badge-report--resubmitted";
+    case ReportStatus.Graded:
+      return "badge-report badge-report--graded";
+    case ReportStatus.Late:
+      return "badge-report badge-report--late";
+    case ReportStatus.Rejected:
+      return "badge-report badge-report--rejected";
+    default:
+      return "badge-report";
+  }
+}
 
 export default function ReportsListPage() {
   const params = useParams();
@@ -140,8 +232,7 @@ export default function ReportsListPage() {
     );
   }
 
-  const showLoading =
-    loading || assignmentLoading; // gộp loading của reports + assignment
+  const showLoading = loading || assignmentLoading; // gộp loading của reports + assignment
 
   return (
     <motion.div
@@ -237,6 +328,9 @@ export default function ReportsListPage() {
                 const updated = r.updatedAt;
                 const grade = r.grade;
 
+                const statusText = reportStatusLabel(status);
+                const statusClass = reportStatusBadgeClass(status);
+
                 return (
                   <li key={reportId} className="py-3">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
@@ -259,7 +353,8 @@ export default function ReportsListPage() {
                         <div className="mt-1 text-xs text-foreground/70 flex flex-wrap items-center gap-x-3 gap-y-1">
                           <span className="inline-flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" />
-                            <b>Status:</b>&nbsp;{String(status)}
+                            <b>Status:</b>
+                            <span className={statusClass}>{statusText}</span>
                           </span>
                           {typeof grade === "number" && (
                             <span className="inline-flex items-center gap-1">

@@ -13,11 +13,11 @@ import {
   Lock,
   Unlock,
   Loader2,
-  RefreshCw,
   ArrowLeft,
   FileText,
   Eye,
 } from "lucide-react";
+import { parseCourseName } from "@/utils/course/parse-course-name";
 
 export default function CourseGroupsPage() {
   const params = useParams();
@@ -25,7 +25,7 @@ export default function CourseGroupsPage() {
   const courseId = typeof params?.id === "string" ? params.id : "";
 
   // Groups
-  const { listData, loading, fetchByCourseId, refetch } = useGroupsByCourseId();
+  const { listData, loading, fetchByCourseId } = useGroupsByCourseId();
 
   // ✅ Students (sidebar) — TRUYỀN courseId vào hook
   const {
@@ -41,12 +41,6 @@ export default function CourseGroupsPage() {
     fetchByCourseId(courseId);
     fetchCourseStudents(courseId);
   }, [courseId, fetchByCourseId, fetchCourseStudents]);
-
-  const onRefresh = () => {
-    if (!courseId) return;
-    refetch(courseId);
-    fetchCourseStudents(courseId);
-  };
 
   if (!courseId) {
     return (
@@ -78,6 +72,12 @@ export default function CourseGroupsPage() {
 
   const isEmpty = !listData || listData.length === 0;
 
+  const parsed = parseCourseName(courseName);
+  const courseDisplay =
+    parsed.courseCode || parsed.classCode || parsed.lecturerName
+      ? `${parsed.courseCode} · ${parsed.classCode} · ${parsed.lecturerName}`
+      : "—";
+
   return (
     <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
@@ -89,9 +89,7 @@ export default function CourseGroupsPage() {
           </h1>
           <p className="text-xs text-[color:var(--text-muted)] mt-1">
             Course:{" "}
-            <b className="text-[color:var(--foreground)]">
-              {courseName || "—"}
-            </b>
+            <b className="text-[color:var(--foreground)]">{courseDisplay}</b>
           </p>
         </div>
 
@@ -103,10 +101,6 @@ export default function CourseGroupsPage() {
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Course
-          </Button>
-          <Button onClick={onRefresh} className="btn btn-gradient-slow px-4 py-2">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
           </Button>
         </div>
       </div>
@@ -122,16 +116,6 @@ export default function CourseGroupsPage() {
                 <p className="mb-4 text-[color:var(--text-muted)]">
                   No groups available for this course yet.
                 </p>
-                <div className="flex gap-2 justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={onRefresh}
-                    className="border-brand text-brand hover:bg-[color:var(--brand)]/5"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Reload
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           ) : (
@@ -269,26 +253,10 @@ export default function CourseGroupsPage() {
                 <CardTitle className="text-base text-[color:var(--foreground)]">
                   Students in this class
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => courseId && fetchCourseStudents(courseId)}
-                  className="text-[color:var(--text-muted)] hover:text-[color:var(--foreground)]"
-                >
-                  {loadingStudents ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                </Button>
               </div>
+              {/* Bỏ hiển thị PHYS301#K3I17J - Smith John, chỉ show số lượng students */}
               <p className="text-xs text-[color:var(--text-muted)]">
-                {courseName ? (
-                  <b className="text-[color:var(--foreground)]">{courseName}</b>
-                ) : (
-                  "Course"
-                )}{" "}
-                • <span>{totalStudents} students</span>
+                <span>{totalStudents} students</span>
               </p>
             </CardHeader>
 

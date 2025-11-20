@@ -2,6 +2,7 @@
 @import "tailwindcss";
 @import "../styles/assignment-status.css"; 
 @import "../styles/group-member-role.css";
+@import "../styles/report-status.css";
 :root {
   --font-sans: 'Sansation', 'Roboto', sans-serif;
 

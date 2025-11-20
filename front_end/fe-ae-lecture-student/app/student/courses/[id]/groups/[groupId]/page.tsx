@@ -8,7 +8,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Users,
-  User,
   Shield,
   Mail,
   Loader2,
@@ -236,7 +235,7 @@ export default function GroupMembersPage() {
                     key={m.id}
                     className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
                   >
-                    {/* Left: avatar + name + email */}
+                    {/* Left: avatar + name + email + role badge */}
                     <div className="flex items-center gap-3">
                       <div
                         className="w-9 h-9 rounded-full text-white flex items-center justify-center text-sm font-semibold shadow"
@@ -254,7 +253,7 @@ export default function GroupMembersPage() {
                             {m.studentName}
                           </span>
 
-                          {/* Role badge – dùng màu mới */}
+                          {/* Role badge – màu lấy từ group-member-role.css */}
                           <span
                             className={`badge-group-role ${badgeClass}`}
                             title={roleLabel}
@@ -273,15 +272,8 @@ export default function GroupMembersPage() {
                       </div>
                     </div>
 
-                    {/* Right: meta */}
+                    {/* Right: chỉ giữ Joined, bỏ Role trùng */}
                     <div className="flex items-center gap-4 text-xs text-foreground/70">
-                      <div className="flex items-center gap-1">
-                        <User className="w-3.5 h-3.5 text-[var(--muted)]" />
-                        <span>
-                          Role:{" "}
-                          <b className="text-foreground/80">{roleLabel}</b>
-                        </span>
-                      </div>
                       <div className="text-[var(--text-muted)]">
                         Joined:{" "}
                         {new Date(m.joinedAt).toLocaleString("en-GB", {

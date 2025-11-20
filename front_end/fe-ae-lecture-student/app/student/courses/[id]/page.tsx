@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { AssignmentStatus } from "@/config/classroom-service/assignment-status.enum";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 /** Safe parse datetime */
 const toDate = (s?: string | null) => {
@@ -51,6 +52,15 @@ const getStatusClass = (s: AssignmentStatus) => {
     default:
       return "badge-assignment badge-assignment--closed";
   }
+};
+
+/** Ẩn mấy ngày sentinel 0001-01-01, chỉ format ngày hợp lệ */
+const formatTermDateVN = (value?: string | null): string | null => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  if (d.getFullYear() < 2000) return null; // 0001 or invalid -> bỏ
+  return formatDateTimeVN(value);
 };
 
 export default function CourseDetailPage() {
@@ -132,6 +142,16 @@ export default function CourseDetailPage() {
       </div>
     );
   }
+
+  // termStartDate / termEndDate (handle 0001-01-01)
+  const termStartLabel = formatTermDateVN(
+    // @ts-expect-error: field from BE
+    course.termStartDate
+  );
+  const termEndLabel = formatTermDateVN(
+    // @ts-expect-error: field from BE
+    course.termEndDate
+  );
 
   // ===== MAIN UI =====
   return (
@@ -227,7 +247,10 @@ export default function CourseDetailPage() {
                   There are no assignments for this course yet.
                 </div>
               ) : (
-                <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+                <ul
+                  className="divide-y"
+                  style={{ borderColor: "var(--border)" }}
+                >
                   {assignments.map((a) => {
                     const due = toDate(a.dueDate);
                     const extended = toDate(a.extendedDueDate);
@@ -344,8 +367,15 @@ export default function CourseDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <CalendarDays className="w-4 h-4 text-brand" />
-                <span>
-                  <b>Term:</b> {course.term} ({course.year})
+                <span className="flex flex-col">
+                  <span>
+                    <b>Term:</b> {course.term} ({course.year})
+                  </span>
+                  {termStartLabel && termEndLabel && (
+                    <span className="text-xs text-muted">
+                      {termStartLabel} – {termEndLabel}
+                    </span>
+                  )}
                 </span>
               </div>
             </CardContent>
@@ -392,7 +422,7 @@ export default function CourseDetailPage() {
               )}
               <div>
                 <b>Created At:</b>{" "}
-                {new Date(course.createdAt).toLocaleString("en-GB")}
+                {formatDateTimeVN(course.createdAt as string)}
               </div>
             </CardContent>
           </Card>

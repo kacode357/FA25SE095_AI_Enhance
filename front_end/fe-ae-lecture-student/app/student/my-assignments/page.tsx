@@ -1,3 +1,4 @@
+// app/student/my-assignments/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -12,7 +13,6 @@ import {
   CalendarClock,
   ListChecks,
   Loader2,
-  RefreshCw,
   Search,
   Timer,
   Users,
@@ -27,12 +27,19 @@ import {
 import type { GetMyCoursesQuery } from "@/types/courses/course.payload";
 import type { CourseItem } from "@/types/courses/course.response";
 
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+import { parseCourseName } from "@/utils/course/parse-course-name";
+
 export default function MyAssignmentsPage() {
   const router = useRouter();
 
   // Hooks
   const { listData, loading, fetchMyAssignments } = useMyAssignments();
-  const { listData: myCourses, loading: loadingCourses, fetchMyCourses } = useMyCourses();
+  const {
+    listData: myCourses,
+    loading: loadingCourses,
+    fetchMyCourses,
+  } = useMyCourses();
 
   // Local state
   const [courseId, setCourseId] = useState<string>("");
@@ -82,37 +89,49 @@ export default function MyAssignmentsPage() {
     return courseId ? items.filter((a) => a.courseId === courseId) : items;
   }, [data, courseId]);
 
-  // Handlers
-  const onRefresh = () => fetchMyAssignments(query);
+  // Helpers
   const gotoDetail = (cid: string, aid: string) =>
     router.push(`/student/courses/${cid}/assignments/${aid}`);
+
   const onClearFilters = () => {
     setCourseId("");
     setCourseNameQuery("");
   };
 
-  const statusTone = (s: AssignmentStatus) => {
+  const fmt = (iso?: string | null) => formatDateTimeVN(iso ?? undefined);
+
+  const statusBadgeClass = (s: AssignmentStatus) => {
     switch (s) {
       case AssignmentStatus.Draft:
-        return "bg-[color-mix(in_oklab,#64748b_10%,white)] text-slate-700 border-[color-mix(in_oklab,#64748b_30%,var(--border))]";
+        return "badge-assignment badge-assignment--draft";
       case AssignmentStatus.Scheduled:
-        return "bg-[color-mix(in_oklab,#10b981_10%,white)] text-emerald-700 border-[color-mix(in_oklab,#10b981_30%,var(--border))]";
+        return "badge-assignment badge-assignment--scheduled";
       case AssignmentStatus.Active:
-        return "bg-[color-mix(in_oklab,var(--brand)_14%,white)] text-nav border-[color-mix(in_oklab,var(--brand)_35%,var(--border))]";
+        return "badge-assignment badge-assignment--active";
       case AssignmentStatus.Extended:
-        return "bg-[color-mix(in_oklab,#f59e0b_12%,white)] text-amber-700 border-[color-mix(in_oklab,#f59e0b_35%,var(--border))]";
+        return "badge-assignment badge-assignment--extended";
       case AssignmentStatus.Overdue:
-        return "bg-[color-mix(in_oklab,var(--accent)_16%,white)] text-accent border-[color-mix(in_oklab,var(--accent)_40%,var(--border))]";
+        return "badge-assignment badge-assignment--overdue";
       case AssignmentStatus.Closed:
-        return "bg-white text-foreground/70 border-[var(--border)]";
+        return "badge-assignment badge-assignment--closed";
       case AssignmentStatus.Graded:
-        return "bg-[color-mix(in_oklab,#8b5cf6_12%,white)] text-purple-700 border-[color-mix(in_oklab,#8b5cf6_35%,var(--border))]";
+        return "badge-assignment badge-assignment--graded";
       default:
-        return "bg-[color-mix(in_oklab,var(--brand)_10%,white)] text-nav border-[color-mix(in_oklab,var(--brand)_28%,var(--border))]";
+        return "badge-assignment";
     }
   };
 
-  const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString("en-GB") : "—");
+  const formatCourseShort = (raw?: string | null) => {
+    const parsed = parseCourseName(raw);
+    if (!parsed.courseCode && !parsed.classCode && !parsed.lecturerName) {
+      return raw ?? "—";
+    }
+
+    const parts = [parsed.courseCode, parsed.classCode, parsed.lecturerName].filter(
+      Boolean
+    );
+    return parts.join(" · ");
+  };
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
@@ -122,25 +141,7 @@ export default function MyAssignmentsPage() {
           <ListChecks className="w-6 h-6 text-nav-active" />
           My Assignments
         </h1>
-
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={loading}
-          className={`btn btn-gradient-slow ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Refreshing…
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </>
-          )}
-        </button>
+        {/* Bỏ nút Refresh theo yêu cầu */}
       </div>
 
       {/* Content 9/3 */}
@@ -150,14 +151,16 @@ export default function MyAssignmentsPage() {
           <div className="card rounded-2xl">
             <div className="px-4 py-3 border-b border-[var(--border)]">
               <div>
-                <div className="text-base font-semibold text-nav">Your assignments</div>
+                <div className="text-base font-semibold text-nav">
+                  Your assignments
+                </div>
                 <p className="text-xs text-[var(--text-muted)]">
                   Total: <b>{total}</b> assignment{total > 1 ? "s" : ""}
                 </p>
               </div>
             </div>
 
-            <div className="pt-0 p-4">
+            <div className="pt-3 p-4">
               {/* Loading */}
               {loading && (
                 <div className="flex justify-center items-center py-10 text-nav">
@@ -170,7 +173,9 @@ export default function MyAssignmentsPage() {
               {empty && (
                 <div className="flex flex-col items-center py-10 text-[var(--text-muted)]">
                   <AlertTriangle className="w-10 h-10 text-[var(--muted)] mb-2" />
-                  <p className="mb-1 text-sm text-center">You have no assignments.</p>
+                  <p className="mb-1 text-sm text-center">
+                    You have no assignments.
+                  </p>
                   <p className="text-xs">Please check your courses again.</p>
                 </div>
               )}
@@ -180,10 +185,10 @@ export default function MyAssignmentsPage() {
                 <ul className="space-y-4">
                   {assignmentsToShow.map((a) => {
                     const due = a.extendedDueDate ?? a.dueDate;
+                    const courseDisplay = formatCourseShort(a.courseName);
 
                     return (
                       <li key={a.id}>
-                        {/* === SỬA Ở ĐÂY: Thêm onClick và cursor-pointer vào div này === */}
                         <div
                           onClick={() => gotoDetail(a.courseId, a.id)}
                           className="cursor-pointer rounded-xl border border-[var(--border)] bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden"
@@ -194,8 +199,8 @@ export default function MyAssignmentsPage() {
                             <div className="md:col-span-7 min-w-0 flex items-center gap-3">
                               <span
                                 className={
-                                  "inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border shrink-0 " +
-                                  statusTone(a.status)
+                                  statusBadgeClass(a.status) +
+                                  " shrink-0"
                                 }
                                 title={a.statusDisplay}
                               >
@@ -208,11 +213,14 @@ export default function MyAssignmentsPage() {
 
                             {/* Right */}
                             <div className="md:col-span-5 min-w-0 flex items-center justify-start md:justify-end gap-2 flex-wrap">
-                              <span className="text-[11px] px-2 py-0.5 rounded-full border border-[var(--border)] text-foreground/80 inline-flex items-center gap-1 shrink-0">
-                                <Users className="w-3 h-3 text-nav-active" />
-                                {a.isGroupAssignment ? <>Group • {a.assignedGroupsCount}</> : <>Individual</>}
+                              <span className="badge-assignment badge-assignment--group inline-flex items-center gap-1 shrink-0">
+                                <Users className="w-3 h-3" />
+                                {a.isGroupAssignment ? (
+                                  <>Group • {a.assignedGroupsCount}</>
+                                ) : (
+                                  <>Individual</>
+                                )}
                               </span>
-                              {/* === ĐÃ XÓA NÚT VIEW DETAILS Ở ĐÂY === */}
                             </div>
                           </div>
 
@@ -228,7 +236,9 @@ export default function MyAssignmentsPage() {
                                 Due: <b>{fmt(due)}</b>
                               </span>
                               {a.extendedDueDate && (
-                                <span className="text-xs text-[var(--text-muted)]">extended from {fmt(a.dueDate)}</span>
+                                <span className="text-xs text-[var(--text-muted)]">
+                                  extended from {fmt(a.dueDate)}
+                                </span>
                               )}
 
                               <span className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-0.5">
@@ -242,8 +252,11 @@ export default function MyAssignmentsPage() {
                               </span>
 
                               {a.isOverdue && (
-                                <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-accent"
-                                  style={{ background: "color-mix(in oklab, var(--accent) 16%, var(--white))", border: "1px solid color-mix(in oklab, var(--accent) 40%, var(--border))" } as any}
+                                <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-accent border border-[color-mix(in_oklab,var(--accent)_40%,var(--border))]"
+                                  style={{
+                                    background:
+                                      "color-mix(in oklab, var(--accent) 16%, var(--white))",
+                                  } as any}
                                 >
                                   <AlertTriangle className="w-4 h-4" />
                                   Overdue
@@ -251,7 +264,10 @@ export default function MyAssignmentsPage() {
                               )}
 
                               <span className="text-xs text-[var(--text-muted)]">
-                                Course: <b className="text-foreground">{a.courseName}</b>
+                                Course:{" "}
+                                <b className="text-foreground">
+                                  {courseDisplay}
+                                </b>
                               </span>
                             </div>
                           </div>
@@ -266,22 +282,33 @@ export default function MyAssignmentsPage() {
               {!loading && data && data.totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between">
                   <div className="text-sm text-[var(--text-muted)]">
-                    Page <b>{data.pageNumber}</b> / {data.totalPages} • Total: <b>{data.totalCount}</b>
+                    Page <b>{data.pageNumber}</b> / {data.totalPages} • Total:{" "}
+                    <b>{data.totalCount}</b>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      className={`btn bg-white border border-brand text-nav hover:text-nav-active ${pageNumber <= 1 ? "opacity-60 cursor-not-allowed" : ""}`}
+                      className={`btn bg-white border border-brand text-nav hover:text-nav-active ${
+                        pageNumber <= 1 ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
                       disabled={pageNumber <= 1}
-                      onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+                      onClick={() =>
+                        setPageNumber((p) => Math.max(1, p - 1))
+                      }
                     >
                       Prev
                     </button>
                     <button
                       type="button"
-                      className={`btn bg-white border border-brand text-nav hover:text-nav-active ${pageNumber >= data.totalPages ? "opacity-60 cursor-not-allowed" : ""}`}
+                      className={`btn bg-white border border-brand text-nav hover:text-nav-active ${
+                        pageNumber >= data.totalPages
+                          ? "opacity-60 cursor-not-allowed"
+                          : ""
+                      }`}
                       disabled={pageNumber >= data.totalPages}
-                      onClick={() => setPageNumber((p) => Math.min(data.totalPages, p + 1))}
+                      onClick={() =>
+                        setPageNumber((p) => Math.min(data.totalPages, p + 1))
+                      }
                     >
                       Next
                     </button>
@@ -301,7 +328,9 @@ export default function MyAssignmentsPage() {
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-nav">Course name</label>
+                <label className="text-xs font-medium text-nav">
+                  Course name
+                </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                   <input
@@ -309,12 +338,13 @@ export default function MyAssignmentsPage() {
                     placeholder="Type to search courses…"
                     value={courseNameQuery}
                     onChange={(e) => setCourseNameQuery(e.target.value)}
-                    style={{ paddingLeft: '2.5rem' }}
-
+                    style={{ paddingLeft: "2.5rem" }}
                   />
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  {loadingCourses ? "Searching…" : `${myCourses?.length ?? 0} course(s)`}
+                  {loadingCourses
+                    ? "Searching…"
+                    : `${myCourses?.length ?? 0} course(s)`}
                 </p>
               </div>
 
@@ -331,7 +361,7 @@ export default function MyAssignmentsPage() {
                     <option value="">— All courses —</option>
                     {myCourses?.map((c: CourseItem) => (
                       <option key={c.id} value={c.id}>
-                        {c.name}
+                        {formatCourseShort(c.name)}
                       </option>
                     ))}
                   </select>
@@ -354,7 +384,8 @@ export default function MyAssignmentsPage() {
               </div>
 
               <p className="text-[11px] text-[var(--text-muted)]">
-                Select a course to filter assignments. Type a course name to search from the server.
+                Select a course to filter assignments. Type a course name to
+                search from the server.
               </p>
             </div>
           </div>
