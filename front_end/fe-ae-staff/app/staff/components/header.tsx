@@ -2,6 +2,13 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
+import { useNotificationHub } from "@/hooks/hubnotification/useNotificationHub";
+import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
+import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
+import { useMarkNotificationAsRead } from "@/hooks/notifications/useMarkNotificationAsRead";
+import { useUnreadNotificationsCount } from "@/hooks/notifications/useUnreadNotificationsCount";
+import type { NotificationItem } from "@/types/notifications/notifications.response";
+import { getSavedAccessToken } from "@/utils/auth/access-token";
 import Cookies from "js-cookie";
 import {
   Bell,
@@ -11,24 +18,148 @@ import {
 } from "lucide-react"; // Bỏ 'Search'
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Props = { onMenuClick?: () => void };
 
 export default function ManagerHeader({ onMenuClick }: Props) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const { user } = useAuth();
   const { logout, loading } = useLogout();
+  const { getUnreadNotificationsCount } = useUnreadNotificationsCount();
+  const { getNotifications } = useGetNotifications();
+  const { markNotificationAsRead } = useMarkNotificationAsRead();
+  const { markAllNotificationsAsRead } = useMarkAllNotificationsAsRead();
+
+  // ===== Hub integration for realtime notifications =====
+  const getTokenForHub = useCallback(() => {
+    return getSavedAccessToken() || "";
+  }, []);
+
+  const handleHubNotification = useCallback((raw: any) => {
+    const item = {
+      id: raw?.id ?? raw?.notificationId ?? `${Date.now()}-${Math.random()}`,
+      userId: raw?.userId ?? user?.id ?? "",
+      relatedEntityId: raw?.relatedEntityId ?? null,
+      title: raw?.title ?? raw?.subject ?? raw?.content ?? "",
+      content: raw?.content ?? raw?.message ?? raw?.body ?? "",
+      type: raw?.type ?? 0,
+      priority: raw?.priority ?? 0,
+      source: raw?.source ?? 0,
+      isRead: typeof raw?.isRead === "boolean" ? raw.isRead : false,
+      readAt: raw?.readAt ?? null,
+      expiresAt: raw?.expiresAt ?? null,
+      metadataJson: raw?.metadataJson ?? null,
+      isDeleted: false,
+      deletedAt: null,
+      deliveryLogs: raw?.deliveryLogs ?? [],
+      createdBy: raw?.createdBy ?? null,
+      updatedBy: raw?.updatedBy ?? null,
+      createdAt: raw?.createdAt ?? new Date().toISOString(),
+      updatedAt: raw?.updatedAt ?? null,
+      domainEvents: raw?.domainEvents ?? [],
+    } as NotificationItem;
+
+    // if the dropdown is open, consider the incoming notification as "read"
+    const isCurrentlyOpen = notificationOpen;
+    const toInsert = isCurrentlyOpen ? { ...item, isRead: true } : item;
+    setNotifications((prev) => [toInsert, ...prev]);
+    if (!isCurrentlyOpen) setUnreadCount((prev) => prev + (item.isRead ? 0 : 1));
+  }, [user?.id, notificationOpen]);
+
+  const { connect, disconnect, connected, connecting, lastError } = useNotificationHub({
+    getAccessToken: getTokenForHub,
+    onNotification: handleHubNotification,
+  });
 
   const handleLogout = () => {
+    // disconnect hub to cleanup
+    try {
+      disconnect();
+    } catch {}
+
     logout({
       userId: user?.id ?? "",
       accessToken: Cookies.get("accessToken") || "",
       logoutAllDevices: false,
     });
   };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const c = await getUnreadNotificationsCount();
+      if (mounted && typeof c === "number") setUnreadCount(c);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // connect to hub when user present
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const token = getSavedAccessToken();
+    if (!token) return;
+
+    connect().catch(() => {
+      // ignore connect errors
+    });
+
+    return () => {
+      disconnect();
+    };
+  }, [user?.id, connect, disconnect]);
+
+  const openNotifications = async () => {
+    const willOpen = !notificationOpen;
+    setNotificationOpen(willOpen);
+
+    // if opening, load notifications and mark all as read
+    if (willOpen) {
+      const list = await getNotifications({ take: 50 });
+      if (list) {
+        // merge/normalize minimal fields we need
+        const normalized = list.map((n: any) => ({
+          id: n.id,
+          title: n.title ?? n.content ?? "",
+          content: n.content ?? n.body ?? "",
+          createdAt: n.createdAt ?? new Date().toISOString(),
+          isRead: !!n.isRead || !!n.read,
+        } as NotificationItem));
+
+        // mark all as read in UI immediately
+        const updated = normalized.map((x) => ({ ...x, isRead: true }));
+        setNotifications(updated);
+        setUnreadCount(0);
+
+        // call backend to mark all as read (best-effort)
+        markAllNotificationsAsRead().catch(() => {
+          // ignore errors — next fetch will reconcile
+        });
+      }
+    }
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    const res = await markNotificationAsRead(id);
+    if (res && res.success) {
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+      setUnreadCount((c) => Math.max(0, c - 1));
+    }
+  };
+
+  // keep unreadCount in sync with current notifications array
+  useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
+    const cnt = notifications.filter((n) => !n.isRead).length;
+    setUnreadCount(cnt);
+  }, [notifications]);
 
   return (
     <header className="h-20 bg-white backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
@@ -76,37 +207,71 @@ export default function ManagerHeader({ onMenuClick }: Props) {
 
         {/* Actions */}
         <div className="flex items-center gap-5">
-          {/* Notifications */}
+          {/* Notifications (dynamic via hooks) */}
           <div className="relative cursor-pointer">
             <button
-              onClick={() => setNotificationOpen(!notificationOpen)}
-              className="relative p-2 cursor-pointer rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-              aria-label="Thông báo"
+              onClick={openNotifications}
+              className="relative inline-flex items-center justify-center p-0 cursor-pointer bg-transparent border-0"
+              aria-label="Notifications"
             >
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-[10px] text-white font-bold">3</span>
+              <span className="inline-flex items-center justify-center w-8 h-8 bg-white rounded-md shadow-sm">
+                <Bell className="w-5 h-5 text-gray-600" />
               </span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 z-50 inline-flex items-center justify-center w-5 h-5 bg-orange-400 text-white text-xs font-bold rounded-full border-2 border-white shadow">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </button>
 
             {notificationOpen && (
               <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
-                <div className="px-4 py-2 border-b border-gray-200">
-                  <h3 className="font-semibold text-gray-900">Thông báo</h3>
+                {/* Header + hub status */}
+                <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  {/* hub connection status */}
+                  <span className={`text-[11px] mt-0.5 ${connecting ? "text-blue-600" : connected ? "text-emerald-600" : lastError ? "text-red-500" : "text-red-500"}`}>
+                    {connecting ? "Connecting..." : connected ? "Connected" : lastError ? "Error" : "Disconnected"}
+                  </span>
                 </div>
                 <div className="max-h-80 overflow-y-auto">
-                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                    <p className="text-sm text-gray-800">
-                      Có 3 bài tập mới được nộp
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">2 phút trước</p>
-                  </div>
-                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                    <p className="text-sm text-gray-800">
-                      Lớp CS101 có tin nhắn mới
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">5 phút trước</p>
-                  </div>
+                  {notifications.length === 0 && (
+                    <div className="px-4 py-3 text-sm text-gray-500">No announcement yet</div>
+                  )}
+                  {notifications.map((n) => {
+                    const contentStr = (n.content as string) ?? (n as any).message ?? "";
+                    const lower = contentStr.toLowerCase();
+                    const marker = "course:";
+                    const idx = lower.indexOf(marker);
+
+                    const messageLine = idx >= 0 ? contentStr.slice(0, idx + marker.length).trim() : contentStr;
+                    const courseLine = idx >= 0 ? contentStr.slice(idx + marker.length).trim() : "";
+
+                    return (
+                      <div
+                        key={n.id}
+                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start justify-between ${n.isRead ? "" : "bg-white"}`}
+                        onClick={() => handleMarkAsRead(n.id)}
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm text-gray-800">{n.title || "New notification"}</p>
+
+                          {messageLine && (
+                            <p className="text-xs text-gray-500 mt-1">{messageLine}</p>
+                          )}
+
+                          {courseLine && (
+                            <p className="text-sm text-gray-700 mt-2 break-words">{courseLine}</p>
+                          )}
+
+                          {n.createdAt && (
+                            <p className="text-[11px] mt-2 text-right text-gray-500">{new Date(n.createdAt).toLocaleString()}</p>
+                          )}
+                        </div>
+                        {!n.isRead && <span className="ml-3 w-2 h-2 bg-blue-500 rounded-full mt-2" />}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -120,7 +285,6 @@ export default function ManagerHeader({ onMenuClick }: Props) {
             >
               <div className="relative">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                  {/* Đã sửa: 'LT' (Lecturer Tran) -> 'ST' (Staff User) */}
                   {user
                     ? user.firstName[0] + user.lastName[0]
                     : "ST"} 
@@ -131,10 +295,10 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 <p className="text-sm font-semibold text-gray-900">
                   {user
                     ? `${user.firstName} ${user.lastName}`
-                    : "Staff User"} {/* Đã sửa: Lecturer User -> Staff User */}
+                    : "Staff User"}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {user ? user.role : "Staff"} {/* Đã sửa: Lecturer -> Staff */}
+                  {user ? user.role : "Staff"}
                 </p>
               </div>
               <ChevronDown
@@ -150,10 +314,10 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                   <p className="font-semibold cursor-text text-gray-900">
                     {user
                       ? `${user.firstName} ${user.lastName}`
-                      : "Staff Tran"} {/* Đã sửa: Lecturer Tran -> Staff Tran */}
+                      : "Staff Tran"}
                   </p>
                   <p className="text-sm cursor-text text-gray-500">
-                    {user ? user.email : "staff.tran@university.edu"} {/* Đã sửa: lecturer.tran -> staff.tran */}
+                    {user ? user.email : "staff.tran@university.edu"}
                   </p>
                 </div>
                 <div className="py-1">
