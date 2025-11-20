@@ -14,14 +14,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
-import SupportRequestStatusBadge from "./SupportRequestStatusBadge";
 import SupportRequestCategoryBadge from "./SupportRequestCategoryBadge";
 import SupportRequestPriorityBadge from "./SupportRequestPriorityBadge";
 import SupportRequestRejectButton from "./SupportRequestRejectButton";
+import SupportRequestStatusBadge from "./SupportRequestStatusBadge";
 
-import type { SupportRequestItem } from "@/types/support/support-request.response";
 import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
+import type { SupportRequestItem } from "@/types/support/support-request.response";
 
 type PaginationState = {
   totalCount: number;
@@ -69,6 +71,9 @@ export default function SupportRequestList({
   onReload,
 }: Props) {
   const showEmpty = !loading && items.length === 0;
+  const { user } = useAuth();
+
+  const router = useRouter();
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -83,6 +88,7 @@ export default function SupportRequestList({
           {pagination.totalCount} items
         </div>
       </div>
+      {/* Chat opens in dedicated page */}
 
       <Separator className="mb-3" />
 
@@ -257,6 +263,17 @@ export default function SupportRequestList({
                               variant="ghost"
                               className="mt-1 h-7 w-7"
                               title="Open conversation (chat)"
+                              onClick={() => {
+                                // navigate to chat page with query params
+                                // eslint-disable-next-line no-console
+                                console.debug("Navigate to chat page", { requestId: item.id, conversationId: item.conversationId });
+                                const q = new URLSearchParams();
+                                q.set("courseId", item.courseId);
+                                q.set("peerId", item.requesterId);
+                                q.set("peerName", item.requesterName || "");
+                                if (item.conversationId) q.set("conversationId", item.conversationId);
+                                router.push(`/staff/support-requests/chat?${q.toString()}`);
+                              }}
                             >
                               <MessageCircle className="w-4 h-4 text-blue-500" />
                             </Button>
@@ -307,3 +324,4 @@ export default function SupportRequestList({
     </div>
   );
 }
+
