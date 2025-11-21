@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
 import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
@@ -10,7 +11,10 @@ import type {
     ChatMessageItemResponse as ChatMessage,
 } from "@/types/chat/chat.response";
 import { getSavedAccessToken } from "@/utils/auth/access-token";
+import { ArrowLeft, EllipsisVertical, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import SupportRequestResolved from "./SupportRequestResolved";
 
 type Props = {
@@ -300,22 +304,22 @@ export default function SupportRequestChatWindow({
     // connect to hub after UI rendered (deferred)
     useEffect(() => {
         if (!started) return;
+
         let cancelled = false;
+
         (async () => {
+            if (cancelled) return;
+
             try {
                 await connect();
             } catch (e) {
-                // eslint-disable-next-line no-console
-                console.error("chat: connect error", e);
+                if (!cancelled) console.error("chat: connect error", e);
             }
         })();
+
         return () => {
             cancelled = true;
-            try {
-                disconnect();
-            } catch {
-                // ignore
-            }
+            disconnect().catch(() => { });
         };
     }, [started, connect, disconnect]);
 
@@ -386,6 +390,10 @@ export default function SupportRequestChatWindow({
     const [footerRect, setFooterRect] = useState<{ left: number; width: number } | null>(null);
     const [headerHeight, setHeaderHeight] = useState(0);
     const [headerRect, setHeaderRect] = useState<{ top: number; left: number; width: number } | null>(null);
+    const router = useRouter();
+
+    // track which message's confirm dialog is open
+    const [confirmId, setConfirmId] = useState<string | null>(null);
 
     // scroll to bottom when messages change, but only if the user is near bottom
     useEffect(() => {
@@ -442,16 +450,35 @@ export default function SupportRequestChatWindow({
 
         recompute();
         let raf = 0;
-        const onResize = () => {
+        const scheduleRecompute = () => {
             cancelAnimationFrame(raf);
             raf = requestAnimationFrame(recompute);
         };
-        // only listen to resize — do not update on page scroll so header stays
-        // pinned under the global header instead of following container movement
-        window.addEventListener("resize", onResize);
+
+        // observe window resizes
+        window.addEventListener("resize", scheduleRecompute);
+
+        // Use ResizeObserver to detect layout changes (e.g. sidebar collapse)
+        let ro: ResizeObserver | null = null;
+        try {
+            if (typeof ResizeObserver !== "undefined") {
+                ro = new ResizeObserver(scheduleRecompute);
+                if (rootRef.current) ro.observe(rootRef.current);
+                if (footerRef.current) ro.observe(footerRef.current);
+                if (headerRef.current) ro.observe(headerRef.current);
+            }
+        } catch (e) {
+            // ignore if ResizeObserver not available
+        }
+
         return () => {
             cancelAnimationFrame(raf);
-            window.removeEventListener("resize", onResize);
+            window.removeEventListener("resize", scheduleRecompute);
+            try {
+                if (ro) ro.disconnect();
+            } catch {
+                // ignore
+            }
         };
     }, []);
 
@@ -474,7 +501,7 @@ export default function SupportRequestChatWindow({
         <div ref={rootRef} className="w-full h-full flex flex-col">
             <div
                 ref={headerRef}
-                className="flex-none bg-white z-30 flex flex-col justify-center px-4 py-3 shadow-sm"
+                className="flex-none bg-white z-30 flex flex-col justify-center px-4 py-3 shadow-lg"
                 style={
                     headerRect
                         ? {
@@ -487,25 +514,26 @@ export default function SupportRequestChatWindow({
                 }
             >
                 <div className="flex items-center justify-between w-full">
-                    <div className="text-lg font-semibold">Chat with {peerName || "User"}</div>
-                    <div>
-                        <Button size="sm" variant="ghost" onClick={onClose}>
-                            Close
+                    <div className="flex items-center gap-3">
+                        <Button variant="ghost" className="cursor-pointer" size="sm" onClick={() => router.back()}>
+                            <ArrowLeft className="w-4 h-4 mr-1" /> Back
                         </Button>
+                        <h3 className="text-lg font-semibold">{peerName || "User"}</h3>
                     </div>
+                    <SupportRequestResolved
+                        resolved={resolved}
+                        resolving={resolving}
+                        onResolve={handleMarkResolved}
+                        supportRequestId={supportRequestId}
+                    />
                 </div>
-                <SupportRequestResolved
-                    resolved={resolved}
-                    resolving={resolving}
-                    onResolve={handleMarkResolved}
-                    supportRequestId={supportRequestId}
-                />
+
             </div>
 
             <div
                 ref={messagesRef}
                 onScroll={onMessagesScroll}
-                className="flex-1 overflow-y-auto px-6 pt-4 space-y-6 bg-[linear-gradient(transparent,transparent)]"
+                className="flex-1 overflow-y-auto space-y-6 bg-[linear-gradient(transparent,transparent)]"
                 style={{
                     paddingTop: headerHeight ? headerHeight + 12 : undefined,
                     paddingBottom: footerHeight ? footerHeight + 20 : undefined,
@@ -514,24 +542,102 @@ export default function SupportRequestChatWindow({
                 {rendered.length === 0 ? (
                     <div className="text-xs text-muted-foreground">No messages yet.</div>
                 ) : (
-                    rendered.map((m) => (
-                        <div
-                            key={m.id}
-                            className={`flex ${m.senderId === currentUserId ? "justify-end" : "justify-start"}`}
-                        >
-                            <div
-                                className={`rounded-2xl px-5 py-4 text-sm leading-relaxed ${m.senderId === currentUserId
-                                    ? "bg-linear-to-br from-blue-500 to-blue-600 text-white shadow-md max-w-[45%] ml-auto"
-                                    : "bg-white max-w-[60%] shadow-sm"
-                                    }`}
-                            >
-                                {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
-                                <div className="text-[11px] text-muted-foreground mt-2">
-                                    {new Date(m.sentAt).toLocaleString()}
+                    rendered.map((m) => {
+                        const isMe = m.senderId === currentUserId;
+
+                        return (
+                            <div key={m.id} className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}>
+                                <div className="relative flex items-center gap-2 justify-end">
+
+                                    {/* Icon Ellipsis bên trái message của mình */}
+                                    {isMe && (
+                                        <div className="relative cursor-pointer group">
+                                            <EllipsisVertical className="w-5 h-5 text-muted-foreground" />
+
+                                            {/* Menu Delete positioned relative to the icon and shown only when hovering the icon */}
+                                            <div className="absolute -left-12 -top-2 bg-white border-slate-100 border shadow-md rounded-md p-1 z-50 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition -translate-y-1 group-hover:translate-y-0">
+                                                <button
+                                                    className="px-3 py-1 text-sm cursor-pointer text-red-600 hover:bg-red-50 w-full text-left"
+                                                    onClick={() => setConfirmId(m.id)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Message bubble */}
+                                    <div
+                                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed inline-block whitespace-pre-wrap break-words ${isMe
+                                            ? "bg-gradient-to-br from-pink-300 to-purple-500 text-white shadow-md max-w-[60%] mr-6"
+                                            : "bg-white max-w-[70%] min-w-[140px] break-words shadow-sm ml-6"
+                                            }`}
+                                    >
+                                        {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
+
+                                        {
+                                            (() => {
+                                                const d = new Date(m.sentAt);
+                                                const formatted = !isNaN(d.getTime())
+                                                    ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+                                                    : "";
+                                                return (
+                                                    <div className={`text-[11px] mt-2 whitespace-nowrap ${isMe ? "text-white/80" : "text-muted-foreground"}`}>
+                                                        {formatted}
+                                                    </div>
+                                                );
+                                            })()
+                                        }
+                                    </div>
+
+
                                 </div>
+
+                                {/* Modal Confirm Delete */}
+                                <AlertDialog
+                                    open={confirmId === m.id}
+                                    onOpenChange={(open) => !open && setConfirmId(null)}
+                                >
+                                    <AlertDialogContent className="bg-white text-gray-900 dark:bg-slate-900 dark:text-white border border-gray-200 shadow-2xl">
+                                        <AlertDialogTitle className="text-lg font-semibold">Delete message?</AlertDialogTitle>
+
+                                        <AlertDialogDescription className="text-sm text-muted-foreground">
+                                            This action cannot be undone.
+                                        </AlertDialogDescription>
+
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel className="cursor-pointer" onClick={() => setConfirmId(null)}>
+                                                Cancel
+                                            </AlertDialogCancel>
+
+                                            <AlertDialogAction
+                                                disabled={deleting}
+                                                onClick={async () => {
+                                                    try {
+                                                        await deleteMessage(m.id);
+                                                        setMessages(prev =>
+                                                            prev.map(msg =>
+                                                                msg.id === m.id ? { ...msg, isDeleted: true } : msg
+                                                            )
+                                                        );
+                                                        toast.success("Message deleted successfully");
+                                                    } catch (err) {
+                                                        console.error(err);
+                                                        toast.error("Failed to delete message");
+                                                    } finally {
+                                                        setConfirmId(null);
+                                                    }
+                                                }}
+                                                className="bg-red-600 shadow-lg cursor-pointer text-white hover:bg-red-700"
+                                            >
+                                                Delete
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
 
                 {/* typing indicator shown inside messages container (below messages) */}
@@ -557,9 +663,9 @@ export default function SupportRequestChatWindow({
                         : {}
                 }
             >
-                <div className="flex items-end gap-3">
+                <div className="flex items-center gap-3">
                     <textarea
-                        className="flex-1 rounded-xl border px-4 py-2 text-sm resize-none"
+                        className="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm resize-none"
                         rows={2}
                         value={input}
                         onChange={(e) => {
@@ -574,12 +680,12 @@ export default function SupportRequestChatWindow({
                         placeholder="Type a message..."
                     />
                     <Button
-                        size="sm"
-                        className="rounded-md"
+                        size="lg"
+                        className="rounded-md btn btn-gradient-slow"
                         onClick={onSend}
                         disabled={sending || !input.trim()}
                     >
-                        {sending ? "Sending…" : "Send"}
+                        {sending ? "Sending…" : "Send"} <Send className="size-5" />
                     </Button>
                 </div>
             </div>

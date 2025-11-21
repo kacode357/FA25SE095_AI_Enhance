@@ -1,9 +1,7 @@
 "use client";
 
 import SupportRequestChatWindow from "@/app/staff/support-requests/components/SupportRequestChatWindow";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ChatPage() {
@@ -17,13 +15,13 @@ export default function ChatPage() {
     const conversationId = search.get("conversationId") ?? null;
 
     return (
-        <div className="p-4 h-screen flex flex-col overflow-hidden">
-            <div className="mb-4 flex items-center gap-3">
+        <div className=" h-screen flex flex-col overflow-hidden">
+            {/* <div className="mb-4 flex items-center gap-3">
                 <Button variant="ghost" size="sm" onClick={() => router.back()}>
                     <ArrowLeft className="w-4 h-4" /> Back
                 </Button>
                 <h3 className="text-lg font-semibold">Chat with {peerName || "User"}</h3>
-            </div>
+            </div> */}
 
             {peerId ? (
                 <div className="flex-1 overflow-hidden">

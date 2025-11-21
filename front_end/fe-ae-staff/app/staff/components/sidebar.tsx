@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { clsx } from "clsx";
 import {
   ChevronRight,
@@ -11,7 +10,8 @@ import {
   Layers3,
   LifeBuoy,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const mainNav = [
   {
@@ -79,7 +79,7 @@ export default function ManagerSidebar({
       )}
     >
       {/* Header */}
-      <header className="p-4 border-b border-gray-200">
+      <header className="p-4 py-4.5 border-b border-gray-200">
         <div
           className={clsx(
             "flex items-center gap-2",
@@ -90,7 +90,7 @@ export default function ManagerSidebar({
             <div className="flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-blue-600" />
               <div>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-lg font-semibold text-gray-900">
                   Staff Panel
                 </p>
                 <p className="text-xs text-gray-500">

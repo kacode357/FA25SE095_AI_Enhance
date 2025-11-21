@@ -136,28 +136,27 @@ export function useChatHub({
   ]);
 
   // ===== Public APIs =====
-  const connect = useCallback(async () => {
+const connect = useCallback(async (cancelRef?: { current: boolean }) => {
     const conn = ensureConnection();
-    if (conn.state === signalR.HubConnectionState.Connected) return;
+    if (conn.state !== signalR.HubConnectionState.Disconnected) return;
     if (startInProgressRef.current) return;
+    if (cancelRef?.current) return; // nếu đã cancel thì không start
 
     try {
-      startInProgressRef.current = true;
-      setConnecting(true);
-      await conn.start();
-      setConnected(true);
-      setLastError(null);
+        startInProgressRef.current = true;
+        setConnecting(true);
+        await conn.start();
+        setConnected(true);
+        setLastError(null);
     } catch (e: any) {
-      setConnected(false);
-      const msg = e?.message ?? "Failed to connect";
-      setLastError(msg);
-      onError?.("Failed to connect to chat");
-      throw e;
+        setConnected(false);
+        if (!cancelRef?.current) onError?.("Failed to connect to chat");
+        throw e;
     } finally {
-      setConnecting(false);
-      startInProgressRef.current = false;
+        setConnecting(false);
+        startInProgressRef.current = false;
     }
-  }, [ensureConnection, onError]);
+}, [ensureConnection, onError]);
 
   const disconnect = useCallback(async () => {
     const conn = connectionRef.current;
