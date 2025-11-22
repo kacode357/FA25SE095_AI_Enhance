@@ -1,7 +1,6 @@
 // hooks/admin/useAdminUsers.ts
 "use client";
 
-import { useState, useCallback } from "react";
 import { AdminService } from "@/services/admin.services";
 import type { GetUsersParams } from "@/types/admin/admin.payload";
 import type {
@@ -9,6 +8,7 @@ import type {
   AdminUserDetailResponse,
   ReactivateUserResponse,
 } from "@/types/admin/admin.response";
+import { useCallback, useState } from "react";
 
 export function useAdminUsers() {
   const [loadingList, setLoadingList] = useState(false);
@@ -24,8 +24,10 @@ export function useAdminUsers() {
       setLoadingList(true);
       try {
         const res = await AdminService.getUsers(params);
-        setListData(res);
-        return res;
+        // Backend sometimes wraps payload in a `data` field: { data: { users, ... } }
+        const payload = (res as any)?.data ?? res;
+        setListData(payload);
+        return payload;
       } finally {
         setLoadingList(false);
       }
@@ -39,8 +41,9 @@ export function useAdminUsers() {
       setLoadingDetail(true);
       try {
         const res = await AdminService.getUserById(userId);
-        setDetailData(res);
-        return res;
+        const payload = (res as any)?.data ?? res;
+        setDetailData(payload);
+        return payload;
       } finally {
         setLoadingDetail(false);
       }

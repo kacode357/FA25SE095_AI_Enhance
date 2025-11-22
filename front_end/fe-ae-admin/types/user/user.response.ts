@@ -1,12 +1,20 @@
 // types/user/user.response.ts
 
+export enum UserStatus {
+    Pending = 0,        // Account created but not verified
+    Active = 1,         // Fully active account
+    Inactive = 2,       // Temporarily disabled
+    Suspended = 3,      // Suspended due to policy violation
+    Deleted = 4,        // Soft deleted
+    PendingApproval = 5 // Waiting for staff approval (lecturers)
+}
 export interface UserProfile {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   role: string;
-  status: string;
+  status: UserStatus;
   subscriptionTier: string;
   isEmailConfirmed: boolean;
   emailConfirmedAt: string;

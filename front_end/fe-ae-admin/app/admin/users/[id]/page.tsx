@@ -1,14 +1,14 @@
-// app/admin/manager/users/[id]/page.tsx
+// app/admin/users/[id]/page.tsx
 "use client";
 
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAdminUsers } from "@/hooks/admin/useAdminUsers";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function AdminUserDetailScreen() {
   const params = useParams();

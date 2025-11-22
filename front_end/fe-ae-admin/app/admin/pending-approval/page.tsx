@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,20 +10,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RotateCw, Users } from "lucide-react";
-import EmptyState from "../components/EmptyState";
-import TableSkeleton from "../components/TableSkeleton";
 import { usePendingApprovalUsers } from "@/hooks/admin/usePendingApprovalUsers";
 import { useUserApproval } from "@/hooks/admin/useUserApproval";
 import { AdminUserItemResponse } from "@/types/admin/admin.response";
+import { RotateCw, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import EmptyState from "../components/EmptyState";
+import TableSkeleton from "../components/TableSkeleton";
 
 // Dialog components
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
@@ -84,10 +84,10 @@ export default function PendingApprovalPage() {
   };
 
   const filtered = useMemo(() => {
-    if (!data) return [];
+    const users = data?.users ?? [];
     const createdFromTime = createdFrom ? new Date(createdFrom).getTime() : null;
 
-    return data.users.filter((u: AdminUserItemResponse) => {
+    return users.filter((u: AdminUserItemResponse) => {
       if (qEmail && !u.email.toLowerCase().includes(qEmail.toLowerCase()))
         return false;
       if (
@@ -126,7 +126,7 @@ export default function PendingApprovalPage() {
           <Button
             onClick={handleRefresh}
             disabled={refreshing || loading}
-            className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
+            className="h-9 bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white flex items-center gap-1"
           >
             <RotateCw
               className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -165,10 +165,10 @@ export default function PendingApprovalPage() {
                     <TableHead className="px-4 py-2 text-left">Name</TableHead>
                     <TableHead className="px-4 py-2 text-center">Role</TableHead>
                     <TableHead className="px-4 py-2 text-left">Institution</TableHead>
-                    <TableHead className="px-4 py-2 text-right hidden xl:table-cell">
+                    <TableHead className="px-4 py-2 text-center hidden xl:table-cell">
                       Created At
                     </TableHead>
-                    <TableHead className="px-4 py-2 text-right hidden xl:table-cell">
+                    <TableHead className="px-4 py-2 text-center hidden xl:table-cell">
                       Last Login
                     </TableHead>
                     <TableHead className="px-4 py-2 text-center">Actions</TableHead>
@@ -194,10 +194,10 @@ export default function PendingApprovalPage() {
                         <TableCell className="px-4 py-2 text-xs text-slate-600">
                           {u.institutionName}
                         </TableCell>
-                        <TableCell className="pr-13 py-2 text-right text-xs text-slate-500 hidden xl:table-cell">
+                        <TableCell className="px-4 py-2 text-center text-xs text-slate-500 hidden xl:table-cell">
                           {formatDateTime(u.createdAt)}
                         </TableCell>
-                        <TableCell className="pr-13 py-2 text-right text-xs text-slate-500 hidden xl:table-cell">
+                        <TableCell className="px-4 py-2 text-center text-xs text-slate-500 hidden xl:table-cell">
                           {u.lastLoginAt ? formatDateTime(u.lastLoginAt) : "—"}
                         </TableCell>
                         <TableCell className="px-4 py-2 text-center">
@@ -206,7 +206,7 @@ export default function PendingApprovalPage() {
                               variant="ghost"
                               disabled={actionLoading}
                               onClick={() => handleApprove(u.id)}
-                              className="h-8 px-2 !bg-emerald-50 cursor-pointer text-emerald-700"
+                              className="h-8 px-2 !bg-emerald-50 btn btn-gradient-slow cursor-pointer text-emerald-700"
                             >
                               Approve
                             </Button>
@@ -217,7 +217,7 @@ export default function PendingApprovalPage() {
                                 setRejectUserId(u.id);
                                 setRejectOpen(true);
                               }}
-                              className="h-8 px-2 !bg-red-50 cursor-pointer text-red-600"
+                              className="h-8 px-2 !bg-red-50 cursor-pointer shadow-lg text-red-600"
                             >
                               Reject
                             </Button>

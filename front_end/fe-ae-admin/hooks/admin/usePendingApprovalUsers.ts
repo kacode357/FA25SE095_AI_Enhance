@@ -1,10 +1,10 @@
 // hooks/admin/usePendingApprovalUsers.ts
 "use client";
 
-import { useCallback, useState } from "react";
 import { AdminService } from "@/services/admin.services";
 import type { PendingApprovalParams } from "@/types/admin/admin.payload";
 import type { PendingApprovalResponse } from "@/types/admin/admin.response";
+import { useCallback, useState } from "react";
 
 export function usePendingApprovalUsers() {
   const [loading, setLoading] = useState(false);
@@ -15,8 +15,9 @@ export function usePendingApprovalUsers() {
       setLoading(true);
       try {
         const res = await AdminService.getPendingApprovalUsers(params);
-        setData(res);
-        return res;
+        const payload = (res as any)?.data ?? res;
+        setData(payload);
+        return payload;
       } finally {
         setLoading(false);
       }

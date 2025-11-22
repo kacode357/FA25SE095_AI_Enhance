@@ -1,4 +1,4 @@
-// app/lecture/manager/course/[id]/assignments/components/EditAssignmentForm.tsx
+// app/lecture/course/[id]/assignments/components/EditAssignmentForm.tsx
 "use client";
 
 import LiteRichTextEditor from "@/components/common/TinyMCE";

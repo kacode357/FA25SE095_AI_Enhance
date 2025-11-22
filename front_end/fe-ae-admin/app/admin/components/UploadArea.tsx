@@ -48,7 +48,7 @@ export default function UploadArea() {
                 <span className="text-sm font-medium text-slate-700">{f.name}</span>
                 <span className="text-[11px] text-slate-400">{(f.size/1024).toFixed(1)} KB</span>
               </div>
-              <Button variant="ghost" className="h-7 w-7 p-0 flex items-center justify-center" onClick={() => setFiles(prev => prev.filter(x => x.id !== f.id))}>
+              <Button variant="ghost" className="h-7 w-7 btn btn-gradient-slow p-0 flex items-center justify-center" onClick={() => setFiles(prev => prev.filter(x => x.id !== f.id))}>
                 <X className="size-4 text-slate-500" />
               </Button>
             </li>

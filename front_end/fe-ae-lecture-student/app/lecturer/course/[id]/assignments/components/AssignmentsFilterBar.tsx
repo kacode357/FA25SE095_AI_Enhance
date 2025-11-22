@@ -1,4 +1,4 @@
-// app/lecture/manager/course/[id]/assignments/components/AssignmentsFilterBar.tsx
+// app/lecture/course/[id]/assignments/components/AssignmentsFilterBar.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";

@@ -8,14 +8,14 @@ import { usePathname } from "next/navigation";
 
 const mainNav = [
   {
-    href: "/admin/manager/users",
+    href: "/admin/users",
     label: "Users",
     icon: Users2,
     description: "Manage All Users",
     count: 12,
   },
   {
-    href: "/admin/manager/pending-approval",
+    href: "/admin/pending-approval",
     label: "Pending Approval",
     icon: FileText,
     description: "Manage Pending Approvals",
@@ -52,7 +52,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
           )}
           <Button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 cursor-pointer rounded-md hover:bg-gray-100 transition-colors"
+            className="p-1.5 cursor-pointer rounded-md btn btn-gradient-slow hover:bg-gray-100 transition-colors"
           >
             <ChevronRight
               className={clsx(

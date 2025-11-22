@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, Power } from "lucide-react";
 import { useAdminUsers } from "@/hooks/admin/useAdminUsers";
 import { toast } from "sonner";
+import { statusToString } from "@/config/user-status";
 
 type Props = {
   userId: string;
   /** current status text from BE, e.g. "Suspended" | "Inactive" | "Active" ... */
-  status: string;
+  status: string | number;
   /** optional className for button */
   className?: string;
   /** called after reactivate success (e.g. to refetch detail or list) */
@@ -32,7 +33,13 @@ export default function ReactivateUserButton({
   const [done, setDone] = useState(false);
 
   const isEligible = useMemo(() => {
-    const s = (status || "").toLowerCase();
+    let sVal = "";
+    if (typeof status === "number") {
+      sVal = statusToString(status as any);
+    } else {
+      sVal = status || "";
+    }
+    const s = sVal.toLowerCase();
     return s === "suspended" || s === "inactive";
   }, [status]);
 

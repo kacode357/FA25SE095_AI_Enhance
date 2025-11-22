@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
-import ManagerHeader from "../components/header";
-import ManagerSidebar from "../components/sidebar";
+import ManagerHeader from "./components/header";
+import ManagerSidebar from "./components/sidebar";
 
 export default function ManagerLayout({
     children,

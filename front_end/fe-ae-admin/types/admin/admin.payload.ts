@@ -11,15 +11,23 @@ export interface SuspendUserPayload {
   suspendUntil: string;
 }
 
+export enum SubscriptionTier {
+  Free = 0,
+  Basic = 1,
+  Premium = 2,
+  Enterprise = 3,
+}
+
 export interface GetUsersParams {
-  page?: number;
-  pageSize?: number;
-  searchTerm?: string;
-  role?: number;
-  status?: number;
-  subscriptionTier?: string;
-  sortBy?: string;
-  sortOrder?: string;
+  page?: number;               // Page (int)
+  pageSize?: number;           // PageSize (int)
+  searchTerm?: string;         // SearchTerm (string)
+  role?: number;               // Role (int)
+  status?: number;             // Status (int)
+  subscriptionTier?: SubscriptionTier;   // SubscriptionTier (int - enum)
+  sortBy?: string;             // SortBy (string)
+  sortOrder?: string;          // SortOrder (string)
+  emails?: string[];           // Emails[] (array of string)
 }
 
 /** GET /api/Admin/users/{userId} — path params */

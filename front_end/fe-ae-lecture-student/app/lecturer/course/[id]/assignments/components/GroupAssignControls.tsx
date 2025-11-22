@@ -1,4 +1,4 @@
-// app/lecture/manager/course/[id]/assignments/components/GroupAssignControls.tsx
+// app/lecture/course/[id]/assignments/components/GroupAssignControls.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";

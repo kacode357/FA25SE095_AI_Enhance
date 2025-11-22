@@ -1,5 +1,8 @@
 "use client";
 
+import { useAuth } from "@/contexts/AuthContext";
+import { useLogout } from "@/hooks/auth/useLogout";
+import Cookies from "js-cookie";
 import {
   Bell,
   ChevronDown,
@@ -9,9 +12,6 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useLogout } from "@/hooks/auth/useLogout";
-import { useAuth } from "@/contexts/AuthContext";
-import Cookies from "js-cookie";
 
 type Props = { onMenuClick?: () => void };
 
@@ -152,7 +152,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 </div>
                 <div className="py-1">
                   <Link
-                    href="/manager/profile"
+                    href="/profile"
                     className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>

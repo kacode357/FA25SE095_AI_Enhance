@@ -1,21 +1,38 @@
 // types/admin/admin.response.ts
 
 /** ==== USER MODELS ==== */
+
+export enum UserStatus {
+    Pending = 0,        // Account created but not verified
+    Active = 1,         // Fully active account
+    Inactive = 2,       // Temporarily disabled
+    Suspended = 3,      // Suspended due to policy violation
+    Deleted = 4,        // Soft deleted
+    PendingApproval = 5 // Waiting for staff approval (lecturers)
+}
 export interface AdminUserItemResponse {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
-  status: string;
-  subscriptionTier: string;
+  role: string;                // "Student" | "Staff" | "Admin"...
+  status: UserStatus;              // "Active" | "Pending"...
+  subscriptionTier: string;    // "Free" | "Basic" | "Premium" | "Enterprise"
   isEmailConfirmed: boolean;
-  lastLoginAt: string;
+
+  lastLoginAt: string | null;  // null hoặc ISO string
+
   crawlQuotaUsed: number;
   crawlQuotaLimit: number;
-  institutionName: string;
+
+  institutionName: string | null;
+  studentId: string | null;
+
+  profilePictureUrl: string | null;
+
   createdAt: string;
 }
+
 
 /** ==== LIST RESPONSE ==== */
 export interface PendingApprovalResponse {

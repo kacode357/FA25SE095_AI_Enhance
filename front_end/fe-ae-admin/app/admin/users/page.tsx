@@ -1,22 +1,24 @@
-// app/admin/manager/users/page.tsx
+// app/admin/users/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { Eye } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 import { AdminSectionHeader, DataTable } from "@/components/admin";
+import PaginationBar from "@/components/common/PaginationBar";
 import { Button } from "@/components/ui/button";
 import { useAdminUsers } from "@/hooks/admin/useAdminUsers";
 import type { GetUsersParams } from "@/types/admin/admin.payload";
+import { SubscriptionTier } from "@/types/admin/admin.payload";
 import type { AdminUserItemResponse } from "@/types/admin/admin.response";
-import PaginationBar from "@/components/common/PaginationBar";
+import ReactivateUserButton from "./components/ReactivateUserButton";
 import UsersFilterInline, {
   UsersFilterValues,
 } from "./components/UsersFilterInline";
-import ReactivateUserButton from "./components/ReactivateUserButton";
+import getUserStatusClasses from "@/utils/user-status-color";
 
-interface UserRow extends AdminUserItemResponse {}
+interface UserRow extends AdminUserItemResponse { }
 
 export default function AdminUsersPage() {
   const {
@@ -47,15 +49,44 @@ export default function AdminUsersPage() {
       params.role = Number(filters.role);
     if (filters.status && filters.status !== "all")
       params.status = Number(filters.status);
-    if (filters.tier && filters.tier !== "all")
-      params.subscriptionTier = filters.tier;
+    if (filters.tier && filters.tier !== "all") {
+      // Accept either numeric string, enum name, or friendly labels (e.g. "Pro")
+      const tierStr = String(filters.tier);
+
+      // Map common labels to enum values (cover 'Pro' -> 'Premium')
+      const tierMap: Record<string, SubscriptionTier> = {
+        Free: SubscriptionTier.Free,
+        Basic: SubscriptionTier.Basic,
+        Premium: SubscriptionTier.Premium,
+        Pro: SubscriptionTier.Premium,
+        Enterprise: SubscriptionTier.Enterprise,
+      };
+
+      // If it's a numeric string like "0"/"1"
+      const asNumber = Number(tierStr);
+      if (!Number.isNaN(asNumber)) {
+        params.subscriptionTier = asNumber as SubscriptionTier;
+      } else if (tierMap[tierStr] !== undefined) {
+        params.subscriptionTier = tierMap[tierStr];
+      } else {
+        // Fallback: try to lookup by enum key
+        const key = tierStr as keyof typeof SubscriptionTier;
+        const enumValue = (SubscriptionTier as any)[key];
+        if (typeof enumValue === "number") params.subscriptionTier = enumValue;
+      }
+    }
 
     fetchUsers(params);
   }, [page, filters, fetchUsers]);
 
-  const users: AdminUserItemResponse[] = listData?.users ?? [];
-  const totalCount = listData?.totalCount ?? 0;
-  const totalPages = listData?.totalPages ?? 1;
+  // Normalize response shape: some endpoints return { users, totalCount, ... }
+  // while others may wrap results in a `data` field. Safely handle both.
+  const users: AdminUserItemResponse[] =
+    (listData as any)?.users ?? (listData as any)?.data?.users ?? [];
+  const totalCount =
+    (listData as any)?.totalCount ?? (listData as any)?.data?.totalCount ?? 0;
+  const totalPages =
+    (listData as any)?.totalPages ?? (listData as any)?.data?.totalPages ?? 1;
 
   const columns = useMemo(() => {
     return [
@@ -91,6 +122,20 @@ export default function AdminUsersPage() {
         render: (u: UserRow) => u.subscriptionTier,
       },
       {
+        key: "status",
+        header: "Status",
+        className: "text-center",
+        render: (u: UserRow) => (
+          <span
+            className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${getUserStatusClasses(
+              u.status
+            )}`}
+          >
+            {u.status}
+          </span>
+        ),
+      },
+      {
         key: "actions",
         header: "Actions",
         className: "text-center min-w-[200px]",
@@ -98,13 +143,13 @@ export default function AdminUsersPage() {
           <div className="flex items-center justify-center gap-1 whitespace-nowrap">
             {/* View detail: dùng asChild + icon Eye */}
             <Button
-      
+
               variant="ghost"
               className="h-8 px-2 text-slate-700 hover:bg-slate-50"
               title="View user"
             >
               <Link
-                href={`/admin/manager/users/${u.id}`}
+                href={`/admin/users/${u.id}`}
                 className="inline-flex items-center gap-1"
               >
                 <Eye className="w-4 h-4" />
@@ -126,7 +171,7 @@ export default function AdminUsersPage() {
         title={`User Management (${totalCount})`}
         description="Manage users: review, search, assign roles, and monitor statuses."
         actions={
-          <Button size="sm" variant="primary" onClick={() => setPage(1)}>
+          <Button size="sm" className="btn btn-gradient-slow text-sm" variant="primary" onClick={() => setPage(1)}>
             Refresh
           </Button>
         }

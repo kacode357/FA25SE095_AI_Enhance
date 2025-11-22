@@ -1,4 +1,4 @@
-// app/lecture/manager/course/[id]/assignments/AssignmentsPanel.tsx
+// app/lecture/course/[id]/assignments/AssignmentsPanel.tsx
 "use client";
 
 import PaginationBar from "@/components/common/PaginationBar";
