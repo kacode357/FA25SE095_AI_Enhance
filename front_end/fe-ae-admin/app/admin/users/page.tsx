@@ -12,11 +12,14 @@ import { useAdminUsers } from "@/hooks/admin/useAdminUsers";
 import type { GetUsersParams } from "@/types/admin/admin.payload";
 import { SubscriptionTier } from "@/types/admin/admin.payload";
 import type { AdminUserItemResponse } from "@/types/admin/admin.response";
+import getUserStatusClasses from "@/utils/user-status-color";
 import ReactivateUserButton from "./components/ReactivateUserButton";
+import { UserX } from "lucide-react";
+import { useUserApproval } from "@/hooks/admin/useUserApproval";
+import { statusToString } from "@/config/user-status";
 import UsersFilterInline, {
   UsersFilterValues,
 } from "./components/UsersFilterInline";
-import getUserStatusClasses from "@/utils/user-status-color";
 
 interface UserRow extends AdminUserItemResponse { }
 
@@ -28,6 +31,8 @@ export default function AdminUsersPage() {
     loadingList,
     loadingReactivate,
   } = useAdminUsers();
+
+  const { suspendUser, loading: suspendLoading } = useUserApproval();
 
   // Bộ lọc áp dụng khi nhấn Apply
   const [filters, setFilters] = useState<UsersFilterValues>({
@@ -159,6 +164,36 @@ export default function AdminUsersPage() {
 
             {/* Reactivate (ẩn nếu không đủ điều kiện) */}
             <ReactivateUserButton userId={u.id} status={u.status} />
+
+            {/* Suspend button */}
+            <Button
+              variant="ghost"
+              title="Suspend user"
+              disabled={suspendLoading ||
+                (() => {
+                  // hide/disable if already suspended or deleted
+                  const s = typeof u.status === "number" ? statusToString(u.status as any) : (u.status || "");
+                  const sl = s.toLowerCase();
+                  return sl === "suspended" || sl === "deleted";
+                })()
+              }
+              onClick={async () => {
+                const ok = confirm("Suspend this user for 7 days?");
+                if (!ok) return;
+                const payload = {
+                  reason: "Suspended by admin",
+                  suspendUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                };
+                const res = await suspendUser(u.id, payload);
+                if (res?.success) {
+                  // refresh list
+                  fetchUsers({ page, pageSize: 10 });
+                }
+              }}
+              className="h-8 px-2 text-red-600 hover:bg-red-50"
+            >
+              <UserX className="w-4 h-4" />
+            </Button>
           </div>
         ),
       },

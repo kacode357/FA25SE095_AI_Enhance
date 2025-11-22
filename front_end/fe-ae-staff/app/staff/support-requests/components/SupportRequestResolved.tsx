@@ -54,18 +54,6 @@ export default function SupportRequestResolved({
                     </div>
                 </div>
             </div>
-
-            {/* <div>
-                {resolved ? (
-                    <Button size="sm" variant="ghost" disabled>
-                        Status: Done
-                    </Button>
-                ) : (
-                    <Button size="sm" onClick={onResolve} disabled={resolving}>
-                        {resolving ? "Marking…" : "Mark resolved"}
-                    </Button>
-                )}
-            </div> */}
         </div>
     );
 }

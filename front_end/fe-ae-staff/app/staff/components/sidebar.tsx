@@ -9,11 +9,18 @@ import {
   GraduationCap,
   Layers3,
   LifeBuoy,
+  UserRoundCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
+    {
+    href: "/staff/approve-lecturer",
+    label: "Approve Lecturers",
+    icon: UserRoundCheck,
+    description: "Approve Lecturer accounts",
+  },
   {
     href: "/staff/terms",
     label: "Terms",

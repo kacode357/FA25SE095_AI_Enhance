@@ -569,8 +569,8 @@ export default function SupportRequestChatWindow({
                                     {/* Message bubble */}
                                     <div
                                         className={`rounded-2xl px-4 py-3 text-sm leading-relaxed inline-block whitespace-pre-wrap break-words ${isMe
-                                            ? "bg-gradient-to-br from-pink-300 to-purple-500 text-white shadow-md max-w-[60%] mr-6"
-                                            : "bg-white max-w-[70%] min-w-[140px] break-words shadow-sm ml-6"
+                                            ? "bg-gradient-to-br from-pink-300 to-purple-500 text-white shadow-md max-w-[70vw] mr-6"
+                                            : "bg-white max-w-[70vw] min-w-0 break-words shadow-sm ml-6"
                                             }`}
                                     >
                                         {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
@@ -665,7 +665,7 @@ export default function SupportRequestChatWindow({
             >
                 <div className="flex items-center gap-3">
                     <textarea
-                        className="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm resize-none"
+                        className="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm resize-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus:border-slate-300"
                         rows={2}
                         value={input}
                         onChange={(e) => {

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { UserRole } from "@/config/user-role";
 import { UserStatus } from "@/config/user-status";
 import { Search } from "lucide-react";
+import { useState } from "react";
 
 export type UsersFilterValues = {
   emailOrName?: string;
@@ -134,6 +134,7 @@ export default function UsersFilterInline({
             size="sm"
             onClick={handleApply}
             disabled={loading}
+            className="shadow-md text-xs bg-violet-50"
           >
             Apply
           </Button>

@@ -219,7 +219,7 @@ export default function PendingApprovalPage() {
                               }}
                               className="h-8 px-2 !bg-red-50 cursor-pointer shadow-lg text-red-600"
                             >
-                              Reject
+                              Suspend
                             </Button>
                           </div>
                         </TableCell>
@@ -237,7 +237,7 @@ export default function PendingApprovalPage() {
         <DialogContent className="bg-white shadow-lg rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
-              Reject User
+              Suspend User
             </DialogTitle>
             <p className="text-sm text-slate-500">
               Provide a reason and suspension end date for this user.
@@ -288,7 +288,7 @@ export default function PendingApprovalPage() {
               disabled={actionLoading}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              Confirm Reject
+              Confirm Suspend
             </Button>
           </DialogFooter>
         </DialogContent>

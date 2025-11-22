@@ -10,18 +10,18 @@ export enum SupportRequestPriority {
 
 export const statusLabelMap: Record<number, string> = {
   [SupportRequestStatus.Pending]: "Pending",
-  [SupportRequestStatus.Accepted]: "Accepted",
   [SupportRequestStatus.InProgress]: "In Progress",
   [SupportRequestStatus.Resolved]: "Resolved",
   [SupportRequestStatus.Cancelled]: "Cancelled",
+  [SupportRequestStatus.Rejected]: "Rejected",
 };
 
 export const statusColorMap: Record<number, string> = {
   [SupportRequestStatus.Pending]: "bg-yellow-100 text-yellow-800",
-  [SupportRequestStatus.Accepted]: "bg-blue-100 text-blue-800",
-  [SupportRequestStatus.InProgress]: "bg-purple-100 text-purple-800",
+  [SupportRequestStatus.InProgress]: "bg-blue-100 text-blue-800",
   [SupportRequestStatus.Resolved]: "bg-green-100 text-green-800",
   [SupportRequestStatus.Cancelled]: "bg-red-100 text-red-800",
+  [SupportRequestStatus.Rejected]: "bg-gray-200 text-gray-800",
 };
 
 export const categoryLabelMap: Record<number, string> = {
