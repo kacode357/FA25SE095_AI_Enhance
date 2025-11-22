@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useChatHub } from "@/hooks/hubchat/useChatHub";
 import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
 import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
+import { useResolveSupportRequest } from "@/hooks/support-requests/useResolveSupportRequest";
 
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
 import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.response";
@@ -82,6 +83,11 @@ export default function SupportChatPage() {
   const [typingMap, setTypingMap] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  // trạng thái cho confirm "Has your need been resolved?"
+  const { resolveSupportRequest, loading: resolving } =
+    useResolveSupportRequest();
+  const [resolveHandled, setResolveHandled] = useState(false);
 
   // scroll
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -197,6 +203,7 @@ export default function SupportChatPage() {
     }
 
     lastLoadedConvRef.current = null;
+    setResolveHandled(false); // reset khi đổi conversation
 
     let cancelled = false;
     (async () => {
@@ -320,6 +327,36 @@ export default function SupportChatPage() {
   const typingText =
     peerId && typingMap[peerId] ? `${peerName} is typing…` : "";
 
+  // tìm message staff mới nhất hỏi "Has your need been resolved?"
+  const resolveQuestionId = useMemo(() => {
+    if (!currentUserId) return null;
+    const haystack = messages.filter(
+      (m) =>
+        m.senderId !== currentUserId &&
+        m.message.trim() === "Has your need been resolved?",
+    );
+    if (!haystack.length) return null;
+    return haystack[haystack.length - 1].id;
+  }, [messages, currentUserId]);
+
+  const handleConfirmResolved = async () => {
+    // Use the actual support request id (try common query keys), not the conversationId
+    const supportRequestId =
+      searchParams.get("requestId") ?? searchParams.get("supportRequestId") ?? null;
+    if (!supportRequestId) return;
+
+    try {
+      await resolveSupportRequest(supportRequestId); // supportRequestId is the id of the request
+      setResolveHandled(true);
+    } catch {
+      // giữ UI, lỗi được xử lý ở interceptor
+    }
+  };
+
+  const handleNotResolved = () => {
+    setResolveHandled(true);
+  };
+
   if (!courseId || !conversationId) {
     return (
       <div className="p-4 text-sm text-red-500">
@@ -418,7 +455,8 @@ export default function SupportChatPage() {
 
               {!loadingHistory &&
                 messages.map((m) => {
-                  const isMine = !!currentUserId && m.senderId === currentUserId;
+                  const isMine =
+                    !!currentUserId && m.senderId === currentUserId;
                   const sentTime = parseServerDate(m.sentAt);
                   const timeLabel = Number.isNaN(sentTime.getTime())
                     ? ""
@@ -426,6 +464,12 @@ export default function SupportChatPage() {
                         hour: "2-digit",
                         minute: "2-digit",
                       });
+
+                  const isResolveQuestion =
+                    m.id === resolveQuestionId &&
+                    !isMine &&
+                    !resolveHandled &&
+                    m.message.trim() === "Has your need been resolved?";
 
                   return (
                     <div
@@ -470,7 +514,6 @@ export default function SupportChatPage() {
                             {openMenuId === m.id && (
                               <div
                                 data-menu-id={m.id}
-                                // 🔥 MỞ XUỐNG DƯỚI, KHÔNG CHUI LÊN ĐỤNG HEADER NỮA
                                 className="absolute top-full right-0 z-50 mt-2 w-40 rounded-lg border border-[var(--border)] bg-white py-1 text-xs text-slate-700 shadow-xl"
                               >
                                 <button
@@ -496,6 +539,34 @@ export default function SupportChatPage() {
                         >
                           {m.message}
                         </div>
+
+                        {/* Hỏi: Has your need been resolved? -> hiện 2 nút */}
+                        {isResolveQuestion && (
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                            <button
+                              type="button"
+                              onClick={handleConfirmResolved}
+                              disabled={resolving}
+                              className={cx(
+                                "rounded-full px-3 py-1 font-semibold",
+                                "bg-emerald-600 text-white hover:bg-emerald-700",
+                                resolving && "opacity-60 cursor-not-allowed",
+                              )}
+                            >
+                              {resolving
+                                ? "Đang xác nhận..."
+                                : "Đã giải quyết rồi"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleNotResolved}
+                              disabled={resolving}
+                              className="rounded-full border border-[var(--border)] bg-slate-50 px-3 py-1 font-medium text-slate-700 hover:bg-slate-100"
+                            >
+                              Chưa, cần hỗ trợ thêm
+                            </button>
+                          </div>
+                        )}
 
                         {timeLabel && (
                           <div className="mt-1 text-[10px] opacity-70 text-right">

@@ -7,14 +7,12 @@ import { useMyGroups } from "@/hooks/group/useMyGroups";
 import {
   ListChecks,
   Users,
-  Lock,
   Loader2,
   ArrowLeft,
   Eye,
   Crown,
   BookOpen,
   FileText,
-  RefreshCw,
 } from "lucide-react";
 import Button from "@/components/ui/button";
 
@@ -29,13 +27,30 @@ export default function MyGroupsByCoursePage() {
     if (courseId) fetchMyGroups(courseId);
   }, [courseId, fetchMyGroups]);
 
-  const courseName = useMemo(() => groups[0]?.courseName ?? "", [groups]);
   const empty = !loading && (!groups || groups.length === 0);
+  const group = !empty ? groups[0] : null;
 
-  const onRefresh = () => {
-    if (!courseId) return;
-    fetchMyGroups(courseId);
-  };
+  const parsedCourse = useMemo(() => {
+    if (!group?.courseName) {
+      return {
+        raw: "",
+        courseCode: "",
+        uniqueCode: "",
+        lecturerName: "",
+      };
+    }
+
+    const raw = group.courseName; // ex: "CS101#PYA8S3 - Smith John"
+    const [left, lecturerName] = raw.split(" - ");
+    const [courseCode, uniqueCode] = (left || "").split("#");
+
+    return {
+      raw,
+      courseCode: courseCode || "",
+      uniqueCode: uniqueCode || "",
+      lecturerName: lecturerName || "",
+    };
+  }, [group]);
 
   if (!courseId) {
     return (
@@ -62,11 +77,36 @@ export default function MyGroupsByCoursePage() {
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold text-nav flex items-center gap-2">
             <ListChecks className="w-6 h-6 text-nav-active" />
-            My Groups
+            My Group
           </h1>
-          <p className="text-sm text-nav">
-            Course: <b className="text-brand">{courseName || "—"}</b>
-          </p>
+
+          {/* Course info từ courseName */}
+          {parsedCourse.courseCode ? (
+            <p className="text-sm text-nav">
+              <span className="font-semibold text-brand">
+                {parsedCourse.courseCode}
+              </span>
+              {parsedCourse.uniqueCode && (
+                <>
+                  {" · "}
+                  <span>{parsedCourse.uniqueCode}</span>
+                </>
+              )}
+              {parsedCourse.lecturerName && (
+                <>
+                  {" · "}
+                  <span>{parsedCourse.lecturerName}</span>
+                </>
+              )}
+            </p>
+          ) : (
+            <p className="text-sm text-nav">
+              Course:{" "}
+              <b className="text-brand">
+                {group?.courseName || "—"}
+              </b>
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -78,24 +118,6 @@ export default function MyGroupsByCoursePage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Course
           </Button>
-
-          <button
-            className={`btn btn-gradient-slow ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
-            onClick={onRefresh}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Refreshing…
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4" />
-                Refresh
-              </>
-            )}
-          </button>
         </div>
       </div>
 
@@ -104,9 +126,10 @@ export default function MyGroupsByCoursePage() {
         {/* Card header */}
         <div className="px-4 sm:px-6 pt-5 pb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-nav">Your Groups</h2>
+            <h2 className="text-base font-semibold text-nav">Group & Assignment</h2>
             <p className="text-xs text-nav">
-              Total: <b className="text-brand">{total}</b> group{total > 1 ? "s" : ""}
+              Total groups joined in this course:{" "}
+              <b className="text-brand">{total}</b>
             </p>
           </div>
         </div>
@@ -120,7 +143,7 @@ export default function MyGroupsByCoursePage() {
           {loading && (
             <div className="flex justify-center items-center py-10">
               <Loader2 className="w-5 h-5 animate-spin mr-2 text-brand" />
-              <span className="text-sm text-nav">Loading your groups…</span>
+              <span className="text-sm text-nav">Loading your group…</span>
             </div>
           )}
 
@@ -128,11 +151,15 @@ export default function MyGroupsByCoursePage() {
           {empty && (
             <div className="flex flex-col items-center py-10 text-center">
               <Users className="w-10 h-10 text-nav-active mb-2" />
-              <p className="mb-4 text-sm text-nav">You have not joined any groups in this course.</p>
+              <p className="mb-4 text-sm text-nav">
+                You have not joined any groups in this course.
+              </p>
               <div className="flex gap-2">
                 <button
                   className="btn btn-gradient"
-                  onClick={() => router.push(`/student/courses/${courseId}/groups`)}
+                  onClick={() =>
+                    router.push(`/student/courses/${courseId}/groups`)
+                  }
                 >
                   <Eye className="w-4 h-4" />
                   View available groups
@@ -141,132 +168,126 @@ export default function MyGroupsByCoursePage() {
             </div>
           )}
 
-          {/* List */}
-          {!loading && !empty && (
-            <ul className="space-y-3">
-              {groups.map((g: any) => {
-                const canViewAssignment = !!g.assignmentId;
-                const membersLabel =
-                  g.maxMembers === null || g.maxMembers === undefined
-                    ? `${g.memberCount} ${g.memberCount === 1 ? "member" : "members"}`
-                    : `${g.memberCount}/${g.maxMembers} ${g.maxMembers === 1 ? "member" : "members"
-                    }`;
+          {/* Single group + assignment layout */}
+          {!loading && !empty && group && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* LEFT: GROUP INFO */}
+              <section className="rounded-xl border border-slate-100 bg-white/70 p-4 shadow-sm flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2 justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h3 className="text-lg font-semibold text-nav truncate">
+                      {group.groupName}
+                    </h3>
 
-                return (
-                  <li key={g.groupId}>
-                    <div
-                      className="
-                        card relative rounded-xl
-                        transition-all hover:shadow-md
-                      "
-                    >
-                      {/* Top row */}
-                      <div className="px-4 pt-4 pb-3 grid grid-cols-1 md:grid-cols-12 gap-3">
-                        {/* Left */}
-                        <div className="md:col-span-7 flex items-center gap-3 min-w-0">
-                          {g.isLocked && (
-                            <span
-                              title="Group is locked"
-                              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-accent text-accent shrink-0"
-                            >
-                              <Lock className="w-3 h-3" />
-                              Locked
-                            </span>
-                          )}
+                    <span className="text-[11px] px-2 py-0.5 rounded-full border border-brand text-brand inline-flex items-center gap-1 shrink-0">
+                      {group.isLeader ? (
+                        <>
+                          <Crown className="w-3 h-3" /> Leader
+                        </>
+                      ) : (
+                        group.role || "Member"
+                      )}
+                    </span>
+                  </div>
+                </div>
 
-                          <h3 className="text-base font-semibold text-nav truncate">
-                            {g.groupName}
-                          </h3>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                  <span className="inline-flex items-center gap-1 text-nav">
+                    <Users className="w-4 h-4 text-brand" />
+                    {group.maxMembers == null
+                      ? `${group.memberCount} ${
+                          group.memberCount === 1 ? "member" : "members"
+                        }`
+                      : `${group.memberCount}/${group.maxMembers} ${
+                          group.maxMembers === 1 ? "member" : "members"
+                        }`}
+                  </span>
 
-                          <span className="text-[11px] px-2 py-0.5 rounded-full border border-brand text-brand inline-flex items-center gap-1 shrink-0">
-                            {g.isLeader ? (
-                              <>
-                                <Crown className="w-3 h-3" /> Leader
-                              </>
-                            ) : (
-                              g.role || "Member"
-                            )}
-                          </span>
-                        </div>
+                  <span className="text-xs opacity-70">
+                    Joined:{" "}
+                    {new Date(group.joinedAt).toLocaleString("en-GB")}
+                  </span>
+                </div>
 
-                        {/* Right actions */}
-                        <div className="md:col-span-5 flex items-center justify-start md:justify-end gap-2">
-                          {canViewAssignment && (
-                            <button
-                              className="btn bg-white border border-brand text-brand"
-                              onClick={() =>
-                                router.push(
-                                  `/student/courses/${g.courseId}/assignments/${g.assignmentId}`
-                                )
-                              }
-                            >
-                              <FileText className="w-4 h-4" />
-                              View assignment
-                            </button>
-                          )}
+                {group.description && (
+                  <p className="text-sm opacity-90">
+                    {group.description}
+                  </p>
+                )}
 
-                          <button
-                            className="btn btn-gradient"
-                            onClick={() =>
-                              router.push(`/student/courses/${g.courseId}/groups/${g.groupId}`)
-                            }
-                          >
-                            <Eye className="w-4 h-4" />
-                            View group
-                          </button>
-                        </div>
-                      </div>
+                <div className="mt-auto pt-2">
+                  <button
+                    className="btn btn-gradient"
+                    onClick={() =>
+                      router.push(
+                        `/student/courses/${group.courseId}/groups/${group.groupId}`
+                      )
+                    }
+                  >
+                    <Eye className="w-4 h-4" />
+                    Open group room
+                  </button>
+                </div>
+              </section>
 
-                      {/* Divider */}
-                      <div className="h-px bg-slate-100" />
+              {/* RIGHT: ASSIGNMENT INFO (RÕ LÀ CỦA GROUP NÀY) */}
+              <section className="rounded-xl border border-slate-100 bg-white/70 p-4 shadow-sm flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-nav flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-nav-active" />
+                      Group assignment
+                    </h3>
 
-                      {/* Bottom row */}
-                      <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-12 gap-3">
-                        {/* Meta */}
-                        <div className="md:col-span-12 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                          <span className="inline-flex items-center gap-1 text-nav">
-                            <Users className="w-4 h-4 text-brand" />
-                            {membersLabel}
-                          </span>
+                    {/* Badge cho user hiểu assignment này gắn với group hiện tại */}
+                    <p className="text-xs text-nav opacity-80 inline-flex items-center gap-1">
+                      <Users className="w-3 h-3 text-brand" />
+                      <span>
+                        This assignment belongs to{" "}
+                        <span className="font-semibold text-brand">
+                          {group.groupName}
+                        </span>{" "}
+                        (submissions are shared within this group).
+                      </span>
+                    </p>
+                  </div>
+                </div>
 
-                          {g.assignmentTitle && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                canViewAssignment &&
-                                router.push(
-                                  `/student/courses/${g.courseId}/assignments/${g.assignmentId}`
-                                )
-                              }
-                              className={`truncate max-w-[60ch] underline-offset-2 ${canViewAssignment
-                                  ? "text-nav hover:underline"
-                                  : "opacity-60 cursor-not-allowed"
-                                }`}
-                              title={g.assignmentTitle || "Assignment"}
-                              disabled={!canViewAssignment}
-                            >
-                              <span className="opacity-70 mr-1">Assignment:</span>
-                              <b className="text-brand">{g.assignmentTitle}</b>
-                            </button>
-                          )}
+                <button
+                  type="button"
+                  className="mt-2 text-left text-base font-semibold text-brand underline-offset-2 hover:underline truncate max-w-[30rem]"
+                  onClick={() =>
+                    group.assignmentId &&
+                    router.push(
+                      `/student/courses/${group.courseId}/assignments/${group.assignmentId}`
+                    )
+                  }
+                >
+                  {group.assignmentTitle || "View assignment"}
+                </button>
 
-                          <span className="text-xs opacity-70">
-                            Joined: {new Date(g.joinedAt).toLocaleString("en-GB")}
-                          </span>
-                        </div>
+                <p className="text-xs text-nav opacity-80">
+                  Open this to see the full instructions, deadlines and the
+                  submission workspace for your group. Any work you submit here
+                  will be counted for <span className="font-semibold">{group.groupName}</span>.
+                </p>
 
-                        {/* Description */}
-                        {g.description && (
-                          <div className="md:col-span-12">
-                            <p className="text-sm opacity-90 line-clamp-2">{g.description}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                <div className="mt-auto flex flex-wrap gap-2">
+                  <button
+                    className="btn btn-blue-slow"
+                    onClick={() =>
+                      group.assignmentId &&
+                      router.push(
+                        `/student/courses/${group.courseId}/assignments/${group.assignmentId}`
+                      )
+                    }
+                  >
+                    <FileText className="w-4 h-4" />
+                    View group assignment
+                  </button>
+                </div>
+              </section>
+            </div>
           )}
         </div>
       </div>

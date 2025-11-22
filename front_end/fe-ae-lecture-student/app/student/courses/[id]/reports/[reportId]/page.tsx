@@ -10,18 +10,19 @@ import {
   CalendarDays,
   Clock,
   FileText,
-  Info,
   Loader2,
   Tag,
   ChevronDown,
   History,
+  RotateCcw,
 } from "lucide-react";
 
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
-import ReportCollabClient from "@/app/student/courses/[id]/reports/components/ReportCollabClient";
+import { useUpdateReportStatus } from "@/hooks/reports/useUpdateReportStatus";
 import ReportTimeline from "@/app/student/courses/[id]/reports/components/ReportTimeline";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import type { ReportDetail } from "@/types/reports/reports.response";
+import { ReportStatus } from "@/types/reports/reports.response";
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 import {
   Collapsible,
@@ -35,6 +36,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+
+import ReportSubmissionEditor from "@/app/student/courses/[id]/reports/components/ReportSubmissionEditor";
 
 /** ============ utils ============ */
 const dt = (s?: string | null) => {
@@ -55,18 +58,15 @@ export default function ReportDetailPage() {
   const reportId = typeof params?.reportId === "string" ? params.reportId : "";
 
   const { getReportById, loading } = useGetReportById();
+  const { loading: updatingStatus, updateReportStatus } =
+    useUpdateReportStatus();
 
-  const [initialHtml, setInitialHtml] = useState<string>("");
   const [html, setHtml] = useState<string>("");
-
   const [report, setReport] = useState<ReportDetail | null>(null);
   const didFetchRef = useRef(false);
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
-
-  // TinyMCE editor API ref
-  const tinyEditorRef = useRef<any>(null);
 
   useEffect(() => {
     if (!reportId || didFetchRef.current) return;
@@ -78,13 +78,41 @@ export default function ReportDetailPage() {
       setReport(r);
 
       const safe = r?.submission ?? "";
-      setInitialHtml(safe);
       setHtml(safe);
-
-      tinyEditorRef.current?.pushContentFromOutside?.(safe);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportId]);
+
+  const handleRevertStatus = async () => {
+    if (!report) return;
+
+    let targetStatus: ReportStatus | null = null;
+    let comment = "";
+
+    if (report.status === ReportStatus.Submitted) {
+      // Submitted -> Draft
+      targetStatus = ReportStatus.Draft;
+      comment = "Revert submitted report back to draft for further editing.";
+    } else if (report.status === ReportStatus.Resubmitted) {
+      // Resubmitted -> RequiresRevision
+      targetStatus = ReportStatus.RequiresRevision;
+      comment =
+        "Revert resubmission back to revision state for more changes.";
+    }
+
+    if (!targetStatus) return;
+
+    await updateReportStatus(report.id, {
+      targetStatus,
+      comment,
+    });
+
+    // Refetch report to get latest status + content
+    const res = await getReportById(reportId);
+    const fresh = res?.report ?? null;
+    setReport(fresh);
+    setHtml(fresh?.submission ?? "");
+  };
 
   if (!reportId) {
     return (
@@ -127,6 +155,17 @@ export default function ReportDetailPage() {
     );
   }
 
+  const canRevertStatus =
+    report.status === ReportStatus.Submitted ||
+    report.status === ReportStatus.Resubmitted;
+
+  const revertLabel =
+    report.status === ReportStatus.Submitted
+      ? "Revert to draft"
+      : report.status === ReportStatus.Resubmitted
+      ? "Back to revision"
+      : "";
+
   return (
     <>
       <motion.div
@@ -162,7 +201,23 @@ export default function ReportDetailPage() {
           </div>
 
           <div className="flex items-start gap-2 shrink-0">
-            {/* Nút mở timeline – giống Google Docs “Version history” */}
+            {canRevertStatus && (
+              <button
+                type="button"
+                onClick={handleRevertStatus}
+                disabled={updatingStatus}
+                className="btn bg-white border border-amber-400 text-xs text-amber-700 hover:bg-amber-50 flex items-center gap-1 disabled:opacity-60"
+                title="Revert report status to continue editing"
+              >
+                {updatingStatus ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                <span>{revertLabel}</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setTimelineOpen(true)}
@@ -175,7 +230,7 @@ export default function ReportDetailPage() {
 
             <button
               onClick={() => router.back()}
-              className="btn bg-white border border-brand text-nav hover:text-nav-active"
+            className="btn bg-white border border-slate-200 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
               title="Back to Previous Page"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -240,48 +295,16 @@ export default function ReportDetailPage() {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Collaboration text + Live collaboration */}
-        <div className="rounded-xl p-3 border border-slate-200 bg-slate-50 text-slate-700 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-2 max-w-xl">
-            <Info className="w-4 h-4 mt-0.5 shrink-0" />
-            <div className="text-xs">
-              Edit the <b>submission</b> below. Your changes will sync in real
-              time with other collaborators.
-            </div>
-          </div>
-
-          <div className="md:flex-shrink-0">
-            <ReportCollabClient
-              reportId={reportId}
-              getAccessToken={getAccessToken}
-              html={html}
-              onRemoteHtml={(newHtml) => {
-                setHtml(newHtml);
-                tinyEditorRef.current?.pushContentFromOutside?.(newHtml);
-              }}
-              getEditorRoot={() => tinyEditorRef.current?.getRoot?.() ?? null}
-            />
-          </div>
-        </div>
-
-        {/* Submission editor – KHÔNG card, chỉ khung TinyMCE mặc định */}
-        <div className="flex flex-col gap-2">
-          <LiteRichTextEditor
-            value={initialHtml}
-            onChange={(v) => setHtml(v)}
-            placeholder="Write your report here..."
-            className="w-full"
-            onInit={(api: any) => {
-              tinyEditorRef.current = api;
-              if (initialHtml) {
-                api.pushContentFromOutside?.(initialHtml);
-              }
-            }}
-          />
-        </div>
+        {/* Submission editor + (optional) live collab */}
+        <ReportSubmissionEditor
+          report={report}
+          html={html}
+          onChange={setHtml}
+          getAccessToken={getAccessToken}
+        />
       </motion.div>
 
-      {/* Dialog xem timeline / version history giống Google Docs */}
+      {/* Dialog xem timeline / version history */}
       <Dialog open={timelineOpen} onOpenChange={setTimelineOpen}>
         <DialogContent className="max-w-2xl sm:max-w-3xl">
           <DialogHeader>
@@ -295,7 +318,6 @@ export default function ReportDetailPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {/* Timeline chỉ mount khi dialog mở ⇒ không spam UI */}
           {timelineOpen && (
             <div className="mt-2">
               <ReportTimeline reportId={report.id} />

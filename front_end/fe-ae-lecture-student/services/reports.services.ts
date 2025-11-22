@@ -16,6 +16,7 @@ import type {
   RequestReportRevisionPayload,
   ResubmitReportPayload,
   UpdateReportPayload,
+  UpdateReportStatusPayload,
 } from "@/types/reports/reports.payload";
 import type {
   ApiSuccess,
@@ -33,6 +34,7 @@ import type {
   MyReportsResponse,
   RejectReportResponse,
   RequestReportRevisionResponse,
+  UpdateReportStatusResponse,
   UploadReportFileResponse,
 } from "@/types/reports/reports.response";
 
@@ -193,8 +195,8 @@ export const ReportsService = {
     const res = await api.post<ApiSuccess>(`/Reports/${id}/submit-draft`);
     return res.data;
   },
-    
-    getTimeline: async (
+
+  getTimeline: async (
     payload: GetReportTimelinePayload
   ): Promise<GetReportTimelineResponse> => {
     const { reportId } = payload;
@@ -229,5 +231,14 @@ export const ReportsService = {
     const res = await api.delete<ApiSuccess>(`/Reports/${reportId}/file`);
     return res.data;
   },
-
+  updateStatus: async (
+    id: string,
+    payload: UpdateReportStatusPayload
+  ): Promise<UpdateReportStatusResponse> => {
+    const res = await api.patch<UpdateReportStatusResponse>(
+      `/Reports/${id}/status`,
+      payload
+    );
+    return res.data;
+  },
 };

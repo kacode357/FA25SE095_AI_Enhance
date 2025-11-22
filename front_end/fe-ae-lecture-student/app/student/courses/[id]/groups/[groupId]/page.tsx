@@ -11,7 +11,6 @@ import {
   Shield,
   Mail,
   Loader2,
-  RefreshCw,
   ArrowLeft,
   AlertCircle,
 } from "lucide-react";
@@ -108,10 +107,6 @@ export default function GroupMembersPage() {
 
   const groupName = useMemo(() => members?.[0]?.groupName ?? "", [members]);
 
-  const onRefresh = () => {
-    if (groupId) fetchAllMembers(groupId);
-  };
-
   if (!groupId) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-slate-600 px-4 sm:px-6 lg:px-8">
@@ -182,17 +177,6 @@ export default function GroupMembersPage() {
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Groups
-          </Button>
-
-          {/* Dùng gradient tím-hồng chậm trong globals.css */}
-          <Button
-            type="button"
-            className="btn-gradient-slow px-4 py-2"
-            onClick={onRefresh}
-            title="Refresh members"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
           </Button>
         </div>
       </div>

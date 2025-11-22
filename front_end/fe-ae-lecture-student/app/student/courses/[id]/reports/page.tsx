@@ -1,30 +1,35 @@
 // app/student/courses/[id]/reports/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
   FileText,
-  ListChecks,
   Loader2,
   CalendarDays,
   Clock,
-  CheckCircle2,
   AlertTriangle,
+  Users,
+  MessageCircle,
+  Layers,
+  Star,
+  CheckCircle2,
 } from "lucide-react";
 
 import { useGetMyReports } from "@/hooks/reports/useGetMyReports";
 import CreateReportButton from "../assignments/components/createReportButton";
-import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 
 // shadcn
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-// enum status report FE
-import { ReportStatus } from "@/config/classroom-service/report-status.enum";
+// types BE
+import type { ReportListItem } from "@/types/reports/reports.response";
+
+// helpers status (chung)
+import { getReportStatusMeta } from "./components/report-labels";
 
 // ===== helpers =====
 const dt = (s?: string | null) => {
@@ -33,102 +38,17 @@ const dt = (s?: string | null) => {
   return Number.isNaN(d.getTime()) ? s : d.toLocaleString("en-GB");
 };
 
-type UIReportItem = {
-  id: string;
-  title: string;
-  status: number | string;
-  createdAt: string | null;
-  updatedAt: string | null;
-  grade: number | null;
-};
+// Reuse type từ BE – không tạo UIReportItem riêng nữa
+type UIReportItem = ReportListItem;
 
-/** Convert value (number/string) -> ReportStatus enum hoặc null */
-function toReportStatus(value: number | string): ReportStatus | null {
-  if (typeof value === "number") {
-    if (value >= 1 && value <= 8) return value as ReportStatus;
-    return null;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  switch (normalized) {
-    case "draft":
-      return ReportStatus.Draft;
-    case "submitted":
-      return ReportStatus.Submitted;
-    case "underreview":
-    case "under review":
-      return ReportStatus.UnderReview;
-    case "requiresrevision":
-    case "requires revision":
-      return ReportStatus.RequiresRevision;
-    case "resubmitted":
-      return ReportStatus.Resubmitted;
-    case "graded":
-      return ReportStatus.Graded;
-    case "late":
-      return ReportStatus.Late;
-    case "rejected":
-      return ReportStatus.Rejected;
-    default:
-      return null;
-  }
-}
-
-/** Label text hiển thị cho UI */
-function reportStatusLabel(value: number | string): string {
-  const status = toReportStatus(value);
-  if (!status) {
-    // fallback: nếu BE trả string lạ thì show nguyên string
-    return String(value);
-  }
-
-  switch (status) {
-    case ReportStatus.Draft:
-      return "Draft";
-    case ReportStatus.Submitted:
-      return "Submitted";
-    case ReportStatus.UnderReview:
-      return "Under review";
-    case ReportStatus.RequiresRevision:
-      return "Requires revision";
-    case ReportStatus.Resubmitted:
-      return "Resubmitted";
-    case ReportStatus.Graded:
-      return "Graded";
-    case ReportStatus.Late:
-      return "Late";
-    case ReportStatus.Rejected:
-      return "Rejected";
-    default:
-      return String(value);
-  }
-}
-
-/** CSS class badge, match với styles/report-status.css */
-function reportStatusBadgeClass(value: number | string): string {
-  const status = toReportStatus(value);
-  if (!status) return "badge-report";
-
-  switch (status) {
-    case ReportStatus.Draft:
-      return "badge-report badge-report--draft";
-    case ReportStatus.Submitted:
-      return "badge-report badge-report--submitted";
-    case ReportStatus.UnderReview:
-      return "badge-report badge-report--under-review";
-    case ReportStatus.RequiresRevision:
-      return "badge-report badge-report--requires-revision";
-    case ReportStatus.Resubmitted:
-      return "badge-report badge-report--resubmitted";
-    case ReportStatus.Graded:
-      return "badge-report badge-report--graded";
-    case ReportStatus.Late:
-      return "badge-report badge-report--late";
-    case ReportStatus.Rejected:
-      return "badge-report badge-report--rejected";
-    default:
-      return "badge-report";
-  }
+// Reusable Group pill (dùng trong card)
+function GroupPill({ name }: { name: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+      <Users className="w-3 h-3" />
+      Group: {name}
+    </span>
+  );
 }
 
 export default function ReportsListPage() {
@@ -138,73 +58,43 @@ export default function ReportsListPage() {
 
   const courseId = typeof params?.id === "string" ? params.id : "";
   const assignmentId = sp.get("assignmentId") || "";
+  // ✅ Lấy groupId từ URL
+  const groupIdFromQuery = sp.get("groupId") || "";
 
-  const { getMyReports, loading } = useGetMyReports();
-
-  // 🔹 assignment detail để lấy isGroupAssignment + assignedGroups
-  const {
-    data: assignmentData,
-    loading: assignmentLoading,
-    fetchAssignment,
-  } = useAssignmentById();
+  const { getMyReports, loading: reportsLoading } = useGetMyReports();
 
   const [items, setItems] = useState<UIReportItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const didFetchReportsRef = useRef(false);
-  const didFetchAssignmentRef = useRef(false);
 
-  // Fetch reports theo assignmentId
+  // Fetch reports theo courseId + assignmentId
   useEffect(() => {
+    if (!assignmentId || !courseId) return;
+
+    setError(null);
+    setItems([]);
+
     (async () => {
-      if (!assignmentId || didFetchReportsRef.current) return;
-      didFetchReportsRef.current = true;
       try {
-        const res = await getMyReports({ assignmentId });
-        const list = res?.reports ?? [];
+        const res = await getMyReports({
+          courseId,
+          assignmentId,
+        });
 
-        const mapped: UIReportItem[] = list
-          .filter((r) => !!r)
-          .filter((r) => !assignmentId || r.assignmentId === assignmentId)
-          .map((r) => ({
-            id: r.id,
-            title: r.assignmentTitle || `Report ${String(r.id).slice(0, 8)}`,
-            status: r.status,
-            createdAt: r.createdAt ?? null,
-            updatedAt: r.updatedAt ?? r.submittedAt ?? null,
-            grade: r.grade ?? null,
-          }));
-
-        setItems(mapped);
+        const list = (res?.reports ?? []) as UIReportItem[];
+        setItems(list);
       } catch (e: any) {
         setError(e?.message || "Failed to load reports");
       }
     })();
-  }, [assignmentId, getMyReports]);
+    // ❌ không đưa getMyReports vào deps để tránh loop
+  }, [courseId, assignmentId]);
 
-  // 🔹 Fetch assignment detail để biết group info
-  useEffect(() => {
-    if (!assignmentId || didFetchAssignmentRef.current) return;
-    didFetchAssignmentRef.current = true;
-    fetchAssignment(assignmentId);
-  }, [assignmentId, fetchAssignment]);
-
-  const assignment = assignmentData?.assignment;
-  const isGroupAssignment = !!assignment?.isGroupAssignment;
-
-  // 🔹 groupId cho CreateReportButton:
-  // tạm thời lấy group đầu tiên được assign cho assignment
-  const groupIdForCreateReport =
-    isGroupAssignment && Array.isArray(assignment?.assignedGroups)
-      ? assignment!.assignedGroups![0]?.id ?? null
-      : null;
+  const report = items[0] ?? null;
 
   const headerSubtitle = useMemo(() => {
-    if (!items?.length)
-      return "You have no reports yet for this assignment.";
-    return `You have ${items.length} ${
-      items.length > 1 ? "reports" : "report"
-    } for this assignment.`;
-  }, [items]);
+    if (!report) return "You have no report yet for this assignment.";
+    return "You have 1 report for this assignment.";
+  }, [report]);
 
   if (!assignmentId) {
     return (
@@ -215,7 +105,7 @@ export default function ReportsListPage() {
             Missing assignmentId
           </h2>
           <p className="text-sm text-foreground/70">
-            Add <code>?assignmentId=...</code> to the URL to view your reports.
+            Add <code>?assignmentId=...</code> to the URL to view your report.
           </p>
           <div className="mt-6">
             <Button
@@ -232,7 +122,23 @@ export default function ReportsListPage() {
     );
   }
 
-  const showLoading = loading || assignmentLoading; // gộp loading của reports + assignment
+  const showLoading = reportsLoading;
+
+  const statusMeta = report
+    ? getReportStatusMeta(report.status)
+    : { label: "", className: "badge-report" };
+
+  const assignmentTitleForCreate = report?.assignmentTitle;
+
+  // ✅ Fix: nếu chưa có report mà URL có groupId ⇒ coi là group submission
+  const isGroupSubmissionForCreate =
+    report?.isGroupSubmission ?? Boolean(groupIdFromQuery);
+
+  // ✅ Ưu tiên groupId từ report, fallback groupId trên URL
+  const resolvedGroupId =
+    (report?.groupId && report.groupId.trim()) ||
+    (groupIdFromQuery && groupIdFromQuery.trim()) ||
+    undefined;
 
   return (
     <motion.div
@@ -243,28 +149,19 @@ export default function ReportsListPage() {
     >
       {/* ===== Header ===== */}
       <div className="flex flex-col gap-3">
-        {/* Row 1: Title + Back */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-3xl font-bold text-nav flex items-center gap-2 truncate">
-              <ListChecks className="w-7 h-7 text-nav-active shrink-0" />
-              <span className="truncate">My Reports</span>
+            <p className="text-xs uppercase tracking-wide text-foreground/60 mb-1 flex items-center gap-1">
+              <FileText className="w-3 h-3" />
+              <span>Report overview</span>
+            </p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-nav truncate">
+              {report?.assignmentTitle || "My Report"}
             </h1>
             <p className="mt-1 text-sm text-foreground/70">{headerSubtitle}</p>
-            {assignment && (
-              <p className="mt-1 text-xs text-foreground/60">
-                Assignment:&nbsp;
-                <span className="font-semibold">{assignment.title}</span>
-                {isGroupAssignment && (
-                  <span className="ml-2 inline-flex items-center text-[11px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    Group assignment
-                  </span>
-                )}
-              </p>
-            )}
           </div>
 
-          <div className="shrink-0 self-start">
+          <div className="flex flex-row items-start gap-2 self-start md:self-center">
             <Button
               onClick={() =>
                 router.push(
@@ -281,121 +178,184 @@ export default function ReportsListPage() {
           </div>
         </div>
 
-        {/* Row 2: Actions */}
+        {/* Actions */}
         <div className="w-full flex justify-end">
           <div className="flex flex-row flex-wrap items-center gap-2">
             <CreateReportButton
               courseId={courseId}
               assignmentId={assignmentId}
-              assignmentTitle={assignment?.title}
-              groupId={groupIdForCreateReport}
-              isGroupSubmission={isGroupAssignment}
-              label="Create Report"
+              assignmentTitle={assignmentTitleForCreate}
+              isGroupSubmission={isGroupSubmissionForCreate}
+              label={report ? "Create / Update report" : "Create report"}
               className="btn btn-gradient px-5 py-2"
+              {...(resolvedGroupId ? { groupId: resolvedGroupId } : {})}
             />
           </div>
         </div>
       </div>
 
       {/* ===== Content ===== */}
-      <Card className="card rounded-2xl">
-        <CardContent className="p-4">
+      <Card className="card rounded-2xl border border-[var(--border-soft)] shadow-sm">
+        <CardHeader className="border-b border-[var(--border-soft)] pb-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-nav-active" />
+              <div>
+                <p className="text-sm font-semibold text-nav">
+                  Report details
+                </p>
+                {report?.version && (
+                  <p className="text-xs text-foreground/60 flex items-center gap-1">
+                    <Layers className="w-3 h-3" />
+                    Version {report.version}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Status badge & Score nằm TRONG card */}
+            <div className="flex items-center gap-2">
+              {report && (
+                <span className={statusMeta.className}>
+                  {statusMeta.label}
+                </span>
+              )}
+              {typeof report?.grade === "number" && (
+                <div className="flex items-center gap-1 text-sm font-semibold text-amber-600">
+                  <Star className="w-4 h-4" />
+                  Score: {report.grade}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-4 sm:p-5 space-y-4">
           {showLoading && (
-            <div className="flex items-center justify-center h-48 text-nav">
+            <div className="flex items-center justify-center h-40 text-nav">
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Loading reports…
+              Loading report…
             </div>
           )}
 
           {!showLoading && error && (
-            <div className="text-red-600 text-sm">{error}</div>
-          )}
-
-          {!showLoading && !error && items.length === 0 && (
-            <div className="text-sm text-foreground/70">
-              You don’t have any report yet. Click <b>Create Report</b> to
-              start a new one.
+            <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
             </div>
           )}
 
-          {!showLoading && !error && items.length > 0 && (
-            <ul className="divide-y divide-[var(--border)]">
-              {items.map((r) => {
-                const reportId = r.id;
-                const title = r.title;
-                const status = r.status;
-                const created = r.createdAt;
-                const updated = r.updatedAt;
-                const grade = r.grade;
+          {!showLoading && !error && !report && (
+            <div className="rounded-md border border-dashed border-[var(--border-soft)] bg-[var(--background-soft)] px-4 py-6 text-sm text-foreground/70 text-center">
+              You don’t have a report for this assignment yet. Click{" "}
+              <b>Create report</b> above to start.
+            </div>
+          )}
 
-                const statusText = reportStatusLabel(status);
-                const statusClass = reportStatusBadgeClass(status);
+          {!showLoading && !error && report && (
+            <>
+              {/* Meta grid – có Status + Group TRONG card */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs sm:text-sm">
+                {/* Status */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-foreground/60">Status</span>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span className={statusMeta.className}>
+                      {statusMeta.label}
+                    </span>
+                  </div>
+                </div>
 
-                return (
-                  <li key={reportId} className="py-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-nav-active shrink-0" />
-                          <button
-                            className="text-foreground font-medium hover:text-nav-active truncate text-left"
-                            onClick={() =>
-                              router.push(
-                                `/student/courses/${courseId}/reports/${reportId}`
-                              )
-                            }
-                            title="Open report"
-                          >
-                            {title}
-                          </button>
-                        </div>
-
-                        <div className="mt-1 text-xs text-foreground/70 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="inline-flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <b>Status:</b>
-                            <span className={statusClass}>{statusText}</span>
-                          </span>
-                          {typeof grade === "number" && (
-                            <span className="inline-flex items-center gap-1">
-                              <ListChecks className="w-3 h-3" />
-                              <b>Score:</b>&nbsp;{grade}
-                            </span>
-                          )}
-                          {created && (
-                            <span className="inline-flex items-center gap-1">
-                              <CalendarDays className="w-3 h-3" />
-                              <b>Created:</b>&nbsp;{dt(created)}
-                            </span>
-                          )}
-                          {updated && (
-                            <span className="inline-flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              <b>Updated:</b>&nbsp;{dt(updated)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex items-center gap-2">
-                        <Button
-                          className="bg-white border border-brand text-nav hover:text-nav-active"
-                          variant="outline"
-                          onClick={() =>
-                            router.push(
-                              `/student/courses/${courseId}/reports/${reportId}`
-                            )
-                          }
-                        >
-                          <FileText className="w-4 h-4" />
-                          View
-                        </Button>
-                      </div>
+                {/* Group (nếu có) */}
+                {report.groupName && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-foreground/60">Group</span>
+                    <div className="flex items-center gap-2">
+                      <GroupPill name={report.groupName} />
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
+                  </div>
+                )}
+
+                {/* Version */}
+                {report.version && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-foreground/60">Version</span>
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-3 h-3" />
+                      <span className="font-medium">v{report.version}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Created */}
+                {report.createdAt && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-foreground/60">Created at</span>
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="w-3 h-3" />
+                      <span>{dt(report.createdAt)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submitted */}
+                {report.submittedAt && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-foreground/60">Submitted at</span>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3 h-3" />
+                      <span>{dt(report.submittedAt)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Updated */}
+                {report.updatedAt && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-foreground/60">Last updated</span>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3 h-3" />
+                      <span>{dt(report.updatedAt)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Feedback */}
+              {report.feedback && (
+                <div className="mt-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs sm:text-sm text-amber-900 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 font-medium">
+                    <MessageCircle className="w-4 h-4" />
+                    Instructor feedback
+                  </div>
+                  <p className="whitespace-pre-wrap leading-relaxed">
+                    {report.feedback}
+                  </p>
+                </div>
+              )}
+
+              {/* Actions under card */}
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-xs text-foreground/60">
+                  Click <b>Open report</b> to continue editing or review your
+                  submission.
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="bg-white border border-[var(--border-soft)] text-foreground hover:text-nav-active"
+                    onClick={() =>
+                      router.push(
+                        `/student/courses/${courseId}/reports/${report.id}`
+                      )
+                    }
+                  >
+                    <FileText className="w-4 h-4" />
+                    Open report
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

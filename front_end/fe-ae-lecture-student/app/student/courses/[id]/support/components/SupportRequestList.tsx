@@ -54,7 +54,7 @@ export function SupportRequestList({ courseId, refreshKey }: Props) {
 
       const url = `/student/courses/${courseId}/support/${item.conversationId}?peerId=${encodeURIComponent(
         peerId,
-      )}&peerName=${encodeURIComponent(peerName)}`;
+      )}&peerName=${encodeURIComponent(peerName)}&requestId=${encodeURIComponent(item.id)}`;
 
       router.push(url);
     },

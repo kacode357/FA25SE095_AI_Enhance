@@ -302,3 +302,7 @@ export interface UploadReportFileResponse extends ApiSuccess {
   version: number;
 }
 
+
+export interface UpdateReportStatusResponse extends ApiSuccess {
+  newStatus: number;
+}

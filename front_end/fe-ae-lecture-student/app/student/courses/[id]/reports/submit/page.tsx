@@ -1,3 +1,4 @@
+// app/student/courses/[id]/reports/submit/page.tsx (hoặc tương đương)
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -109,7 +110,8 @@ export default function SubmitReportsPage() {
         setError(e?.message || "Failed to load reports.");
       }
     })();
-  }, [assignmentId, fetchAssignmentReports, refreshToken]);
+    // ❗ Không đưa fetchAssignmentReports vào deps để tránh loop
+  }, [assignmentId, refreshToken]);
 
   const refresh = () => setRefreshToken((x) => x + 1);
 
@@ -223,7 +225,6 @@ export default function SubmitReportsPage() {
               <div className="space-y-3">
                 <ul className="space-y-3">
                   {items.map((r) => {
-                    const isDraft = r.status === ReportStatus.Draft;
                     const canEdit =
                       r.status === ReportStatus.Draft ||
                       r.status === ReportStatus.RequiresRevision;
@@ -236,6 +237,14 @@ export default function SubmitReportsPage() {
                       r.status === ReportStatus.Rejected;
 
                     const pendingFile = pendingFiles[r.id] || null;
+
+                    // ✅ submission text: dùng data thật, không hard-code ""
+                    const fileName =
+                      pendingFile?.name ||
+                      (r.fileUrl ? r.fileUrl.split("/").pop() ?? "" : "");
+                    const submissionText = fileName
+                      ? `File: ${fileName}`
+                      : "No file attached";
 
                     return (
                       <li
@@ -337,6 +346,8 @@ export default function SubmitReportsPage() {
                                 status={r.status}
                                 fileUrl={r.fileUrl}
                                 pendingFile={pendingFile}
+                                // ✅ truyền submission là thông tin file thật, không hard-code ""
+                                submission={submissionText}
                                 onSubmitted={() => {
                                   // clear pending file + reload data
                                   setPendingFiles((prev) => ({

@@ -98,10 +98,15 @@ export interface GetReportHistoryVersionPayload {
 
 export interface CompareReportVersionsPayload {
   reportId: string;
-  version1: number;   // query param
-  version2: number;   // query param
+  version1: number;   
+  version2: number;  
 }
 
 export interface GetReportTimelinePayload {
-  reportId: string; // path param
+  reportId: string; 
+}
+
+export interface UpdateReportStatusPayload {
+  targetStatus: number;
+  comment?: string;
 }

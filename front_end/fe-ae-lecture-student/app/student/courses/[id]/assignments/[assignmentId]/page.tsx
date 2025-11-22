@@ -295,9 +295,9 @@ export default function AssignmentDetailPage() {
           <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2 rounded-2xl bg-white/80 border border-[var(--border)] shadow-sm px-3 py-2">
             <Button
               onClick={() =>
-                router.push(
-                  `/student/courses/${courseId}/reports?assignmentId=${aId}`
-                )
+              router.push(
+                `/student/courses/${courseId}/reports?assignmentId=${aId}${selectedGroupId ? `&groupId=${selectedGroupId}` : ""}`
+              )
               }
               className="btn-gradient-slow h-10 px-4 text-sm rounded-xl"
             >
