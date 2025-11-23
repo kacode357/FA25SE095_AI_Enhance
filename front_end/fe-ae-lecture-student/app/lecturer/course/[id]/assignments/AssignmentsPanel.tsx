@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
 import { useEffect, useMemo, useState } from "react";
 
 import { useAssignments } from "@/hooks/assignment/useAssignments";
@@ -116,6 +117,21 @@ export default function AssignmentsPanel({
     fetchAssignments(query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, refreshSignal]);
+
+  // load groups for mapping group ids -> names
+  const { listData: groups, fetchByCourseId: fetchGroupsByCourseId } = useGroupsByCourseId();
+  useEffect(() => {
+    if (!courseId) return;
+    fetchGroupsByCourseId(courseId);
+  }, [courseId, fetchGroupsByCourseId]);
+
+  const groupNameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    (groups || []).forEach((g: any) => {
+      if (g?.id) m.set(g.id, g.name || g.id);
+    });
+    return m;
+  }, [groups]);
 
   // handlers
   const patchFilter = (patch: Partial<FilterState>) => {
@@ -273,19 +289,45 @@ export default function AssignmentsPanel({
                         )}
                       </div>
                       <div className="flex flex-col mt-2 gap-2 text-xs text-slate-500">
-                        <div className="flex gap-1 mr-2">
-                          Topic:
+                        <div className="flex gap-1 mr-2 items-center">
+                          <span>Topic:</span>
                           <span className="text-slate-900">{a.topicName}</span>
-                          &nbsp;&nbsp;•&nbsp;&nbsp; Groups: {a.assignedGroupsCount}
-
+                          {a.isGroupAssignment && (
+                            <>
+                              &nbsp;&nbsp;•&nbsp;&nbsp; <span>Groups Counts:</span>
+                              <span className="text-slate-900">{a.assignedGroupsCount}</span>
+                              &nbsp;&nbsp;•&nbsp;&nbsp; <span>Group:</span>
+                              <span className="text-slate-900 truncate">
+                                {((a as any).groupIds && (a as any).groupIds.length > 0)
+                                  ? (a as any).groupIds.map((id: string) => groupNameMap.get(id) ?? id).join(", ")
+                                  : "-"}
+                              </span>
+                            </>
+                          )}
                         </div>
-                        <div className="flex gap-1 mr-2">
-                          Due: {new Date(a.dueDate).toLocaleString()}
-                          &nbsp;&nbsp;&nbsp;•&nbsp; {a.isOverdue ? (
+
+                        <div className="flex gap-2 flex-wrap items-center mr-2">
+                          <span>Start:</span>
+                          <span className="text-slate-900">{a.startDate ? new Date(a.startDate).toLocaleString() : "-"}</span>
+                          <span className="text-slate-400">·</span>
+
+                          <span>Due:</span>
+                          <span className="text-slate-900">{a.dueDate ? new Date(a.dueDate).toLocaleString() : "-"}</span>
+                          <span className="text-slate-400">·</span>
+
+                          <span>Extended Due:</span>
+                          <span className="text-slate-900">{a.extendedDueDate ? new Date(a.extendedDueDate).toLocaleString() : "-"}</span>
+                          <span className="text-slate-400">·</span>
+
+                          {a.isOverdue ? (
                             <span className="text-red-600 ml-1">Overdue</span>
                           ) : (
-                            <span className="flex gap-2 ml-1">Days until Due &nbsp; - <p className="text-violet-800">{a.daysUntilDue}</p></span>
+                            <span className="text-slate-500">Days until Due: <span className="text-violet-800">{a.daysUntilDue}</span></span>
                           )}
+                        </div>
+
+                        <div className="text-xs text-slate-400">
+                          Created: {a.createdAt ? new Date(a.createdAt).toLocaleString() : "-"}
                         </div>
                       </div>
                     </div>

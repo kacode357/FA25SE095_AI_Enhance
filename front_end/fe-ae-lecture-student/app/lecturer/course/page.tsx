@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import {
-  ChevronRight,
-  Home,
   Loader2,
   Plus
 } from "lucide-react";
@@ -23,28 +21,6 @@ import EditDialog from "./components/EditDialog";
 import FilterBar from "./components/FilterBar";
 // ImportDialog replaced by standalone import page
 import { useAuth } from "@/contexts/AuthContext";
-
-function Breadcrumb({ router }: { router: ReturnType<typeof useRouter> }) {
-  return (
-    <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden">
-      <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
-        <li>
-          <button
-            onClick={() => router.push("/")}
-            className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-slate-500 hover:text-brand transition shrink-0"
-          >
-            <Home className="size-3.5" />
-            <span className="sr-only sm:not-sr-only sm:inline">Home</span>
-          </button>
-        </li>
-        <ChevronRight className="size-3 text-slate-400" />
-        <li className="px-1 py-0.5">Lecturer</li>
-        <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
-        <li className="font-medium text-slate-900 max-w-[160px] truncate">All Courses</li>
-      </ol>
-    </nav>
-  );
-}
 
 export default function CoursesPage() {
   const router = useRouter();

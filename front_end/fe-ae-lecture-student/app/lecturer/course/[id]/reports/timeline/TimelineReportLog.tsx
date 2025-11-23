@@ -42,7 +42,6 @@ export default function TimelineReportLog({ reportId, courseId = '' }: Props) {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h3 className="text-lg font-semibold">Timeline</h3>
-                        <div className="text-xs text-slate-500 mt-1">Report ID: <span className="font-mono">{reportId}</span></div>
                     </div>
                 </div>
 

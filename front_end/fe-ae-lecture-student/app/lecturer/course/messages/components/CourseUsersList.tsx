@@ -45,9 +45,9 @@ export default function CourseUsersList({ courseId, onSelectUser }: Props) {
   }, [users, keyword]);
 
   return (
-    <Card className="h-full flex flex-col gap-2 p-2">
+    <Card className="h-full w-full min-w-0 flex flex-col gap-2 p-2">
       <Input
-        placeholder="Tìm người dùng trong lớp..."
+        placeholder="Find users in class..."
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
         disabled={!courseId}
@@ -58,42 +58,44 @@ export default function CourseUsersList({ courseId, onSelectUser }: Props) {
           Select a Course to view a list of users.
         </div>
       ) : (
-        <ScrollArea className="flex-1">
-          <ul className="space-y-1 pr-2">
-            {loading && users.length === 0 ? (
-              <li className="text-sm text-muted-foreground p-2">Loading...</li>
-            ) : filtered.length === 0 ? (
-              <li className="text-sm text-muted-foreground p-2">No users.</li>
-            ) : (
-              filtered.map((u) => (
-                <li key={u.id}>
-                  <button
-                    onClick={() => onSelectUser?.(u)}
-                    className="w-full text-left p-2 rounded hover:bg-muted transition"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="relative h-8 w-8 rounded-full overflow-hidden bg-muted">
-                        {u.profilePictureUrl ? (
-                          <Image
-                            src={u.profilePictureUrl}
-                            alt={u.fullName}
-                            fill
-                            sizes="32px"
-                            className="object-cover"
-                          />
-                        ) : null}
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="h-full flex flex-col">
+            <ul className="space-y-1 pr-2 flex-1">
+              {loading && users.length === 0 ? (
+                <li className="text-sm text-muted-foreground p-2">Loading...</li>
+              ) : filtered.length === 0 ? (
+                <li className="text-sm text-muted-foreground p-2">No users.</li>
+              ) : (
+                filtered.map((u) => (
+                  <li key={u.id}>
+                    <button
+                      onClick={() => onSelectUser?.(u)}
+                      className="w-full text-left p-2 rounded hover:bg-muted transition"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="relative h-8 w-8 rounded-full overflow-hidden bg-muted flex-shrink-0">
+                          {u.profilePictureUrl ? (
+                            <Image
+                              src={u.profilePictureUrl}
+                              alt={u.fullName}
+                              fill
+                              sizes="32px"
+                              className="object-cover"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{u.fullName}</div>
+                          <div className="text-xs text-muted-foreground truncate">{u.email}</div>
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate ml-2">{u.role}</div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{u.fullName}</div>
-                        <div className="text-xs text-muted-foreground truncate">{u.email}</div>
-                      </div>
-                      <div className="text-xs text-muted-foreground">{u.role}</div>
-                    </div>
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
         </ScrollArea>
       )}
     </Card>

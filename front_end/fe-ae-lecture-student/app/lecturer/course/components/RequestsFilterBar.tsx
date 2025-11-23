@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Select from "@/components/ui/select/Select";
 import { Calendar, Filter, GitPullRequestClosed, Search, SlidersHorizontal, Tag } from "lucide-react";
 import { useState } from "react";
 
@@ -127,18 +128,19 @@ export default function RequestsFilterBar({
               <label className="text-xs text-slate-500 mb-1 cursor-text">Status</label>
               <div className="relative">
                 <Tag className="size-3 cursor-pointer text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <select
-                  aria-label="Status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="h-9 text-xs border border-slate-300 cursor-pointer rounded-md pl-6 bg-white w-full focus:outline-none focus:ring-1 focus:ring-brand"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="1">Pending</option>
-                  <option value="2">Approved</option>
-                  <option value="3">Rejected</option>
-                  <option value="4">Cancelled</option>
-                </select>
+                <Select<string>
+                  value={status ?? ""}
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "1", label: "Pending" },
+                    { value: "2", label: "Approved" },
+                    { value: "3", label: "Rejected" },
+                    { value: "4", label: "Cancelled" },
+                  ]}
+                  placeholder="All Statuses"
+                  onChange={(v) => setStatus(v)}
+                  className="h-9 text-xs border border-slate-300 cursor-pointer rounded-md pl-6 bg-white w-full"
+                />
               </div>
             </div>
 

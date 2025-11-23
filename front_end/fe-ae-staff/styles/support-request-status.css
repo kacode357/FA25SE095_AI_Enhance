@@ -1,0 +1,45 @@
+/* app/styles/support-request-status.css */
+/* === SUPPORT REQUEST STATUS BADGES (SupportRequestStatus) === */
+
+/* Base badge */
+.badge-support-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* Pending = 0 (vàng – đang chờ) */
+.badge-support-status--pending {
+  background: rgba(250, 204, 21, 0.18); /* amber-ish */
+  color: #ca8a04;
+}
+
+/* InProgress = 1 (tím brand – đang xử lý, không đụng Low nữa) */
+.badge-support-status--in-progress {
+  background: rgba(127, 113, 244, 0.16); /* brand tint */
+  color: var(--brand);
+}
+
+/* Resolved = 2 (xanh lá – đã giải quyết) */
+.badge-support-status--resolved {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+/* Cancelled = 3 (xám nhẹ) */
+.badge-support-status--cancelled {
+  background: rgba(148, 163, 184, 0.10);
+  color: var(--text-muted);
+}
+
+/* Rejected = 4 (đỏ) */
+.badge-support-status--rejected {
+  background: rgba(220, 38, 38, 0.10);
+  color: #b91c1c;
+}

@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Select from "@/components/ui/select/Select";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { courseAxiosInstance } from "@/config/axios.config";
@@ -296,19 +297,13 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             ) : (topics?.length ?? 0) === 0 ? (
               <div className="text-sm text-slate-500 p-2">No topics available.</div>
             ) : (
-              <select
-                title="Topic"
-                className="w-full border text-xs border-slate-200 bg-white placeholder:text-xs rounded-lg px-2 py-3"
-                value={form.topicId}
-                onChange={(e) => setForm((p) => ({ ...p, topicId: e.target.value }))}
-              >
-                <option value="">Select a topic</option>
-                {topics?.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+              <Select<string>
+                value={form.topicId ?? ""}
+                options={(topics ?? []).map((t: any) => ({ value: t.id, label: t.name }))}
+                placeholder="Select a topic"
+                onChange={(v) => setForm((p) => ({ ...p, topicId: v }))}
+                className="w-full"
+              />
             )}
           </div>
         </div>

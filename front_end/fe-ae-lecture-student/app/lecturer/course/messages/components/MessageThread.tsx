@@ -9,6 +9,7 @@ import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessa
 import { cn, formatVNDateTime } from "@/lib/utils";
 import { ChatService } from "@/services/chat.services";
 import type { ChatMessageItemResponse, ConversationItemResponse } from "@/types/chat/chat.response";
+import { MessageCircle, Send } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type Props = {
@@ -32,7 +33,9 @@ export default function MessageThread({ conversation }: Props) {
       }
       const res = await getConversationMessages(conversation.id, { pageNumber: 1, pageSize });
       if (mounted && res) {
-        setMessages(res);
+        // some APIs return { messages: [...] } or an array — normalize to array
+        const arr = Array.isArray(res) ? res : (res && (res as any).messages) ? (res as any).messages : [];
+        setMessages(arr);
         setPageNumber(1);
       }
     })();
@@ -48,8 +51,9 @@ export default function MessageThread({ conversation }: Props) {
     if (!conversation?.id) return;
     const next = pageNumber + 1;
     const res = await getConversationMessages(conversation.id, { pageNumber: next, pageSize });
-    if (res && res.length > 0) {
-      setMessages((prev) => [...prev, ...res]);
+    const arr = Array.isArray(res) ? res : (res && (res as any).messages) ? (res as any).messages : [];
+    if (arr && arr.length > 0) {
+      setMessages((prev) => [...prev, ...arr]);
       setPageNumber(next);
     }
   }
@@ -61,19 +65,23 @@ export default function MessageThread({ conversation }: Props) {
 
   if (!conversation) {
     return (
-      <Card className="h-full flex items-center justify-center text-sm text-muted-foreground">
-        Select a conversation to view messages.
+      <Card className="h-full flex items-center border-slate-300 text-slate-500 justify-center text-sm text-muted-foreground">
+        <span className="text-slate-500">Select a conversation to view messages.</span>
       </Card>
     );
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <div className="p-3 border-b flex items-center gap-2">
-        <div className="font-semibold">{conversation.otherUserName}</div>
-        {conversation.courseName ? (
-          <div className="text-xs text-muted-foreground">• {conversation.courseName}</div>
-        ) : null}
+    <Card className="h-full flex border-slate-300 -py-6 flex-col">
+      {/* Header: align with SupportChatPage */}
+      <div className="flex items-center justify-between border-b border-slate-300 px-3 py-2">
+        <div className="flex items-start gap-3 py-2">
+          <MessageCircle className="h-5 w-5 text-[var(--brand)] mt-0.5" />
+          <div>
+            <div className="text-sm font-semibold text-nav">Support conversation</div>
+            <div className="text-xs text-[var(--text-muted)]">Chat with <span className="font-medium">{conversation.otherUserName}</span></div>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0">
@@ -95,7 +103,7 @@ export default function MessageThread({ conversation }: Props) {
                 {messages.map((m) => {
                   const mine = m.senderId === user?.id;
                   return (
-                    <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}> 
+                    <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
                       <div className={cn(
                         "max-w-[70%] rounded px-3 py-2",
                         mine ? "bg-primary text-primary-foreground" : "bg-muted"
@@ -128,9 +136,24 @@ export default function MessageThread({ conversation }: Props) {
         </ScrollArea>
       </div>
 
+      {/* composer area (visual only: sending not supported here) */}
       <Separator />
-      <div className="p-3 text-xs text-muted-foreground">
-        Message history viewing interface (sending messages in this screen is not supported yet).
+      <div className="sticky bottom-0 bg-[var(--card)] border-t border-[var(--border)] px-4 py-3 z-10">
+        <div className="flex items-center gap-2">
+          <textarea
+            className="input flex-1 resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-0"
+            rows={2}
+            placeholder="Type a message… (Sending disabled in this view)"
+            disabled
+          />
+          <button
+            disabled
+            className="btn btn-gradient-slow h-9 px-4 text-xs font-semibold opacity-60 cursor-not-allowed"
+          >
+            Send
+            <Send className="size-4 ml-2" />
+          </button>
+        </div>
       </div>
     </Card>
   );

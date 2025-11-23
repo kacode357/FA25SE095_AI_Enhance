@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowBigRightDash, BookOpenCheck, ChevronRight, FileText, Loader2 } from "lucide-react";
 import LateSubmissions from "./late-submitssion/LateSubmissions";
 
+import Select from "@/components/ui/select/Select";
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
@@ -214,46 +215,34 @@ export default function LecturerCourseReportsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <select
-                            value={courseId}
-                            onChange={(e) => (activeTab === "late" ? handleCourseChangeForLate(e.target.value) : handleCourseChange(e.target.value))}
-                            className="min-w-[220px] rounded border border-slate-300 px-2 py-1 text-sm"
-                            aria-label="Select course"
-                        >
-                            <option value="" disabled>
-                                {loadingCourses ? "Loading courses..." : "Select a course"}
-                            </option>
-                            {courses.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.courseCode} — {c.name}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="min-w-[220px]">
+                            <Select<string>
+                                value={courseId ?? ""}
+                                options={courses.map((c) => ({ value: c.id, label: `${c.courseCode} — ${c.courseCodeTitle}` }))}
+                                placeholder={loadingCourses ? "Loading courses..." : "Select a course"}
+                                onChange={(v) => (activeTab === "late" ? handleCourseChangeForLate(v) : handleCourseChange(v))}
+                                className="w-80"
+                            />
+                        </div>
 
                         {/* assignment selector shown only in Late tab */}
                         {activeTab === "late" && (
-                            <select
-                                title="Assignment"
-                                value={assignmentId}
-                                onChange={(e) => {
-                                    setAssignmentId(e.target.value);
-                                    if (courseId) fetchLateData(courseId, e.target.value || undefined);
-                                }}
-                                className="min-w-[220px] rounded border border-slate-300 px-2 py-1 text-sm"
-                                disabled={!courseId || loadingAssignments}
-                            >
-                                <option value="" disabled={!!loadingAssignments}>
-                                    {loadingAssignments ? "Loading assignments..." : "All assignments (optional)"}
-                                </option>
-                                {(assignmentsData?.assignments ?? []).map((a) => (
-                                    <option key={a.id} value={a.id}>
-                                        {a.title}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="min-w-[220px]">
+                                <Select<string>
+                                    value={assignmentId ?? ""}
+                                    options={(assignmentsData?.assignments ?? []).map((a) => ({ value: a.id, label: a.title }))}
+                                    placeholder={loadingAssignments ? "Loading assignments..." : "All assignments (optional)"}
+                                    onChange={(v) => {
+                                        setAssignmentId(v);
+                                        if (courseId) fetchLateData(courseId, v || undefined);
+                                    }}
+                                    className="w-full"
+                                    disabled={!courseId || loadingAssignments}
+                                />
+                            </div>
                         )}
 
-                        <Button size="sm" variant="outline" onClick={() => activeTab === "late" ? fetchLateData(courseId || undefined, assignmentId || undefined) : (courseId && fetchData(courseId))} disabled={!courseId}>
+                        <Button size="sm" className="text-violet-800 hover:text-violet-500" variant="outline" onClick={() => activeTab === "late" ? fetchLateData(courseId || undefined, assignmentId || undefined) : (courseId && fetchData(courseId))} disabled={!courseId}>
                             Refresh
                         </Button>
                     </div>

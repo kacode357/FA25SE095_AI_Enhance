@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BookOpenCheck, ChevronRight, Loader2 } from "lucide-react";
 
+import Select from "@/components/ui/select/Select";
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 import { useGetReportsRequiringGrading } from "@/hooks/reports/useGetReportsRequiringGrading";
@@ -92,10 +93,10 @@ export default function ReportsRequiringGradingPage() {
             <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mb-4">
                 <div className="flex items-center justify-between">
                     <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
-                        <li className="flex flex-row gap-0 items-center">
+                        <li className="flex flex-row gap-0 hover:text-violet-800 items-center">
                             <BookOpenCheck className="size-4" />
                             <button
-                                className="px-1 py-0.5 rounded hover:text-violet-800"
+                                className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800"
                                 onClick={() => router.push(`/lecturer/course/reports${courseId ? `?courseId=${courseId}` : ""}`)}
                             >
                                 Reports
@@ -114,38 +115,28 @@ export default function ReportsRequiringGradingPage() {
                         <div className="text-sm text-slate-600 mt-1">Review submissions awaiting grading</div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <select
-                            title="Select"
-                            value={courseId}
-                            onChange={(e) => { setCourseId(e.target.value); syncUrl(e.target.value, assignmentId); }}
-                            className="min-w-[220px] rounded border border-slate-300 px-2 py-1 text-sm"
-                        >
-                            <option value="" disabled>
-                                {loadingCourses ? "Loading courses..." : "Select a course (optional)"}
-                            </option>
-                            {courses.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.courseCode} — {c.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            title="Assignment"
-                            value={assignmentId}
-                            onChange={(e) => { setAssignmentId(e.target.value); syncUrl(courseId, e.target.value); }}
-                            className="min-w-[220px] rounded border border-slate-300 px-2 py-1 text-sm"
-                            disabled={!courseId || loadingAssignments}
-                        >
-                            <option value="" disabled={!!loadingAssignments}>
-                                {loadingAssignments ? "Loading assignments..." : "All assignments (optional)"}
-                            </option>
-                            {assignments.map((a) => (
-                                <option key={a.id} value={a.id}>
-                                    {a.title}
-                                </option>
-                            ))}
-                        </select>
-                        <Button size="sm" variant="outline" onClick={fetchData}>
+                        <div className="min-w-[220px]">
+                            <Select<string>
+                                value={courseId ?? ""}
+                                options={courses.map((c) => ({ value: c.id, label: `${c.courseCode} — ${c.name}` }))}
+                                placeholder={loadingCourses ? "Loading courses..." : "Select a course (optional)"}
+                                onChange={(v) => { setCourseId(v); syncUrl(v, assignmentId); }}
+                                className="w-full"
+                            />
+                        </div>
+
+                        <div className="min-w-[220px]">
+                            <Select<string>
+                                value={assignmentId ?? ""}
+                                options={assignments.map((a) => ({ value: a.id, label: a.title }))}
+                                placeholder={loadingAssignments ? "Loading assignments..." : "All assignments (optional)"}
+                                onChange={(v) => { setAssignmentId(v); syncUrl(courseId, v); }}
+                                className="w-full"
+                                disabled={!courseId || loadingAssignments}
+                            />
+                        </div>
+
+                        <Button size="sm" className="text-violet-800 hover:text-violet-500" variant="outline" onClick={fetchData}>
                             Refresh
                         </Button>
                     </div>

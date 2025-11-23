@@ -1,0 +1,39 @@
+/* app/styles/support-request-category.css */
+/* === SUPPORT REQUEST CATEGORY BADGES (SupportRequestCategory) === */
+
+/* Base badge */
+.badge-support-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* Technical = 0 (xanh dương) */
+.badge-support-category--technical {
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+}
+
+/* Academic = 1 (tím brand / học thuật) */
+.badge-support-category--academic {
+  background: rgba(127, 113, 244, 0.10);
+  color: var(--brand);
+}
+
+/* Administrative = 2 (cam / hành chính) */
+.badge-support-category--administrative {
+  background: rgba(244, 162, 59, 0.12);
+  color: var(--accent);
+}
+
+/* Other = 3 (xám trung tính) */
+.badge-support-category--other {
+  background: rgba(148, 163, 184, 0.10);
+  color: var(--foreground);
+}

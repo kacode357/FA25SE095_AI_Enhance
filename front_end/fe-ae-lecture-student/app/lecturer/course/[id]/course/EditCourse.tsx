@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import Select from "@/components/ui/select/Select";
 import { Textarea } from "@/components/ui/textarea";
 import { useGetAccessCodes } from "@/hooks/access-code/useGetAccessCodes";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
@@ -295,19 +296,13 @@ export default function EditCourse() {
                                     <label className="text-slate-500 text-xs cursor-text uppercase mb-1">
                                         Term
                                     </label>
-                                    <select
-                                        title="Select"
-                                        value={selectedTermId}
-                                        onChange={(e) => setSelectedTermId(e.target.value)}
-                                        className="border rounded-lg cursor-pointer border-slate-200 px-2 py-2.5 bg-white focus:ring-2 focus:ring-emerald-500"
-                                    >
-                                        <option value="">Select term</option>
-                                        {terms?.map((t) => (
-                                            <option key={t.id} value={t.id}>
-                                                {t.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <Select<string>
+                                        value={selectedTermId ?? ""}
+                                        options={(terms ?? []).map((t: any) => ({ value: t.id, label: t.name }))}
+                                        placeholder="Select term"
+                                        onChange={(v) => setSelectedTermId(v)}
+                                        className="w-full"
+                                    />
                                 </div>
 
                                 {/* <div className="flex flex-col">

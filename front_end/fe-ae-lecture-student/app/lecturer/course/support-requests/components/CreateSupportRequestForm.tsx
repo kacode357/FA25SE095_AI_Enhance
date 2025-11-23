@@ -106,7 +106,7 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                         {!loadingCourses && courses && courses.length > 0 ? (
                             <Select<string>
                                 value={courseId}
-                                options={[{ value: "", label: "-- Select course --" }, ...(courses || []).map((c: any) => ({ value: c.id, label: c.name || c.title || c.id }))]}
+                                options={[{ value: "", label: "-- Select course --" }, ...(courses || []).map((c: any) => ({ value: c.id, label: c.courseCode + " — " + c.courseCodeTitle || c.id }))]}
                                 placeholder="-- Select course --"
                                 onChange={(v) => setCourseId(String(v))}
                                 className="mt-1"

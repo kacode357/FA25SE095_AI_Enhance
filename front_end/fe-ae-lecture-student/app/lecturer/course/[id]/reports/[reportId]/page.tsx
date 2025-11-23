@@ -159,7 +159,6 @@ export default function ReportDetailsPage() {
               <Button size="sm" variant="ghost" className="cursor-pointer -ml-2" onClick={goBack}><ArrowLeft className="size-4" /></Button>
               <div>
                 <h2 className="text-xl font-semibold text-slate-900">Report Details</h2>
-                <div className="text-xs text-slate-600">Report ID: <span className="font-mono">{reportId}</span></div>
               </div>
             </div>
 

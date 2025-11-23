@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Select from "@/components/ui/select/Select";
 import { AccessCodeType } from "@/config/access-code-type";
 import { useUpdateAccessCode } from "@/hooks/course/useUpdateAccessCode";
 import { useEffect, useMemo, useState } from "react";
@@ -115,21 +116,19 @@ export default function AccessCodeDialog({
           {/* Type */}
           <div>
             <Label>Access Code Type</Label>
-            <select
-              title="Access Code Type"
-              value={accessCodeType}
-              onChange={(e) =>
-                setAccessCodeType(e.target.value === "" ? "" : Number(e.target.value))
-              }
-              className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white"
+            <Select<number>
+              value={accessCodeType === "" ? ("" as any) : (accessCodeType as number)}
+              options={[
+                { value: AccessCodeType.Numeric, label: "Numeric" },
+                { value: AccessCodeType.AlphaNumeric, label: "AlphaNumeric" },
+                { value: AccessCodeType.Words, label: "Words" },
+                { value: AccessCodeType.Custom, label: "Custom" },
+              ]}
+              placeholder="-- Select Type --"
+              onChange={(v) => setAccessCodeType(v)}
+              className="w-full"
               disabled={!requiresAccessCode}
-            >
-              <option value="">-- Select Type --</option>
-              <option value={AccessCodeType.Numeric}>Numeric</option>
-              <option value={AccessCodeType.AlphaNumeric}>AlphaNumeric</option>
-              <option value={AccessCodeType.Words}>Words</option>
-              <option value={AccessCodeType.Custom}>Custom</option>
-            </select>
+            />
           </div>
 
           {/* ✅ Ô nhập code luôn hiển thị cho mọi type, optional */}

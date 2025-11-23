@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Select from "@/components/ui/select/Select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AccessCodeType } from "@/config/access-code-type";
 import { useCourseCodeOptions } from "@/hooks/course-code/useCourseCodeOptions";
@@ -144,20 +145,13 @@ export default function CreateDialog({
             <div className="py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <Label className="cursor-text mb-2" htmlFor="courseCode">Course Code</Label>
-                <select
-                  id="courseCode"
-                  value={form.courseCodeId}
-                  onChange={(e) => set("courseCodeId", e.target.value)}
-                  className="w-full border border-slate-300 rounded-md p-2 cursor-pointer text-sm bg-white"
-                  title="Select course code"
-                >
-                  <option value="">{loadingCodes ? "Loading..." : "-- Select Course Code --"}</option>
-                  {courseCodeOptions.map((cc) => (
-                    <option key={cc.id} value={cc.id}>
-                      {cc.displayName || `${cc.code} - ${cc.title}`}
-                    </option>
-                  ))}
-                </select>
+                <Select<string>
+                  value={form.courseCodeId ?? ""}
+                  options={courseCodeOptions.map((cc) => ({ value: cc.id, label: cc.displayName || `${cc.code} - ${cc.title}` }))}
+                  placeholder={loadingCodes ? "Loading..." : "-- Select Course Code --"}
+                  onChange={(v) => set("courseCodeId", v)}
+                  className="w-full"
+                />
               </div>
 
               <div className="sm:col-span-2">
@@ -171,20 +165,13 @@ export default function CreateDialog({
 
               <div>
                 <Label className="cursor-text mb-2" htmlFor="term">Term</Label>
-                <select
-                  id="term"
-                  value={form.termId}
-                  onChange={(e) => set("termId", e.target.value)}
-                  className="w-full border cursor-pointer border-slate-300 rounded-md p-2 text-sm bg-white"
-                  title="Select term"
-                >
-                  <option value="">{loadingTerms ? "Loading..." : "-- Select Term --"}</option>
-                  {termOptions.map((term) => (
-                    <option key={term.id} value={term.id}>
-                      {term.name}
-                    </option>
-                  ))}
-                </select>
+                <Select<string>
+                  value={form.termId ?? ""}
+                  options={termOptions.map((term) => ({ value: term.id, label: term.name }))}
+                  placeholder={loadingTerms ? "Loading..." : "-- Select Term --"}
+                  onChange={(v) => set("termId", v)}
+                  className="w-full"
+                />
               </div>
 
               <div>
@@ -213,27 +200,24 @@ export default function CreateDialog({
                 <>
                   <div>
                     <Label className="cursor-text" htmlFor="accessCodeType">Access Code Type</Label>
-                    <select
-                      id="accessCodeType"
-                      value={form.accessCodeType ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.value ? parseInt(e.target.value) : undefined;
+                    <Select<number>
+                      value={form.accessCodeType ?? ("" as any)}
+                      options={[
+                        { value: AccessCodeType.Numeric, label: "Numeric" },
+                        { value: AccessCodeType.AlphaNumeric, label: "AlphaNumeric" },
+                        { value: AccessCodeType.Words, label: "Words" },
+                        { value: AccessCodeType.Custom, label: "Custom" },
+                      ]}
+                      placeholder="-- Select Type --"
+                      onChange={(v) =>
                         setForm((prev) => ({
                           ...prev,
                           accessCodeType: v,
-                          // Clear any custom code when switching away from Custom
                           accessCodeValue: v === AccessCodeType.Custom ? prev.accessCodeValue : "",
-                        }));
-                      }}
-                      className="w-full border border-slate-300 cursor-pointer rounded-md p-2 text-sm bg-white"
-                      title="Select access code type"
-                    >
-                      <option value="">-- Select Type --</option>
-                      <option value={AccessCodeType.Numeric}>Numeric</option>
-                      <option value={AccessCodeType.AlphaNumeric}>AlphaNumeric</option>
-                      <option value={AccessCodeType.Words}>Words</option>
-                      <option value={AccessCodeType.Custom}>Custom</option>
-                    </select>
+                        }))
+                      }
+                      className="w-full"
+                    />
                   </div>
 
                   {form.accessCodeType === AccessCodeType.Custom && (
@@ -259,24 +243,13 @@ export default function CreateDialog({
             <div className="py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <Label className="cursor-text mb-2" htmlFor="requestCourseCode">Course Code</Label>
-                <select
-                  id="requestCourseCode"
-                  required
-                  value={requestForm.courseCodeId}
-                  onChange={(e) => setReq("courseCodeId", e.target.value)}
-                  className={`w-full border rounded-md p-2 cursor-pointer text-sm bg-white ${!requestForm.courseCodeId ? "border-slate-300" : "border-slate-300"
-                    }`}
-                  title="Select course code"
-                >
-                  <option value="">
-                    {loadingCodes ? "Loading..." : "-- Select Course Code --"}
-                  </option>
-                  {courseCodeOptions.map((cc) => (
-                    <option key={cc.id} value={cc.id}>
-                      {cc.displayName || `${cc.code} - ${cc.title}`}
-                    </option>
-                  ))}
-                </select>
+                <Select<string>
+                  value={requestForm.courseCodeId ?? ""}
+                  options={courseCodeOptions.map((cc) => ({ value: cc.id, label: cc.displayName || `${cc.code} - ${cc.title}` }))}
+                  placeholder={loadingCodes ? "Loading..." : "-- Select Course Code --"}
+                  onChange={(v) => setReq("courseCodeId", v)}
+                  className={`w-full ${!requestForm.courseCodeId ? "border-slate-300" : "border-slate-300"}`}
+                />
               </div>
 
               <div className="sm:col-span-2">
@@ -292,22 +265,13 @@ export default function CreateDialog({
 
               <div>
                 <Label className="cursor-text mb-2" htmlFor="requestTerm">Term</Label>
-                <select
-                  id="requestTerm"
-                  required
-                  value={requestForm.termId}
-                  onChange={(e) => setReq("termId", e.target.value)}
-                  className={`w-full border cursor-pointer rounded-md p-2 text-sm bg-white ${!requestForm.termId ? "border-slate-300" : "border-slate-300"
-                    }`}
-                  title="Select term"
-                >
-                  <option value="">{loadingTerms ? "Loading..." : "-- Select Term --"}</option>
-                  {termOptions.map((term) => (
-                    <option key={term.id} value={term.id}>
-                      {term.name}
-                    </option>
-                  ))}
-                </select>
+                <Select<string>
+                  value={requestForm.termId ?? ""}
+                  options={termOptions.map((term) => ({ value: term.id, label: term.name }))}
+                  placeholder={loadingTerms ? "Loading..." : "-- Select Term --"}
+                  onChange={(v) => setReq("termId", v)}
+                  className={`w-full ${!requestForm.termId ? "border-slate-300" : "border-slate-300"}`}
+                />
               </div>
 
               <div>

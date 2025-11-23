@@ -10,6 +10,7 @@ import {
     DialogClose,
     DialogContent
 } from "@/components/ui/dialog";
+import Select from "@/components/ui/select/Select";
 import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
@@ -177,33 +178,31 @@ export default function SupportRequestsList({ courseId }: Props) {
                     )}
 
                     {/* Filter */}
-                    <div>
-                        <div className="flex justify-between items-center gap-4">
+                        <div className="flex justify-between items-center">
                             {loadingList && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
 
-                            <div className="flex justify-start items-center gap-2">
+                            <div className="flex justify-start items-center w-full gap-2">
                                 <span className="text-slate-600 text-sm">Filter by Course: </span>
 
                                 {!loadingCourses && courses && (
-                                    <select
-                                        title="Course"
-                                        value={selectedCourseId}
-                                        onChange={(e) => setSelectedCourseId(e.target.value)}
-                                        className="text-sm rounded-md border-slate-300 border px-2 py-1"
-                                    >
-                                        <option value="all">All</option>
-                                        {courses.map((c: any) => (
-                                            <option key={c.id} value={c.id}>
-                                                {c.name || c.title || c.id}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="w-48">
+                                        <Select<string>
+                                            value={selectedCourseId ?? "all"}
+                                            options={[
+                                                { value: "all", label: "All" },
+                                                ...courses.map((c: any) => ({ value: c.id, label: (c.courseCode + " — " + c.courseCodeTitle) || c.id }))
+                                            ]}
+                                            placeholder="All"
+                                            onChange={(v) => setSelectedCourseId(v === "all" ? "all" : v)}
+                                            className="w-72"
+                                            disabled={false}
+                                        />
+                                    </div>
                                 )}
                             </div>
 
-                            <div className="text-slate-500 text-sm">{items.length} requests</div>
+                            <div className="text-slate-500 text-sm">{items.length}(requests)</div>
                         </div>
-                    </div>
 
                     {/* LIST */}
                     {items.map((item: SupportRequestItem) => (
@@ -288,10 +287,18 @@ export default function SupportRequestsList({ courseId }: Props) {
                                                                 ? item.courseId
                                                                 : selectedCourseId;
                                                         if (!messageCourseId) return;
-                                                        window.open(
-                                                            `/lecturer/course/${messageCourseId}/messages/${item.conversationId}`,
-                                                            "_blank"
-                                                        );
+
+                                                        const peerId = item.assignedStaffId ?? item.requesterId ?? undefined;
+                                                        const peerName = item.assignedStaffName ?? item.requesterName ?? "Support";
+
+                                                        const base = `/lecturer/course/${messageCourseId}/messages/${item.conversationId}`;
+                                                        const qs = new URLSearchParams();
+                                                        if (peerId) qs.set("peerId", String(peerId));
+                                                        if (peerName) qs.set("peerName", String(peerName));
+                                                        qs.set("supportRequestId", item.id);
+                                                        if (item.subject) qs.set("requestTitle", String(item.subject));
+
+                                                        router.push(`${base}?${qs.toString()}`);
                                                     }}
                                                 >
                                                     <MessageSquare className="h-4 w-4" /> Chat

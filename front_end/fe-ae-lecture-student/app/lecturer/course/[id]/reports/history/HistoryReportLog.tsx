@@ -4,6 +4,7 @@ import { getActionInfo } from '@/app/lecturer/course/[id]/reports/utils/actions-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import Select from "@/components/ui/select/Select";
 import { Separator } from "@/components/ui/separator";
 import { useGetReportHistory } from "@/hooks/reports/useGetReportHistory";
 import { useGetReportHistoryVersion } from "@/hooks/reports/useGetReportHistoryVersion";
@@ -86,22 +87,17 @@ export default function HistoryReportLog({ reportId }: Props) {
             {!compareResult && (
               <>
                 <label htmlFor="version-select" className="text-xs text-slate-500">Version</label>
-                <select
-                  title="Version"
-                  id="version-select"
-                  value={selectedVersion ?? ''}
-                  onChange={(e) => {
-                    const v = e.target.value === '' ? null : Number(e.target.value);
-                    setSelectedVersion(v);
-                    fetchVersion(v);
-                  }}
-                  className="px-2 py-1 border border-slate-300 rounded cursor-pointer bg-white text-sm focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-                >
-                  <option value="">Latest</option>
-                  {availableVersions.map((v) => (
-                    <option key={v} value={v}>Version {v}</option>
-                  ))}
-                </select>
+                <div className="min-w-[120px]">
+                  <Select<number>
+                    title="Version"
+                    id="version-select"
+                    value={selectedVersion ?? ("" as any)}
+                    options={availableVersions.map((v) => ({ value: v as number, label: `Version ${v}` }))}
+                    placeholder="Latest"
+                    onChange={(v) => { setSelectedVersion(v as number); fetchVersion(v as number); }}
+                    className="w-full"
+                  />
+                </div>
                 {loadingVersion && <Loader2 className="animate-spin w-4 h-4 text-slate-400" />}
               </>
             )}
