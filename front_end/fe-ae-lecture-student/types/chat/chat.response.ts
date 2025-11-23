@@ -1,9 +1,5 @@
 // types/chat/chat.response.ts
 
-/** =======================
- *  Response DTOs
- *  ======================= */
-
 /** Item hội thoại từ GET /api/Chat/conversations */
 export interface ConversationItemResponse {
   id: string;
@@ -28,6 +24,17 @@ export interface ChatMessageItemResponse {
   /** ISO datetime */
   sentAt: string;
   isDeleted: boolean;
+}
+
+/** =========================
+ *  API: GET /api/Chat/conversations/{conversationId}/messages
+ *  ========================= */
+export interface GetMessagesApiResponse {
+  success: boolean;
+  message: string;
+  messages: ChatMessageItemResponse[];
+  isReadOnly: boolean;
+  readOnlyReason: string | null;
 }
 
 /** Người dùng có thể chat trong 1 course */

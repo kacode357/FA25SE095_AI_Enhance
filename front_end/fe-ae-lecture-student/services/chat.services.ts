@@ -5,8 +5,8 @@ import type {
   ConversationItemResponse,
   ChatMessageItemResponse,
   CourseChatUserItemResponse,
+  GetMessagesApiResponse,
 } from "@/types/chat/chat.response";
-
 
 export const ChatService = {
   /** ✅ GET /api/Chat/conversations?courseId=... */
@@ -17,12 +17,12 @@ export const ChatService = {
     return res.data;
   },
 
-  /** ✅ GET /api/Chat/conversations/{conversationId}/messages?pageNumber=&pageSize= */
+  /** ✅ GET /api/Chat/conversations/{conversationId}/messages?pageNumber=&pageSize=&supportRequestId= */
   getConversationMessages: async (
     conversationId: string,
     params?: GetMessagesQuery
-  ): Promise<ChatMessageItemResponse[]> => {
-    const res = await api.get<ChatMessageItemResponse[]>(
+  ): Promise<GetMessagesApiResponse> => {
+    const res = await api.get<GetMessagesApiResponse>(
       `/Chat/conversations/${conversationId}/messages`,
       { params }
     );

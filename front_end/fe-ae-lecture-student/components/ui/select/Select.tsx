@@ -1,85 +1,173 @@
 "use client";
 
 import { Check, ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useLayoutEffect,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
+import { createPortal } from "react-dom";
 
 type Option<T extends string | number> = { value: T; label: string };
 
 export type SelectProps<T extends string | number> = {
-    value: T | "" | undefined;
-    options: Option<T>[];
-    placeholder?: string;
-    onChange: (v: T) => void;
-    className?: string;
-    disabled?: boolean;
+  value: T | "" | undefined;
+  options: Option<T>[];
+  placeholder?: string;
+  onChange: (v: T) => void;
+  className?: string;
+  disabled?: boolean;
+};
+
+type Rect = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
 };
 
 export default function Select<T extends string | number>({
-    value,
-    options,
-    placeholder,
-    onChange,
-    className,
-    disabled,
+  value,
+  options,
+  placeholder,
+  onChange,
+  className,
+  disabled,
 }: SelectProps<T>) {
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [rect, setRect] = useState<Rect | null>(null);
 
-    useEffect(() => {
-        function onDoc(e: MouseEvent) {
-            if (!ref.current) return;
-            if (!ref.current.contains(e.target as Node)) setOpen(false);
-        }
-        document.addEventListener("mousedown", onDoc);
-        return () => document.removeEventListener("mousedown", onDoc);
-    }, []);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-    // Keep dropdown absolutely positioned inside the relative wrapper
-    // so it appears directly under the button and doesn't 'jump' vertically.
-    // Using absolute positioning keeps the dropdown aligned with the select
-    // in the normal flow of the surrounding container.
-    useEffect(() => {
-        // nothing required here for absolute positioning
-        return () => {};
-    }, [open]);
+  const selected = options.find((o) => o.value === value);
 
-    const selected = options.find((o) => o.value === value);
+  // Cập nhật vị trí dropdown dựa trên button
+  const updateRect = () => {
+    if (!triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    setRect({
+      top: r.bottom + window.scrollY,
+      left: r.left + window.scrollX,
+      width: r.width,
+      height: r.height,
+    });
+  };
 
-    return (
-        <div ref={ref} className={`relative ${className ?? ""}`}>
-            <button
-                type="button"
-                onClick={() => setOpen((s) => !s)}
-                disabled={disabled}
-                className="w-full text-left rounded-md cursor-pointer border border-slate-300 bg-white px-3 py-2 flex items-center justify-between gap-2 shadow-sm hover:shadow-md transition-shadow disabled:opacity-60"
+  // Khi open = true thì đo lại rect
+  useLayoutEffect(() => {
+    if (open) {
+      updateRect();
+    }
+  }, [open]);
+
+  // Reposition khi scroll / resize
+  useEffect(() => {
+    if (!open) return;
+
+    const handleScroll = () => updateRect();
+    const handleResize = () => updateRect();
+
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [open]);
+
+  // Click ngoài để đóng (kể cả dropdown render ở portal)
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (!open) return;
+      const target = e.target as Node | null;
+      if (!target) return;
+
+      if (
+        wrapperRef.current?.contains(target) ||
+        dropdownRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
+
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const handleOptionClick = (optValue: T, e: ReactMouseEvent) => {
+    e.preventDefault();
+    onChange(optValue);
+    setOpen(false);
+  };
+
+  const dropdown =
+    open && rect
+      ? createPortal(
+          <div
+            ref={dropdownRef}
+            className="cursor-pointer rounded-md bg-white shadow-lg border border-slate-100 z-[9999]"
+            style={{
+              position: "absolute",
+              top: rect.top + 4, // thêm chút margin
+              left: rect.left,
+              width: rect.width,
+            }}
+          >
+            <div
+              role="listbox"
+              aria-label={placeholder ?? "Options"}
+              className="max-h-64 overflow-auto"
             >
-                <span className={`truncate text-sm ${selected ? "text-gray-900" : "text-gray-500"}`}>
-                    {selected?.label ?? placeholder ?? "Select..."}
-                </span>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-            </button>
+              {options.map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  role="option"
+                  onClick={(e) => handleOptionClick(opt.value, e)}
+                  className={`w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between gap-2 ${
+                    opt.value === value ? "bg-slate-50" : ""
+                  }`}
+                >
+                  <span className="truncate text-sm text-gray-900">
+                    {opt.label}
+                  </span>
+                  {opt.value === value && (
+                    <Check className="w-4 h-4 text-emerald-600" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
-            {open && (
-                <div className="absolute left-0 top-full mt-1 w-full cursor-pointer rounded-md bg-white shadow-lg border border-slate-100 z-50">
-                    <div role="listbox" aria-label={placeholder ?? "Options"} className="max-h-64 overflow-auto">
-                        {options.map((opt) => (
-                            <button
-                                key={String(opt.value)}
-                                type="button"
-                                role="option"
-                                onClick={() => {
-                                    onChange(opt.value);
-                                    setOpen(false);
-                                }}
-                                className={`w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between gap-2 ${opt.value === value ? "bg-slate-50" : ""}`}
-                            >
-                                <span className="truncate text-sm text-gray-900">{opt.label}</span>
-                                {opt.value === value && <Check className="w-4 h-4 text-emerald-600" />}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+  return (
+    <div ref={wrapperRef} className={className ?? ""}>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => !disabled && setOpen((s) => !s)}
+        disabled={disabled}
+        className="w-full text-left rounded-md cursor-pointer border border-slate-300 bg-white px-3 py-2 flex items-center justify-between gap-2 shadow-sm hover:shadow-md transition-shadow disabled:opacity-60"
+      >
+        <span
+          className={`truncate text-sm ${
+            selected ? "text-gray-900" : "text-gray-500"
+          }`}
+        >
+          {selected?.label ?? placeholder ?? "Select..."}
+        </span>
+        <ChevronDown className="w-4 h-4 text-gray-400" />
+      </button>
+
+      {dropdown}
+    </div>
+  );
 }

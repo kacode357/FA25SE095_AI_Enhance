@@ -92,6 +92,13 @@ export default function SupportChatPage() {
   const [resolveHandled, setResolveHandled] = useState(false);
   const [isResolved, setIsResolved] = useState(false); // sau khi confirm resolved thì khóa chat
 
+  // read-only từ BE
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [readOnlyReason, setReadOnlyReason] = useState<string | null>(null);
+
+  // flag tổng khóa chat
+  const chatLocked = isResolved || isReadOnly;
+
   // scroll
   const listRef = useRef<HTMLDivElement | null>(null);
   const scrollBottom = () =>
@@ -179,13 +186,13 @@ export default function SupportChatPage() {
       if (lastLoadedConvRef.current === convId) return;
       lastLoadedConvRef.current = convId;
 
-      const rawMsgs: any = await getConversationMessages(convId, {
+      const res = await getConversationMessages(convId, {
         pageNumber: 1,
         pageSize: 50,
       });
-      const msgs: ChatMessage[] = Array.isArray(rawMsgs)
-        ? rawMsgs
-        : rawMsgs?.messages ?? [];
+      if (!res) return;
+
+      const msgs: ChatMessage[] = res.messages ?? [];
       const sorted = msgs.sort(
         (a, b) =>
           parseServerDate(a.sentAt).getTime() -
@@ -193,6 +200,16 @@ export default function SupportChatPage() {
       );
       setMessages(sorted);
       scrollBottom();
+
+      // cập nhật trạng thái read-only từ BE
+      setIsReadOnly(res.isReadOnly);
+      setReadOnlyReason(res.readOnlyReason ?? null);
+
+      // nếu server nói conversation đã đóng thì không cần show dialog “Has your need been resolved?”
+      if (res.isReadOnly) {
+        setResolveHandled(true);
+        setIsResolved(true); // cũng coi như đã resolved để UI đồng bộ
+      }
     },
   ).current;
 
@@ -208,6 +225,8 @@ export default function SupportChatPage() {
     lastLoadedConvRef.current = null;
     setResolveHandled(false); // reset khi đổi conversation
     setIsResolved(false);
+    setIsReadOnly(false);
+    setReadOnlyReason(null);
 
     let cancelled = false;
     (async () => {
@@ -233,8 +252,8 @@ export default function SupportChatPage() {
   useEffect(() => {
     if (!peerId) return;
 
-    if (isResolved) {
-      // nếu đã resolved thì đảm bảo không gửi typing nữa
+    if (chatLocked) {
+      // nếu đã locked (resolved hoặc read-only) thì đảm bảo không gửi typing nữa
       if (prevNonEmpty.current) {
         void stopTyping(peerId);
         prevNonEmpty.current = false;
@@ -251,11 +270,11 @@ export default function SupportChatPage() {
       if (prevNonEmpty.current && peerId) void stopTyping(peerId);
       prevNonEmpty.current = false;
     };
-  }, [input, peerId, startTyping, stopTyping, isResolved]);
+  }, [input, peerId, startTyping, stopTyping, chatLocked]);
 
   // send
   const onSend = async () => {
-    if (isResolved) return; // khóa chat sau khi resolved
+    if (chatLocked) return; // khóa chat sau khi resolved hoặc read-only
     if (!peerId || !courseId || !currentUserId) return;
     const message = input.trim();
     if (!message) return;
@@ -341,7 +360,7 @@ export default function SupportChatPage() {
   };
 
   const typingText =
-    peerId && typingMap[peerId] && !isResolved
+    peerId && typingMap[peerId] && !chatLocked
       ? `${peerName} is typing…`
       : "";
 
@@ -358,7 +377,7 @@ export default function SupportChatPage() {
   }, [messages, currentUserId]);
 
   const showResolveDialog =
-    !!resolveQuestionId && !resolveHandled && !isResolved;
+    !!resolveQuestionId && !resolveHandled && !chatLocked && !isReadOnly;
 
   const handleConfirmResolved = async () => {
     const supportRequestId =
@@ -536,7 +555,7 @@ export default function SupportChatPage() {
                             {openMenuId === m.id && (
                               <div
                                 data-menu-id={m.id}
-                                className="absolute top-full right-0 z-50 mt-2 w-40 rounded-lg border border-[var(--border)] bg-white py-1 text-xs text-slate-700 shadow-xl"
+                                className="absolute top.full right-0 z-50 mt-2 w-40 rounded-lg border border-[var(--border)] bg-white py-1 text-xs text-slate-700 shadow-xl"
                               >
                                 <button
                                   className="w-full px-3 py-1.5 text-left hover:bg-slate-50"
@@ -581,17 +600,33 @@ export default function SupportChatPage() {
             )}
 
             {/* composer */}
-            {isResolved ? (
+            {chatLocked ? (
               <div className="border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--text-muted)]">
-                This support request has been marked as{" "}
-                <span className="font-semibold text-brand">resolved</span>. You
-                can no longer send new messages in this conversation.
+                {isReadOnly ? (
+                  <>
+                    {readOnlyReason ? (
+                      <span>{readOnlyReason}</span>
+                    ) : (
+                      <>
+                        This conversation has been{" "}
+                        <span className="font-semibold text-brand">closed</span>
+                        . You can no longer send new messages.
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    This support request has been marked as{" "}
+                    <span className="font-semibold text-brand">resolved</span>.
+                    You can no longer send new messages in this conversation.
+                  </>
+                )}
               </div>
             ) : (
               <div className="border-t border-[var(--border)] px-4 py-3">
-                <div className="flex items-end gap-2">
+                <div className="flex items.end gap-2">
                   <textarea
-                    className="input flex-1 resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-0"
+                    className="input flex-1 resize-none rounded-xl border border-[var(--border)] bg.white px-3 py-2 text-sm outline-none focus:ring-0"
                     rows={2}
                     placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
                     value={input}
