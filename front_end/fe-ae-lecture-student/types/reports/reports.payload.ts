@@ -20,7 +20,6 @@ export interface UpdateReportPayload {
 /** POST /api/Reports/resubmit */
 export interface ResubmitReportPayload {
   reportId: string;          // target report id (must be RequiresRevision)
-  submission: string;        // updated content to resubmit
 }
 
 /** GET /api/Reports/my-reports */

@@ -18,7 +18,7 @@ type Props = {
   /** File selected by user but not uploaded yet */
   pendingFile: File | null;
   /** Nội dung report hiện tại (HTML / text) */
-  submission: string;
+  submission: string; // tạm giữ lại prop cho compatible, nhưng BE không dùng nữa
   disabled?: boolean;
   onSubmitted?: () => void;
 };
@@ -61,13 +61,9 @@ export default function SubmitDraftButton({
 
     let res = null;
 
-    // Nếu đang ở RequiresRevision -> dùng API resubmit
+    // Nếu đang ở RequiresRevision -> dùng API resubmit (BE tự lấy bản mới nhất)
     if (status === ReportStatus.RequiresRevision) {
-      res = await resubmitReport({
-        reportId,
-        // ✅ dùng nội dung người dùng nhập, không hard-code ""
-        submission,
-      });
+      res = await resubmitReport(reportId);
     } else {
       // Các status còn lại (Draft) -> dùng submitDraft như cũ
       res = await submitDraft(reportId);
@@ -89,7 +85,6 @@ export default function SubmitDraftButton({
     pendingFile,
     reportId,
     status,
-    submission,
     submitDraft,
     resubmitReport,
     uploadFile,

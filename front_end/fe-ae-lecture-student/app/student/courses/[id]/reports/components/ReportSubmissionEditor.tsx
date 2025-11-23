@@ -54,9 +54,8 @@ export default function ReportSubmissionEditor({
     if (!report.id) return;
 
     const payload: UpdateReportPayload = {
-      // tuỳ spec của mày, nhưng chắc chắn phải có submission
       submission: html,
-    } as UpdateReportPayload;
+    };
 
     const res = await updateReport(report.id, payload);
 
@@ -144,14 +143,17 @@ export default function ReportSubmissionEditor({
       {/* Save + Submit – chỉ hiện khi chưa locked */}
       {!isLocked && (
         <div className="mt-2 flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            className="h-9 px-3 text-xs rounded-xl"
-            disabled={saving}
-            onClick={handleSave}
-          >
-            {saving ? "Saving…" : "Save"}
-          </Button>
+          {/* ❗ Chỉ group submission mới có nút Save */}
+          {!isGroupSubmission && (
+            <Button
+              variant="outline"
+              className="h-9 px-3 text-xs rounded-xl"
+              disabled={saving}
+              onClick={handleSave}
+            >
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          )}
 
           <Button
             onClick={handleGoToSubmitPage}

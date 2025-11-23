@@ -17,9 +17,7 @@ type Options = {
 };
 
 export function useNotificationHub({
-  baseUrl =
-    process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL ||
-    "https://noti.fishmakeweb.id.vn",
+  baseUrl =     process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL || "",
   getAccessToken,
   onNotification,
   onNotificationsBatch,

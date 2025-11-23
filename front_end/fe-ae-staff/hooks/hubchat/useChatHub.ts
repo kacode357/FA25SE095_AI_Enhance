@@ -18,7 +18,7 @@ type Options = {
 };
 
 export function useChatHub({
-  baseUrl = "https://classroom.fishmakeweb.id.vn",
+  baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ,
   getAccessToken,
   onReceiveMessage,
   onReceiveMessagesBatch,
