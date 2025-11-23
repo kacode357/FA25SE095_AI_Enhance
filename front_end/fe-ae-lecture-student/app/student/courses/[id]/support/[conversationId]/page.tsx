@@ -30,11 +30,13 @@ import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.r
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 
 import { ArrowLeft, MessageCircle } from "lucide-react";
+import ResolveSupportRequestDialog from "@/app/student/courses/[id]/support/components/ResolveSupportRequestDialog";
 
 /* ===== Utils ===== */
 const cx = (...a: Array<string | false | undefined>) =>
   a.filter(Boolean).join(" ");
 
+/** Generate temp id cho optimistic message */
 const uuid = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
@@ -88,6 +90,7 @@ export default function SupportChatPage() {
   const { resolveSupportRequest, loading: resolving } =
     useResolveSupportRequest();
   const [resolveHandled, setResolveHandled] = useState(false);
+  const [isResolved, setIsResolved] = useState(false); // sau khi confirm resolved thì khóa chat
 
   // scroll
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -204,6 +207,7 @@ export default function SupportChatPage() {
 
     lastLoadedConvRef.current = null;
     setResolveHandled(false); // reset khi đổi conversation
+    setIsResolved(false);
 
     let cancelled = false;
     (async () => {
@@ -228,18 +232,30 @@ export default function SupportChatPage() {
   const prevNonEmpty = useRef(false);
   useEffect(() => {
     if (!peerId) return;
+
+    if (isResolved) {
+      // nếu đã resolved thì đảm bảo không gửi typing nữa
+      if (prevNonEmpty.current) {
+        void stopTyping(peerId);
+        prevNonEmpty.current = false;
+      }
+      return;
+    }
+
     const nonEmpty = !!input.trim();
     if (!prevNonEmpty.current && nonEmpty) void startTyping(peerId);
     else if (prevNonEmpty.current && !nonEmpty) void stopTyping(peerId);
     prevNonEmpty.current = nonEmpty;
+
     return () => {
       if (prevNonEmpty.current && peerId) void stopTyping(peerId);
       prevNonEmpty.current = false;
     };
-  }, [input, peerId, startTyping, stopTyping]);
+  }, [input, peerId, startTyping, stopTyping, isResolved]);
 
   // send
   const onSend = async () => {
+    if (isResolved) return; // khóa chat sau khi resolved
     if (!peerId || !courseId || !currentUserId) return;
     const message = input.trim();
     if (!message) return;
@@ -325,7 +341,9 @@ export default function SupportChatPage() {
   };
 
   const typingText =
-    peerId && typingMap[peerId] ? `${peerName} is typing…` : "";
+    peerId && typingMap[peerId] && !isResolved
+      ? `${peerName} is typing…`
+      : "";
 
   // tìm message staff mới nhất hỏi "Has your need been resolved?"
   const resolveQuestionId = useMemo(() => {
@@ -339,22 +357,32 @@ export default function SupportChatPage() {
     return haystack[haystack.length - 1].id;
   }, [messages, currentUserId]);
 
+  const showResolveDialog =
+    !!resolveQuestionId && !resolveHandled && !isResolved;
+
   const handleConfirmResolved = async () => {
-    // Use the actual support request id (try common query keys), not the conversationId
     const supportRequestId =
-      searchParams.get("requestId") ?? searchParams.get("supportRequestId") ?? null;
-    if (!supportRequestId) return;
+      searchParams.get("requestId") ??
+      searchParams.get("supportRequestId") ??
+      null;
+
+    if (!supportRequestId) {
+      // không có id thì chỉ đóng popup, không khóa chat
+      setResolveHandled(true);
+      return;
+    }
 
     try {
-      await resolveSupportRequest(supportRequestId); // supportRequestId is the id of the request
+      await resolveSupportRequest(supportRequestId);
       setResolveHandled(true);
+      setIsResolved(true); // sau khi xác nhận xong thì khóa chat
     } catch {
-      // giữ UI, lỗi được xử lý ở interceptor
+      // lỗi interceptor xử lý, không đổi state
     }
   };
 
   const handleNotResolved = () => {
-    setResolveHandled(true);
+    setResolveHandled(true); // đóng popup nhưng vẫn chat tiếp
   };
 
   if (!courseId || !conversationId) {
@@ -465,12 +493,6 @@ export default function SupportChatPage() {
                         minute: "2-digit",
                       });
 
-                  const isResolveQuestion =
-                    m.id === resolveQuestionId &&
-                    !isMine &&
-                    !resolveHandled &&
-                    m.message.trim() === "Has your need been resolved?";
-
                   return (
                     <div
                       key={m.id}
@@ -540,34 +562,6 @@ export default function SupportChatPage() {
                           {m.message}
                         </div>
 
-                        {/* Hỏi: Has your need been resolved? -> hiện 2 nút */}
-                        {isResolveQuestion && (
-                          <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                            <button
-                              type="button"
-                              onClick={handleConfirmResolved}
-                              disabled={resolving}
-                              className={cx(
-                                "rounded-full px-3 py-1 font-semibold",
-                                "bg-emerald-600 text-white hover:bg-emerald-700",
-                                resolving && "opacity-60 cursor-not-allowed",
-                              )}
-                            >
-                              {resolving
-                                ? "Đang xác nhận..."
-                                : "Đã giải quyết rồi"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleNotResolved}
-                              disabled={resolving}
-                              className="rounded-full border border-[var(--border)] bg-slate-50 px-3 py-1 font-medium text-slate-700 hover:bg-slate-100"
-                            >
-                              Chưa, cần hỗ trợ thêm
-                            </button>
-                          </div>
-                        )}
-
                         {timeLabel && (
                           <div className="mt-1 text-[10px] opacity-70 text-right">
                             {timeLabel}
@@ -587,35 +581,43 @@ export default function SupportChatPage() {
             )}
 
             {/* composer */}
-            <div className="border-t border-[var(--border)] px-4 py-3">
-              <div className="flex items-end gap-2">
-                <textarea
-                  className="input flex-1 resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-0"
-                  rows={2}
-                  placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      void onSend();
-                    }
-                  }}
-                />
-                <button
-                  onClick={onSend}
-                  disabled={sending || !input.trim()}
-                  className={cx(
-                    "btn btn-gradient-slow h-9 px-4 text-xs font-semibold",
-                    sending || !input.trim()
-                      ? "opacity-60 cursor-not-allowed"
-                      : "",
-                  )}
-                >
-                  {sending ? "Sending…" : "Send"}
-                </button>
+            {isResolved ? (
+              <div className="border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--text-muted)]">
+                This support request has been marked as{" "}
+                <span className="font-semibold text-brand">resolved</span>. You
+                can no longer send new messages in this conversation.
               </div>
-            </div>
+            ) : (
+              <div className="border-t border-[var(--border)] px-4 py-3">
+                <div className="flex items-end gap-2">
+                  <textarea
+                    className="input flex-1 resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-0"
+                    rows={2}
+                    placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void onSend();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={onSend}
+                    disabled={sending || !input.trim()}
+                    className={cx(
+                      "btn btn-gradient-slow h-9 px-4 text-xs font-semibold",
+                      sending || !input.trim()
+                        ? "opacity-60 cursor-not-allowed"
+                        : "",
+                    )}
+                  >
+                    {sending ? "Sending…" : "Send"}
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </Card>
@@ -644,6 +646,15 @@ export default function SupportChatPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Overlay xác nhận đã giải quyết – gọi component riêng */}
+      <ResolveSupportRequestDialog
+        open={showResolveDialog}
+        peerName={peerName}
+        resolving={resolving}
+        onConfirmResolved={handleConfirmResolved}
+        onNotResolved={handleNotResolved}
+      />
     </div>
   );
 }

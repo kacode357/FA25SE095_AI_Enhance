@@ -13,7 +13,7 @@ type Options = {
   onReceiveMessagesBatch?: (msgs: ChatMessageDto[]) => void;
   onTyping?: (payload: { userId: string; isTyping: boolean }) => void;
   onError?: (message: string) => void;
-  onMessageDeleted?: (messageId: string) => void; // vẫn giữ listener nếu sau này BE phát
+  onMessageDeleted?: (messageId: string) => void; 
   debounceMs?: number;
 };
 

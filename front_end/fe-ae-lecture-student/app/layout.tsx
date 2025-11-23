@@ -34,10 +34,6 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* <Suspense fallback={null}>
-          <RouteLoader />
-        </Suspense> */}
-
 
         <AuthProvider>
           {children}

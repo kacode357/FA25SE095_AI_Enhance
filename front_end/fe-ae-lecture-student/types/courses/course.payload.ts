@@ -93,3 +93,7 @@ export interface GetCoursesByTermYearQuery {
 export interface GetCourseByUniqueCodePayload {
   uniqueCode: string;
 }
+
+export interface GetCourseJoinInfoPayload {
+  courseId: string;
+}

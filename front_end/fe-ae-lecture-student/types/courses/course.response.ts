@@ -310,3 +310,15 @@ export interface GetCourseByUniqueCodeResponse {
   /** Current user đã enroll course này chưa */
   isEnrolled: boolean;
 }
+
+/** 🆕 Course item cho join-info – tái dùng cấu trúc CourseByUniqueCodeItem */
+export type CourseJoinInfoItem = CourseByUniqueCodeItem;
+
+/** 🆕 Response GET /api/Courses/{id}/join-info */
+export interface GetCourseJoinInfoResponse {
+  success: boolean;
+  message: string;
+  course: CourseJoinInfoItem;
+  /** Current user đã enroll course này chưa */
+  isEnrolled: boolean;
+}

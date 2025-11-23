@@ -66,7 +66,7 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [courseId, basePath, router]);
+  }, [ basePath, router]);
 
   return (
     <div className="flex flex-col">

@@ -19,15 +19,27 @@ export default function CourseLayout({ children }: Props) {
 
   const { loading, error, isEnrolled, fetchCourseById } = useGetCourseById();
   const didFetchRef = useRef(false);
+  const didRedirectRef = useRef(false);
 
+  // Gọi API để biết isEnrolled
   useEffect(() => {
     if (!courseId) return;
     if (didFetchRef.current) return;
     didFetchRef.current = true;
 
-    // Gọi API để biết isEnrolled
     fetchCourseById(courseId);
   }, [courseId, fetchCourseById]);
+
+  // Nếu chưa enroll -> redirect sang trang join
+  useEffect(() => {
+    if (!courseId) return;
+    if (loading) return;
+    if (isEnrolled !== false) return;
+    if (didRedirectRef.current) return;
+
+    didRedirectRef.current = true;
+    router.replace(`/student/all-courses/${courseId}/join`);
+  }, [courseId, loading, isEnrolled, router]);
 
   // Không có id -> sai URL
   if (!courseId) {
@@ -65,28 +77,15 @@ export default function CourseLayout({ children }: Props) {
     );
   }
 
-  // ❌ Chưa enroll mà cố vào URL thẳng -> chặn
+  // ❌ Đã biết là chưa enroll -> chặn render content, chờ redirect
   if (!loading && isEnrolled === false) {
     return (
-      <div className="py-16 text-center" style={{ color: "var(--text-muted)" }}>
-        <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-red-500" />
-        <p className="mb-2 font-semibold">
-          You are not enrolled in this course.
-        </p>
-        <p className="text-sm mb-4">
-          Please join the course first before accessing its content.
-        </p>
-        <button
-          onClick={() => router.push("/student/my-courses")}
-          className="btn mt-2"
-          style={{
-            background: "var(--card)",
-            color: "var(--brand)",
-            border: "1px solid var(--brand)",
-          }}
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back to My Courses
-        </button>
+      <div
+        className="flex items-center justify-center h-[60vh]"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <BookOpen className="w-6 h-6 mr-2 animate-pulse" />
+        <span className="text-sm">Redirecting to enrolment page…</span>
       </div>
     );
   }
@@ -115,6 +114,6 @@ export default function CourseLayout({ children }: Props) {
     );
   }
 
-  // ✅ Đã enroll -> render tất cả route con: /, /groups, /my-groups, /assignments/...
+  // ✅ Đã enroll -> render tất cả route con
   return <>{children}</>;
 }

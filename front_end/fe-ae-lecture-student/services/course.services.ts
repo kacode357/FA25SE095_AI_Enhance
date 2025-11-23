@@ -20,6 +20,7 @@ import {
   GetCourseByIdResponse,
   GetCourseByUniqueCodeResponse,
   GetCourseEnrollmentsResponse,
+  GetCourseJoinInfoResponse,
   GetCoursesByTermYearResponse,
   GetMyCoursesResponse,
   InactivateCourseResponse,
@@ -142,6 +143,12 @@ inactivateCourse: async (
   ): Promise<GetCourseByUniqueCodeResponse > => {
     const res = await courseAxiosInstance.get<GetCourseByUniqueCodeResponse>(
       `/Courses/by-code/${uniqueCode}`
+    );
+    return res.data;
+  },
+    getCourseJoinInfo: async (id: string): Promise<GetCourseJoinInfoResponse> => {
+    const res = await courseAxiosInstance.get<GetCourseJoinInfoResponse>(
+      `/Courses/${id}/join-info`
     );
     return res.data;
   },
