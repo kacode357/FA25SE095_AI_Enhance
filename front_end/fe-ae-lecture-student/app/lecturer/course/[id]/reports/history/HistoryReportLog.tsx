@@ -80,7 +80,6 @@ export default function HistoryReportLog({ reportId }: Props) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold">History Log</h3>
-            <div className="text-xs text-slate-500 mt-1">Report ID: <span className="font-mono">{reportId}</span></div>
           </div>
 
           <div className="flex items-center cursor-text gap-2">
@@ -177,7 +176,7 @@ export default function HistoryReportLog({ reportId }: Props) {
 
             <div className="mt-4">
               <div className="text-xs text-slate-500">Change Summary</div>
-              <div className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{compareResult.changeSummary ?? '—'}</div>
+              <div className="mt-1 text-sm text-slate-700 whitespace-pre-wrap break-words max-h-40 overflow-auto p-2 bg-white rounded">{compareResult.changeSummary ?? '—'}</div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -306,10 +305,10 @@ export default function HistoryReportLog({ reportId }: Props) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-slate-500">Change Summary</div>
-                      <div className="text-sm text-slate-700 whitespace-pre-wrap mt-2">{h.changeSummary ?? '—'}</div>
+                      <div className="text-sm text-slate-700 whitespace-pre-wrap break-words max-h-40 overflow-auto mt-2 p-2 bg-white rounded">{h.changeSummary ?? '—'}</div>
 
                       <div className="text-xs text-slate-500 mt-7">Change Details</div>
-                      <div className="text-sm text-slate-700 whitespace-pre-wrap mt-2">{h.changeDetails ?? '—'}</div>
+                      <div className="text-sm text-slate-700 whitespace-pre-wrap break-words max-h-40 overflow-auto mt-2 p-2 bg-white rounded">{h.changeDetails ?? '—'}</div>
                     </div>
 
                     <div>

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
+import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
 import { Book, ChevronRight, FileSpreadsheet, FolderPlus, Shuffle } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -60,6 +61,7 @@ export default function CourseDetailPage() {
   const action = search?.get?.("action") || null;
 
   const { data: course, fetchCourseById } = useGetCourseById();
+  const { listData: groups, fetchByCourseId: fetchGroupsByCourseId } = useGroupsByCourseId();
 
   const [openGroup, setOpenGroup] = useState(false);
   const [openRandomize, setOpenRandomize] = useState(false);
@@ -74,7 +76,8 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     if (id) fetchCourseById(id);
-  }, [id, fetchCourseById]);
+    if (id) fetchGroupsByCourseId(id);
+  }, [id, fetchCourseById, fetchGroupsByCourseId]);
 
   useEffect(() => {
     setOpenImport(action === "import");
@@ -227,12 +230,14 @@ export default function CourseDetailPage() {
                 </CardTitle>
                 {isActive && (
                   <div className="flex items-center gap-4">
-                    <Button
-                      className="btn btn-gradient-slow text-xs text-white"
-                      onClick={() => setOpenRandomize(true)}
-                    >
-                      <Shuffle className="size-4 mr-1" /> Randomize
-                    </Button>
+                    {!(groups && groups.length > 0) && (
+                      <Button
+                        className="btn btn-gradient-slow text-xs text-white"
+                        onClick={() => setOpenRandomize(true)}
+                      >
+                        <Shuffle className="size-4 mr-1" /> Randomize
+                      </Button>
+                    )}
                     <Button
                       className="btn btn-gradient-slow text-xs text-white"
                       onClick={() => setOpenGroup(true)}
@@ -257,7 +262,8 @@ export default function CourseDetailPage() {
                 <GroupsPanel
                   courseId={id}
                   refreshSignal={groupsRefresh}
-                  onViewDetails={(gid) => setSelectedGroupId(gid)}
+                    onViewDetails={(gid) => setSelectedGroupId(gid)}
+                    onChanged={() => { if (id) fetchGroupsByCourseId(id, true); }}
                 />
               )}
             </CardContent>
@@ -276,11 +282,11 @@ export default function CourseDetailPage() {
       </Tabs>
 
       <Dialog open={openRandomize} onOpenChange={setOpenRandomize}>
-        <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg">
           <RandomizeGroupDialog
             courseId={id}
             onClose={() => setOpenRandomize(false)}
-            onRandomized={() => setGroupsRefresh((v) => v + 1)}
+            onRandomized={() => { setGroupsRefresh((v) => v + 1); if (id) fetchGroupsByCourseId(id, true); }}
           />
         </DialogContent>
       </Dialog>
@@ -289,7 +295,7 @@ export default function CourseDetailPage() {
         open={openGroup}
         onOpenChange={setOpenGroup}
         courseId={id}
-        onCreated={() => setGroupsRefresh((v) => v + 1)}
+        onCreated={() => { setGroupsRefresh((v) => v + 1); if (id) fetchGroupsByCourseId(id, true); }}
       />
     </div>
   );

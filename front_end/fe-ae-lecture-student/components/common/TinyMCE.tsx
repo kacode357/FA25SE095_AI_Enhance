@@ -12,6 +12,8 @@ type Props = {
   className?: string;
   readOnly?: boolean;
   debounceMs?: number;
+  /** If set to 'text', the editor will emit plain text (no HTML). Default: 'html' */
+  outputFormat?: "html" | "text";
   /** Nhận Tiny editor instance (cho collab/caret) */
   onInit?: (editor: any) => void;
 };
@@ -27,6 +29,8 @@ export default function LiteRichTextEditor({
   className = "",
   readOnly = false,
   debounceMs = 150,
+  // Make text the default so editor always emits plain text
+  outputFormat = "text",
   onInit,
 }: Props) {
   const editorRef = useRef<any>(null);
@@ -52,10 +56,21 @@ export default function LiteRichTextEditor({
     const v = normalize(newHtml);
     if (v === lastEmittedRef.current) return;
 
-    const cur = normalize(ed.getContent({ format: "raw" }) || "");
+    const cur = normalize(
+      (outputFormat === "text"
+        ? ed.getContent({ format: "text" })
+        : ed.getContent({ format: "raw" })) || ""
+    );
     if (v === cur) return;
 
-    ed.setContent(v, { format: "raw" });
+    // If caller expects plain text output, ensure the editor displays the
+    // incoming text literally (escape HTML) so tags are not interpreted.
+    if (outputFormat === "text") {
+      const escaped = ed.dom?.encode ? ed.dom.encode(v) : v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      ed.setContent(escaped, { format: "raw" });
+    } else {
+      ed.setContent(v, { format: "raw" });
+    }
     lastEmittedRef.current = v;
   };
 
@@ -83,9 +98,15 @@ export default function LiteRichTextEditor({
           editorRef.current = api;
           onInit?.(api);
         }}
-        onEditorChange={(content) => {
+        onEditorChange={(content, editor) => {
           if (readOnly) return;
-          emit(content);
+          try {
+            const out = outputFormat === "text" ? editor.getContent({ format: "text" }) : content;
+            emit(out);
+          } catch (e) {
+            // fallback to provided content
+            emit(content);
+          }
         }}
         init={{
           menubar: false,

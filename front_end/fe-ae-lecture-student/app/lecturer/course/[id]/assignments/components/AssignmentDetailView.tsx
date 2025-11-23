@@ -15,7 +15,8 @@ import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { useCloseAssignment } from "@/hooks/assignment/useCloseAssignment";
 import { useExtendDueDate } from "@/hooks/assignment/useExtendDueDate";
 import { useScheduleAssignment } from "@/hooks/assignment/useScheduleAssignment";
-import { AssignmentStatus } from "@/types/assignments/assignment.response";
+import { AssignmentService } from "@/services/assignment.services";
+import { AssignmentStatus, GroupItem } from "@/types/assignments/assignment.response";
 import AssignmentActionsBar from "./AssignmentActionsBar";
 import ConfirmScheduleAssignmentDialog from "./ConfirmScheduleAssignmentDialog";
 import GroupAssignControls from "./GroupAssignControls";
@@ -63,14 +64,35 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
   const [overviewEnter, setOverviewEnter] = useState(false);
   const [overviewMounted, setOverviewMounted] = useState(false);
 
+  const [assignedGroupsState, setAssignedGroupsState] = useState<GroupItem[]>([]);
+
   useEffect(() => {
-    if (id) fetchAssignment(id);
+    // fetch assignment details and assigned groups together
+    async function load() {
+      if (!id) return;
+      await fetchAssignment(id);
+      try {
+        const res = await AssignmentService.getGroups(id);
+        setAssignedGroupsState(res.groups || []);
+      } catch {
+        // ignore
+      }
+    }
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const a = data?.assignment;
 
-  const refetchDetail = () => {
-    if (id) fetchAssignment(id);
+  const refetchDetail = async () => {
+    if (!id) return;
+    await fetchAssignment(id);
+    try {
+      const res = await AssignmentService.getGroups(id);
+      setAssignedGroupsState(res.groups || []);
+    } catch {
+      // ignore
+    }
   };
 
   const handleExtend = async (iso: string) => {
@@ -345,12 +367,12 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                 {/* Groups */}
                 <section>
                   <div className="mb-2 -mt-5 text-sm text-slate-500">
-                    Assigned Groups ({a.assignedGroupsCount})
+                    Assigned Groups ({assignedGroupsState.length ?? a?.assignedGroupsCount ?? 0})
                   </div>
-                  {a.assignedGroups && a.assignedGroups.length > 0 ? (
+                  {assignedGroupsState && assignedGroupsState.length > 0 ? (
                     <ScrollArea className="max-h-72">
                       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                        {a.assignedGroups.map((g) => (
+                        {assignedGroupsState.map((g) => (
                           <div
                             key={g.id}
                             className="px-3 py-2 text-sm border border-violet-400 rounded-md bg-slate-50"

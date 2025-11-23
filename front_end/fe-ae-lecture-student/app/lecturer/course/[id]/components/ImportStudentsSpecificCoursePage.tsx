@@ -87,22 +87,41 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
                         }}
                         onDragLeave={() => setDragActive(false)}
                         onDrop={onDrop}
-                        className={`flex flex-col items-center justify-center text-center rounded-xl border-2 border-dashed p-8 transition-colors ${dragActive ? "border-indigo-400 bg-indigo-50/50" : "border-slate-300 bg-slate-50"}`}
+                        className={`flex flex-col items-center justify-center text-center rounded-xl border-2 border-dashed p-8 transition-colors ${dragActive ? "border-indigo-400 bg-indigo-50/50" : file ? "border-emerald-400 bg-emerald-50/40" : "border-slate-300 bg-slate-50"}`}
                     >
-                        <FileSpreadsheet className="size-8 text-slate-500 mb-2" />
-                        <p className="text-sm font-medium text-slate-700 mb-1">{file ? file.name : "No file selected"}</p>
-                        <p className="text-xs text-slate-500">Drag & drop your <span className="font-semibold">.xlsx/.xls</span> file here, or</p>
-                        <div className="mt-3 text-green-700">
-                            <Button variant="outline" size="lg" onClick={pickFile} className="rounded-full">Choose File</Button>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept={acceptMime}
-                                onChange={(e) => validateAndSet(e.target.files?.[0] || null)}
-                                className="hidden"
-                                aria-label="Import file"
-                            />
-                        </div>
+                        {file ? (
+                            <div className="w-full flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <FileSpreadsheet className="size-8 text-emerald-700" />
+                                    <div className="text-left">
+                                        <p className="text-sm font-semibold text-slate-900">{file.name}</p>
+                                        <p className="text-xs text-slate-600">{(file.size / 1024).toFixed(1)} KB</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" onClick={() => validateAndSet(null)}>Remove</Button>
+                                    <Button variant="outline" size="sm" className="text-blue-500 hover:text-blue-600" onClick={pickFile}>Change</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <FileSpreadsheet className="size-8 text-slate-500 mb-2" />
+                                <p className="text-sm font-medium text-slate-700 mb-1">No file selected</p>
+                                <p className="text-xs text-slate-500">Drag & drop your <span className="font-semibold">.xlsx/.xls</span> file here, or</p>
+                                <div className="mt-3 text-green-700">
+                                    <Button variant="outline" size="lg" onClick={pickFile} className="rounded-full">Choose File</Button>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept={acceptMime}
+                                        onChange={(e) => validateAndSet(e.target.files?.[0] || null)}
+                                        className="hidden"
+                                        aria-label="Import file"
+                                    />
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* Options + Action */}
@@ -119,7 +138,11 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
                             </label>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button onClick={handleSubmit} disabled={!canSubmit} className="bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white">
+                            <Button
+                                onClick={handleSubmit}
+                                disabled={!canSubmit}
+                                className={`bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white ${!canSubmit ? 'opacity-50 pointer-events-none' : ''}`}
+                            >
                                 <Upload className="size-4 mr-2" /> Start Import
                             </Button>
                             {onDone && (

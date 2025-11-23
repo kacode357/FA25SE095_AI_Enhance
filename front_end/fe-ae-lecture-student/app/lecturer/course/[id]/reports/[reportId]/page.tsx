@@ -9,6 +9,7 @@ import { useGetReportById } from "@/hooks/reports/useGetReportById";
 import { useGradeReport } from "@/hooks/reports/useGradeReport";
 import { useRejectReport } from "@/hooks/reports/useRejectReport";
 import { useRequestReportRevision } from "@/hooks/reports/useRequestReportRevision";
+import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { ArrowLeft, Book, ChevronRight, ClipboardPenLine, Loader2, OctagonAlert, PencilOff, X } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -158,7 +159,7 @@ export default function ReportDetailsPage() {
               <Button size="sm" variant="ghost" className="cursor-pointer -ml-2" onClick={goBack}><ArrowLeft className="size-4" /></Button>
               <div>
                 <h2 className="text-xl font-semibold text-slate-900">Report Details</h2>
-                <div className="text-sm text-slate-600">Report ID: <span className="font-mono">{reportId}</span></div>
+                <div className="text-xs text-slate-600">Report ID: <span className="font-mono">{reportId}</span></div>
               </div>
             </div>
 
@@ -226,11 +227,6 @@ export default function ReportDetailsPage() {
                 {/* Assignment & Course meta */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-slate-200 pb-5">
                   <div>
-                    <div className="text-xs text-slate-500">Assignment ID</div>
-                    <div className="font-mono text-xs text-slate-700 truncate">{detail.assignmentId ?? '—'}</div>
-                  </div>
-
-                  <div>
                     <div className="text-xs text-slate-500">Assignment Title</div>
                     <div className="font-medium">{detail.assignmentTitle ?? '—'}</div>
                   </div>
@@ -244,7 +240,9 @@ export default function ReportDetailsPage() {
                 {detail.assignmentDescription && (
                   <div>
                     <div className="text-xs text-slate-500">Assignment Description</div>
-                    <div className="mt-1 text-slate-700 bg-white p-5 border-slate-200 rounded-md shadow-md whitespace-pre-wrap">{detail.assignmentDescription}</div>
+                    <div className="mt-1 text-slate-700 bg-white p-5 border-slate-200 rounded-md shadow-md">
+                      <div dangerouslySetInnerHTML={{ __html: normalizeAndSanitizeHtml(detail.assignmentDescription) }} />
+                    </div>
                   </div>
                 )}
 

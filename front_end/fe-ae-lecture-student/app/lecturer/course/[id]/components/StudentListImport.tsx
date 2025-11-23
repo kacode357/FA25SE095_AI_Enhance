@@ -114,7 +114,7 @@ export default function StudentList({
 
                                 <TableHead className="text-center w-[150px]">Joined At</TableHead>
                                 {/* <TableHead className="text-center w-[110px]">Status</TableHead> */}
-                                <TableHead className="text-center w-20">Action</TableHead>
+                                <TableHead className="text-center w-20">Unenroll</TableHead>
                             </TableRow>
                         </TableHeader>
 

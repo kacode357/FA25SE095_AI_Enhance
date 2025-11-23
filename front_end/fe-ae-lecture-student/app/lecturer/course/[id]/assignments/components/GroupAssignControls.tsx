@@ -29,7 +29,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged, s
   const { assignGroups, loading: loadingAssign } = useAssignGroups();
   const { unassignGroups, loading: loadingUnassign } = useUnassignGroups();
 
-  const assignedList = assignment.assignedGroups ?? [];
+  const [assignedListState, setAssignedListState] = useState<GroupItem[]>(assignment.assignedGroups ?? []);
 
   const isDraft = status === AssignmentStatus.Draft;
 
@@ -47,6 +47,28 @@ export default function GroupAssignControls({ courseId, assignment, onChanged, s
     if (courseId) refreshUnassigned();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, assignment.id]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchAssigned() {
+      try {
+        const res = await AssignmentService.getGroups(assignment.id);
+        if (mounted && res?.groups) setAssignedListState(res.groups);
+      } catch {
+        // ignore
+      }
+    }
+    if (assignment.id) fetchAssigned();
+    return () => {
+      mounted = false;
+    };
+  }, [assignment.id]);
+
+  useEffect(() => {
+    if (assignment.assignedGroups && assignment.assignedGroups.length > 0) {
+      setAssignedListState(assignment.assignedGroups);
+    }
+  }, [assignment.assignedGroups]);
 
   const selectedUnassignedIds = useMemo(
     () => Object.entries(pickUnassigned).filter(([, v]) => v).map(([k]) => k),
@@ -141,7 +163,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged, s
           </div>
           <div className="pt-2">
             <Button
-              className="text-[#000D83]"
+              className="text-[#000D83] shadow-md"
               size="sm"
               onClick={handleAssign}
               disabled={isDraft || loadingAssign || selectedUnassignedIds.length === 0}
@@ -157,10 +179,10 @@ export default function GroupAssignControls({ courseId, assignment, onChanged, s
             Assigned to this assignment ({assignment.assignedGroupsCount})
           </div>
           <div className="max-h-64 overflow-auto pr-1 space-y-2">
-            {assignedList.length === 0 ? (
+            {assignedListState.length === 0 ? (
               <div className="text-sm text-slate-500 p-2">No groups assigned.</div>
             ) : (
-              assignedList.map((g) => (
+              assignedListState.map((g) => (
                 <label key={g.id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
                   <Checkbox
                     checked={!!pickAssigned[g.id]}
@@ -185,7 +207,7 @@ export default function GroupAssignControls({ courseId, assignment, onChanged, s
               size="sm"
               variant="destructive"
               onClick={handleUnassign}
-              className="text-[#000D83]"
+              className="text-[#000D83] shadow-md"
               disabled={isDraft || loadingUnassign || selectedAssignedIds.length === 0}
             >
               Unassign selected

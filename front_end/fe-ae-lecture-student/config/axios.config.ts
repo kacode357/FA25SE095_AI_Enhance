@@ -1,12 +1,12 @@
 // config/axios.config.ts
-import axios, { AxiosError, AxiosInstance } from "axios";
-import Cookies from "js-cookie";
-import { toast } from "sonner";
-import { clearEncodedUser } from "@/utils/secure-user";
 import {
   updateAccessToken,
   updateRefreshToken,
 } from "@/utils/auth/access-token";
+import { clearEncodedUser } from "@/utils/secure-user";
+import axios, { AxiosError, AxiosInstance } from "axios";
+import Cookies from "js-cookie";
+import { toast } from "sonner";
 
 /** ===== ENVs ===== */
 const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;
@@ -221,6 +221,12 @@ const createAxiosInstance = (
         }
       }
 
+      // If the request set suppressToast, skip global toasts for this response
+      const reqConfig: any = config || {};
+      if (reqConfig.suppressToast) {
+        return response;
+      }
+
       // Các lỗi 4xx/5xx khác (không phải 401)
       if (status >= 400) {
         const msg = pickErrorMessage(
@@ -236,7 +242,7 @@ const createAxiosInstance = (
       if (axios.isCancel(error)) {
         return Promise.reject(error);
       }
-      toast.error(error.message || "Không thể kết nối máy chủ");
+      toast.error(error.message || "Unable to connect to server");
       return Promise.reject(error);
     }
   );
