@@ -5,7 +5,6 @@ import { useState } from "react";
 import { ChatService } from "@/services/chat.services";
 import { GetMessagesQuery } from "@/types/chat/chat.payload";
 import {
-  ChatMessageItemResponse,
   GetMessagesApiResponse,
 } from "@/types/chat/chat.response";
 

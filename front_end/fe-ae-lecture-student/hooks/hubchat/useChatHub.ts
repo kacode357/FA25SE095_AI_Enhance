@@ -6,19 +6,19 @@ import * as signalR from "@microsoft/signalr";
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
 import type { ChatMessageItemResponse as ChatMessageDto } from "@/types/chat/chat.response";
 
-type Options = {  
+type Options = {
   baseUrl?: string;
   getAccessToken: () => Promise<string> | string;
   onReceiveMessage?: (msg: ChatMessageDto) => void;
   onReceiveMessagesBatch?: (msgs: ChatMessageDto[]) => void;
   onTyping?: (payload: { userId: string; isTyping: boolean }) => void;
   onError?: (message: string) => void;
-  onMessageDeleted?: (messageId: string) => void; 
+  onMessageDeleted?: (messageId: string) => void;
   debounceMs?: number;
 };
 
 export function useChatHub({
-baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ,
+  baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB,
   getAccessToken,
   onReceiveMessage,
   onReceiveMessagesBatch,
@@ -34,7 +34,7 @@ baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ,
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const startInProgressRef = useRef(false);
 
-  // ===== batch buffer =====
+  // ===== buffer cho batch messages =====
   const msgBufferRef = useRef<ChatMessageDto[]>([]);
   const msgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,7 +56,7 @@ baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ,
     }, debounceMs);
   }, [flushMessages, debounceMs, onReceiveMessagesBatch]);
 
-  // ===== Build connection (lazy) =====
+  // ===== lazy build connection =====
   const ensureConnection = useMemo(() => {
     return () => {
       if (connectionRef.current) return connectionRef.current;
@@ -105,7 +105,7 @@ baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ,
         onTyping?.({ userId: p.userId, isTyping: !!p.isTyping });
       });
 
-      // Nếu BE bổ sung broadcast xóa, FE tự nhận:
+      // Nếu BE broadcast xóa:
       // await Clients.All.SendAsync("MessageDeleted", new { messageId });
       conn.on("MessageDeleted", (payload: { messageId: string }) => {
         if (!payload?.messageId) return;
@@ -170,31 +170,49 @@ baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ,
     }
   }, []);
 
-  const sendMessage = useCallback(async (dto: SendMessagePayload) => {
-    const conn = connectionRef.current;
-    if (!conn || conn.state !== signalR.HubConnectionState.Connected) {
-      throw new Error("Not connected");
-    }
-    if (!dto.message?.trim()) throw new Error("Message cannot be empty");
-    if (dto.message.length > 2000) throw new Error("Message too long (max 2000 chars)");
-    if (!dto.receiverId) throw new Error("Missing receiverId");
-    if (!dto.courseId) throw new Error("Missing courseId");
-    await conn.invoke("SendMessage", dto);
-  }, []);
+  const sendMessage = useCallback(
+    async (dto: SendMessagePayload) => {
+      const conn = connectionRef.current;
+      if (!conn || conn.state !== signalR.HubConnectionState.Connected) {
+        throw new Error("Not connected");
+      }
+
+      if (!dto.message?.trim()) throw new Error("Message cannot be empty");
+      if (dto.message.length > 2000)
+        throw new Error("Message too long (max 2000 chars)");
+      if (!dto.receiverId) throw new Error("Missing receiverId");
+      if (!dto.courseId) throw new Error("Missing courseId");
+
+      // Chuẩn hóa payload gửi lên Hub
+      const payload = {
+        message: dto.message.trim(),
+        receiverId: dto.receiverId,
+        courseId: dto.courseId,
+        // nếu FE chưa có, gửi null để BE bind Guid? / Guid? cho ổn
+        conversationId: dto.conversationId || null,
+        supportRequestId: dto.supportRequestId || null,
+      };
+
+      await conn.invoke("SendMessage", payload);
+    },
+    []
+  );
 
   const startTyping = useCallback(async (receiverId: string) => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;
+    // console.log("[ChatHub] startTyping ->", receiverId);
     await conn.invoke("StartTyping", receiverId);
   }, []);
 
   const stopTyping = useCallback(async (receiverId: string) => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;
+    // console.log("[ChatHub] stopTyping ->", receiverId);
     await conn.invoke("StopTyping", receiverId);
   }, []);
 
-  // Giữ lại: gọi tới method "DeleteMessage" nếu có. Nếu BE chưa có -> FE catch/ignore.
+  // Gọi tới method "DeleteMessage" nếu BE có implement
   const deleteMessageHub = useCallback(async (messageId: string) => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;
@@ -214,6 +232,6 @@ baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ,
     sendMessage,
     startTyping,
     stopTyping,
-    deleteMessageHub, 
+    deleteMessageHub,
   };
 }

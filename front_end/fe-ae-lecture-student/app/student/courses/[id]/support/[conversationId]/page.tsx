@@ -1,7 +1,13 @@
 // app/student/courses/[id]/support/[conversationId]/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
@@ -77,6 +83,15 @@ export default function SupportChatPage() {
   const peerId = searchParams.get("peerId");
   const peerName = searchParams.get("peerName") ?? "Support Staff";
 
+  // Lấy supportRequestId từ URL (?requestId=... hoặc ?supportRequestId=...)
+  const supportRequestId = useMemo(() => {
+    return (
+      searchParams.get("requestId") ??
+      searchParams.get("supportRequestId") ??
+      null
+    );
+  }, [searchParams]);
+
   const currentUserId = user?.id ?? null;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -99,6 +114,9 @@ export default function SupportChatPage() {
   // flag tổng khóa chat
   const chatLocked = isResolved || isReadOnly;
 
+  // đã load history thành công 1 lần cho conversation + supportRequest hiện tại chưa
+  const [loadedOnce, setLoadedOnce] = useState(false);
+
   // scroll
   const listRef = useRef<HTMLDivElement | null>(null);
   const scrollBottom = () =>
@@ -116,9 +134,6 @@ export default function SupportChatPage() {
   const pendingRef = useRef<
     Map<string, { createdAt: number; message: string; receiverId: string }>
   >(new Map());
-
-  // tránh spam load history
-  const lastLoadedConvRef = useRef<string | null>(null);
 
   // Hub
   const {
@@ -179,16 +194,25 @@ export default function SupportChatPage() {
     debounceMs: 500,
   });
 
-  /* ===== Load history (mỗi conversation 1 lần) ===== */
-  const loadHistory = useRef(
-    async (convId: string | null | undefined) => {
-      if (!convId) return;
-      if (lastLoadedConvRef.current === convId) return;
-      lastLoadedConvRef.current = convId;
+  /* ===== Reset khi đổi conversation / supportRequest ===== */
+  useEffect(() => {
+    // đổi conv hoặc supportRequest -> chuẩn bị load lại
+    setLoadedOnce(false);
+    setResolveHandled(false);
+    setIsResolved(false);
+    setIsReadOnly(false);
+    setReadOnlyReason(null);
+    setMessages([]);
+    pendingRef.current.clear();
+  }, [conversationId, supportRequestId, peerId]);
 
+  /* ===== Load history: chỉ gọi API khi chưa loadedOnce ===== */
+  const loadHistory = useCallback(
+    async (convId: string, supportReqId?: string | null) => {
       const res = await getConversationMessages(convId, {
         pageNumber: 1,
         pageSize: 50,
+        ...(supportReqId ? { supportRequestId: supportReqId } : {}),
       });
       if (!res) return;
 
@@ -210,31 +234,24 @@ export default function SupportChatPage() {
         setResolveHandled(true);
         setIsResolved(true); // cũng coi như đã resolved để UI đồng bộ
       }
+
+      // ✅ đánh dấu đã load thành công
+      setLoadedOnce(true);
     },
-  ).current;
+    [getConversationMessages],
+  );
 
-  // connect & load history
   useEffect(() => {
-    if (!peerId || !conversationId) {
-      setMessages([]);
-      pendingRef.current.clear();
-      lastLoadedConvRef.current = null;
-      return;
-    }
-
-    lastLoadedConvRef.current = null;
-    setResolveHandled(false); // reset khi đổi conversation
-    setIsResolved(false);
-    setIsReadOnly(false);
-    setReadOnlyReason(null);
+    if (!peerId || !conversationId) return;
+    if (loadedOnce) return; // ✅ đã có response rồi, không gọi nữa
 
     let cancelled = false;
+
     (async () => {
       try {
-        await connect();
-        if (!cancelled) {
-          await loadHistory(conversationId);
-        }
+        await connect(); // connect() tự check state, không spam
+        if (cancelled) return;
+        await loadHistory(conversationId, supportRequestId);
       } catch {
         // ignore
       }
@@ -242,10 +259,15 @@ export default function SupportChatPage() {
 
     return () => {
       cancelled = true;
-      // không disconnect ở đây để tránh lỗi HttpConnection
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [peerId, conversationId]);
+  }, [
+    peerId,
+    conversationId,
+    supportRequestId,
+    connect,
+    loadHistory,
+    loadedOnce,
+  ]);
 
   // typing edge-based
   const prevNonEmpty = useRef(false);
@@ -307,6 +329,8 @@ export default function SupportChatPage() {
         courseId,
         receiverId: peerId,
         message,
+        conversationId,
+        supportRequestId, // gửi kèm supportRequestId từ URL
       };
       await sendMessage(dto);
       setInput("");
@@ -380,11 +404,6 @@ export default function SupportChatPage() {
     !!resolveQuestionId && !resolveHandled && !chatLocked && !isReadOnly;
 
   const handleConfirmResolved = async () => {
-    const supportRequestId =
-      searchParams.get("requestId") ??
-      searchParams.get("supportRequestId") ??
-      null;
-
     if (!supportRequestId) {
       // không có id thì chỉ đóng popup, không khóa chat
       setResolveHandled(true);
@@ -475,7 +494,7 @@ export default function SupportChatPage() {
               className="relative flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-stable"
             >
               {/* Loading skeleton */}
-              {loadingHistory && (
+              {loadingHistory && !loadedOnce && (
                 <div className="space-y-3">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
@@ -624,9 +643,9 @@ export default function SupportChatPage() {
               </div>
             ) : (
               <div className="border-t border-[var(--border)] px-4 py-3">
-                <div className="flex items.end gap-2">
+                <div className="flex items-end gap-2">
                   <textarea
-                    className="input flex-1 resize-none rounded-xl border border-[var(--border)] bg.white px-3 py-2 text-sm outline-none focus:ring-0"
+                    className="input flex-1 resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-0"
                     rows={2}
                     placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
                     value={input}
