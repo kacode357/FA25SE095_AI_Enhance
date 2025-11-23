@@ -6,7 +6,7 @@ import * as signalR from "@microsoft/signalr";
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
 import type { ChatMessageItemResponse as ChatMessageDto } from "@/types/chat/chat.response";
 
-type Options = {
+type Options = {  
   baseUrl?: string;
   getAccessToken: () => Promise<string> | string;
   onReceiveMessage?: (msg: ChatMessageDto) => void;

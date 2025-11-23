@@ -192,9 +192,10 @@ export default function JoinCourseWithAccessCodePage() {
                       className="px-4 py-4 bg-white"
                       style={{ color: "var(--brand-700)" }}
                     >
-                      <div className="text-sm font-medium underline underline-offset-2">
+                      <div className="text-sm font-medium">
                         {headerTitle}
                       </div>
+
 
                       {courseSubtitle && (
                         <div

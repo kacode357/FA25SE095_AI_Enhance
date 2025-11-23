@@ -86,6 +86,8 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
 
   const selectedGroupSet = useMemo(() => new Set(form.groupIds), [form.groupIds]);
 
+  const assignDisabled = assigning || (form.groupIds?.length ?? 0) === 0;
+
   const toggleGroup = (gid: string, checked: boolean | string) => {
     setForm((prev) => {
       const next = new Set(prev.groupIds);
@@ -168,7 +170,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     const nowMs = Date.now();
     const startMs = new Date(form.startDate).getTime();
     if (startMs < nowMs + 5 * 60 * 1000) {
-      return toast.warning("Start Date/Time must be at least 5 minutes from now");
+      return toast.error("Start Date/Time must be at least 5 minutes from now");
     }
 
     // Due date must be at least the next calendar day after start date (ignore time)
@@ -199,7 +201,8 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     };
 
     try {
-      const res = await createAssignment(payload);
+      // suppress internal toasts from hooks so we only show a single FE toast
+      const res = await createAssignment(payload, true);
       // If the backend returned a non-success response, show its message (not a generic error)
       if (res && !res.success) {
         toast(res.message || "Failed to create assignment");
@@ -207,27 +210,48 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
       }
 
       if (res?.success) {
-      setCreatedAssignmentId(res.assignmentId);
-      setCreatedAssignment(res.assignment ?? null);
+        setCreatedAssignmentId(res.assignmentId);
+        setCreatedAssignment(res.assignment ?? null);
 
-      if (form.autoSchedule) {
-        try {
-          await scheduleAssignment(res.assignmentId, { schedule: true });
-        } catch {
-          // schedule hook đã toast lỗi rồi
+        if (form.autoSchedule) {
+          try {
+            await scheduleAssignment(res.assignmentId, { schedule: true }, true);
+          } catch {
+            // suppressed schedule errors here to avoid duplicate toasts
+          }
         }
-      }
 
-      setTimeout(
-        () => checkboxSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
-        100
-      );
+        setTimeout(
+          () => checkboxSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+          100
+        );
 
-      toast.success("Assignment created. You can now assign groups (if needed).");
-      // Không reset form để user chọn groups
+        // If this is a group assignment and the user already selected groups, auto-assign them now
+        if (form.isGroupAssignment) {
+          if ((form.groupIds?.length ?? 0) > 0) {
+            try {
+              await assignGroups({ assignmentId: res.assignmentId, groupIds: form.groupIds }, true);
+              toast.success("The assignment has been created and assigned to the group successfully.");
+              onCreated?.();
+              return;
+            } catch {
+              // If assign fails, surface an error and keep the UI so user can retry manually
+              toast.error("Failed to assign groups.");
+              return;
+            }
+          }
+
+          // No groups selected yet: show created toast and keep UI for manual group assignment
+          toast.success("Assignment created successfully.");
+          return;
+        }
+
+        // Non-group assignment: show success and return to assignments
+        toast.success("Assignment created successfully.");
+        onCreated?.();
+        return;
       }
     } catch (err) {
-      // Unexpected/network error
       toast.error("Failed to create assignment. Please try again.");
       return;
     }
@@ -305,6 +329,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               <Label className="text-sm mb-1">Start Date *</Label>
               <DateTimePicker
                 className="placeholder:text-slate-100  border-slate-100"
+                size="sm"
                 value={form.startDate}
                 onChange={(iso: string) => setForm((p) => ({ ...p, startDate: iso }))}
                 placeholder="yyyy-MM-dd HH:mm"
@@ -317,6 +342,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             <div className="flex-1">
               <Label className="text-sm mb-1">Due Date *</Label>
               <DateTimePicker
+                size="sm"
                 value={form.dueDate}
                 onChange={(iso: string) => setForm((p) => ({ ...p, dueDate: iso }))}
                 placeholder="yyyy-MM-dd HH:mm"
@@ -473,37 +499,32 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             {createdAssignmentId && form.isGroupAssignment && (
               <div className="flex items-center justify-end gap-3 mt-3">
                 <Button
-                  variant="outline"
-                  className="text-violet-800"
-                  onClick={() => {
-                    toast.success("Returning to assignments...");
-                    onCreated?.();
-                  }}
-                >
-                  Back
-                </Button>
-                <Button
-                  className="btn text-sm btn-gradient-slow"
+                  className={`btn text-sm btn-gradient-slow ${assignDisabled ? 'opacity-50 pointer-events-none' : ''}`}
+                  aria-disabled={assignDisabled}
+                  disabled={assignDisabled}
                   onClick={async () => {
                     if (!createdAssignmentId) {
                       return toast.error("No assignment available to assign groups.");
                     }
                     if ((form.groupIds?.length ?? 0) === 0) {
-                      toast.success("No groups selected. Returning to assignments.");
+                      // No groups selected: simply return to assignments without extra toasts
                       onCreated?.();
                       return;
                     }
                     try {
-                      await assignGroups({
-                        assignmentId: createdAssignmentId,
-                        groupIds: form.groupIds,
-                      });
+                      // suppress assignGroups hook toast so we only show the single FE toast
+                      await assignGroups(
+                        {
+                          assignmentId: createdAssignmentId,
+                          groupIds: form.groupIds,
+                        },
+                        true
+                      );
                       onCreated?.();
                     } catch {
                       toast.error("Failed to assign groups.");
                     }
                   }}
-                  disabled={assigning}
                 >
                   Assign Group
                 </Button>

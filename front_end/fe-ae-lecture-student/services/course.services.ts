@@ -32,7 +32,8 @@ import {
 export const CourseService = {
   /** Tạo course (Lecturer only) */
   createCourse: async (data: CreateCoursePayload): Promise<CreateCourseResponse> => {
-    const res = await courseAxiosInstance.post<CreateCourseResponse>("/Courses", data);
+    // suppressToast: true prevents the global axios interceptor from showing a toast
+    const res = await courseAxiosInstance.post<CreateCourseResponse>("/Courses", data, { suppressToast: true } as any);
     return res.data;
   },
 

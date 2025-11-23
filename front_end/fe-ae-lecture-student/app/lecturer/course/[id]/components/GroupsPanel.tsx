@@ -11,7 +11,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useDeleteGroup } from "@/hooks/group/useDeleteGroup";
-// Chắc chắn rằng useGroupsByCourseId không còn trả về error nữa
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
 import { GroupDetail } from "@/types/group/group.response";
 import { ChevronDown, ChevronUp, Lock, PencilLine, Trash2, Unlock } from "lucide-react";
@@ -24,10 +23,12 @@ export default function GroupsPanel({
     courseId,
     refreshSignal = 0,
     onViewDetails,
+    onChanged,
 }: {
     courseId: string;
     refreshSignal?: number;
     onViewDetails?: (groupId: string) => void;
+    onChanged?: () => void;
 }) {
     // Xoá error khỏi destructuring
     const { listData: groups, loading, fetchByCourseId } =
@@ -71,6 +72,7 @@ export default function GroupsPanel({
         if (res?.success) {
             toast.success("Group deleted successfully");
             fetchByCourseId(courseId, true);
+            try { onChanged?.(); } catch {}
         }
         // Xoá khối else (báo lỗi)
 
@@ -107,7 +109,7 @@ export default function GroupsPanel({
                                         <button
                                             type="button"
                                             onClick={() => toggleExpand(g.id)}
-                                            aria-expanded={isOpen ? "true" : "false"}
+                                            aria-expanded={isOpen}
                                             className="p-1 rounded-md hover:bg-slate-100"
                                         >
                                             {isOpen ? <ChevronUp className="size-4 text-slate-500" /> : <ChevronDown className="size-4 text-slate-500" />}
@@ -209,6 +211,7 @@ export default function GroupsPanel({
                 onUpdated={() => {
                     toast.success("Group updated successfully");
                     fetchByCourseId(courseId, true);
+                    try { onChanged?.(); } catch {}
                 }}
             />
         </div>

@@ -8,11 +8,13 @@ import { Book, ChevronRight, FileDown, FileText, Loader2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useAssignmentReports } from "@/hooks/reports/useAssignmentReports";
 import { useExportAssignmentGrades } from "@/hooks/reports/useExportAssignmentGrades";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
 import type { ReportBase } from "@/types/reports/reports.response";
+import { ReportStatus } from "@/types/reports/reports.response";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import StatusBadge from "./utils/status";
 
@@ -23,6 +25,7 @@ export default function LecturerAssignmentReportsPage() {
     const assignmentId = sp.get("assignmentId") || "";
 
     const { fetchAssignmentReports, loading: loadingList } = useAssignmentReports();
+    const { data: assignmentData, fetchAssignment } = useAssignmentById();
     const { getReportById, loading: loadingDetail } = useGetReportById();
     const { data: course, fetchCourseById } = useGetCourseById();
     const { students: enrolledStudents, fetchCourseStudents } = useCourseStudents("");
@@ -40,11 +43,21 @@ export default function LecturerAssignmentReportsPage() {
             if (!assignmentId) return;
             try {
                 const res = await fetchAssignmentReports({ assignmentId, pageNumber: 1, pageSize: 200 });
-                if (res?.reports) setItems(res.reports as ReportBase[]);
+                if (res?.reports) {
+                    const filtered = (res.reports as ReportBase[]).filter((r) => r.status !== ReportStatus.Draft);
+                    setItems(filtered);
+                }
             } catch (e: any) {
                 setError(e?.message || "Failed to load reports");
             }
         })();
+    }, [assignmentId]);
+
+    useEffect(() => {
+        if (!assignmentId) return;
+        fetchAssignment(assignmentId).catch(() => {
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [assignmentId]);
     useEffect(() => {
         if (courseId) fetchCourseById(courseId);
@@ -60,7 +73,9 @@ export default function LecturerAssignmentReportsPage() {
     };
 
     const assignmentTitle = useMemo(() => {
-        return items?.[0]?.assignmentTitle ?? `Assignment ${assignmentId}`;
+        return (
+            assignmentData?.assignment?.title || items?.[0]?.assignmentTitle || `Assignment ${assignmentId}`
+        );
     }, [items, assignmentId]);
 
     const openDetail = async (id: string) => {
@@ -266,10 +281,6 @@ export default function LecturerAssignmentReportsPage() {
                                     {expandedId === r.id && (
                                         <div className="mt-3 bg-white border border-slate-100 rounded p-4 text-sm text-slate-700">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Assignment ID</div>
-                                                    <div className="font-medium">{r.assignmentId}</div>
-                                                </div>
                                                 <div>
                                                     <div className="text-xs text-slate-500">Assignment Title</div>
                                                     <div className="font-medium">{r.assignmentTitle}</div>

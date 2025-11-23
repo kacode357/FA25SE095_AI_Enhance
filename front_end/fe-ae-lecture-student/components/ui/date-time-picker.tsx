@@ -85,7 +85,7 @@ function TimeSelector({
           variant="ghost"
           className={
             buttonClassName ??
-            "h-9 w-28 justify-between px-3 text-xs font-normal text-slate-700"
+            "h-9 w-32 justify-between px-2 text-xs font-normal text-slate-700"
           }
         >
           {timeStr || placeholder}
@@ -211,6 +211,7 @@ type DateTimePickerProps = {
   minDate?: Date;
   minTime?: Date;
   timeIntervals?: number; // phút
+  size?: "sm" | "md";
 };
 
 export function DateTimePicker({
@@ -221,6 +222,7 @@ export function DateTimePicker({
   minDate,
   minTime,
   timeIntervals = 5,
+  size = "md",
 }: DateTimePickerProps) {
   const [openDate, setOpenDate] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(
@@ -294,10 +296,14 @@ export function DateTimePicker({
           <PopoverTrigger asChild>
             <Button
                   variant="ghost"
-                  className="h-10 w-full justify-between text-xs font-normal bg-white text-slate-700 text-left"
+                  className={
+                    size === "sm"
+                      ? "h-8 w-full justify-between text-xs font-normal bg-white text-slate-700 text-left px-2 min-w-0"
+                      : "h-10 w-full justify-between text-xs font-normal bg-white text-slate-700 text-left px-2 min-w-0"
+                  }
                 >
-              {date ? date.toLocaleDateString() : "Select date"}
-              <ChevronDownIcon className="h-4 w-4 text-slate-400" />
+              <span className="truncate">{date ? date.toLocaleDateString() : "Select date"}</span>
+              <ChevronDownIcon className={size === "sm" ? "h-3 w-3 text-slate-400" : "h-4 w-4 text-slate-400"} />
             </Button>
           </PopoverTrigger>
           <PopoverContent
@@ -334,7 +340,11 @@ export function DateTimePicker({
           onChange={handleTimeSelectorChange}
           timeIntervals={timeIntervals}
           placeholder="Select time"
-          buttonClassName="h-10 w-28 justify-between bg-white px-2 text-xs font-normal text-slate-700"
+          buttonClassName={
+            size === "sm"
+              ? "h-8 w-28 justify-between bg-white px-2 text-xs font-normal text-slate-700"
+              : "h-10 w-36 justify-between bg-white px-2 text-xs font-normal text-slate-700"
+          }
         />
       </div>
     </div>

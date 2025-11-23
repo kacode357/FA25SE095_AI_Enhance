@@ -26,6 +26,7 @@ import { TermService } from "@/services/term.services";
 import { CourseCodeOption } from "@/types/course-codes/course-codes.response";
 import { CreateCoursePayload } from "@/types/courses/course.payload";
 import { TermResponse } from "@/types/term/term.response";
+import { toast } from "sonner";
 // image upload removed per design request: full-width form
 
 function BreadcrumbCreate({ router }: { router: ReturnType<typeof useRouter> }) {
@@ -66,7 +67,7 @@ export default function CreateCoursePage() {
         year: number;
         description: string;
         requiresAccessCode: boolean;
-        accessCodeType?: number;
+        accessCodeType: AccessCodeType.Custom,
         customAccessCode?: string;
         accessCodeExpiresAt?: string;
     }>({
@@ -75,6 +76,7 @@ export default function CreateCoursePage() {
         year: now.getFullYear(),
         description: "",
         requiresAccessCode: false,
+        accessCodeType: AccessCodeType.Custom,
     });
 
     const [submitting, setSubmitting] = useState(false);
@@ -104,8 +106,31 @@ export default function CreateCoursePage() {
     }, []);
 
     const handleSubmit = async () => {
-        if (!isValid || submitting) return;
+        if (!form.courseCodeId || !form.termId || !form.description) {
+            toast.error("Please complete all required fields.");
+            return;
+        }
+
+        if (form.requiresAccessCode && form.accessCodeType === AccessCodeType.Custom && !form.customAccessCode) {
+            toast.error("Please enter custom access code.");
+            return;
+        }
+
         setSubmitting(true);
+
+        const extractErrorMessage = (data: any) => {
+            if (!data) return null;
+            if (data.errors && typeof data.errors === "object") {
+                for (const key of Object.keys(data.errors)) {
+                    const val = data.errors[key];
+                    if (Array.isArray(val) && val.length > 0) return String(val[0]);
+                    if (typeof val === "string" && val) return val;
+                }
+            }
+            if (data.message) return data.message;
+            return null;
+        };
+
         try {
             const payload: CreateCoursePayload = {
                 courseCodeId: form.courseCodeId,
@@ -117,11 +142,21 @@ export default function CreateCoursePage() {
                 customAccessCode: form.requiresAccessCode ? form.customAccessCode : undefined,
                 accessCodeExpiresAt: form.requiresAccessCode ? form.accessCodeExpiresAt : undefined,
             };
+
             const res = await CourseService.createCourse(payload);
+
             if (res?.success) {
                 try { invalidateMyCoursesCache(); } catch { }
+                try { toast.success(res?.message || "Course created."); } catch { }
                 router.push("/lecturer/course");
+            } else {
+                // Throw so single catch handler shows one toast (prefer field errors)
+                throw res || new Error("Failed to create course");
             }
+        } catch (err: any) {
+            const data = err?.response?.data ?? err;
+            const msg = extractErrorMessage(data) || data?.message || "Server error";
+            toast.error(String(msg));
         } finally {
             setSubmitting(false);
         }
@@ -141,7 +176,7 @@ export default function CreateCoursePage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
                             {/* Course code */}
                             <div>
-                                <Label className="text-lg mb-2">Course Code</Label>
+                                <Label className="text-lg mb-2">Course Code <span className="text-red-500 text-xs">(* required)</span></Label>
                                 <div className="mt-1">
                                     <Select value={form.courseCodeId} onValueChange={(v) => setForm((f) => ({ ...f, courseCodeId: v }))} disabled={formDisabled}>
                                         <SelectTrigger className="w-full border-slate-200 bg-white">
@@ -163,7 +198,7 @@ export default function CreateCoursePage() {
 
                             {/* Term */}
                             <div>
-                                <Label className="text-lg mb-2">Term</Label>
+                                <Label className="text-lg mb-2">Term <span className="text-red-500 text-xs">(* required)</span></Label>
                                 <div className="mt-1">
                                     <Select value={form.termId} onValueChange={(v) => setForm((f) => ({ ...f, termId: v }))} disabled={formDisabled}>
                                         <SelectTrigger className="w-full bg-white border-slate-200">
@@ -180,11 +215,11 @@ export default function CreateCoursePage() {
 
                             {/* Description */}
                             <div className="sm:col-span-2">
-                                <Label className="text-lg mb-2">Description</Label>
+                                <Label className="text-lg mb-2">Description <span className="text-red-500 text-xs">(* required)</span></Label>
                                 <Textarea
                                     value={form.description}
                                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                                    className="mt-1 min-h-24 border-slate-200"
+                                    className="mt-1 min-h-24 bg-white border-slate-200"
                                     placeholder="Short overview for this course.."
                                     disabled={formDisabled}
                                 />
@@ -215,21 +250,7 @@ export default function CreateCoursePage() {
                                 {/* Code Type */}
                                 <div className="flex-1 min-w-[150px]">
                                     <Label className="text-sm mb-1">Code Type</Label>
-                                    <Select
-                                        value={String(form.accessCodeType ?? "")}
-                                        onValueChange={(v) => setForm((f) => ({ ...f, accessCodeType: Number(v) }))}
-                                        disabled={formDisabled}
-                                    >
-                                        <SelectTrigger className="w-full border bg-white border-slate-200">
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                        <SelectContent className="border border-slate-300">
-                                            <SelectItem value={String(AccessCodeType.Numeric)}>Numeric</SelectItem>
-                                            <SelectItem value={String(AccessCodeType.AlphaNumeric)}>Alphanumeric</SelectItem>
-                                            <SelectItem value={String(AccessCodeType.Words)}>Words</SelectItem>
-                                            <SelectItem value={String(AccessCodeType.Custom)}>Custom</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <Input value="Custom" disabled className="h-9 text-sm bg-white border-slate-200" />
                                 </div>
 
                                 {/* Custom Code (chỉ hiển thị khi chọn Custom) */}
@@ -286,7 +307,7 @@ export default function CreateCoursePage() {
                                     onClick={handleSubmit}
                                     loading={submitting}
                                     className="btn btn-gradient text-sm text-white"
-                                    disabled={!isValid || submitting}
+                                    disabled={submitting}
                                 >
                                     Create
                                 </Button>

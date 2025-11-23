@@ -11,16 +11,17 @@ export function useScheduleAssignment() {
 
   const scheduleAssignment = async (
     id: string,
-    payload: ScheduleAssignmentRequest
+    payload: ScheduleAssignmentRequest,
+    suppressToast = false
   ): Promise<ScheduleAssignmentResponse | null> => {
     if (loading) return null;
     setLoading(true);
     try {
       const res = await AssignmentService.scheduleAssignment(id, payload);
-      toast.success(res.message || "Assignment scheduled successfully");
+      if (!suppressToast) toast.success(res.message || "Assignment scheduled successfully");
       return res;
     } catch (err) {
-      toast.error("Failed to schedule assignment");
+      if (!suppressToast) toast.error("Failed to schedule assignment");
       return null;
     } finally {
       setLoading(false);
