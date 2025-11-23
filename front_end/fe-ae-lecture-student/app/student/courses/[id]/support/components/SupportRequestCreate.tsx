@@ -1,13 +1,12 @@
 // app/student/courses/[id]/support/components/SupportRequestCreate.tsx
 "use client";
 
-import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,10 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
-import { useCreateSupportRequest } from "@/hooks/support-requests/useCreateSupportRequest";
-import { SupportRequestPriority } from "@/config/classroom-service/support-request-priority.enum";
 import { SupportRequestCategory } from "@/config/classroom-service/support-request-category.enum";
+import { SupportRequestPriority } from "@/config/classroom-service/support-request-priority.enum";
+import { useCreateSupportRequest } from "@/hooks/support-requests/useCreateSupportRequest";
 
 type Props = {
   courseId: string;
@@ -93,6 +93,9 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                   </SelectItem>
                   <SelectItem value={String(SupportRequestPriority.High)}>
                     High
+                    </SelectItem>
+                    <SelectItem value={String(SupportRequestPriority.Urgent)}>
+                      Urgent
                   </SelectItem>
                 </SelectContent>
               </Select>

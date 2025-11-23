@@ -86,7 +86,7 @@ export default function SupportRequestsPage({
       </div>
 
       {/* Content */}
-      <Card className="card rounded-2xl flex-1 flex flex-col">
+      <Card className="card rounded-2xl gap-0 flex-1 flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold text-gray-900">
             Support Center

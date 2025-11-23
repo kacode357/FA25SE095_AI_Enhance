@@ -9,6 +9,22 @@ export enum SupportRequestStatus {
   Rejected = 4,
 }
 
+/** Priority enum (mirror BE) */
+export enum SupportRequestPriority {  
+  Low = 0,
+    Medium = 1,
+    High = 2,
+    Urgent = 3
+}
+
+/** Category enum (mirror BE) */
+export enum SupportRequestCategory {
+  Technical = 0,
+  Academic = 1,
+  Administrative = 2,
+  Other = 3,
+}
+
 /** Item support request trả về từ API */
 export interface SupportRequestItem {
   id: string;
@@ -27,9 +43,9 @@ export interface SupportRequestItem {
   /** Status enum (BE dùng số, ví dụ 0 = Pending, ...) */
   status: SupportRequestStatus;
   /** Priority enum (BE dùng số) */
-  priority: number;
+  priority: SupportRequestPriority;
   /** Category enum (BE dùng số) */
-  category: number;
+  category: SupportRequestCategory;
 
   subject: string;
   /**

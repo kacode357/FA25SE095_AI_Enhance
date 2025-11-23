@@ -1,13 +1,15 @@
 // types/support/support-request.payload.ts
 
 /** Payload tạo mới support request: POST /api/SupportRequests */
+import { SupportRequestCategory, SupportRequestPriority } from "./support-request.response";
+
 export interface CreateSupportRequestPayload {
   /** Id khoá học liên quan */
   courseId: string;
-  /** Độ ưu tiên (enum bên BE – dùng number cho chắc) */
-  priority: number;
-  /** Loại request (enum bên BE – dùng number cho chắc) */
-  category: number;
+  /** Độ ưu tiên (enum bên BE) */
+  priority: SupportRequestPriority;
+  /** Loại request (enum bên BE) */
+  category: SupportRequestCategory;
   /** Tiêu đề ngắn gọn */
   subject: string;
   /** Mô tả chi tiết vấn đề */

@@ -9,9 +9,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover";
 
 // ================== COMMON TIME UTILS ==================
@@ -47,6 +47,8 @@ type TimeSelectorProps = {
   timeIntervals?: number; // phút
   buttonClassName?: string;
   placeholder?: string;
+  selectedDate?: Date | undefined;
+  minTime?: Date | undefined;
 };
 
 function TimeSelector({
@@ -55,6 +57,8 @@ function TimeSelector({
   timeIntervals = 5,
   buttonClassName,
   placeholder = "Select time",
+  selectedDate,
+  minTime,
 }: TimeSelectorProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -77,6 +81,11 @@ function TimeSelector({
     const mm = m.toString().padStart(2, "0");
     onChange(`${hh}:${mm}`);
   };
+
+  // compute disabled state based on minTime when selectedDate is same day as minTime
+  const isMinDay = selectedDate && minTime && isSameDay(selectedDate, minTime);
+  const minHour = isMinDay ? minTime!.getHours() : -1;
+  const minMinute = isMinDay ? minTime!.getMinutes() : -1;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -102,16 +111,18 @@ function TimeSelector({
             {hours.map((h) => {
               const label = h.toString().padStart(2, "0");
               const active = h === curH;
+              const disabled = isMinDay && h < minHour;
               return (
                 <button
                   key={h}
                   type="button"
+                  disabled={disabled}
                   className={`mb-1 w-full rounded px-1 py-1 text-center ${
                     active
                       ? "bg-blue-500 text-white"
                       : "hover:bg-slate-100 text-slate-800"
-                  }`}
-                  onClick={() => setHour(h)}
+                  } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                  onClick={() => !disabled && setHour(h)}
                 >
                   {label}
                 </button>
@@ -123,16 +134,19 @@ function TimeSelector({
             {minutes.map((m) => {
               const label = m.toString().padStart(2, "0");
               const active = m === curM;
+              // disabled when on min-day and hour is equal to minHour and minute < minMinute
+              const disabledMinute = isMinDay && curH === minHour && m < minMinute;
               return (
                 <button
                   key={m}
                   type="button"
+                  disabled={disabledMinute}
                   className={`mb-1 w-full rounded px-1 py-1 text-center ${
                     active
                       ? "bg-blue-500 text-white"
                       : "hover:bg-slate-100 text-slate-800"
-                  }`}
-                  onClick={() => setMinute(m)}
+                  } ${disabledMinute ? "opacity-40 cursor-not-allowed" : ""}`}
+                  onClick={() => !disabledMinute && setMinute(m)}
                 >
                   {label}
                 </button>
@@ -345,6 +359,8 @@ export function DateTimePicker({
               ? "h-8 w-28 justify-between bg-white px-2 text-xs font-normal text-slate-700"
               : "h-10 w-36 justify-between bg-white px-2 text-xs font-normal text-slate-700"
           }
+          selectedDate={date}
+          minTime={minTime}
         />
       </div>
     </div>

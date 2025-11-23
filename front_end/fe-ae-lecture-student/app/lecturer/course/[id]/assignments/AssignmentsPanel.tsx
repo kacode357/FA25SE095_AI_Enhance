@@ -31,14 +31,14 @@ type Props = {
   children?: React.ReactNode;
 };
 
-const statusColor: Record<AssignmentStatus, string> = {
-  1: "bg-slate-200 text-slate-800",
-  2: "bg-emerald-200 text-emerald-800",
-  3: "bg-blue-200 text-blue-800",
-  4: "bg-amber-200 text-amber-800",
-  5: "bg-red-200 text-red-800",
-  6: "bg-slate-500 text-white",
-  7: "bg-purple-200 text-purple-800",
+const statusClass: Record<AssignmentStatus, string> = {
+  [AssignmentStatus.Draft]: "badge-assignment badge-assignment--draft",
+  [AssignmentStatus.Scheduled]: "badge-assignment badge-assignment--scheduled",
+  [AssignmentStatus.Active]: "badge-assignment badge-assignment--active",
+  [AssignmentStatus.Extended]: "badge-assignment badge-assignment--extended",
+  [AssignmentStatus.Overdue]: "badge-assignment badge-assignment--overdue",
+  [AssignmentStatus.Closed]: "badge-assignment badge-assignment--closed",
+  [AssignmentStatus.Graded]: "badge-assignment badge-assignment--graded",
 };
 
 const defaultFilter: FilterState = {
@@ -265,7 +265,7 @@ export default function AssignmentsPanel({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <div className="font-medium truncate text-slate-800">{a.title ?? "Untitled"}</div>
-                        <Badge className={statusColor[a.status]}>{a.statusDisplay}</Badge>
+                        <Badge className={statusClass[a.status]}>{a.statusDisplay}</Badge>
                         {a.isGroupAssignment ? (
                           <Badge variant="outline">Group</Badge>
                         ) : (

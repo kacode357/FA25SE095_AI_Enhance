@@ -66,6 +66,23 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     gradingCriteria: "",
   });
 
+  // compute dynamic minTime for start date: if startDate is today (or not set yet),
+  // enforce at least 5 minutes from now; if startDate is a future date, allow any time.
+  const computeStartMinTime = () => {
+    const nowOffset = new Date(Date.now() + 5 * 60 * 1000);
+    if (!form.startDate) return nowOffset;
+    const s = new Date(form.startDate);
+    const today = new Date();
+    if (
+      s.getFullYear() === today.getFullYear() &&
+      s.getMonth() === today.getMonth() &&
+      s.getDate() === today.getDate()
+    ) {
+      return nowOffset;
+    }
+    return undefined;
+  };
+
   const [createdAssignmentId, setCreatedAssignmentId] = useState<string | null>(null);
   const [createdAssignment, setCreatedAssignment] = useState<any | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
   const checkboxSectionRef = useRef<HTMLDivElement | null>(null);
@@ -304,7 +321,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             value={form.description}
             onChange={(html) => setForm((p) => ({ ...p, description: html }))}
             placeholder="Exercise description…"
-            // onImageUpload={uploadImageToServer}
+          // onImageUpload={uploadImageToServer}
           />
         </div>
 
@@ -324,38 +341,48 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             />
           </div>
 
-          <div className="flex gap-3 w-full">
-            <div className="flex-1">
-              <Label className="text-sm mb-1">Start Date *</Label>
-              <DateTimePicker
-                className="placeholder:text-slate-100  border-slate-100"
-                size="sm"
-                value={form.startDate}
-                onChange={(iso: string) => setForm((p) => ({ ...p, startDate: iso }))}
-                placeholder="yyyy-MM-dd HH:mm"
-                minDate={new Date()}
-                minTime={new Date(Date.now() + 5 * 60 * 1000)}
-                timeIntervals={5}
-              />
-            </div>
+          <div className="flex flex-col gap-3 w-full">
+            <div className="flex gap-3 w-full">
+              <div className="flex-1">
+                <Label className="text-sm mb-1">Start Date *</Label>
+                <DateTimePicker
+                  className="placeholder:text-slate-100  border-slate-100"
+                  size="sm"
+                  value={form.startDate}
+                  onChange={(iso: string) => setForm((p) => ({ ...p, startDate: iso }))}
+                  placeholder="yyyy-MM-dd HH:mm"
+                  minDate={new Date()}
+                  minTime={computeStartMinTime()}
+                  timeIntervals={5}
+                />
+              </div>
 
-            <div className="flex-1">
-              <Label className="text-sm mb-1">Due Date *</Label>
-              <DateTimePicker
-                size="sm"
-                value={form.dueDate}
-                onChange={(iso: string) => setForm((p) => ({ ...p, dueDate: iso }))}
-                placeholder="yyyy-MM-dd HH:mm"
-                minDate={
-                  form.startDate
-                    ? (() => {
+              <div className="flex-1">
+                <Label className="text-sm mb-1">Due Date *</Label>
+                <DateTimePicker
+                  size="sm"
+                  value={form.dueDate}
+                  onChange={(iso: string) => setForm((p) => ({ ...p, dueDate: iso }))}
+                  placeholder="yyyy-MM-dd HH:mm"
+                  minDate={
+                    form.startDate
+                      ? (() => {
                         const s = new Date(form.startDate);
                         return new Date(s.getFullYear(), s.getMonth(), s.getDate() + 1);
                       })()
-                    : new Date()
-                }
-                timeIntervals={5}
-              />
+                      : new Date()
+                  }
+                  timeIntervals={5}
+                />
+              </div>
+            </div>
+            <div className="mb-2 flex items-start gap-2">
+              <div className="inline-flex items-center rounded px-2 py-1 bg-amber-50 text-amber-700 text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path fillRule="evenodd" d="M10.29 3.86a1 1 0 011.42 0l8.29 8.29a1 1 0 01.21 1.09l-6 14A1 1 0 0113 27H11a1 1 0 01-.71-.29l-6-6A1 1 0 013.21 19L11.5 10.71l-1.21-1.21L4 17.79 10.29 3.86z" clipRule="evenodd" />
+                </svg>
+                <span>Time starts at least 5 minutes after current time.</span>
+              </div>
             </div>
           </div>
 
@@ -453,9 +480,8 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                       return (
                         <label
                           key={g.id}
-                          className={`flex border-slate-300 items-center gap-2 rounded-md border px-3 py-2 ${
-                            isAssigned ? "opacity-70" : ""
-                          }`}
+                          className={`flex border-slate-300 items-center gap-2 rounded-md border px-3 py-2 ${isAssigned ? "opacity-70" : ""
+                            }`}
                         >
                           <Checkbox
                             checked={selectedGroupSet.has(g.id)}

@@ -1,12 +1,6 @@
 import { SupportRequestCategory } from "@/config/classroom-service/support-request-category.enum";
+import { SupportRequestPriority } from "@/config/classroom-service/support-request-priority.enum";
 import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
-
-export enum SupportRequestPriority {
-  Low = 0,
-  Medium = 1,
-  High = 2,
-  Urgent = 3
-}
 
 export const statusLabelMap: Record<number, string> = {
   [SupportRequestStatus.Pending]: "Pending",
@@ -17,11 +11,16 @@ export const statusLabelMap: Record<number, string> = {
 };
 
 export const statusColorMap: Record<number, string> = {
-  [SupportRequestStatus.Pending]: "bg-yellow-100 text-yellow-800",
-  [SupportRequestStatus.InProgress]: "bg-blue-100 text-blue-800",
-  [SupportRequestStatus.Resolved]: "bg-green-100 text-green-800",
-  [SupportRequestStatus.Cancelled]: "bg-red-100 text-red-800",
-  [SupportRequestStatus.Rejected]: "bg-gray-200 text-gray-800",
+  [SupportRequestStatus.Pending]:
+    "badge-support-status badge-support-status--pending",
+  [SupportRequestStatus.InProgress]:
+    "badge-support-status badge-support-status--in-progress",
+  [SupportRequestStatus.Resolved]:
+    "badge-support-status badge-support-status--resolved",
+  [SupportRequestStatus.Cancelled]:
+    "badge-support-status badge-support-status--cancelled",
+  [SupportRequestStatus.Rejected]:
+    "badge-support-status badge-support-status--rejected",
 };
 
 export const categoryLabelMap: Record<number, string> = {
@@ -39,17 +38,21 @@ export const priorityLabelMap: Record<number, string> = {
 };
 
 export const categoryColorMap: Record<number, string> = {
-  [SupportRequestCategory.Technical]: "bg-indigo-100 text-indigo-800",
-  [SupportRequestCategory.Academic]: "bg-blue-100 text-blue-800",
-  [SupportRequestCategory.Administrative]: "bg-amber-100 text-amber-800",
-  [SupportRequestCategory.Other]: "bg-gray-100 text-gray-800",
+  [SupportRequestCategory.Technical]:
+    "badge-support-category badge-support-category--technical",
+  [SupportRequestCategory.Academic]:
+    "badge-support-category badge-support-category--academic",
+  [SupportRequestCategory.Administrative]:
+    "badge-support-category badge-support-category--administrative",
+  [SupportRequestCategory.Other]:
+    "badge-support-category badge-support-category--other",
 };
 
 export const priorityColorMap: Record<number, string> = {
-  [SupportRequestPriority.Low]: "bg-green-100 text-green-800",
-  [SupportRequestPriority.Medium]: "bg-sky-100 text-sky-800",
-  [SupportRequestPriority.High]: "bg-yellow-100 text-yellow-800",
-  [SupportRequestPriority.Urgent]: "bg-red-100 text-red-800",
+  [SupportRequestPriority.Low]: "badge-support-priority badge-support-priority--low",
+  [SupportRequestPriority.Medium]: "badge-support-priority badge-support-priority--medium",
+  [SupportRequestPriority.High]: "badge-support-priority badge-support-priority--high",
+  [SupportRequestPriority.Urgent]: "badge-support-priority badge-support-priority--urgent",
 };
 
 export function statusLabel(status: number) {
@@ -58,7 +61,7 @@ export function statusLabel(status: number) {
 
 /** ✅ Helper để lấy class màu */
 export function statusColor(status: number) {
-  return statusColorMap[status] ?? "bg-gray-100 text-gray-700";
+  return statusColorMap[status] ?? "badge-support-status";
 }
 
 export function categoryLabel(category: number) {
@@ -70,7 +73,7 @@ export function priorityLabel(priority: number) {
 }
 
 export function categoryColor(category: number) {
-  return categoryColorMap[category] ?? "bg-gray-100 text-gray-700";
+  return categoryColorMap[category] ?? "badge-support-category";
 }
 
 export function priorityColor(priority: number) {

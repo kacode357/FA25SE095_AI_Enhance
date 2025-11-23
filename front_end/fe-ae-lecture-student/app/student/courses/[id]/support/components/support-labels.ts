@@ -1,9 +1,9 @@
 // app/student/courses/[id]/support/components/support-labels.ts
 
-import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
 import { SupportRequestCategory } from "@/config/classroom-service/support-request-category.enum";
-import { SupportRequestRejectionReason } from "@/config/classroom-service/support-request-rejection-reason.enum";
 import { SupportRequestPriority } from "@/config/classroom-service/support-request-priority.enum";
+import { SupportRequestRejectionReason } from "@/config/classroom-service/support-request-rejection-reason.enum";
+import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 /** Never show raw enum numbers in UI, only English labels */
@@ -26,6 +26,7 @@ export const priorityLabelMap: Record<SupportRequestPriority, string> = {
   [SupportRequestPriority.Low]: "Low",
   [SupportRequestPriority.Medium]: "Medium",
   [SupportRequestPriority.High]: "High",
+  [SupportRequestPriority.Urgent]: "Urgent",
 };
 
 export const rejectionReasonLabelMap: Record<SupportRequestRejectionReason, string> =
@@ -115,6 +116,8 @@ const priorityBadgeClassMap: Record<SupportRequestPriority, string> = {
     "badge-support-priority badge-support-priority--medium",
   [SupportRequestPriority.High]:
     "badge-support-priority badge-support-priority--high",
+  [SupportRequestPriority.Urgent]:
+    "badge-support-priority badge-support-priority--urgent",
 };
 
 export function statusBadgeClass(status: number): string {

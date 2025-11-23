@@ -2,37 +2,34 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { SupportRequestPriority } from "@/config/classroom-service/support-request-priority.enum";
 
 type Props = {
-  priority: number; // 0 = Low, 1 = Medium, 2 = High
+  priority: number; // 0 = Low, 1 = Medium, 2 = High, 3 = Urgent
 };
 
 const PRIORITY_LABEL: Record<number, string> = {
   0: "Low",
   1: "Medium",
   2: "High",
+  3: "Urgent",
+};
+
+const PRIORITY_CLASS: Record<number, string> = {
+  [SupportRequestPriority.Low]: "badge-support-priority--low",
+  [SupportRequestPriority.Medium]: "badge-support-priority--medium",
+  [SupportRequestPriority.High]: "badge-support-priority--high",
+  [SupportRequestPriority.Urgent]: "badge-support-priority--urgent",
 };
 
 export default function SupportRequestPriorityBadge({ priority }: Props) {
-  let colorClass = "bg-slate-50 text-slate-700 border border-slate-100";
-
-  switch (priority) {
-    case 0: // Low
-      colorClass = "bg-emerald-50 text-emerald-700 border border-emerald-100";
-      break;
-    case 1: // Medium
-      colorClass = "bg-blue-50 text-blue-700 border border-blue-100";
-      break;
-    case 2: // High
-      colorClass = "bg-amber-50 text-amber-700 border border-amber-100";
-      break;
-  }
+  const modifier = PRIORITY_CLASS[priority as SupportRequestPriority];
+  const className = modifier
+    ? `badge-support-priority ${modifier}`
+    : "badge-support-priority";
 
   return (
-    <Badge
-      variant="outline"
-      className={`px-2.5 py-0.5 text-xs rounded-full ${colorClass}`}
-    >
+    <Badge variant="outline" className={className}>
       {PRIORITY_LABEL[priority] ?? `Priority ${priority}`}
     </Badge>
   );

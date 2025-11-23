@@ -5,6 +5,8 @@ import { GetGroupsByCourseIdResponse, GroupDetail } from "@/types/group/group.re
 import { useCallback, useState } from "react";
 
 const cache = new Map<string, GetGroupsByCourseIdResponse>();
+// in-flight dedupe map
+const inflight = new Map<string, Promise<GetGroupsByCourseIdResponse | null>>();
 
 export function useGroupsByCourseId() {
   const [listData, setListData] = useState<GroupDetail[]>([]);
@@ -20,17 +22,27 @@ export function useGroupsByCourseId() {
       return cached;
     }
 
+    // reuse inflight requests
+    if (inflight.has(key)) {
+      return inflight.get(key)!;
+    }
+
     setLoading(true);
 
-    try {
-      const res = await GroupService.getByCourseId(courseId);
-      cache.set(key, res);
-      setListData(res.groups || []);
-      return res;
-      
-    } finally {
-      setLoading(false);
-    }
+    const req = (async (): Promise<GetGroupsByCourseIdResponse | null> => {
+      try {
+        const res = await GroupService.getByCourseId(courseId);
+        cache.set(key, res);
+        setListData(res.groups || []);
+        return res;
+      } finally {
+        setLoading(false);
+        inflight.delete(key);
+      }
+    })();
+
+    inflight.set(key, req);
+    return req;
   }, []);
 
   const refetch = (courseId: string) => fetchByCourseId(courseId, true);

@@ -1,15 +1,16 @@
 "use client";
 
+import Select from "@/components/ui/select/Select";
 import React, { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 import { useCreateSupportRequest } from "@/hooks/support-requests/useCreateSupportRequest";
 import type { CreateSupportRequestPayload } from "@/types/support/support-request.payload";
+import type { SupportRequestCategory, SupportRequestPriority } from "@/types/support/support-request.response";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { categoryColor, categoryLabel, priorityColor, priorityLabel } from "./support-labels";
@@ -21,8 +22,8 @@ type Props = {
 
 export default function CreateSupportRequestForm({ courseId: initialCourseId, onSuccess }: Props) {
     const [courseId, setCourseId] = useState(initialCourseId ?? "");
-    const [priority, setPriority] = useState<number>(1);
-    const [category, setCategory] = useState<number>(0);
+    const [priority, setPriority] = useState<SupportRequestPriority>(1);
+    const [category, setCategory] = useState<SupportRequestCategory>(0);
     const [subject, setSubject] = useState("");
     const [description, setDescription] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -30,6 +31,8 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
 
     const { createSupportRequest, loading } = useCreateSupportRequest();
     const { listData: courses, loading: loadingCourses, fetchMyCourses } = useMyCourses();
+
+    // using shared Select component (imported above)
 
     useEffect(() => {
         // load courses for lecturer; pageSize large to fetch all
@@ -101,25 +104,19 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                     <div className="md:col-span-3">
                         <Label className="text-sm">Course</Label>
                         {!loadingCourses && courses && courses.length > 0 ? (
-                            <select
-                                title="Course"
+                            <Select<string>
                                 value={courseId}
-                                onChange={(e) => setCourseId(e.target.value)}
-                                className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                            >
-                                <option value="">-- Select course --</option>
-                                {courses.map((c: any) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.name || c.title || c.id}
-                                    </option>
-                                ))}
-                            </select>
+                                options={[{ value: "", label: "-- Select course --" }, ...(courses || []).map((c: any) => ({ value: c.id, label: c.name || c.title || c.id }))]}
+                                placeholder="-- Select course --"
+                                onChange={(v) => setCourseId(String(v))}
+                                className="mt-1"
+                            />
                         ) : (
                             <input
                                 title="Course (manual)"
                                 value={courseId}
                                 onChange={(e) => setCourseId(e.target.value)}
-                                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
                                 placeholder="Nhập courseId (ví dụ: course-123)"
                             />
                         )}
@@ -128,13 +125,16 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                     <div>
                         <Label className="text-sm">Priority</Label>
                         <div className="flex items-center gap-2">
-                            <Input
-                                title="Priority"
-                                type="number"
+                            <Select<SupportRequestPriority>
                                 value={priority}
-                                onChange={(e) => setPriority(Number(e.target.value))}
-                                className="mt-1 w-full"
-                                min={0}
+                                options={[
+                                    { value: 0, label: "Low" },
+                                    { value: 1, label: "Medium" },
+                                    { value: 2, label: "High" },
+                                    { value: 3, label: "Urgent" },
+                                ]}
+                                onChange={(v) => setPriority(v)}
+                                className="mt-1  w-40"
                             />
                             <span className={`${priorityColor(priority)} mt-1 text-xs font-semibold px-2 py-1 rounded-full`}>
                                 {priorityLabel(priority)}
@@ -145,13 +145,16 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                     <div>
                         <Label className="text-sm">Category</Label>
                         <div className="flex items-center gap-2">
-                            <Input
-                                title="Category"
-                                type="number"
+                            <Select<SupportRequestCategory>
                                 value={category}
-                                onChange={(e) => setCategory(Number(e.target.value))}
-                                className="mt-1 w-full"
-                                min={0}
+                                options={[
+                                    { value: 0, label: "Technical" },
+                                    { value: 1, label: "Academic" },
+                                    { value: 2, label: "Administrative" },
+                                    { value: 3, label: "Other" },
+                                ]}
+                                onChange={(v) => setCategory(v)}
+                                className="mt-1  w-40"
                             />
                             <span className={`${categoryColor(category)} mt-1 text-xs font-semibold px-2 py-1 rounded-full`}>
                                 {categoryLabel(category)}
@@ -164,7 +167,7 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                         <input
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
-                            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                            className="mt-1 block w-full rounded-md border bg-white border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-slate-300"
                             placeholder="Enter your Subject.."
                         />
                     </div>
@@ -174,17 +177,13 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                         <Textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="mt-1 w-full min-h-[160px] border-slate-300"
+                            className="mt-1 w-full min-h-[160px] bg-white border-slate-200"
                             placeholder="Describe the problem in detail.."
                         />
                     </div>
                 </div>
 
                 <div className="mt-6 flex items-center justify-end gap-3">
-                    <Button type="submit" className="btn btn-gradient-slow text-sm" disabled={loading}>
-                        {loading ? "Sending..." : "Create"}
-                    </Button>
-
                     <Button
                         type="button"
                         variant="ghost"
@@ -198,6 +197,10 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                         }}
                     >
                         Reset
+                    </Button>
+
+                    <Button type="submit" className="btn btn-gradient-slow text-sm" disabled={loading}>
+                        {loading ? "Sending..." : "Create"}
                     </Button>
                 </div>
             </Card>

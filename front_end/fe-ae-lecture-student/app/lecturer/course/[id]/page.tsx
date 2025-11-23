@@ -19,40 +19,6 @@ import StudentList from "./components/StudentListImport";
 import RandomizeGroupDialog from "./group/[groupId]/components/RandomizeGroupDialog";
 import GroupDetailPage from "./group/[groupId]/page";
 
-function renderStatusBadge(status?: CourseStatus) {
-  switch (status) {
-    case CourseStatus.PendingApproval:
-      return (
-        <span className="px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700">
-          Pending Approval
-        </span>
-      );
-    case CourseStatus.Active:
-      return (
-        <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
-          Active
-        </span>
-      );
-    case CourseStatus.Inactive:
-      return (
-        <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
-          Inactive
-        </span>
-      );
-    case CourseStatus.Rejected:
-      return (
-        <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
-          Rejected
-        </span>
-      );
-    default:
-      return (
-        <span className="px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-600">
-          Unknown
-        </span>
-      );
-  }
-}
 
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();

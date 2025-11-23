@@ -246,7 +246,7 @@ export default function SupportRequestList({
                             <Button
                               size="sm"
                               variant="outline"
-                              className="px-3 py-1 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                              className="px-3 py-1 cursor-pointer text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                               disabled={actionLoading || isClosed}
                               onClick={() => onResolve(item.id)}
                             >
@@ -257,11 +257,11 @@ export default function SupportRequestList({
                             </Button>
                           )}
 
-                          {item.conversationId && (
+                          {item.conversationId && item.status !== SupportRequestStatus.Resolved && (
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="mt-1 h-7 w-7"
+                              className="mt-1 h-7 w-7 cursor-pointer"
                               title="Open conversation (chat)"
                               onClick={() => {
                                 // navigate to chat page with query params
