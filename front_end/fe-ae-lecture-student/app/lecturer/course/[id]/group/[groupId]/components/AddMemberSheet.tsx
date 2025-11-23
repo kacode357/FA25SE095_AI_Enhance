@@ -100,7 +100,7 @@ export default function AddGroupMemberSheet({
                     groupId,
                     studentId,
                     isLeader: studentId === leaderId,
-                    role: MemberRole.Student,
+                    role: MemberRole.Member,
                 };
                 await addGroupMember(payload, false); // không toast trong hook
             }

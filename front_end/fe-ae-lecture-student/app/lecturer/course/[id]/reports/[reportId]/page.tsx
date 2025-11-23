@@ -172,7 +172,7 @@ export default function ReportDetailsPage() {
                   <Button size="sm" className="cursor-pointer text-red-500 shadow-lg mr-2" onClick={() => { setShowRejectForm(true); setRejectError(null); setShowRevisionForm(false); }}><X className="size-4" />Reject Report</Button>
                 )}
 
-                {!showGradeForm && detail?.status !== 'Rejected' && (
+                {!showGradeForm && !(Number(detail?.status) === 8) && !(Number(detail?.status) === 6) && (
                   <Button size="sm" className="cursor-pointer btn btn-gradient-slow" onClick={() => { setShowGradeForm(true); setGradeError(null); setShowRevisionForm(false); setShowRejectForm(false); }}><ClipboardPenLine className="size-4" />Grade</Button>
                 )}
               </div>
@@ -260,8 +260,8 @@ export default function ReportDetailsPage() {
                   </div>
 
                   <div>
-                    <div className="text-xs text-slate-500">Group ID</div>
-                    <div className="font-mono text-xs text-slate-700 truncate">{detail.groupId ?? '—'}</div>
+                    <div className="text-xs text-slate-500">Group Name</div>
+                    <div className="font-mono text-xs text-slate-700 truncate">{detail.groupName ?? '—'}</div>
                   </div>
                 </div>
 
@@ -359,7 +359,7 @@ export default function ReportDetailsPage() {
                   {/* Grade form */}
                   {showGradeForm && (
                     <div className="p-4 bg-white border border-slate-200 rounded">
-                      <div className="text-sm text-red-600 uppercase mb-5">Submit grade and feedback for this report.</div>
+                      <div className="text-sm text-green-600 uppercase mb-5">Submit grade and feedback for this report.</div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                         <div className="max-w-40">
@@ -401,6 +401,19 @@ export default function ReportDetailsPage() {
                               return;
                             }
 
+                            // non-negative
+                            if (Number(gradeValue) < 0) {
+                              setGradeError("Grade cannot be negative.");
+                              return;
+                            }
+
+                            // must not exceed assignment max points (if provided)
+                            const maxPoints = typeof detail?.assignmentMaxPoints === 'number' ? detail.assignmentMaxPoints : (detail?.assignmentMaxPoints ? Number(detail.assignmentMaxPoints) : NaN);
+                            if (!Number.isNaN(maxPoints) && Number(gradeValue) > maxPoints) {
+                              setGradeError(`Grade cannot exceed ${maxPoints}.`);
+                              return;
+                            }
+
                             try {
                               const payload = {
                                 reportId: reportId,
@@ -415,7 +428,7 @@ export default function ReportDetailsPage() {
                                   ...prev,
                                   grade: payload.grade,
                                   feedback: payload.feedback,
-                                  status: 'Graded',
+                                  status: 6, // Graded (numeric code)
                                   gradedAt: new Date().toISOString(),
                                 }));
                                 setShowGradeForm(false);
@@ -483,7 +496,7 @@ export default function ReportDetailsPage() {
                               if (res && res.success) {
                                 setDetail((prev: any) => ({
                                   ...prev,
-                                  status: 'RequiresRevision',
+                                  status: 4, // RequiresRevision (numeric code)
                                   feedback: payload.feedback,
                                 }));
                                 setShowRevisionForm(false);
@@ -552,7 +565,7 @@ export default function ReportDetailsPage() {
                               if (res && res.success) {
                                 setDetail((prev: any) => ({
                                   ...prev,
-                                  status: 'Rejected',
+                                  status: 8, // Rejected (numeric code)
                                   feedback: payload.feedback,
                                 }));
                                 // after reject, hide grade button (detail.status check handles it)

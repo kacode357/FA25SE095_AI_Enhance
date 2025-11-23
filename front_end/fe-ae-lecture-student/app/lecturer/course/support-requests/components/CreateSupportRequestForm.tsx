@@ -1,7 +1,7 @@
 "use client";
 
 import Select from "@/components/ui/select/Select";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,6 +21,8 @@ type Props = {
 };
 
 export default function CreateSupportRequestForm({ courseId: initialCourseId, onSuccess }: Props) {
+    const cardRef = useRef<HTMLDivElement | null>(null);
+    const footerRef = useRef<HTMLDivElement | null>(null);
     const [courseId, setCourseId] = useState(initialCourseId ?? "");
     const [priority, setPriority] = useState<SupportRequestPriority>(1);
     const [category, setCategory] = useState<SupportRequestCategory>(0);
@@ -38,6 +40,62 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
         // load courses for lecturer; pageSize large to fetch all
         fetchMyCourses({ asLecturer: true, page: 1, pageSize: 200 });
     }, [fetchMyCourses]);
+
+    const getScrollParent = useCallback((el: Element | null) => {
+        let parent = el?.parentElement || null;
+        while (parent) {
+            const style = window.getComputedStyle(parent);
+            const overflowY = style.overflowY;
+            if ((overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight) return parent;
+            parent = parent.parentElement;
+        }
+        return window;
+    }, []);
+
+    const ensureFooterVisible = useCallback(() => {
+        const footer = footerRef.current;
+        if (!footer) return;
+        const parent = getScrollParent(footer);
+
+        const targetRect = footer.getBoundingClientRect();
+
+        if (parent === window) {
+            if (targetRect.bottom > window.innerHeight) {
+                window.scrollBy({ top: targetRect.bottom - window.innerHeight + 12, behavior: 'smooth' });
+            }
+            if (targetRect.top < 0) {
+                window.scrollBy({ top: targetRect.top - 12, behavior: 'smooth' });
+            }
+        } else {
+            const p = parent as Element;
+            const parentRect = (p as Element).getBoundingClientRect();
+            const offset = targetRect.bottom - parentRect.bottom;
+            if (offset > 0) {
+                (p as HTMLElement).scrollBy({ top: offset + 12, behavior: 'smooth' });
+            }
+            if (targetRect.top < parentRect.top) {
+                (p as HTMLElement).scrollBy({ top: targetRect.top - parentRect.top - 12, behavior: 'smooth' });
+            }
+        }
+    }, [getScrollParent]);
+
+    useEffect(() => {
+        // ensure visible on mount and on resize
+        ensureFooterVisible();
+        window.addEventListener('resize', ensureFooterVisible);
+        return () => window.removeEventListener('resize', ensureFooterVisible);
+    }, [ensureFooterVisible]);
+
+    useEffect(() => {
+        const card = cardRef.current;
+        if (!card) return;
+        const onFocusIn = (e: FocusEvent) => {
+            // when any input inside form gains focus, make sure footer is visible
+            ensureFooterVisible();
+        };
+        card.addEventListener('focusin', onFocusIn as EventListener);
+        return () => card.removeEventListener('focusin', onFocusIn as EventListener);
+    }, [ensureFooterVisible]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -93,15 +151,15 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
 
     return (
         <form onSubmit={handleSubmit} className="">
-            <Card className="p-4 py-4 border-slate-200  shadow-sm">
+            <Card ref={cardRef} className="p-4 border-slate-200 shadow-sm relative flex flex-col h-[calc(100vh-140px)]">
                 <div className="flex items-start justify-between mb-4">
                     <div>
                         <p className="text-sm text-slate-500">Send a request for help to system Staff.</p>
                     </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 gap-x-32">
-                    <div className="md:col-span-3">
+                <div className="overflow-auto flex-1 pr-2 pb-20">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="col-span-1 md:col-span-3">
                         <Label className="text-sm">Course</Label>
                         {!loadingCourses && courses && courses.length > 0 ? (
                             <Select<string>
@@ -109,7 +167,7 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                                 options={[{ value: "", label: "-- Select course --" }, ...(courses || []).map((c: any) => ({ value: c.id, label: c.courseCode + " — " + c.courseCodeTitle || c.id }))]}
                                 placeholder="-- Select course --"
                                 onChange={(v) => setCourseId(String(v))}
-                                className="mt-1"
+                                className="mt-1 w-full"
                             />
                         ) : (
                             <input
@@ -122,7 +180,7 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                         )}
                     </div>
 
-                    <div>
+                    <div className="col-span-1 md:col-span-1">
                         <Label className="text-sm">Priority</Label>
                         <div className="flex items-center gap-2">
                             <Select<SupportRequestPriority>
@@ -134,15 +192,14 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                                     { value: 3, label: "Urgent" },
                                 ]}
                                 onChange={(v) => setPriority(v)}
-                                className="mt-1  w-40"
+                                className="mt-1 w-full max-w-xs"
                             />
                             <span className={`${priorityColor(priority)} mt-1 text-xs font-semibold px-2 py-1 rounded-full`}>
                                 {priorityLabel(priority)}
                             </span>
                         </div>
                     </div>
-
-                    <div>
+                    <div className="col-span-1 md:col-span-1">
                         <Label className="text-sm">Category</Label>
                         <div className="flex items-center gap-2">
                             <Select<SupportRequestCategory>
@@ -154,15 +211,14 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                                     { value: 3, label: "Other" },
                                 ]}
                                 onChange={(v) => setCategory(v)}
-                                className="mt-1  w-40"
+                                className="mt-1 w-full max-w-xs"
                             />
                             <span className={`${categoryColor(category)} mt-1 text-xs font-semibold px-2 py-1 rounded-full`}>
                                 {categoryLabel(category)}
                             </span>
                         </div>
                     </div>
-
-                    <div className="md:col-span-3">
+                    <div className="col-span-1 md:col-span-3">
                         <Label className="text-sm">Subject</Label>
                         <input
                             value={subject}
@@ -172,7 +228,7 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                         />
                     </div>
 
-                    <div className="md:col-span-3">
+                    <div className="col-span-1 md:col-span-3">
                         <Label className="text-sm">Description</Label>
                         <Textarea
                             value={description}
@@ -181,9 +237,10 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                             placeholder="Describe the problem in detail.."
                         />
                     </div>
+                    </div>
                 </div>
 
-                <div className="mt-6 flex items-center justify-end gap-3">
+                <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-3 flex-none sticky sm:static bottom-0 p-3 bg-white/95 border-t border-slate-200 z-10">
                     <Button
                         type="button"
                         variant="ghost"

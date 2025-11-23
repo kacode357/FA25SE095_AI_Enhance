@@ -73,10 +73,12 @@ export default function LecturerAssignmentReportsPage() {
     };
 
     const assignmentTitle = useMemo(() => {
+        // Prefer the fetched assignment title, then any report-provided title.
+        // If neither is available yet, show a neutral label instead of the raw id.
         return (
-            assignmentData?.assignment?.title || items?.[0]?.assignmentTitle || `Assignment ${assignmentId}`
+            assignmentData?.assignment?.title || items?.[0]?.assignmentTitle || `Assignment`
         );
-    }, [items, assignmentId]);
+    }, [items, assignmentId, assignmentData]);
 
     const openDetail = async (id: string) => {
         setSelectedReport(id);

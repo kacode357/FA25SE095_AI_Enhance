@@ -1,8 +1,7 @@
 "use client";
 
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
+import { useChatDeleteMessage } from "@/hooks/chat/useChatDeleteMessage";
 import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
 import { useGetConversations } from "@/hooks/chat/useGetConversations";
 import { useChatHub } from "@/hooks/hubchat/useChatHub";
@@ -14,8 +13,8 @@ import { getSavedAccessToken } from "@/utils/auth/access-token";
 import { ArrowLeft, EllipsisVertical, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import SupportRequestResolved from "./SupportRequestResolved";
+import SupportRequestResolvePrompt from "./SupportRequestResolvePrompt";
 
 type Props = {
     courseId: string;
@@ -70,7 +69,6 @@ export default function SupportRequestChatWindow({
 
     const { getConversations } = useGetConversations();
     const { getConversationMessages } = useGetConversationMessages();
-    const { deleteMessage, loading: deleting } = useDeleteMessage();
 
     const [conversationId, setConversationId] = useState<string | null>(
         initialConvId ?? null,
@@ -182,6 +180,10 @@ export default function SupportRequestChatWindow({
     // resolved status for the associated support request (local state)
     const [resolved, setResolved] = useState<boolean>(!!initialResolved);
     const [resolving, setResolving] = useState(false);
+    // which message's ellipsis menu is open
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    // hover position for tooltip (follows cursor)
+    const [hoverPos, setHoverPos] = useState<{ id: string | null; x: number; y: number }>({ id: null, x: 0, y: 0 });
 
     const handleMarkResolved = useCallback(async () => {
         if (resolved) return;
@@ -206,6 +208,61 @@ export default function SupportRequestChatWindow({
             setResolving(false);
         }
     }, [onResolve, supportRequestId, resolved]);
+
+    // helper to scroll a particular message element into view (centers in container)
+    const scrollMessageIntoView = useCallback((id: string) => {
+        try {
+            const el = messageElsRef.current.get(id);
+            const container = messagesRef.current;
+            if (!el || !container) return;
+            // Prefer element-level scrollIntoView for nested scroll containers
+            // attempt to center the element within the scroll container
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        } catch (e) {
+            // fallback: scroll to bottom
+            try {
+                const elc = messagesRef.current;
+                if (elc) elc.scrollTo({ top: elc.scrollHeight, behavior: "smooth" });
+            } catch {
+                // ignore
+            }
+        }
+    }, []);
+
+    // quick send a system message when user clicks the resolved prompt
+    const handleQuickSend = useCallback(() => {
+        try {
+            const text = "Has your need been resolved?";
+            const msg: ChatMessage = {
+                id: uuid(),
+                senderId: "system",
+                senderName: "System",
+                receiverId: peerId,
+                receiverName: peerName,
+                message: text,
+                sentAt: new Date().toISOString(),
+                isDeleted: false,
+            } as unknown as ChatMessage;
+
+            setMessages((prev) => {
+                const next = [...prev, msg];
+                return next.length > 500 ? next.slice(-500) : next;
+            });
+
+            // ensure we auto-scroll to the new system prompt message
+            setTimeout(() => {
+                try {
+                    scrollMessageIntoView(msg.id);
+                } catch {
+                    // fallback to bottom
+                    const el = messagesRef.current;
+                    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+                }
+            }, 40);
+        } catch (e) {
+            // ignore
+        }
+    }, [peerId, peerName, scrollMessageIntoView]);
 
     // ===== TYPING LOGIC (sửa lại gọn như page cũ) =====
     const prevNonEmptyRef = useRef(false);
@@ -329,6 +386,20 @@ export default function SupportRequestChatWindow({
         return () => clearTimeout(t);
     }, []);
 
+    // close open menu when clicking outside
+    useEffect(() => {
+        const onDocClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            // if click inside a menu or the button for current open menu, keep it open
+            const inMenu = target.closest('[data-menu-owner]');
+            const inButton = target.closest('[data-menu-button]');
+            if (!inMenu && !inButton) setOpenMenuId(null);
+        };
+        document.addEventListener('click', onDocClick);
+        return () => document.removeEventListener('click', onDocClick);
+    }, []);
+
     const onSend = async () => {
         if (!peerId || !courseId || !currentUserId) return;
         const message = input.trim();
@@ -383,6 +454,7 @@ export default function SupportRequestChatWindow({
     const rendered = useMemo(() => messages, [messages]);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const messagesRef = useRef<HTMLDivElement | null>(null);
+    const messageElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
     const footerRef = useRef<HTMLDivElement | null>(null);
     const headerRef = useRef<HTMLDivElement | null>(null);
     const shouldAutoScrollRef = useRef(true);
@@ -392,8 +464,11 @@ export default function SupportRequestChatWindow({
     const [headerRect, setHeaderRect] = useState<{ top: number; left: number; width: number } | null>(null);
     const router = useRouter();
 
-    // track which message's confirm dialog is open
-    const [confirmId, setConfirmId] = useState<string | null>(null);
+    // hook to handle message deletion + confirm dialog
+    const { requestDelete, ConfirmDialog } = useChatDeleteMessage({
+        currentUserId,
+        setMessages,
+    });
 
     // scroll to bottom when messages change, but only if the user is near bottom
     useEffect(() => {
@@ -525,6 +600,7 @@ export default function SupportRequestChatWindow({
                         resolving={resolving}
                         onResolve={handleMarkResolved}
                         supportRequestId={supportRequestId}
+                        onQuickSend={handleQuickSend}
                     />
                 </div>
 
@@ -533,7 +609,7 @@ export default function SupportRequestChatWindow({
             <div
                 ref={messagesRef}
                 onScroll={onMessagesScroll}
-                className="flex-1 overflow-y-auto space-y-6 bg-[linear-gradient(transparent,transparent)]"
+                className="flex-1 overflow-y-auto space-y-4 bg-[linear-gradient(transparent,transparent)]"
                 style={{
                     paddingTop: headerHeight ? headerHeight + 12 : undefined,
                     paddingBottom: footerHeight ? footerHeight + 20 : undefined,
@@ -544,21 +620,55 @@ export default function SupportRequestChatWindow({
                 ) : (
                     rendered.map((m) => {
                         const isMe = m.senderId === currentUserId;
+                        const isSystem = m.senderId === "system" || (m as any).isSystem;
+                        const d = parseServerDate(m.sentAt);
+                        const formatted = !isNaN(d.getTime())
+                            ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+                            : "";
 
                         return (
-                            <div key={m.id} className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}>
-                                <div className="relative flex items-center gap-2 justify-end">
+                            <div
+                                key={m.id}
+                                ref={(el) => {
+                                    if (el) messageElsRef.current.set(m.id, el);
+                                    else messageElsRef.current.delete(m.id);
+                                }}
+                                className={`flex w-full ${isSystem ? "justify-center" : isMe ? "justify-end" : "justify-start"}`}>
+                                <div
+                                    className="relative flex items-center gap-2 justify-center group"
+                                    onMouseEnter={() => setHoverPos({ id: m.id, x: 0, y: 0 })}
+                                    onMouseMove={(e) => setHoverPos({ id: m.id, x: e.clientX, y: e.clientY })}
+                                    onMouseLeave={() => setHoverPos({ id: null, x: 0, y: 0 })}
+                                >
 
                                     {/* Icon Ellipsis bên trái message của mình */}
                                     {isMe && (
-                                        <div className="relative cursor-pointer group">
-                                            <EllipsisVertical className="w-5 h-5 text-muted-foreground" />
+                                        <div className="relative">
+                                            <button
+                                                title="Button"
+                                                data-menu-button={m.id}
+                                                type="button"
+                                                onClick={(ev) => {
+                                                    ev.stopPropagation();
+                                                    setOpenMenuId((cur) => (cur === m.id ? null : m.id));
+                                                }}
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1"
+                                            >
+                                                <EllipsisVertical className="w-4 h-4 text-muted-foreground" />
+                                            </button>
 
-                                            {/* Menu Delete positioned relative to the icon and shown only when hovering the icon */}
-                                            <div className="absolute -left-12 -top-2 bg-white border-slate-100 border shadow-md rounded-md p-1 z-50 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition -translate-y-1 group-hover:translate-y-0">
+                                            {/* Menu Delete shown only when ellipsis is clicked (openMenuId matches) */}
+                                            <div
+                                                data-menu-owner={m.id}
+                                                className={`absolute -left-12 -top-2 bg-white border-slate-100 border shadow-md rounded-md p-1 z-50 transition-transform ${openMenuId === m.id ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none -translate-y-1'}`}
+                                            >
                                                 <button
                                                     className="px-3 py-1 text-sm cursor-pointer text-red-600 hover:bg-red-50 w-full text-left"
-                                                    onClick={() => setConfirmId(m.id)}
+                                                    onClick={(ev) => {
+                                                        ev.stopPropagation();
+                                                        setOpenMenuId(null);
+                                                        requestDelete(m.id);
+                                                    }}
                                                 >
                                                     Delete
                                                 </button>
@@ -567,74 +677,84 @@ export default function SupportRequestChatWindow({
                                     )}
 
                                     {/* Message bubble */}
-                                    <div
-                                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed inline-block whitespace-pre-wrap break-words ${isMe
-                                            ? "bg-gradient-to-br from-pink-300 to-purple-500 text-white shadow-md max-w-[70vw] mr-6"
-                                            : "bg-white max-w-[70vw] min-w-0 break-words shadow-sm ml-6"
-                                            }`}
-                                    >
-                                        {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
+                                    {isSystem && !resolved && typeof m.message === 'string' && m.message.includes('Has your need been resolved') ? (
+                                        <SupportRequestResolvePrompt
+                                            message={m.message}
+                                            onDismiss={() => {
+                                                // optional: add a small system note or just close
+                                            }}
+                                            onConfirm={async () => {
+                                                try {
+                                                    await handleMarkResolved();
+                                                } catch (e) {
+                                                    // ignore
+                                                }
 
-                                        {
-                                            (() => {
-                                                const d = new Date(m.sentAt);
-                                                const formatted = !isNaN(d.getTime())
-                                                    ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
-                                                    : "";
-                                                return (
-                                                    <div className={`text-[11px] mt-2 whitespace-nowrap ${isMe ? "text-white/80" : "text-muted-foreground"}`}>
-                                                        {formatted}
-                                                    </div>
-                                                );
-                                            })()
-                                        }
+                                                // add a short acknowledgement system message
+                                                try {
+                                                    const ack: ChatMessage = {
+                                                        id: uuid(),
+                                                        senderId: "system",
+                                                        senderName: "System",
+                                                        receiverId: peerId,
+                                                        receiverName: peerName,
+                                                        message: "Thanks — we've marked this request as resolved.",
+                                                        sentAt: new Date().toISOString(),
+                                                        isDeleted: false,
+                                                    } as unknown as ChatMessage;
+                                                    setMessages((prev) => {
+                                                        const next = [...prev, ack];
+                                                        return next.length > 500 ? next.slice(-500) : next;
+                                                    });
+                                                    // ensure the acknowledgement (and original prompt) are visible
+                                                    setTimeout(() => {
+                                                        try {
+                                                            scrollMessageIntoView(ack.id);
+                                                        } catch {
+                                                            try {
+                                                                scrollMessageIntoView(m.id);
+                                                            } catch {
+                                                                // ignore
+                                                            }
+                                                        }
+                                                    }, 60);
+                                                } catch {
+                                                    // ignore
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <div
+                                            className={
+                                                isSystem
+                                                    ? "rounded-full px-4 py-2 text-sm leading-relaxed inline-block whitespace-pre-wrap text-muted-foreground bg-slate-100 shadow-sm max-w-[70%] text-center"
+                                                    : `rounded-2xl px-4 py-3 text-sm leading-relaxed inline-block whitespace-pre-wrap break-words ${isMe
+                                                        ? "bg-gradient-to-br from-pink-300 to-purple-500 text-white shadow-md max-w-[70vw] mr-6"
+                                                        : "bg-white max-w-[70vw] min-w-0 break-words shadow-sm ml-6"
+                                                    }`
+                                            }
+                                        >
+                                            {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
+                                        </div>
+                                    )}
+
+                                    {/* Floating timestamp tooltip that follows cursor when hovering this message */}
+                                    <div>
+                                        {hoverPos.id === m.id && (
+                                            <div
+                                                style={{ left: hoverPos.x + 12, top: hoverPos.y + 12, position: "fixed", pointerEvents: "none", zIndex: 60 }}
+                                            >
+                                                <div className="bg-white border border-slate-100 shadow-sm rounded-md px-3 py-1 text-xs text-muted-foreground">
+                                                    {formatted}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
 
                                 </div>
 
-                                {/* Modal Confirm Delete */}
-                                <AlertDialog
-                                    open={confirmId === m.id}
-                                    onOpenChange={(open) => !open && setConfirmId(null)}
-                                >
-                                    <AlertDialogContent className="bg-white text-gray-900 dark:bg-slate-900 dark:text-white border border-gray-200 shadow-2xl">
-                                        <AlertDialogTitle className="text-lg font-semibold">Delete message?</AlertDialogTitle>
-
-                                        <AlertDialogDescription className="text-sm text-muted-foreground">
-                                            This action cannot be undone.
-                                        </AlertDialogDescription>
-
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel className="cursor-pointer" onClick={() => setConfirmId(null)}>
-                                                Cancel
-                                            </AlertDialogCancel>
-
-                                            <AlertDialogAction
-                                                disabled={deleting}
-                                                onClick={async () => {
-                                                    try {
-                                                        await deleteMessage(m.id);
-                                                        setMessages(prev =>
-                                                            prev.map(msg =>
-                                                                msg.id === m.id ? { ...msg, isDeleted: true } : msg
-                                                            )
-                                                        );
-                                                        toast.success("Message deleted successfully");
-                                                    } catch (err) {
-                                                        console.error(err);
-                                                        toast.error("Failed to delete message");
-                                                    } finally {
-                                                        setConfirmId(null);
-                                                    }
-                                                }}
-                                                className="bg-red-600 shadow-lg cursor-pointer text-white hover:bg-red-700"
-                                            >
-                                                Delete
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                {/* Confirm dialog is rendered by the deletion hook (once) */}
                             </div>
                         );
                     })
@@ -648,6 +768,7 @@ export default function SupportRequestChatWindow({
                 )}
             </div>
 
+            {ConfirmDialog}
             {/* footer is visually inside the chat container but fixed to viewport bottom */}
             <div
                 ref={footerRef}
