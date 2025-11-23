@@ -12,22 +12,11 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatHub } from "@/hooks/hubchat/useChatHub";
 import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
-import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
 import { useResolveSupportRequest } from "@/hooks/support-requests/useResolveSupportRequest";
 
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
@@ -38,6 +27,17 @@ import { getSavedAccessToken } from "@/utils/auth/access-token";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import ResolveSupportRequestDialog from "@/app/student/courses/[id]/support/components/ResolveSupportRequestDialog";
 
+// ⭐ time utils dùng chung với ChatWindow
+import {
+  parseServerDate,
+  timeHHmm,
+  buildChatTimeline,
+  ChatTimelineItem,
+} from "@/utils/chat/time";
+
+// ⭐ hook xoá message dùng chung
+import { useChatDeleteMessage } from "@/hooks/chat/useChatDeleteMessage";
+
 /* ===== Utils ===== */
 const cx = (...a: Array<string | false | undefined>) =>
   a.filter(Boolean).join(" ");
@@ -47,18 +47,6 @@ const uuid = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `temp-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-
-/** Parse datetime từ BE:
- * - Nếu thiếu timezone => coi là UTC
- * - Clamp phần nghìn giây về 3 chữ số cho ổn định
- */
-function parseServerDate(ts: string): Date {
-  if (!ts) return new Date(NaN);
-  const clamped = ts.replace(/(\.\d{3})\d+$/, "$1");
-  const hasTZ = /Z|[+\-]\d{2}:\d{2}$/.test(clamped);
-  const iso = hasTZ ? clamped : clamped + "Z";
-  return new Date(iso);
-}
 
 const initial = (name?: string) =>
   name?.trim()?.[0]?.toUpperCase() ?? "?";
@@ -99,7 +87,6 @@ export default function SupportChatPage() {
   const [sending, setSending] = useState(false);
   const [typingMap, setTypingMap] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   // trạng thái cho confirm "Has your need been resolved?"
   const { resolveSupportRequest, loading: resolving } =
@@ -127,7 +114,6 @@ export default function SupportChatPage() {
 
   const { getConversationMessages, loading: loadingMsgs } =
     useGetConversationMessages();
-  const { deleteMessage, loading: deleting } = useDeleteMessage();
   const loadingHistory = loadingMsgs;
 
   // optimistic map
@@ -192,6 +178,13 @@ export default function SupportChatPage() {
         ),
       ),
     debounceMs: 500,
+  });
+
+  // ⭐ hook xoá message dùng chung (confirm dialog + call BE + hub)
+  const { requestDelete, ConfirmDialog, deleting } = useChatDeleteMessage({
+    currentUserId,
+    setMessages,
+    deleteMessageHub: (id) => deleteMessageHub(id),
   });
 
   /* ===== Reset khi đổi conversation / supportRequest ===== */
@@ -358,31 +351,6 @@ export default function SupportChatPage() {
     };
   }, [openMenuId]);
 
-  // confirm delete
-  const onConfirmDelete = async () => {
-    const id = confirmId;
-    if (!id) return;
-    setConfirmId(null);
-    const isMine = !!messages.find(
-      (m) => m.id === id && m.senderId === currentUserId,
-    );
-    if (!isMine || deleting) return;
-
-    const ok = await deleteMessage(id);
-    if (!ok) return;
-
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
-      ),
-    );
-    try {
-      await deleteMessageHub(id);
-    } catch {
-      /* ignore */
-    }
-  };
-
   const typingText =
     peerId && typingMap[peerId] && !chatLocked
       ? `${peerName} is typing…`
@@ -422,6 +390,12 @@ export default function SupportChatPage() {
   const handleNotResolved = () => {
     setResolveHandled(true); // đóng popup nhưng vẫn chat tiếp
   };
+
+  // ⭐ build timeline: Today / Yesterday / ... + showTime
+  const rendered = useMemo<ChatTimelineItem<ChatMessage>[]>(
+    () => buildChatTimeline(messages, currentUserId),
+    [messages, currentUserId],
+  );
 
   if (!courseId || !conversationId) {
     return (
@@ -520,60 +494,62 @@ export default function SupportChatPage() {
               )}
 
               {!loadingHistory &&
-                messages.map((m) => {
-                  const isMine =
-                    !!currentUserId && m.senderId === currentUserId;
-                  const sentTime = parseServerDate(m.sentAt);
-                  const timeLabel = Number.isNaN(sentTime.getTime())
-                    ? ""
-                    : sentTime.toLocaleTimeString("en-GB", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-
-                  return (
+                rendered.map((it) =>
+                  it.kind === "sep" ? (
+                    // separator "Today / Yesterday / ..."
+                    <div key={it.id} className="relative my-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-px flex-1 bg-[var(--border)]" />
+                        <div className="rounded-full bg-[var(--background)] px-3 py-0.5 text-[10px] font-medium text-[var(--text-muted)] shadow-sm">
+                          {it.label}
+                        </div>
+                        <div className="h-px flex-1 bg-[var(--border)]" />
+                      </div>
+                    </div>
+                  ) : (
+                    // message bubble
                     <div
-                      key={m.id}
+                      key={it.m.id}
                       className={cx(
                         "flex",
-                        isMine ? "justify-end" : "justify-start",
+                        it.isMine ? "justify-end" : "justify-start",
                       )}
                     >
                       <div
                         className={cx(
                           "group relative w-fit max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
-                          isMine
+                          it.isMine
                             ? "bg-[var(--brand)] text-white"
                             : "bg-white border border-[var(--border)] text-slate-900",
                         )}
                       >
                         {/* ⋮ menu */}
-                        {isMine && !m.isDeleted && (
+                        {it.isMine && !it.m.isDeleted && (
                           <div className="absolute left-[-30px] top-1/2 -translate-y-1/2">
                             <button
-                              data-trigger-id={m.id}
+                              data-trigger-id={it.m.id}
                               className={cx(
                                 "flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[11px] text-slate-700 transition-opacity shadow-sm",
-                                openMenuId === m.id
+                                openMenuId === it.m.id
                                   ? "opacity-100"
                                   : "opacity-0 group-hover:opacity-100",
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenMenuId((id) =>
-                                  id === m.id ? null : m.id,
+                                  id === it.m.id ? null : it.m.id,
                                 );
                               }}
                               aria-label="Message actions"
-                              aria-expanded={openMenuId === m.id}
+                              aria-expanded={openMenuId === it.m.id}
                               title="More"
                             >
                               ⋮
                             </button>
 
-                            {openMenuId === m.id && (
+                            {openMenuId === it.m.id && (
                               <div
-                                data-menu-id={m.id}
+                                data-menu-id={it.m.id}
                                 className="absolute top.full right-0 z-50 mt-2 w-40 rounded-lg border border-[var(--border)] bg-white py-1 text-xs text-slate-700 shadow-xl"
                               >
                                 <button
@@ -581,7 +557,7 @@ export default function SupportChatPage() {
                                   disabled={deleting}
                                   onClick={() => {
                                     setOpenMenuId(null);
-                                    setConfirmId(m.id);
+                                    requestDelete(it.m.id); // dùng hook xoá chung
                                   }}
                                 >
                                   Delete
@@ -594,21 +570,21 @@ export default function SupportChatPage() {
                         <div
                           className={cx(
                             "whitespace-pre-wrap break-words",
-                            m.isDeleted && "italic opacity-70",
+                            it.m.isDeleted && "italic opacity-70",
                           )}
                         >
-                          {m.message}
+                          {it.m.message}
                         </div>
 
-                        {timeLabel && (
+                        {it.showTime && (
                           <div className="mt-1 text-[10px] opacity-70 text-right">
-                            {timeLabel}
+                            {timeHHmm(parseServerDate(it.m.sentAt))}
                           </div>
                         )}
                       </div>
                     </div>
-                  );
-                })}
+                  ),
+                )}
             </div>
 
             {/* typing dưới input */}
@@ -676,30 +652,8 @@ export default function SupportChatPage() {
         )}
       </Card>
 
-      {/* Confirm delete */}
-      <AlertDialog
-        open={!!confirmId}
-        onOpenChange={(open) => !open && setConfirmId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action can’t be undone. The message will be marked as deleted
-              for everyone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={onConfirmDelete}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* 🔥 Dialog xoá tái sử dụng hook */}
+      {ConfirmDialog}
 
       {/* Overlay xác nhận đã giải quyết – gọi component riêng */}
       <ResolveSupportRequestDialog

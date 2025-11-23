@@ -24,21 +24,3 @@
   background: rgba(127, 113, 244, 0.10); /* brand tím */
   color: var(--brand);
 }
-
-/* Presenter (highlight vàng) */
-.badge-group-role--presenter {
-  background: rgba(244, 162, 59, 0.12);
-  color: var(--accent);
-}
-
-/* Researcher (green analytic vibes) */
-.badge-group-role--researcher {
-  background: rgba(16, 185, 129, 0.12);
-  color: #059669;
-}
-
-/* Writer (indigo creative) */
-.badge-group-role--writer {
-  background: rgba(99, 102, 241, 0.12);
-  color: #6366f1;
-}

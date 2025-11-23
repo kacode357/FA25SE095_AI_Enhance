@@ -2,8 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+
 import { useChatHub } from "@/hooks/hubchat/useChatHub";
-import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
 import { useGetConversations } from "@/hooks/chat/useGetConversations";
 import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
@@ -11,60 +11,32 @@ import type {
   ChatMessageItemResponse as ChatMessage,
   CourseChatUserItemResponse as ChatUser,
 } from "@/types/chat/chat.response";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton"; // 👈 THÊM DÒNG NÀY
+import { Skeleton } from "@/components/ui/skeleton";
+
+// ⭐ time utils dùng chung
+import {
+  parseServerDate,
+  timeHHmm,
+  buildChatTimeline,
+  ChatTimelineItem,
+} from "@/utils/chat/time";
+
+// ⭐ hook xoá message dùng lại được
+import { useChatDeleteMessage } from "@/hooks/chat/useChatDeleteMessage";
 
 /* ===== Utils ===== */
-const cx = (...a: Array<string | false | undefined>) => a.filter(Boolean).join(" ");
+const cx = (...a: Array<string | false | undefined>) =>
+  a.filter(Boolean).join(" ");
 const uuid = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `temp-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
-/** Parse datetime từ BE:
- * - Nếu thiếu timezone => coi là UTC, gắn 'Z'
- * - Clamp phần nghìn giây về 3 chữ số để Date parse ổn định
- */
-function parseServerDate(ts: string): Date {
-  if (!ts) return new Date(NaN);
-  const clamped = ts.replace(/(\.\d{3})\d+$/, "$1");
-  const hasTZ = /Z|[+\-]\d{2}:\d{2}$/.test(clamped);
-  const iso = hasTZ ? clamped : clamped + "Z";
-  return new Date(iso);
-}
-
-const sameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-
-const mins = (a: Date, b: Date) => Math.abs(a.getTime() - b.getTime()) / 60000;
-
-const timeHHmm = (d: Date) =>
-  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-
-const dayLabel = (d: Date) => {
-  const now = new Date();
-  const y = new Date(now);
-  y.setDate(now.getDate() - 1);
-  if (sameDay(d, now)) return "Today";
-  if (sameDay(d, y)) return "Yesterday";
-  return `${String(d.getDate()).padStart(2, "0")} ${d.toLocaleString(undefined, {
-    month: "short",
-  })} ${d.getFullYear()}`;
-};
-
-const initial = (name?: string) => (name?.trim()?.[0]?.toUpperCase() ?? "?");
+const initial = (name?: string) =>
+  name?.trim()?.[0]?.toUpperCase() ?? "?";
 
 /* ===== Props ===== */
 type Props = {
@@ -85,19 +57,19 @@ export default function ChatWindow({
   const [sending, setSending] = useState(false);
   const [typingMap, setTypingMap] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   // scroll
   const listRef = useRef<HTMLDivElement | null>(null);
   const scrollBottom = () =>
     requestAnimationFrame(() => {
-      if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+      if (listRef.current)
+        listRef.current.scrollTop = listRef.current.scrollHeight;
     });
 
-  // hooks
+  // hooks load data
   const { getConversations, loading: loadingConvs } = useGetConversations();
-  const { getConversationMessages, loading: loadingMsgs } = useGetConversationMessages();
-  const { deleteMessage, loading: deleting } = useDeleteMessage();
+  const { getConversationMessages, loading: loadingMsgs } =
+    useGetConversationMessages();
   const loadingHistory = loadingConvs || loadingMsgs;
 
   // optimistic map
@@ -106,58 +78,71 @@ export default function ChatWindow({
   >(new Map());
 
   // Hub
-  const { connect, disconnect, sendMessage, startTyping, stopTyping, deleteMessageHub } =
-    useChatHub({
-      getAccessToken,
-      onReceiveMessagesBatch: (batch) => {
-        if (!batch?.length) return;
-        setMessages((prev) => {
-          const byId = new Map(prev.map((m) => [m.id, m]));
-          for (const it of batch) {
-            if (currentUserId && it.senderId === currentUserId) {
-              // replace temp by server echo
-              for (const [tempId, p] of pendingRef.current) {
-                const within7s = Date.now() - p.createdAt <= 7000;
-                if (
-                  within7s &&
-                  p.receiverId === it.receiverId &&
-                  p.message === it.message &&
-                  byId.has(tempId)
-                ) {
-                  byId.delete(tempId);
-                  byId.set(it.id, it);
-                  pendingRef.current.delete(tempId);
-                  break;
-                }
+  const {
+    connect,
+    disconnect,
+    sendMessage,
+    startTyping,
+    stopTyping,
+    deleteMessageHub,
+  } = useChatHub({
+    getAccessToken,
+    onReceiveMessagesBatch: (batch) => {
+      if (!batch?.length) return;
+      setMessages((prev) => {
+        const byId = new Map(prev.map((m) => [m.id, m]));
+        for (const it of batch) {
+          if (currentUserId && it.senderId === currentUserId) {
+            // replace temp by server echo
+            for (const [tempId, p] of pendingRef.current) {
+              const within7s = Date.now() - p.createdAt <= 7000;
+              if (
+                within7s &&
+                p.receiverId === it.receiverId &&
+                p.message === it.message &&
+                byId.has(tempId)
+              ) {
+                byId.delete(tempId);
+                byId.set(it.id, it);
+                pendingRef.current.delete(tempId);
+                break;
               }
-              if (!byId.has(it.id)) byId.set(it.id, it);
-            } else {
-              byId.set(it.id, it);
             }
+            if (!byId.has(it.id)) byId.set(it.id, it);
+          } else {
+            byId.set(it.id, it);
           }
-          const next = Array.from(byId.values()).sort(
-            (a, b) =>
-              parseServerDate(a.sentAt).getTime() -
-              parseServerDate(b.sentAt).getTime(),
-          );
-          return next.length > 500 ? next.slice(-500) : next;
-        });
-        scrollBottom();
-      },
-      onTyping: ({ userId, isTyping }) =>
-        setTypingMap((prev) =>
-          prev[userId] === isTyping ? prev : { ...prev, [userId]: isTyping },
+        }
+        const next = Array.from(byId.values()).sort(
+          (a, b) =>
+            parseServerDate(a.sentAt).getTime() -
+            parseServerDate(b.sentAt).getTime(),
+        );
+        return next.length > 500 ? next.slice(-500) : next;
+      });
+      scrollBottom();
+    },
+    onTyping: ({ userId, isTyping }) =>
+      setTypingMap((prev) =>
+        prev[userId] === isTyping ? prev : { ...prev, [userId]: isTyping },
+      ),
+    onMessageDeleted: (id) =>
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
         ),
-      onMessageDeleted: (id) =>
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
-          ),
-        ),
-      debounceMs: 500,
-    });
+      ),
+    debounceMs: 500,
+  });
 
-  /* ===== Load history (normalize cả conversations & messages) ===== */
+  // ⭐ hook xoá message chung (confirm dialog + call BE + hub)
+  const { requestDelete, ConfirmDialog, deleting } = useChatDeleteMessage({
+    currentUserId,
+    setMessages,
+    deleteMessageHub: (id) => deleteMessageHub(id),
+  });
+
+  /* ===== Load history (normalize conversations & messages) ===== */
   const loadHistory = useRef(async (peerId: string) => {
     if (!courseId) return;
 
@@ -226,10 +211,12 @@ export default function ChatWindow({
     if (!selectedUser) return;
     const nonEmpty = !!input.trim();
     if (!prevNonEmpty.current && nonEmpty) void startTyping(selectedUser.id);
-    else if (prevNonEmpty.current && !nonEmpty) void stopTyping(selectedUser.id);
+    else if (prevNonEmpty.current && !nonEmpty)
+      void stopTyping(selectedUser.id);
     prevNonEmpty.current = nonEmpty;
     return () => {
-      if (prevNonEmpty.current && selectedUser) void stopTyping(selectedUser.id);
+      if (prevNonEmpty.current && selectedUser)
+        void stopTyping(selectedUser.id);
       prevNonEmpty.current = false;
     };
   }, [input, selectedUser, startTyping, stopTyping]);
@@ -295,58 +282,11 @@ export default function ChatWindow({
     };
   }, [openMenuId]);
 
-  // confirm delete
-  const onConfirmDelete = async () => {
-    const id = confirmId;
-    if (!id) return;
-    setConfirmId(null);
-    const isMine = !!messages.find(
-      (m) => m.id === id && m.senderId === currentUserId,
-    );
-    if (!isMine || deleting) return;
-
-    const ok = await deleteMessage(id);
-    if (!ok) return;
-
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
-      ),
-    );
-    try {
-      await deleteMessageHub(id);
-    } catch {
-      /* ignore */
-    }
-  };
-
-  // render: day separators + clusters
-  const rendered = useMemo(() => {
-    const out: Array<
-      | { kind: "sep"; id: string; label: string }
-      | { kind: "msg"; m: ChatMessage; isMine: boolean; showTime: boolean }
-    > = [];
-    for (let i = 0; i < messages.length; i++) {
-      const m = messages[i];
-      const d = parseServerDate(m.sentAt);
-      if (i === 0 || !sameDay(parseServerDate(messages[i - 1].sentAt), d)) {
-        out.push({
-          kind: "sep",
-          id: `sep-${d.toDateString()}`,
-          label: dayLabel(d),
-        });
-      }
-      const next = messages[i + 1];
-      const showTime = !(
-        next &&
-        next.senderId === m.senderId &&
-        mins(parseServerDate(next.sentAt), d) <= 5
-      );
-      const isMine = !!currentUserId && m.senderId === currentUserId;
-      out.push({ kind: "msg", m, isMine, showTime });
-    }
-    return out;
-  }, [messages, currentUserId]);
+  // ===== build timeline: Today / Yesterday / ... + showTime =====
+  const rendered = useMemo<ChatTimelineItem<ChatMessage>[]>(
+    () => buildChatTimeline(messages, currentUserId),
+    [messages, currentUserId],
+  );
 
   const typingText =
     selectedUser && typingMap[selectedUser.id]
@@ -396,7 +336,7 @@ export default function ChatWindow({
               ref={listRef}
               className="relative flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-stable"
             >
-              {/* 🔥 Loading skeleton thay vì chữ "Loading history…" */}
+              {/* Loading skeleton */}
               {loadingHistory && (
                 <div className="space-y-3">
                   {Array.from({ length: 4 }).map((_, i) => (
@@ -489,7 +429,7 @@ export default function ChatWindow({
                                   disabled={deleting}
                                   onClick={() => {
                                     setOpenMenuId(null);
-                                    setConfirmId(it.m.id);
+                                    requestDelete(it.m.id);
                                   }}
                                 >
                                   Delete
@@ -554,29 +494,8 @@ export default function ChatWindow({
         )}
       </Card>
 
-      {/* Confirm delete */}
-      <AlertDialog
-        open={!!confirmId}
-        onOpenChange={(open) => !open && setConfirmId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action can’t be undone. The message will be marked as deleted
-              for everyone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={onConfirmDelete}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* 🔥 Dialog xoá tách ra hook/component riêng */}
+      {ConfirmDialog}
     </section>
   );
 }

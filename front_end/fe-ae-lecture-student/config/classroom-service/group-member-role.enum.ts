@@ -6,13 +6,4 @@ export enum GroupMemberRole {
 
   /** Group leader with coordination responsibilities */
   Leader = 2,
-
-  /** Presenter responsible for presenting work */
-  Presenter = 3,
-
-  /** Researcher responsible for research tasks */
-  Researcher = 4,
-
-  /** Writer responsible for documentation */
-  Writer = 5,
 }
