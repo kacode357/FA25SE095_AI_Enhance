@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useAddGroupMember } from "@/hooks/group-member/useAddGroupMember";
+import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
+import { GroupMembersService } from "@/services/group-member.services";
 import { AddGroupMemberPayload, MemberRole } from "@/types/group-members/group-member.payload";
 import { UserRoundPen, UserRoundX } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -32,17 +34,66 @@ export default function AddGroupMemberSheet({
 }: AddGroupMemberSheetProps) {
     const { addGroupMember } = useAddGroupMember();
     const { students, loading: enrollmentsLoading, fetchCourseStudents } = useCourseStudents(courseId);
+    const { listData: groups, loading: groupsLoading, fetchByCourseId } = useGroupsByCourseId();
 
     const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
     const [leaderId, setLeaderId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [occupiedStudentIds, setOccupiedStudentIds] = useState<Set<string>>(new Set());
+    const [occupiedLoading, setOccupiedLoading] = useState(false);
 
-    // Load enrollments khi mở sheet
-    // include fetchCourseStudents in deps to avoid stale closure and to satisfy lint
     useEffect(() => {
         if (open && courseId) fetchCourseStudents(courseId);
     }, [open, courseId, fetchCourseStudents]);
+
+    // Fetch groups for the course and then load members for each other group
+    useEffect(() => {
+        if (!open || !courseId) return;
+
+        let mounted = true;
+
+        const load = async () => {
+            try {
+                setOccupiedLoading(true);
+                await fetchByCourseId(courseId);
+
+                // ensure we have latest groups and use the returned response
+                const res = await fetchByCourseId(courseId);
+
+                // collect other group ids (exclude current groupId)
+                const otherGroupIds = (res?.groups || [])
+                    .map((g) => g.id)
+                    .filter((id) => id && id !== groupId);
+
+                const sets: string[] = [];
+
+                // fetch members for each other group concurrently
+                const promises = otherGroupIds.map((gid) => GroupMembersService.getAllMembers(gid).then((res) => res?.members ?? []));
+                const results = await Promise.all(promises);
+
+                const occupied = new Set<string>();
+                results.forEach((members) => {
+                    (members || []).forEach((m) => {
+                        if (m?.studentId) occupied.add(m.studentId);
+                    });
+                });
+
+                if (mounted) setOccupiedStudentIds(occupied);
+            } catch (err) {
+                // ignore errors; occupied set will be empty
+                if (mounted) setOccupiedStudentIds(new Set());
+            } finally {
+                if (mounted) setOccupiedLoading(false);
+            }
+        };
+
+        load();
+
+        return () => {
+            mounted = false;
+        };
+    }, [open, courseId, groupId, fetchByCourseId, groups]);
 
     // Reset form khi đóng
     useEffect(() => {
@@ -55,20 +106,39 @@ export default function AddGroupMemberSheet({
 
     // Use all students returned by the hook (do not filter by status)
     const activeStudents = students ?? [];
-    // Lọc ra những student chưa có trong group
-    const availableStudents = activeStudents.filter((s) => !existingMemberIds.includes(s.studentId));
+    // Lọc ra những student chưa có trong group và chưa thuộc nhóm khác
+    const availableStudents = activeStudents.filter((s) => {
+        if (existingMemberIds.includes(s.studentId)) return false;
+        if (occupiedStudentIds.has(s.studentId)) return false;
+        return true;
+    });
 
     // (debug logs removed)
 
-    // Khi selectedStudents thay đổi, set leader mặc định là học viên đầu tiên
+    // When selectedStudents change:
+    // - Do not auto-assign a leader on student selection generally.
+    // - BUT when the leader-selection UI appears (no existing group leader and
+    //   at least one selected student), auto-select the first selected student
+    //   as the default leader so the radio has a sensible default.
     useEffect(() => {
-        if (selectedStudents.length > 0 && !selectedStudents.includes(leaderId || "")) {
-            setLeaderId(selectedStudents[0]);
-        }
         if (selectedStudents.length === 0) {
             setLeaderId(null);
+            return;
         }
-    }, [selectedStudents]);
+
+        // If the leader-selection panel is visible (no groupHasLeader) and
+        // we don't have a leader chosen yet, pick the first selected student
+        // as the default selection.
+        if (!groupHasLeader && !leaderId && selectedStudents.length > 0) {
+            setLeaderId(selectedStudents[0]);
+            return;
+        }
+
+        // If a previously chosen leader was unselected, clear leaderId
+        if (leaderId && !selectedStudents.includes(leaderId)) {
+            setLeaderId(null);
+        }
+    }, [selectedStudents, leaderId, groupHasLeader]);
 
     const canSubmit = selectedStudents.length > 0;
 
@@ -117,12 +187,12 @@ export default function AddGroupMemberSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="bg-white w-full sm:max-w-xl md:max-w-xl">
+            <SheetContent className="bg-white border-white w-full sm:max-w-xl md:max-w-xl h-full flex flex-col">
                 <SheetHeader>
-                    <SheetTitle className="text-[#000D83]">Add Member</SheetTitle>
+                    <SheetTitle className="text-[#000D83]">Add New Member</SheetTitle>
                 </SheetHeader>
 
-                <div className="pb-4 px-4 space-y-3">
+                <div className="px-4 pb-4 space-y-3 flex-1 overflow-auto">
                     {error && (
                         <div className="text-sm text-red-600 bg-red-50 p-2">{error}</div>
                     )}
@@ -135,7 +205,7 @@ export default function AddGroupMemberSheet({
                                     <div className="text-sm text-slate-500 font-normal">({availableStudents.length} / {students?.length ?? 0})</div></Label>
                             </div>
                             <div className="flex gap-1 mb-2">
-                                <Button size="xs" className="text-[#000D83] cursor-pointer !bg-emerald-50" variant="ghost" onClick={selectAll} disabled={enrollmentsLoading}>
+                                <Button size="xs" className="text-[#000D83] cursor-pointer !bg-violet-50" variant="ghost" onClick={selectAll} disabled={enrollmentsLoading}>
                                     Select All
                                 </Button>
                                 <Button size="xs" className="text-[#000D83] cursor-pointer" variant="ghost" onClick={clearAll} disabled={enrollmentsLoading}>
@@ -173,7 +243,7 @@ export default function AddGroupMemberSheet({
                                 const s = availableStudents.find((st) => st.studentId === id);
                                 if (!s) return null;
                                 return (
-                                    <div key={id} className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-sm flex items-center gap-1">
+                                    <div key={id} className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
                                         {s.fullName ?? `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim()}
                                     </div>
                                 );

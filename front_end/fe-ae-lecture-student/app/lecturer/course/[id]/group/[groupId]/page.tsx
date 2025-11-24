@@ -104,7 +104,6 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
             <Info className="size-4" /> Group Overview
           </h3>
           <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-xs text-slate-700">
-            <InfoItem label="Group ID" value={group.id} />
             <InfoItem label="Group Name" value={group.name} />
             <InfoItem label="Course Name" value={group.courseName} />
             <InfoItem label="Description" value={group.description || "—"} />
@@ -129,16 +128,13 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
           </h3>
           <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-xs text-slate-700">
             <InfoItem label="Leader Name" value={group.leaderName || "—"} />
-            <InfoItem label="Leader ID" value={group.leaderId || "—"} />
             <InfoItem label="Assignment Title" value={group.assignmentTitle || "—"} />
-            <InfoItem label="Assignment ID" value={group.assignmentId || "—"} />
           </div>
 
           <h3 className="text-xs font-semibold text-violet-800 flex items-center gap-2 mt-10 mb-5">
             <CalendarClock className="size-4" /> Metadata
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-2 gap-x-6 gap-y-5 text-xs text-slate-700">
-            <InfoItem label="Course ID" value={group.courseId} />
             <InfoItem label="Created At" value={new Date(group.createdAt).toLocaleString()} />
           </div>
         </section>
@@ -260,7 +256,7 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
       <Dialog open={leaderModalOpen} onOpenChange={setLeaderModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Assign Group Leader</DialogTitle>
+            <DialogTitle>Assign New Group Leader</DialogTitle>
           </DialogHeader>
           <div className="py-2">
             <p className="mb-2 text-sm text-slate-600">Set a new group Leader:</p>
@@ -281,10 +277,10 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
             </div>
           </div>
           <DialogFooter className="flex gap-3 mt-4">
-            <Button className="cursor-pointer" variant="ghost" onClick={() => setLeaderModalOpen(false)} disabled={assigning}>
+            <Button className="cursor-pointer text-violet-800 hover:text-violet-500" variant="ghost" onClick={() => setLeaderModalOpen(false)} disabled={assigning}>
               Cancel
             </Button>
-            <Button className="cursor-pointer" onClick={handleConfirmLeader} disabled={assigning || !selectedLeader}>
+            <Button className="cursor-pointer btn btn-gradient-slow" onClick={handleConfirmLeader} disabled={assigning || !selectedLeader}>
               {assigning ? "Assigning..." : "Confirm"}
             </Button>
           </DialogFooter>

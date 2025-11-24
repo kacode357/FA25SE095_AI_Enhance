@@ -1,20 +1,20 @@
 // app/student/courses/[id]/groups/[groupId]/page.tsx
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useAllMembers } from "@/hooks/group-member/useAllMembers";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Users,
-  Shield,
-  Mail,
-  Loader2,
-  ArrowLeft,
-  AlertCircle,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GroupMemberRole } from "@/config/classroom-service/group-member-role.enum";
+import { useAllMembers } from "@/hooks/group-member/useAllMembers";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Loader2,
+  Mail,
+  Shield,
+  Users,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
 
 /** ====== Types (đồng bộ field từ BE) ====== */
 type MemberLike = {
@@ -33,17 +33,11 @@ type MemberLike = {
 const ROLE_LABEL_MAP: Record<GroupMemberRole, string> = {
   [GroupMemberRole.Member]: "Member",
   [GroupMemberRole.Leader]: "Leader",
-  [GroupMemberRole.Presenter]: "Presenter",
-  [GroupMemberRole.Researcher]: "Researcher",
-  [GroupMemberRole.Writer]: "Writer",
 };
 
 const ROLE_CLASS_MAP: Record<GroupMemberRole, string> = {
   [GroupMemberRole.Member]: "badge-group-role--member",
   [GroupMemberRole.Leader]: "badge-group-role--leader",
-  [GroupMemberRole.Presenter]: "badge-group-role--presenter",
-  [GroupMemberRole.Researcher]: "badge-group-role--researcher",
-  [GroupMemberRole.Writer]: "badge-group-role--writer",
 };
 
 function detectRole(m: MemberLike): GroupMemberRole {
@@ -56,9 +50,6 @@ function detectRole(m: MemberLike): GroupMemberRole {
   if (typeof m.roleDisplay === "string" && m.roleDisplay.trim().length > 0) {
     const text = m.roleDisplay.trim().toLowerCase();
     if (text === "leader") return GroupMemberRole.Leader;
-    if (text === "presenter") return GroupMemberRole.Presenter;
-    if (text === "researcher") return GroupMemberRole.Researcher;
-    if (text === "writer") return GroupMemberRole.Writer;
     return GroupMemberRole.Member;
   }
 

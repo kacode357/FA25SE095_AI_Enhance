@@ -60,7 +60,7 @@ export const GroupMembersService = {
   ): Promise<AssignLeaderResponse> => {
     const { groupId, studentId } = data;
     const response = await courseAxiosInstance.put<AssignLeaderResponse>(
-      `/group-members/groups/${groupId}/leader`,
+      `/group-members/groups/${groupId}/assign-leader`,
       { studentId }
     );
     return response.data;

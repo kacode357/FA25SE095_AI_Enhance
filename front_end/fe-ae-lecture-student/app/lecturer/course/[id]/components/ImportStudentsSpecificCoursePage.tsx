@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useImportStudentsSpecificCourse } from "@/hooks/enrollments/useImportStudentsSpecificCourse";
 import { useImportStudentTemplate } from "@/hooks/enrollments/useImportStudentTemplate";
-import { ArrowLeft, FileSpreadsheet, HardDriveDownload, Info, Upload } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, HardDriveDownload, Info, Loader2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 
 interface Props {
@@ -22,6 +22,7 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
     const [dragActive, setDragActive] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [localLoading, setLocalLoading] = useState(false);
 
     const acceptMime = ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel";
 
@@ -51,16 +52,22 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
         validateAndSet(f);
     };
 
-    const canSubmit = !!file && !importing;
+    const isLoading = importing || localLoading;
+    const canSubmit = !!file && !isLoading;
 
     const handleSubmit = async () => {
         if (!canSubmit || !file) return;
-        const res = await importStudents({
-            file,
-            courseId,
-            createAccountIfNotFound: createAccounts,
-        });
-        if (res?.success) onDone?.();
+        setLocalLoading(true);
+        try {
+            const res = await importStudents({
+                file,
+                courseId,
+                createAccountIfNotFound: createAccounts,
+            });
+            if (res?.success) onDone?.();
+        } finally {
+            setLocalLoading(false);
+        }
     };
 
     return (
@@ -143,7 +150,8 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
                                 disabled={!canSubmit}
                                 className={`bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white ${!canSubmit ? 'opacity-50 pointer-events-none' : ''}`}
                             >
-                                <Upload className="size-4 mr-2" /> Start Import
+                                {isLoading ? <Loader2 className="animate-spin size-4 mr-2" /> : <Upload className="size-4 mr-2" />}
+                                {isLoading ? "Importing..." : "Start Import"}
                             </Button>
                             {onDone && (
                                 <Button variant="ghost" className="text-violet-800 hover:text-violet-500" onClick={onDone}>
