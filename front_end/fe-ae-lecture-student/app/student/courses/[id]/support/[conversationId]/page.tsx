@@ -27,7 +27,6 @@ import { getSavedAccessToken } from "@/utils/auth/access-token";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import ResolveSupportRequestDialog from "@/app/student/courses/[id]/support/components/ResolveSupportRequestDialog";
 
-// ⭐ time utils dùng chung với ChatWindow
 import {
   parseServerDate,
   timeHHmm,
@@ -35,14 +34,12 @@ import {
   ChatTimelineItem,
 } from "@/utils/chat/time";
 
-// ⭐ hook xoá message dùng chung
 import { useChatDeleteMessage } from "@/hooks/chat/useChatDeleteMessage";
 
 /* ===== Utils ===== */
 const cx = (...a: Array<string | false | undefined>) =>
   a.filter(Boolean).join(" ");
 
-/** Generate temp id cho optimistic message */
 const uuid = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
@@ -51,6 +48,14 @@ const uuid = () =>
 const initial = (name?: string) =>
   name?.trim()?.[0]?.toUpperCase() ?? "?";
 
+type PendingMeta = {
+  createdAt: number;
+  message: string;
+  receiverId: string;
+  conversationId: string;
+  supportRequestId?: string | null;
+};
+
 /* ===== Page ===== */
 export default function SupportChatPage() {
   const router = useRouter();
@@ -58,6 +63,7 @@ export default function SupportChatPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
+  /* ===== Derived URL params ===== */
   const courseId = useMemo(() => {
     const id = params?.id;
     return typeof id === "string" ? id : Array.isArray(id) ? id[0] : "";
@@ -72,115 +78,118 @@ export default function SupportChatPage() {
   const peerName = searchParams.get("peerName") ?? "Support Staff";
 
   // Lấy supportRequestId từ URL (?requestId=... hoặc ?supportRequestId=...)
-  const supportRequestId = useMemo(() => {
-    return (
+  const supportRequestId = useMemo(
+    () =>
       searchParams.get("requestId") ??
       searchParams.get("supportRequestId") ??
-      null
-    );
-  }, [searchParams]);
+      null,
+    [searchParams],
+  );
 
   const currentUserId = user?.id ?? null;
 
+  /* ===== States ===== */
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [typingMap, setTypingMap] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // trạng thái cho confirm "Has your need been resolved?"
+  // resolve support request
   const { resolveSupportRequest, loading: resolving } =
     useResolveSupportRequest();
   const [resolveHandled, setResolveHandled] = useState(false);
-  const [isResolved, setIsResolved] = useState(false); // sau khi confirm resolved thì khóa chat
+  const [isResolved, setIsResolved] = useState(false);
 
   // read-only từ BE
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [readOnlyReason, setReadOnlyReason] = useState<string | null>(null);
 
-  // flag tổng khóa chat
-  const chatLocked = isResolved || isReadOnly;
-
   // đã load history thành công 1 lần cho conversation + supportRequest hiện tại chưa
   const [loadedOnce, setLoadedOnce] = useState(false);
 
+  // flag tổng khóa chat
+  const chatLocked = isResolved || isReadOnly;
+
   // scroll
   const listRef = useRef<HTMLDivElement | null>(null);
-  const scrollBottom = () =>
+  const scrollBottom = useCallback(() => {
     requestAnimationFrame(() => {
-      if (listRef.current)
+      if (listRef.current) {
         listRef.current.scrollTop = listRef.current.scrollHeight;
+      }
     });
+  }, []);
 
   const { getConversationMessages, loading: loadingMsgs } =
     useGetConversationMessages();
   const loadingHistory = loadingMsgs;
 
   // optimistic map
-  const pendingRef = useRef<
-    Map<string, { createdAt: number; message: string; receiverId: string }>
-  >(new Map());
+  const pendingRef = useRef<Map<string, PendingMeta>>(new Map());
 
-  // Hub
-  const {
-    connect,
-    sendMessage,
-    startTyping,
-    stopTyping,
-    deleteMessageHub,
-  } = useChatHub({
-    getAccessToken: () => getSavedAccessToken() ?? "",
-    onReceiveMessagesBatch: (batch) => {
-      if (!batch?.length) return;
-      setMessages((prev) => {
-        const byId = new Map(prev.map((m) => [m.id, m]));
+  // chặn double send
+  const sendingRef = useRef(false);
 
-        for (const it of batch) {
-          if (currentUserId && it.senderId === currentUserId) {
-            // replace temp message bằng server echo nếu match
-            for (const [tempId, p] of pendingRef.current) {
-              const within7s = Date.now() - p.createdAt <= 7000;
-              if (
-                within7s &&
-                p.receiverId === it.receiverId &&
-                p.message === it.message &&
-                byId.has(tempId)
-              ) {
-                byId.delete(tempId);
-                byId.set(it.id, it);
-                pendingRef.current.delete(tempId);
-                break;
+  /* ===== Hub ===== */
+  const { connect, sendMessage, startTyping, stopTyping, deleteMessageHub } =
+    useChatHub({
+      getAccessToken: () => getSavedAccessToken() ?? "",
+      onReceiveMessagesBatch: (batch) => {
+        if (!batch?.length) return;
+
+        setMessages((prev) => {
+          const byId = new Map(prev.map((m) => [m.id, m]));
+
+          for (const it of batch) {
+            // nếu là message của mình → cố gắng replace optimistic
+            if (currentUserId && it.senderId === currentUserId) {
+              for (const [tempId, p] of pendingRef.current) {
+                if (
+                  p.receiverId === it.receiverId &&
+                  p.message === it.message &&
+                  p.conversationId === conversationId &&
+                  p.supportRequestId === supportRequestId &&
+                  byId.has(tempId)
+                ) {
+                  byId.delete(tempId);
+                  byId.set(it.id, it);
+                  pendingRef.current.delete(tempId);
+                  break;
+                }
               }
+              if (!byId.has(it.id)) {
+                byId.set(it.id, it);
+              }
+            } else {
+              byId.set(it.id, it);
             }
-            if (!byId.has(it.id)) byId.set(it.id, it);
-          } else {
-            byId.set(it.id, it);
           }
-        }
 
-        const next = Array.from(byId.values()).sort(
-          (a, b) =>
-            parseServerDate(a.sentAt).getTime() -
-            parseServerDate(b.sentAt).getTime(),
-        );
-        return next.length > 500 ? next.slice(-500) : next;
-      });
-      scrollBottom();
-    },
-    onTyping: ({ userId, isTyping }) =>
-      setTypingMap((prev) =>
-        prev[userId] === isTyping ? prev : { ...prev, [userId]: isTyping },
-      ),
-    onMessageDeleted: (id) =>
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
+          const next = Array.from(byId.values()).sort(
+            (a, b) =>
+              parseServerDate(a.sentAt).getTime() -
+              parseServerDate(b.sentAt).getTime(),
+          );
+          return next.length > 500 ? next.slice(-500) : next;
+        });
+
+        scrollBottom();
+      },
+      onTyping: ({ userId, isTyping }) =>
+        setTypingMap((prev) =>
+          prev[userId] === isTyping ? prev : { ...prev, [userId]: isTyping },
         ),
-      ),
-    debounceMs: 500,
-  });
+      onMessageDeleted: (id) =>
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
+          ),
+        ),
+      debounceMs: 500,
+    });
 
-  // ⭐ hook xoá message dùng chung (confirm dialog + call BE + hub)
+  // hook xoá message dùng chung
   const { requestDelete, ConfirmDialog, deleting } = useChatDeleteMessage({
     currentUserId,
     setMessages,
@@ -189,7 +198,6 @@ export default function SupportChatPage() {
 
   /* ===== Reset khi đổi conversation / supportRequest ===== */
   useEffect(() => {
-    // đổi conv hoặc supportRequest -> chuẩn bị load lại
     setLoadedOnce(false);
     setResolveHandled(false);
     setIsResolved(false);
@@ -197,9 +205,11 @@ export default function SupportChatPage() {
     setReadOnlyReason(null);
     setMessages([]);
     pendingRef.current.clear();
+    setInput("");
+    setOpenMenuId(null);
   }, [conversationId, supportRequestId, peerId]);
 
-  /* ===== Load history: chỉ gọi API khi chưa loadedOnce ===== */
+  /* ===== Load history ===== */
   const loadHistory = useCallback(
     async (convId: string, supportReqId?: string | null) => {
       const res = await getConversationMessages(convId, {
@@ -225,24 +235,23 @@ export default function SupportChatPage() {
       // nếu server nói conversation đã đóng thì không cần show dialog “Has your need been resolved?”
       if (res.isReadOnly) {
         setResolveHandled(true);
-        setIsResolved(true); // cũng coi như đã resolved để UI đồng bộ
+        setIsResolved(true);
       }
 
-      // ✅ đánh dấu đã load thành công
       setLoadedOnce(true);
     },
-    [getConversationMessages],
+    [getConversationMessages, scrollBottom],
   );
 
   useEffect(() => {
     if (!peerId || !conversationId) return;
-    if (loadedOnce) return; // ✅ đã có response rồi, không gọi nữa
+    if (loadedOnce) return;
 
     let cancelled = false;
 
     (async () => {
       try {
-        await connect(); // connect() tự check state, không spam
+        await connect();
         if (cancelled) return;
         await loadHistory(conversationId, supportRequestId);
       } catch {
@@ -262,13 +271,12 @@ export default function SupportChatPage() {
     loadedOnce,
   ]);
 
-  // typing edge-based
+  /* ===== Typing ===== */
   const prevNonEmpty = useRef(false);
   useEffect(() => {
     if (!peerId) return;
 
     if (chatLocked) {
-      // nếu đã locked (resolved hoặc read-only) thì đảm bảo không gửi typing nữa
       if (prevNonEmpty.current) {
         void stopTyping(peerId);
         prevNonEmpty.current = false;
@@ -287,14 +295,22 @@ export default function SupportChatPage() {
     };
   }, [input, peerId, startTyping, stopTyping, chatLocked]);
 
-  // send
-  const onSend = async () => {
-    if (chatLocked) return; // khóa chat sau khi resolved hoặc read-only
-    if (!peerId || !courseId || !currentUserId) return;
+  /* ===== Send message (đã fix double text) ===== */
+  const onSend = useCallback(async () => {
+    if (chatLocked) return;
+    if (!peerId || !courseId || !currentUserId || !conversationId) return;
+
     const message = input.trim();
     if (!message) return;
 
+    // chặn double send trong cùng thời điểm
+    if (sendingRef.current) return;
+    sendingRef.current = true;
+    setSending(true);
+
     const tempId = uuid();
+    const now = new Date().toISOString();
+
     const local: ChatMessage = {
       id: tempId,
       senderId: currentUserId,
@@ -302,14 +318,18 @@ export default function SupportChatPage() {
       receiverId: peerId,
       receiverName: peerName,
       message,
-      sentAt: new Date().toISOString(),
+      sentAt: now,
       isDeleted: false,
     };
+
     pendingRef.current.set(tempId, {
       createdAt: Date.now(),
       message,
       receiverId: peerId,
+      conversationId,
+      supportRequestId,
     });
+
     setMessages((prev) => {
       const next = [...prev, local];
       return next.length > 500 ? next.slice(-500) : next;
@@ -317,25 +337,37 @@ export default function SupportChatPage() {
     scrollBottom();
 
     try {
-      setSending(true);
       const dto: SendMessagePayload = {
         courseId,
         receiverId: peerId,
         message,
         conversationId,
-        supportRequestId, // gửi kèm supportRequestId từ URL
+        supportRequestId,
       };
       await sendMessage(dto);
       setInput("");
     } finally {
       setSending(false);
+      sendingRef.current = false;
     }
-  };
+  }, [
+    chatLocked,
+    peerId,
+    courseId,
+    currentUserId,
+    conversationId,
+    input,
+    peerName,
+    supportRequestId,
+    scrollBottom,
+    sendMessage,
+  ]);
 
-  // close menu on outside/Esc
+  /* ===== Close menu on outside / Esc ===== */
   useEffect(() => {
+    if (!openMenuId) return;
+
     const onDown = (e: MouseEvent) => {
-      if (!openMenuId) return;
       const t = e.target as HTMLElement;
       const inTrig = !!t.closest(`[data-trigger-id="${openMenuId}"]`);
       const inMenu = !!t.closest(`[data-menu-id="${openMenuId}"]`);
@@ -343,6 +375,7 @@ export default function SupportChatPage() {
     };
     const onKey = (e: KeyboardEvent) =>
       e.key === "Escape" && setOpenMenuId(null);
+
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -351,6 +384,7 @@ export default function SupportChatPage() {
     };
   }, [openMenuId]);
 
+  /* ===== Derived UI states ===== */
   const typingText =
     peerId && typingMap[peerId] && !chatLocked
       ? `${peerName} is typing…`
@@ -373,7 +407,6 @@ export default function SupportChatPage() {
 
   const handleConfirmResolved = async () => {
     if (!supportRequestId) {
-      // không có id thì chỉ đóng popup, không khóa chat
       setResolveHandled(true);
       return;
     }
@@ -381,17 +414,17 @@ export default function SupportChatPage() {
     try {
       await resolveSupportRequest(supportRequestId);
       setResolveHandled(true);
-      setIsResolved(true); // sau khi xác nhận xong thì khóa chat
+      setIsResolved(true);
     } catch {
       // lỗi interceptor xử lý, không đổi state
     }
   };
 
   const handleNotResolved = () => {
-    setResolveHandled(true); // đóng popup nhưng vẫn chat tiếp
+    setResolveHandled(true);
   };
 
-  // ⭐ build timeline: Today / Yesterday / ... + showTime
+  // build timeline: Today / Yesterday / ... + showTime
   const rendered = useMemo<ChatTimelineItem<ChatMessage>[]>(
     () => buildChatTimeline(messages, currentUserId),
     [messages, currentUserId],
@@ -405,6 +438,7 @@ export default function SupportChatPage() {
     );
   }
 
+  /* ===== Render ===== */
   return (
     <div className="p-4">
       {/* Back + title */}
@@ -429,7 +463,7 @@ export default function SupportChatPage() {
         </div>
       </div>
 
-      <Card className="border-[var(--border)] bg-[var(--card)] h-[520px] flex flex-col shadow-sm">
+      <Card className="h-[520px] flex flex-col border-[var(--border)] bg-[var(--card)] shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
           {!peerId ? (
@@ -445,10 +479,10 @@ export default function SupportChatPage() {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-nav truncate">
+                <div className="truncate text-sm font-semibold text-nav">
                   {peerName}
                 </div>
-                <div className="text-[11px] text-[var(--text-muted)] truncate">
+                <div className="truncate text-[11px] text-[var(--text-muted)]">
                   Support staff
                 </div>
               </div>
@@ -465,7 +499,7 @@ export default function SupportChatPage() {
           <>
             <div
               ref={listRef}
-              className="relative flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-stable"
+              className="relative flex-1 space-y-3 overflow-y-auto px-4 py-3 scrollbar-stable"
             >
               {/* Loading skeleton */}
               {loadingHistory && !loadedOnce && (
@@ -479,7 +513,7 @@ export default function SupportChatPage() {
                       )}
                     >
                       <div className="max-w-[75%] rounded-2xl px-3 py-2">
-                        <Skeleton className="h-4 w-32 mb-1 rounded-full" />
+                        <Skeleton className="mb-1 h-4 w-32 rounded-full" />
                         <Skeleton className="h-4 w-40 rounded-full" />
                       </div>
                     </div>
@@ -496,18 +530,16 @@ export default function SupportChatPage() {
               {!loadingHistory &&
                 rendered.map((it) =>
                   it.kind === "sep" ? (
-                    // separator "Today / Yesterday / ..."
                     <div key={it.id} className="relative my-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-px flex-1 bg-[var(--border)]" />
+                        <div className="flex-1 h-px bg-[var(--border)]" />
                         <div className="rounded-full bg-[var(--background)] px-3 py-0.5 text-[10px] font-medium text-[var(--text-muted)] shadow-sm">
                           {it.label}
                         </div>
-                        <div className="h-px flex-1 bg-[var(--border)]" />
+                        <div className="flex-1 h-px bg-[var(--border)]" />
                       </div>
                     </div>
                   ) : (
-                    // message bubble
                     <div
                       key={it.m.id}
                       className={cx(
@@ -520,7 +552,7 @@ export default function SupportChatPage() {
                           "group relative w-fit max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
                           it.isMine
                             ? "bg-[var(--brand)] text-white"
-                            : "bg-white border border-[var(--border)] text-slate-900",
+                            : "border border-[var(--border)] bg-white text-slate-900",
                         )}
                       >
                         {/* ⋮ menu */}
@@ -529,7 +561,7 @@ export default function SupportChatPage() {
                             <button
                               data-trigger-id={it.m.id}
                               className={cx(
-                                "flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[11px] text-slate-700 transition-opacity shadow-sm",
+                                "flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[11px] text-slate-700 shadow-sm transition-opacity",
                                 openMenuId === it.m.id
                                   ? "opacity-100"
                                   : "opacity-0 group-hover:opacity-100",
@@ -550,14 +582,14 @@ export default function SupportChatPage() {
                             {openMenuId === it.m.id && (
                               <div
                                 data-menu-id={it.m.id}
-                                className="absolute top.full right-0 z-50 mt-2 w-40 rounded-lg border border-[var(--border)] bg-white py-1 text-xs text-slate-700 shadow-xl"
+                                className="absolute right-0 top-full z-50 mt-2 w-40 rounded-lg border border-[var(--border)] bg-white py-1 text-xs text-slate-700 shadow-xl"
                               >
                                 <button
                                   className="w-full px-3 py-1.5 text-left hover:bg-slate-50"
                                   disabled={deleting}
                                   onClick={() => {
                                     setOpenMenuId(null);
-                                    requestDelete(it.m.id); // dùng hook xoá chung
+                                    requestDelete(it.m.id);
                                   }}
                                 >
                                   Delete
@@ -577,7 +609,7 @@ export default function SupportChatPage() {
                         </div>
 
                         {it.showTime && (
-                          <div className="mt-1 text-[10px] opacity-70 text-right">
+                          <div className="mt-1 text-right text-[10px] opacity-70">
                             {timeHHmm(parseServerDate(it.m.sentAt))}
                           </div>
                         )}
@@ -604,7 +636,9 @@ export default function SupportChatPage() {
                     ) : (
                       <>
                         This conversation has been{" "}
-                        <span className="font-semibold text-brand">closed</span>
+                        <span className="font-semibold text-brand">
+                          closed
+                        </span>
                         . You can no longer send new messages.
                       </>
                     )}
@@ -612,8 +646,10 @@ export default function SupportChatPage() {
                 ) : (
                   <>
                     This support request has been marked as{" "}
-                    <span className="font-semibold text-brand">resolved</span>.
-                    You can no longer send new messages in this conversation.
+                    <span className="font-semibold text-brand">
+                      resolved
+                    </span>
+                    . You can no longer send new messages in this conversation.
                   </>
                 )}
               </div>
@@ -629,17 +665,19 @@ export default function SupportChatPage() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        void onSend();
+                        if (!sendingRef.current) {
+                          void onSend();
+                        }
                       }
                     }}
                   />
                   <button
-                    onClick={onSend}
+                    onClick={() => void onSend()}
                     disabled={sending || !input.trim()}
                     className={cx(
                       "btn btn-gradient-slow h-9 px-4 text-xs font-semibold",
                       sending || !input.trim()
-                        ? "opacity-60 cursor-not-allowed"
+                        ? "cursor-not-allowed opacity-60"
                         : "",
                     )}
                   >
@@ -652,10 +690,10 @@ export default function SupportChatPage() {
         )}
       </Card>
 
-      {/* 🔥 Dialog xoá tái sử dụng hook */}
+      {/* Dialog xoá */}
       {ConfirmDialog}
 
-      {/* Overlay xác nhận đã giải quyết – gọi component riêng */}
+      {/* Dialog xác nhận resolved */}
       <ResolveSupportRequestDialog
         open={showResolveDialog}
         peerName={peerName}
