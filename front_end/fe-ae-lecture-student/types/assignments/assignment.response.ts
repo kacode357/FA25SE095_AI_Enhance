@@ -261,3 +261,27 @@ export interface AssignedGroup {
   createdAt: string;
   createdBy: string;
 }
+export interface StudentAssignmentGradeItem {
+  assignmentId: string;
+  assignmentName: string;
+  dueDate: string; // ISO datetime
+  weight: number;
+  score: number;
+  maxPoints: number;
+  percentage: number;
+  weightedScore: number;
+  status: string; // server trả string theo doc
+}
+
+export interface StudentCourseGradeStatistics {
+  completedAssignmentsCount: number;
+  totalWeightedScore: number;
+  totalWeightCovered: number;
+  assignmentGrades: StudentAssignmentGradeItem[];
+}
+
+export interface GetStudentCourseGradesResponse {
+  success: boolean;
+  message: string;
+  statistics: StudentCourseGradeStatistics;
+}
