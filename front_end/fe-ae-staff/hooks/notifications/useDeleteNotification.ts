@@ -1,9 +1,8 @@
 // hooks/notifications/useDeleteNotification.ts
 "use client";
 
+import { ApiSuccess, NotificationsService } from "@/services/notifications.services";
 import { useState } from "react";
-import { NotificationsService } from "@/services/notifications.services";
-import type { ApiSuccess } from "@/types/reports/reports.response";
 
 export function useDeleteNotification() {
   const [loading, setLoading] = useState(false);
