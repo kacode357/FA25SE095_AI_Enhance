@@ -3,7 +3,7 @@
 import { useAvailableCourses } from "@/hooks/course/useAvailableCourses";
 import { AvailableCourseItem } from "@/types/courses/course.response";
 import { BookOpen, ChevronLeft, ChevronRight, ChevronsRight, KeyRound, Lock, PlusCircle, Unlock, Users } from "lucide-react";
-import Image from "next/image";
+// use a regular <img> fallback to avoid next/image domain config issues
 import { useRouter } from "next/navigation"; // ✅ thêm dòng này
 import { useEffect, useRef } from "react";
 
@@ -25,6 +25,9 @@ export default function AvailableCoursesSection({
     }, [courses, fetchAvailableCourses]);
 
     const items = courses && courses.length > 0 ? courses : listData;
+
+    const DEFAULT_IMAGE_URL =
+        "https://i.postimg.cc/VL3PwwpK/Gemini-Generated-Image-pu4lm6pu4lm6pu4l.png";
 
     return (
         <section className="min-h-screen bg-gradient-to-br from-[#fff7f9] via-[#f3e8ff] to-[#e0f2fe] py-20">
@@ -65,16 +68,17 @@ export default function AvailableCoursesSection({
                             >
                                 {/* Thumbnail */}
                                 <div className="relative px-5 pt-6">
-                                    {/* <Image
-                                        src={
-                                            course.img ??
-                                            "https://vinuni.edu.vn/wp-content/uploads/2024/11/marketing-courses-chon-khoa-hoc-phu-hop-de-dot-pha-trong-nganh-marketing.jpg"
-                                        }
-                                        alt={course.name}
+                                    <img
+                                        src={course.img ?? DEFAULT_IMAGE_URL}
+                                        alt={course.name ?? "course thumbnail"}
                                         width={400}
                                         height={250}
                                         className="object-cover w-full border-2 h-52 rounded-2xl border-violet-300"
-                                    /> */}
+                                        onError={(e) => {
+                                            const t = e.currentTarget as HTMLImageElement;
+                                            if (t.src !== DEFAULT_IMAGE_URL) t.src = DEFAULT_IMAGE_URL;
+                                        }}
+                                    />
 
                                     {/* Access Code badge */}
                                     <span

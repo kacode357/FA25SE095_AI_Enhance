@@ -1,10 +1,14 @@
 "use client";
 import Reveal from "@/components/common/Reveal";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { GraduationCap } from "lucide-react";
-import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function HeroSection() {
+    const [navigating, setNavigating] = useState(false);
+
     useEffect(() => {
         const hdr = document.querySelector("header");
         if (!hdr) return;
@@ -31,6 +35,31 @@ export default function HeroSection() {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    const router = useRouter();
+    const { user } = useAuth();
+
+    const handleGetStarted = async () => {
+        if (navigating) return;
+        setNavigating(true);
+
+        try {
+            if (!user) {
+                router.push("/login");
+                return;
+            }
+
+            const role = user.role;
+            const STUDENT_ROUTE = "/student/all-courses";
+            const LECTURER_ROUTE = "/lecturer/course";
+
+            if (role === "Student") router.push(STUDENT_ROUTE);
+            else if (role === "Lecturer") router.push(LECTURER_ROUTE);
+            else router.push("/");
+        } finally {
+            setNavigating(false);
+        }
+    };
 
     return (
         <section
@@ -68,8 +97,12 @@ export default function HeroSection() {
 
                     <Reveal direction="up" delay={0.2} amount={0.22}>
                         <div className="flex justify-center gap-4 md:justify-start">
-                            <Button className="px-6 py-3 text-lg font-semibold text-black bg-yellow-400 rounded-lg btn btn-gradient hover:bg-yellow-500">
-                                Get Started
+                            <Button
+                                onClick={handleGetStarted}
+                                disabled={navigating}
+                                className="px-6 py-3 text-lg font-semibold text-black bg-yellow-400 rounded-lg btn btn-gradient hover:bg-yellow-500"
+                            >
+                                {navigating ? "Redirecting..." : "Get Started"}
                             </Button>
                             <Button
                                 variant="outline"
@@ -119,7 +152,7 @@ export default function HeroSection() {
                     <Reveal direction="right" delay={0.45} className="absolute right-0 bottom-100 md:-right-12">
                         <div className="flex items-center gap-2 bg-white shadow-lg rounded-4xl">
                             <div className="flex items-center justify-center rounded-full w-14 h-14 bg-gradient-to-tr from-violet-400 to-pink-200">
-                                <GraduationCap className="text-[#000D83]" />
+                                <GraduationCap className="text-white" />
                             </div>
 
                             <p className="mr-4 text-xl font-bold text-violet-500">
