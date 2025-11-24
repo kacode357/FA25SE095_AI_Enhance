@@ -8,7 +8,7 @@ import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin";
 import { useLogin } from "@/hooks/auth/useLogin";
 import { executeTurnstile, loadTurnstileScript, renderTurnstileWidget } from "@/lib/turnstile";
 import { motion } from "framer-motion";
-import { Chrome } from "lucide-react";
+// using an actual image for Google logo (place your logo at `/public/gg-logo2.webp`)
 import { useEffect, useRef, useState } from "react";
 
 declare global {
@@ -157,14 +157,14 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Welcome back!"
-      subtitle={
-        <span>
-          New here?{" "}
-          <a className="underline" href="/register" rel="nofollow">
-            Create an account
-          </a>
-        </span>
-      }
+      // subtitle={
+      //   <span>
+      //     New here?{" "}
+      //     <a className="underline" href="/register" rel="nofollow">
+      //       Create an account
+      //     </a>
+      //   </span>
+      // }
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <Input
@@ -217,13 +217,12 @@ export default function LoginPage() {
         <Button
           type="button"
           variant="ghost"
-          className="w-full border border-slate-200 hover:border-slate-300"
+          className="w-full hover:bg-white cursor-pointer"
           onClick={handleGoogleLogin}
           loading={googleLoading || googleAuthLoading}
           aria-label="Đăng nhập với Google"
         >
-          <Chrome size={18} />
-          Đăng nhập với Google
+          <img src="/gg-logo2.webp" alt="Google" className="w-10 h-10" />
         </Button>
 
         {/* Container ẩn nếu sau này muốn render Google button gốc (không bắt buộc) */}

@@ -50,31 +50,7 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
               tabIndex={0}
             >
               {visible ? (
-                // Eye-off icon
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M3 3l18 18"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M10.58 10.58A3 3 0 0012 15a3 3 0 002.42-4.42M9.88 5.09A10.92 10.92 0 0112 5c5 0 9.27 3.11 10.5 7.5-.37 1.28-.98 2.46-1.78 3.5m-3.16 2.41A10.93 10.93 0 0112 19C7 19 2.73 15.89 1.5 11.5c.55-1.89 1.64-3.56 3.06-4.84"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : (
-                // Eye icon
+                // Eye (open) icon when password is visible
                 <svg
                   width="18"
                   height="18"
@@ -96,6 +72,30 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
                     r="3.5"
                     stroke="currentColor"
                     strokeWidth="2"
+                  />
+                </svg>
+              ) : (
+                // Eye-off icon when password is hidden
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 3l18 18"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M10.58 10.58A3 3 0 0012 15a3 3 0 002.42-4.42M9.88 5.09A10.92 10.92 0 0112 5c5 0 9.27 3.11 10.5 7.5-.37 1.28-.98 2.46-1.78 3.5m-3.16 2.41A10.93 10.93 0 0112 19C7 19 2.73 15.89 1.5 11.5c.55-1.89 1.64-3.56 3.06-4.84"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </svg>
               )}

@@ -40,7 +40,7 @@ export default function VerifyEmailPage() {
         className="text-sm text-center text-slate-700"
       >
         {loading
-          ? "Đang xử lý..."
+          ? "Loading..."
           : result
           ? result.message
           : "Không tìm thấy token xác thực."}

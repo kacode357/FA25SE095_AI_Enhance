@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
 import AuthShell from "@/components/auth/AuthShell";
+import { useConfirmEmail } from "@/hooks/auth/useConfirmEmail";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useConfirmEmail } from "@/hooks/auth/useConfirmEmail";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
@@ -40,7 +40,7 @@ export default function VerifyEmailPage() {
         className="text-sm text-center text-white/80"
       >
         {loading
-          ? "Đang xử lý..."
+          ? "Loading..."
           : result
           ? result.message
           : "Không tìm thấy token xác thực."}

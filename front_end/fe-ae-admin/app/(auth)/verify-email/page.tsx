@@ -35,7 +35,7 @@ export default function VerifyEmailPage() {
         footer={<Link href="/login" className="text-emerald-600 hover:underline">Quay lại đăng nhập</Link>}
       >
         <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:.4 }} className="text-sm text-center text-slate-600">
-          {loading ? "Đang xử lý..." : result ? result.message : "Không tìm thấy token xác thực."}
+          {loading ? "Loading..." : result ? result.message : "Không tìm thấy token xác thực."}
         </motion.div>
       </AuthCard>
     </AuthShellAdmin>

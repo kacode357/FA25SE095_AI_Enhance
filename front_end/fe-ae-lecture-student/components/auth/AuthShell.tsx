@@ -3,10 +3,9 @@
 
 import LogoLoader from "@/components/common/logo-loader";
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
+import Logo from "../logo/Logo";
 import { useAuthLoading } from "./AuthLoadingProvider";
 
 type Props = {
@@ -23,91 +22,63 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
   const { loading } = useAuthLoading();
 
   return (
-    <div className="min-h-dvh relative isolate text-slate-800">
-      {/* Decorative background shapes will remain from global styles */}
+    <div className="min-h-screen bg-gradient-to-br from-[#ffd1e6] via-[#cda2ff] to-[#8b5cf6] flex items-center justify-center p-8">
+      <div className="w-full max-w-5xl rounded-2xl shadow-2xl bg-white overflow-hidden flex flex-col md:flex-row">
+        {/* Left decorative area */}
+        <div className="hidden md:block md:w-1/2 relative bg-gradient-to-br from-[#ffffff] to-[#fff6fb]">
+          {/* Decorative shapes - using absolute circles and gradients to mimic sample */}
+          <div className="absolute inset-0">
+            <div className="absolute -left-24 -top-24 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#6b28b8] to-[#ff6aa3] opacity-20 blur-3xl" />
+            <div className="absolute -right-36 top-20 w-[360px] h-[360px] rounded-full bg-gradient-to-br from-[#ffd24d] to-[#ff8a00] opacity-20 blur-3xl" />
+            <div className="absolute left-12 bottom-12 w-[220px] h-[220px] rounded-full bg-white/80 shadow-inner" />
+          </div>
 
-      <div className="relative z-10 mx-auto max-w-[1200px] px-6 sm:px-8 py-6 min-h-dvh flex flex-col">
-        {/* compact header */}
-        <header className="flex items-center justify-between gap-4 py-2">
-          <Link href="/" className="inline-flex items-center gap-2" aria-label="AI Enhance Home">
-            <div className="rounded-full bg-gradient-to-br from-[#f4a7df] to-[--brand] p-1">
-              <Image src="/ai-enhance-logo.svg" alt="AI Enhance" width={28} height={28} priority />
-            </div>
-            <span className="font-semibold tracking-tight">AI Enhance</span>
-          </Link>
-
-          <nav aria-label="Auth navigation" className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className={`btn px-3 py-1 text-sm rounded-md ${isLogin ? "border-brand text-nav-active" : "btn-ghost text-nav"}`}
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              className={`btn px-3 py-1 text-sm rounded-md ${isRegister ? "border-brand text-nav-active" : "btn-ghost text-nav"}`}
-            >
-              Register
-            </Link>
-          </nav>
-        </header>
-
-        <main className="mx-auto w-full max-w-[1100px] grid grid-cols-12 gap-10 flex-1 items-center">
-          {/* Left hero (visual emphasis) */}
-          <motion.div
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.45, ease: "easeOut" }}
-            className="hidden md:flex flex-col justify-center col-span-7 auth-hero"
-          >
-            <h1 className="hero-title text-slate-900">
-              Real-time Data <span className="text-brand">Automation</span>
-            </h1>
-            <p className="mt-4 hero-sub max-w-prose">
-              Streamline online data gathering and reporting for business students. Secure, fast, and elegant—powered by AI.
-            </p>
-
-            <div className="mt-8 grid grid-cols-3 gap-4 max-w-lg">
-              {["Secure", "Fast", "Reliable"].map((k, i) => (
-                <motion.div
-                  key={k}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.14 + i * 0.04 }}
-                  className="glass-card p-4"
-                >
-                  <div className="text-sm text-slate-800">{k}</div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Right form: glass card, centered on smaller screens */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: "easeOut", delay: 0.05 }}
-            className="flex items-center col-span-12 md:col-span-5"
-          >
-            <div className="glass-card w-full max-w-[520px] mx-auto p-6 sm:p-8">
-              <div className="mb-5">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h2>
-                  <div className="text-xs text-slate-500">{isLogin ? "Welcome back!" : "Welcome"}</div>
-                </div>
-                {subtitle && <div className="mt-1 text-sm text-slate-600">{subtitle}</div>}
+          {/* Decorative gradient rings (replaces illustrative image) */}
+          <div className="relative h-full flex items-center justify-center p-8">
+            <div className="relative w-full h-full">
+              {/* Large bottom-right ring */}
+              <div className="absolute -right-10 bottom-14 w-72 h-72 rounded-full p-1 bg-gradient-to-br from-[#6b28b8] via-[#ff4b9b] to-[#ff7a59] shadow-xl">
+                <div className="w-full h-full rounded-full bg-white/90" />
               </div>
 
-              {children}
+              {/* Medium top-left ring */}
+              <div className="absolute -left-20 -top-16 w-56 h-56 rounded-full p-1 bg-gradient-to-br from-[#8b5cf6] via-[#c084fc] to-[#ff6aa3] opacity-95 shadow-md">
+                <div className="w-full h-full rounded-full bg-white/90" />
+              </div>
 
-              {footer && <div className="mt-6 text-center text-sm text-slate-600">{footer}</div>}
+              {/* Small accent ring */}
+              <div className="absolute left-12 top-32 w-28 h-28 rounded-full p-1 bg-gradient-to-br from-[#ffd24d] to-[#ff6aa3] opacity-90 shadow-lg">
+                <div className="w-full h-full rounded-full bg-white/95" />
+              </div>
+
+              {/* Subtle blurred gradient glow behind shapes */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute -left-24 -top-24 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#6b28b8] to-[#ff6aa3] opacity-10 blur-3xl" />
+                <div className="absolute -right-36 top-20 w-[360px] h-[360px] rounded-full bg-gradient-to-br from-[#ffd24d] to-[#ff8a00] opacity-10 blur-3xl" />
+              </div>
             </div>
-          </motion.div>
-        </main>
+          </div>
+        </div>
 
-        <footer className="mt-6 text-center text-xs text-slate-500">
-          © 2025 AI Enhance. All rights reserved.
-        </footer>
+        {/* Right form area */}
+        <div className="w-full md:w-1/2 p-8 md:p-12">
+          <div className="flex justify-end mb-4">
+              <div className="">
+                <Logo />
+              </div>
+          </div>
+
+          <div className="max-w-md mx-auto">
+            <h2 className="text-2xl font-semibold text-slate-900 mb-2">Welcome to <span className="text-violet-800">AIDS-LMS!</span></h2>
+            {subtitle && <div className="text-sm text-slate-600 mb-6">{subtitle}</div>}
+
+            <div className="bg-white rounded-xl p-6 shadow-md">
+              {children}
+            </div>
+
+            {footer && <div className="mt-4 text-center text-sm text-slate-500">{footer}</div>}
+          </div>
+        </div>
       </div>
 
       {/* Full-screen auth loading overlay */}
@@ -125,7 +96,7 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
           >
             <div className="flex flex-col items-center gap-3">
               <LogoLoader size={40} />
-              <div className="text-sm text-slate-100">Processing…</div>
+              <div className="text-sm text-white">Loading…</div>
             </div>
           </motion.div>
         )}
