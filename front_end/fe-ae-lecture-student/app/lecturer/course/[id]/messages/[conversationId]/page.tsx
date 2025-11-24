@@ -29,6 +29,7 @@ import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.r
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 
 import ResolveSupportRequestDialog from "@/app/student/courses/[id]/support/components/ResolveSupportRequestDialog";
+import { buildChatTimeline, parseServerDate, timeHHmm } from "@/utils/chat/time";
 import { ArrowLeft, ChevronRight, MessageCircle, Send, Wrench } from "lucide-react";
 
 /* ===== Utils ===== */
@@ -41,17 +42,6 @@ const uuid = () =>
         ? crypto.randomUUID()
         : `temp-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
-/** Parse datetime từ BE:
- * - Nếu thiếu timezone => coi là UTC
- * - Clamp phần nghìn giây về 3 chữ số cho ổn định
- */
-function parseServerDate(ts: string): Date {
-    if (!ts) return new Date(NaN);
-    const clamped = ts.replace(/(\.\d{3})\d+$/, "$1");
-    const hasTZ = /Z|[+\-]\d{2}:\d{2}$/.test(clamped);
-    const iso = hasTZ ? clamped : clamped + "Z";
-    return new Date(iso);
-}
 
 const initial = (name?: string) =>
     name?.trim()?.[0]?.toUpperCase() ?? "?";
@@ -109,6 +99,8 @@ export default function LecturerSupportChatPage() {
     const pendingRef = useRef<
         Map<string, { createdAt: number; message: string; receiverId: string }>
     >(new Map());
+
+    const sendingRef = useRef(false);
 
     // tránh spam load history
     const lastLoadedConvRef = useRef<string | null>(null);
@@ -257,8 +249,14 @@ export default function LecturerSupportChatPage() {
     const onSend = async () => {
         if (isResolved) return; // khóa chat sau khi resolved
         if (!peerId || !courseId || !currentUserId) return;
+        if (sendingRef.current) return; // another send in progress
+
         const message = input.trim();
         if (!message) return;
+
+        // acquire lock immediately to prevent double-submit on rapid Enter
+        sendingRef.current = true;
+        setSending(true);
 
         const tempId = uuid();
         const local: ChatMessage = {
@@ -283,7 +281,6 @@ export default function LecturerSupportChatPage() {
         scrollBottom();
 
         try {
-            setSending(true);
             const dto: SendMessagePayload = {
                 courseId,
                 receiverId: peerId,
@@ -292,6 +289,7 @@ export default function LecturerSupportChatPage() {
             await sendMessage(dto);
             setInput("");
         } finally {
+            sendingRef.current = false;
             setSending(false);
         }
     };
@@ -356,6 +354,10 @@ export default function LecturerSupportChatPage() {
         if (!haystack.length) return null;
         return haystack[haystack.length - 1].id;
     }, [messages, currentUserId]);
+
+    const timeline = useMemo(() => buildChatTimeline(messages, currentUserId), [messages, currentUserId]);
+
+    const [hoverInfo, setHoverInfo] = useState< { id: string; label: string } | null>(null);
 
     const showResolveDialog =
         !!resolveQuestionId && !resolveHandled && !isResolved;
@@ -501,16 +503,21 @@ export default function LecturerSupportChatPage() {
                             )}
 
                             {!loadingHistory &&
-                                messages.map((m) => {
-                                    const isMine =
-                                        !!currentUserId && m.senderId === currentUserId;
-                                    const sentTime = parseServerDate(m.sentAt);
-                                    const timeLabel = Number.isNaN(sentTime.getTime())
-                                        ? ""
-                                        : sentTime.toLocaleTimeString("en-GB", {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                        });
+                                timeline.map((it) => {
+                                    if (it.kind === "sep") {
+                                        return (
+                                            <div key={it.id} className="w-full flex items-center">
+                                                <div className="flex-1 h-px bg-[var(--border)]/100" />
+                                                <div className="mx-3 px-3 py-1 bg-[var(--card)] text-xs text-[var(--text-muted)] rounded-full border border-[var(--border)]">
+                                                    {it.label}
+                                                </div>
+                                                <div className="flex-1 h-px bg-[var(--border)]/100" />
+                                            </div>
+                                        );
+                                    }
+
+                                    const m = it.m;
+                                    const isMine = it.isMine;
 
                                     return (
                                         <div
@@ -527,6 +534,29 @@ export default function LecturerSupportChatPage() {
                                                         ? "bg-[var(--brand)] text-white"
                                                         : "bg-white border border-[var(--border)] text-slate-900",
                                                 )}
+                                                onMouseEnter={(e) => {
+                                                    if (!listRef.current) return;
+                                                    const rect = listRef.current.getBoundingClientRect();
+                                                    const x = e.clientX - rect.left;
+                                                    const y = e.clientY - rect.top + (listRef.current?.scrollTop ?? 0);
+                                                    const ts = parseServerDate(m.sentAt);
+                                                    if (Number.isNaN(ts.getTime())) return;
+                                                    const label = timeHHmm(ts);
+                                                    // position tooltip exactly at cursor
+                                                    listRef.current.style.setProperty("--tooltip-left", `${x}px`);
+                                                    listRef.current.style.setProperty("--tooltip-top", `${y}px`);
+                                                    setHoverInfo({ id: m.id, label });
+                                                }}
+                                                onMouseMove={(e) => {
+                                                    if (!hoverInfo || hoverInfo.id !== m.id) return;
+                                                    if (!listRef.current) return;
+                                                    const rect = listRef.current.getBoundingClientRect();
+                                                    const x = e.clientX - rect.left;
+                                                    const y = e.clientY - rect.top + (listRef.current?.scrollTop ?? 0);
+                                                    listRef.current.style.setProperty("--tooltip-left", `${x}px`);
+                                                    listRef.current.style.setProperty("--tooltip-top", `${y}px`);
+                                                }}
+                                                onMouseLeave={() => setHoverInfo(null)}
                                             >
                                                 {/* ⋮ menu */}
                                                 {isMine && !m.isDeleted && (
@@ -546,7 +576,7 @@ export default function LecturerSupportChatPage() {
                                                                 );
                                                             }}
                                                             aria-label="Message actions"
-                                                            aria-expanded={openMenuId === m.id}
+                                                            aria-expanded={openMenuId === m.id ? "true" : "false"}
                                                             title="More"
                                                         >
                                                             ⋮
@@ -580,16 +610,21 @@ export default function LecturerSupportChatPage() {
                                                 >
                                                     {m.message}
                                                 </div>
-
-                                                {timeLabel && (
-                                                    <div className="mt-1 text-[10px] opacity-70 text-right">
-                                                        {timeLabel}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     );
                                 })}
+
+                            {/* Hover tooltip positioned inside listRef */}
+                            {hoverInfo && (
+                                <div
+                                    className="pointer-events-none absolute z-50 left-[var(--tooltip-left)] top-[var(--tooltip-top)]"
+                                >
+                                    <div className="bg-white border border-[var(--border)] text-xs rounded px-2 py-1 shadow-sm">
+                                        {hoverInfo.label}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* typing dưới input */}

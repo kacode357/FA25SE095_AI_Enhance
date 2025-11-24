@@ -1,8 +1,8 @@
 // components/layout/Header.tsx
 "use client";
 
-import Link from "next/link";
 import Logo from "@/components/logo/Logo";
+import Link from "next/link";
 
 export default function Header() {
   return (
@@ -10,7 +10,6 @@ export default function Header() {
       className="fixed top-0 z-40 w-full h-16 backdrop-blur-sm"
       style={{
         background: "rgba(255,255,255,0.72)",
-        borderBottom: "1px solid var(--border)",
       }}
     >
       <div

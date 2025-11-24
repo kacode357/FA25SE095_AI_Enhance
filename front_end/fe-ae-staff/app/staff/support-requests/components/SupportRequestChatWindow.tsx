@@ -751,12 +751,6 @@ export default function SupportRequestChatWindow({
                                             }
                                         >
                                             {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
-
-                                            {it.showTime && !isSystem && (
-                                                <div className={`mt-1 text-[11px] ${isMe ? 'text-white/80' : 'text-muted-foreground'}`}>
-                                                    {formatted}
-                                                </div>
-                                            )}
                                         </div>
                                     )}
 
