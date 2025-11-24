@@ -10,6 +10,13 @@ import type {
     ChatMessageItemResponse as ChatMessage,
 } from "@/types/chat/chat.response";
 import { getSavedAccessToken } from "@/utils/auth/access-token";
+// time helpers (shared)
+import {
+    buildChatTimeline,
+    ChatTimelineItem,
+    parseServerDate,
+    timeHHmm,
+} from "@/utils/chat/time";
 import { ArrowLeft, EllipsisVertical, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -36,13 +43,7 @@ const uuid = () =>
         ? crypto.randomUUID()
         : `temp-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
-function parseServerDate(ts: string) {
-    if (!ts) return new Date(NaN);
-    const clamped = ts.replace(/(\.\d{3})\d+$/, "$1");
-    const hasTZ = /Z|[+\-]\d{2}:\d{2}$/.test(clamped);
-    const iso = hasTZ ? clamped : clamped + "Z";
-    return new Date(iso);
-}
+// parseServerDate is imported from shared utils (`@/utils/chat/time`)
 
 export default function SupportRequestChatWindow({
     courseId,
@@ -442,7 +443,7 @@ export default function SupportRequestChatWindow({
 
         try {
             setSending(true);
-            const dto: SendMessagePayload = { courseId, receiverId: peerId, message };
+            const dto: SendMessagePayload = { courseId, receiverId: peerId, message, supportRequestId };
             await sendMessage(dto);
             setInput("");
             // sau khi send thì coi như hết typing (input rỗng -> effect sẽ tự gọi stopTyping)
@@ -451,7 +452,11 @@ export default function SupportRequestChatWindow({
         }
     };
 
-    const rendered = useMemo(() => messages, [messages]);
+    // build timeline items (separators + messages with showTime flag)
+    const timeline = useMemo<ChatTimelineItem<ChatMessage>[]>(() =>
+        buildChatTimeline(messages, currentUserId),
+        [messages, currentUserId],
+    );
     const rootRef = useRef<HTMLDivElement | null>(null);
     const messagesRef = useRef<HTMLDivElement | null>(null);
     const messageElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -615,16 +620,27 @@ export default function SupportRequestChatWindow({
                     paddingBottom: footerHeight ? footerHeight + 20 : undefined,
                 }}
             >
-                {rendered.length === 0 ? (
+                {timeline.length === 0 ? (
                     <div className="text-xs text-muted-foreground">No messages yet.</div>
                 ) : (
-                    rendered.map((m) => {
-                        const isMe = m.senderId === currentUserId;
+                    timeline.map((it) => {
+                        if (it.kind === "sep") {
+                            return (
+                                <div key={it.id} className="w-full flex items-center py-3">
+                                    <div className="flex-1 border-t border-slate-200" />
+                                    <div className="mx-3 px-3 py-1 bg-white rounded-full text-xs text-muted-foreground shadow-sm">
+                                        {it.label}
+                                    </div>
+                                    <div className="flex-1 border-t border-slate-200" />
+                                </div>
+                            );
+                        }
+
+                        const m = it.m;
+                        const isMe = it.isMine;
                         const isSystem = m.senderId === "system" || (m as any).isSystem;
                         const d = parseServerDate(m.sentAt);
-                        const formatted = !isNaN(d.getTime())
-                            ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
-                            : "";
+                        const formatted = !isNaN(d.getTime()) ? timeHHmm(d) : "";
 
                         return (
                             <div
@@ -735,6 +751,12 @@ export default function SupportRequestChatWindow({
                                             }
                                         >
                                             {m.isDeleted ? <i className="opacity-70">[deleted]</i> : m.message}
+
+                                            {it.showTime && !isSystem && (
+                                                <div className={`mt-1 text-[11px] ${isMe ? 'text-white/80' : 'text-muted-foreground'}`}>
+                                                    {formatted}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 

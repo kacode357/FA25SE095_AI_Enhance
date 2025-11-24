@@ -14,4 +14,5 @@ export interface SendMessagePayload {
   receiverId: string;     // GUID user
   courseId: string;       // course GUID
   conversationId?: string;
+  supportRequestId?: string | null;
 }
