@@ -42,6 +42,8 @@ export interface AssignmentItem {
   statusDisplay: string;
   isGroupAssignment: boolean;
   maxPoints: number;
+  weight: number;
+  groupIds: string[];
   isOverdue: boolean;
   daysUntilDue: number;
   assignedGroupsCount: number;

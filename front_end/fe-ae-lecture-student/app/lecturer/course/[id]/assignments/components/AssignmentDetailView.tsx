@@ -155,6 +155,9 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                 Max: {a.maxPoints ?? 0} pts
               </span>
               <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
+                Weight: {a.weight ?? 0} %
+              </span>
+              <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
                 Start: {fmt(a.startDate)}
               </span>
               <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
@@ -285,7 +288,12 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
 
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-slate-500">Max Points</span>
-                        <span className="font-medium">{a.maxPoints ?? 0}</span>
+                        <span className="font-medium">{a.maxPoints ?? 0} pts</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-slate-500">Weight</span>
+                        <span className="font-medium">{a.weight ?? 0} %</span>
                       </div>
 
                       <div className="flex items-center justify-between gap-3">
@@ -365,7 +373,7 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                 </section>
 
                 {/* Groups */}
-                <section>
+                <section className="pb-10">
                   <div className="mb-2 -mt-5 text-sm text-slate-500">
                     Assigned Groups ({assignedGroupsState.length ?? a?.assignedGroupsCount ?? 0})
                   </div>

@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
-import { Book, ChevronRight, FileSpreadsheet, FolderPlus, Shuffle } from "lucide-react";
+import { Book, ChevronRight, FileSpreadsheet, FolderPlus, Shuffle, Waypoints } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import CreateGroupSheet from "./components/CreateGroupSheet";
@@ -72,7 +72,7 @@ export default function CourseDetailPage() {
 
   return (
     <div className="space-y-0 px-3">
-      <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mt-1.5 mr-3">
+      <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mr-3">
         <div className="flex items-center justify-between">
           <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
             <li className="flex flex-row gap-0 hover:text-violet-800 items-center">
@@ -110,8 +110,22 @@ export default function CourseDetailPage() {
               )}
           </ol>
 
-          <div className="flex text-sm items-center gap-2">
-              {/* When clicked, course title (below) will navigate to EditCourse page. Back button removed as requested. */}
+          <div className="flex items-center gap-2">
+            <Button
+              className="bg-white text-sm text-indigo-600 border border-indigo-200 rounded-xl mb-4 mr-2 py-2 px-4 shadow-lg hover:shadow-md flex items-center gap-2"
+              onClick={() => {
+                try {
+                  const dest = id
+                    ? `/lecturer/course/${id}/course-statistics${activeTab ? `?tab=${activeTab}` : ""}`
+                    : `/lecturer/course-statistics`;
+                  router.push(dest);
+                } catch (e) {
+                }
+              }}
+            >
+              <Waypoints className="size-4 text-indigo-600" />
+              Statistics
+            </Button>
           </div>
         </div>
       </nav>
@@ -131,7 +145,7 @@ export default function CourseDetailPage() {
         className="w-full"
       >
         {/* Underline style tabs */}
-        <TabsList className="mt-4 mb-1 inline-flex items-center gap-5 bg-transparent px-0 self-start">
+        <TabsList className="mb-1 inline-flex items-center gap-5 bg-transparent px-0 self-start">
           <TabsTrigger
             className="relative -mb-px cursor-pointer pb-2 text-sm font-medium tracking-wide text-slate-600 hover:text-indigo-600 transition-colors focus-visible:outline-none focus:ring-0 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-[1px] data-[state=active]:after:h-[2px] data-[state=active]:after:bg-indigo-600 data-[state=active]:after:rounded-sm data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:ring-0"
             value="students"

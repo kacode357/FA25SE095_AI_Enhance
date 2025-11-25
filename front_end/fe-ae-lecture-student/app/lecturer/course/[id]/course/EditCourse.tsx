@@ -157,7 +157,7 @@ export default function EditCourse() {
                 }}
             />
             {/* Breadcrumb (styled like CreateCoursePage) */}
-            <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden py-3 mr-3">
+            <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mt-2 py-3 mr-3">
                 <div className="flex items-center justify-between">
                     <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
                         <li className="flex flex-row gap-0 hover:text-violet-800 items-center">

@@ -22,7 +22,7 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
   const { loading } = useAuthLoading();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ffd1e6] via-[#cda2ff] to-[#8b5cf6] flex items-center justify-center p-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#ffffff] via-[#fff7ed] to-[#ffd59a] flex items-center justify-center p-8">
       <div className="w-full max-w-5xl rounded-2xl shadow-2xl bg-white overflow-hidden flex flex-col md:flex-row">
         {/* Left decorative area */}
         <div className="hidden md:block md:w-1/2 relative bg-gradient-to-br from-[#ffffff] to-[#fff6fb]">

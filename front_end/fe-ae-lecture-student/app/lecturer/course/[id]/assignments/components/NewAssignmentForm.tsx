@@ -62,6 +62,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     isGroupAssignment: false,
     autoSchedule: true,
     maxPoints: "",
+    weight: "",
     groupIds: [] as string[],
     format: "",
     gradingCriteria: "",
@@ -159,6 +160,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
       isGroupAssignment: false,
       autoSchedule: true,
       maxPoints: "",
+      weight: "",
       groupIds: [],
       format: "",
       gradingCriteria: "",
@@ -213,6 +215,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
       dueDate: new Date(form.dueDate).toISOString(),
       isGroupAssignment: !!form.isGroupAssignment,
       maxPoints: form.maxPoints ? Number(form.maxPoints) : undefined,
+      weight: form.weight !== undefined && form.weight !== "" ? Number(form.weight) : 0,
       format: form.format?.trim() || undefined,
       gradingCriteria: form.gradingCriteria?.trim() || undefined,
       groupIds: form.isGroupAssignment && form.groupIds.length > 0 ? form.groupIds : undefined,
@@ -321,19 +324,52 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
         </div>
 
         {/* Settings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 mt-10 md:grid-cols-2 gap-8">
           <div>
             <Label className="text-sm mb-1">Max Points</Label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="100"
-              value={form.maxPoints}
-              className="text-xs !py-3"
-              onChange={(e) =>
-                setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))
-              }
-            />
+            <div className="flex items-center">
+              <Input
+                type="number"
+                inputMode="numeric"
+                placeholder="100"
+                value={form.maxPoints}
+                className="text-xs !py-3"
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))
+                }
+              />
+              <span className="ml-2 text-sm text-slate-600">pts</span>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm mb-1">Weight
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Grading criteria help"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full cursor-pointer bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    <CircleAlert className="size-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-lg text-center bg-white text-slate-500">
+                  The weight of the assignment in the total grade of the course (%).
+                </TooltipContent>
+              </Tooltip>
+            </Label>
+            <div className="flex items-center">
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="e.g., 40"
+                value={form.weight}
+                className="text-xs !py-3"
+                onChange={(e) => setForm((p) => ({ ...p, weight: e.target.value.replace(/[^0-9.]/g, "") }))}
+              />
+              <span className="ml-2 text-base text-slate-600">%</span>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 w-full">

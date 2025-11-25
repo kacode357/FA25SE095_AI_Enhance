@@ -1,8 +1,8 @@
 // services/user.services.ts
 import { userAxiosInstance } from "@/config/axios.config";
 import type { ApiResponse } from "@/types/auth/auth.response";
-import type { UserProfile, UpdateProfileResponse } from "@/types/user/user.response";
-import type { UpdateProfilePayload } from "@/types/user/user.payload";
+import type { UpdateProfilePayload, UploadAvatarPayload } from "@/types/user/user.payload";
+import type { UpdateProfileResponse, UserProfile } from "@/types/user/user.response";
 
 /**
  * Lưu ý:
@@ -24,6 +24,24 @@ export const UserService = {
       "/User/profile",
       data
     );
-    return res.data; 
+    return res.data;
   },
+
+  uploadAvatar: async (
+    payload: UploadAvatarPayload
+  ): Promise<ApiResponse<string>> => {
+    const formData = new FormData();
+    formData.append("file", payload.file);
+
+    const res = await userAxiosInstance.post<ApiResponse<string>>(
+      "/User/profile/picture",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return res.data;
+  },
+
 };

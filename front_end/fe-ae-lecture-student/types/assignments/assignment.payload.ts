@@ -13,6 +13,7 @@ export interface CreateAssignmentPayload {
   gradingCriteria?: string;
   isGroupAssignment: boolean;
   maxPoints?: number;
+  weight: number;
   /** Only when isGroupAssignment = true */
   groupIds?: string[];              // uuid[]
 }
@@ -25,6 +26,7 @@ export interface UpdateAssignmentPayload {
   format?: string;
   gradingCriteria?: string;
   maxPoints?: number;
+  weight?: number;
 }
 
 export interface GetAssignmentsQuery {

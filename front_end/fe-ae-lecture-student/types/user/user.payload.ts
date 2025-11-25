@@ -6,5 +6,9 @@ export interface UpdateProfilePayload {
   institutionName: string;
   institutionAddress: string;
   department: string;
-  studentId?: string;  
+  studentId?: string;
+}
+
+export interface UploadAvatarPayload {
+  file: File;
 }

@@ -42,6 +42,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
         startDate: "",
         dueDate: "",
         maxPoints: "",
+        weight: "",
         format: "",
         gradingCriteria: "",
     });
@@ -62,6 +63,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
             startDate: a.startDate ? new Date(a.startDate).toISOString().slice(0, 16) : "",
             dueDate: a.dueDate ? new Date(a.dueDate).toISOString().slice(0, 16) : "",
             maxPoints: a.maxPoints ? String(a.maxPoints) : "",
+            weight: a.weight !== undefined && a.weight !== null ? String(a.weight) : "",
             format: a.format ?? "",
             gradingCriteria: a.gradingCriteria ?? "",
         });
@@ -78,20 +80,21 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
         const descriptionClean = normalizeHtmlForSave(form.description);
 
 
-            const payload: UpdateAssignmentPayload = {
-                title: form.title !== undefined ? form.title.trim() : a.title ?? "",
-                description: descriptionClean !== undefined ? descriptionClean : a.description ?? "",
-                format: form.format !== undefined ? form.format.trim() : a.format ?? undefined,
-                gradingCriteria: form.gradingCriteria !== undefined ? form.gradingCriteria.trim() : a.gradingCriteria ?? undefined,
-                maxPoints: form.maxPoints !== undefined && form.maxPoints !== "" ? Number(form.maxPoints) : a.maxPoints ?? undefined,
-            };
+        const payload: UpdateAssignmentPayload = {
+            title: form.title !== undefined ? form.title.trim() : a.title ?? "",
+            description: descriptionClean !== undefined ? descriptionClean : a.description ?? "",
+            format: form.format !== undefined ? form.format.trim() : a.format ?? undefined,
+            gradingCriteria: form.gradingCriteria !== undefined ? form.gradingCriteria.trim() : a.gradingCriteria ?? undefined,
+            maxPoints: form.maxPoints !== undefined && form.maxPoints !== "" ? Number(form.maxPoints) : a.maxPoints ?? undefined,
+            weight: form.weight !== undefined && form.weight !== "" ? Number(form.weight) : a.weight ?? undefined,
+        };
 
-            if (isDraft) {
-                payload.startDate = form.startDate ? new Date(form.startDate).toISOString() : a.startDate ?? undefined;
-                payload.dueDate = form.dueDate ? new Date(form.dueDate).toISOString() : a.dueDate ?? undefined;
-            }
+        if (isDraft) {
+            payload.startDate = form.startDate ? new Date(form.startDate).toISOString() : a.startDate ?? undefined;
+            payload.dueDate = form.dueDate ? new Date(form.dueDate).toISOString() : a.dueDate ?? undefined;
+        }
 
-            const res = await updateAssignment(a.id, payload);
+        const res = await updateAssignment(a.id, payload);
         if (res?.success) {
             onUpdated?.();
         }
@@ -121,8 +124,8 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
     return (
         <Card className="border-slate-200 py-0 pt-4 shadow-sm">
             <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+                    <div className="md:col-span-2">
                         <Label className="text-sm mb-1">Title *</Label>
                         <Input
                             value={form.title}
@@ -130,16 +133,33 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
                             className="text-xs"
                         />
                     </div>
-
                     <div>
                         <Label className="text-sm mb-1">Max Points</Label>
-                        <Input
-                            type="number"
-                            inputMode="numeric"
-                            value={form.maxPoints}
-                            className="text-xs"
-                            onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))}
-                        />
+                        <div className="flex items-center">
+                            <Input
+                                type="number"
+                                inputMode="numeric"
+                                value={form.maxPoints}
+                                className="text-xs"
+                                onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))}
+                            />
+                            <span className="ml-2 text-sm text-slate-600">pts</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label className="text-sm mb-1">Weight</Label>
+                        <div className="flex items-center">
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={form.weight}
+                                className="text-xs"
+                                onChange={(e) => setForm((p) => ({ ...p, weight: e.target.value.replace(/[^0-9.]/g, "") }))}
+                                placeholder="e.g, 40"
+                            />
+                            <span className="ml-2 text-base text-slate-600">%</span>
+                        </div>
                     </div>
 
                     {/* Topic shown read-only since Update payload doesn't include topicId */}
@@ -154,7 +174,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
 
                     <div className="flex gap-3 w-full md:col-span-2">
                         <div className="flex-1">
-                            <Label className="text-sm mb-1">Start Date {isDraft ? "*" : "(locked)"}</Label>
+                            <Label className="text-sm mb-1">Start Date {isDraft ? "*" : <span className="text-red-500">(locked)</span>}</Label>
                             <Input
                                 type="datetime-local"
                                 disabled={!isDraft}
@@ -164,7 +184,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
                             />
                         </div>
                         <div className="flex-1">
-                            <Label className="text-sm mb-1">Due Date {isDraft ? "*" : "(locked)"}</Label>
+                            <Label className="text-sm mb-1">Due Date {isDraft ? "*" : <span className="text-red-500">(locked)</span>}</Label>
                             <Input
                                 type="datetime-local"
                                 disabled={!isDraft}
@@ -182,7 +202,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
                     </div>
                 )}
                 <div>
-                    <Label className="text-sm block mb-1">Description</Label>
+                    <Label className="text-sm block mt-10 mb-1">Description</Label>
                     <LiteRichTextEditor
                         className="w-full"
                         value={form.description}

@@ -22,6 +22,7 @@ import {
   GetCourseEnrollmentsResponse,
   GetCourseJoinInfoResponse,
   GetCoursesByTermYearResponse,
+  GetCourseStatisticsResponse,
   GetMyCoursesResponse,
   InactivateCourseResponse,
   UpdateAccessCodeResponse,
@@ -151,6 +152,12 @@ inactivateCourse: async (
     const res = await courseAxiosInstance.get<GetCourseJoinInfoResponse>(
       `/Courses/${id}/join-info`
     );
+    return res.data;
+  },
+
+    /** (đã thêm trước) ✅ GET /api/Courses/{id}/statistics */
+  getStatistics: async (id: string): Promise<GetCourseStatisticsResponse> => {
+    const res = await courseAxiosInstance.get<GetCourseStatisticsResponse>(`/Courses/${id}/statistics`);
     return res.data;
   },
 };

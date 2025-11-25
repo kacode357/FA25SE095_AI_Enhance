@@ -2,9 +2,10 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateProfile } from "@/hooks/user/useUpdateProfile";
+import { useUploadAvatar } from "@/hooks/user/useUploadAvatar";
 import type { UpdateProfilePayload } from "@/types/user/user.payload";
-import { Loader2, Mail, ShieldCheck } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CircleFadingArrowUp, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, DetailRow, Field, formatDateTime, initials, safeStr, StatLine } from "../components/format-profile";
 
 type ProfileForm = {
@@ -18,6 +19,16 @@ type ProfileForm = {
 export default function LecturerMyProfilePage() {
     const { user } = useAuth();
     const { updateProfile, loading } = useUpdateProfile();
+    const { uploadAvatar, loading: uploading } = useUploadAvatar();
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (preview) URL.revokeObjectURL(preview);
+        };
+    }, [preview]);
 
     const [form, setForm] = useState<ProfileForm>({
         firstName: "",
@@ -85,19 +96,57 @@ export default function LecturerMyProfilePage() {
             {/* Header */}
             <div className="card p-6">
                 <div className="flex flex-col md:flex-row md:items-start gap-10">
-                    <div
-                        className="h-32 w-32 rounded-xl grid place-items-center text-base font-semibold border border-[var(--border)] bg-white text-[var(--brand-700)]"
-                        aria-hidden
-                    >
-                        {user.profilePictureUrl ? (
-                            <img
-                                src={user.profilePictureUrl}
-                                alt={`${user.firstName} ${user.lastName}`}
-                                className="h-full w-full object-cover"
-                            />
-                        ) : (
-                            initials(user.firstName, user.lastName)
-                        )}
+                    <div className="relative group" aria-hidden>
+                        <div className="h-32 w-32 rounded-xl overflow-hidden border border-[var(--border)] bg-white grid place-items-center text-base font-semibold text-[var(--brand-700)]">
+                            {preview ? (
+                                <img src={preview} alt="avatar preview" className="h-full w-full object-cover" />
+                            ) : user.profilePictureUrl ? (
+                                <img
+                                    src={user.profilePictureUrl}
+                                    alt={`${user.firstName} ${user.lastName}`}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                initials(user.firstName, user.lastName)
+                            )}
+                        </div>
+
+                        <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-150 opacity-0 group-hover:opacity-100">
+                            {/* very subtle light overlay so avatar remains visible */}
+                            <div className="absolute inset-0 cursor-pointer bg-white/50" aria-hidden />
+
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="relative z-10 rounded cursor-pointer  text-nav text-sm flex items-center gap-2"
+                                aria-label="Upload avatar"
+                                disabled={uploading}
+                            >
+                                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                <CircleFadingArrowUp className="w-7 h-7 text-violet-500" />
+                            </button>
+                        </div>
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            aria-hidden="true"
+                            aria-label="Upload avatar"
+                            className="hidden"
+                            onChange={async (e) => {
+                                const f = e.target.files?.[0];
+                                if (!f) return;
+                                // show local preview immediately
+                                const url = URL.createObjectURL(f);
+                                setPreview(url);
+
+                                await uploadAvatar({ file: f });
+
+                                // clear input so same file can be selected again later
+                                e.currentTarget.value = "";
+                            }}
+                        />
                     </div>
 
                     <div className="flex-1 min-w-0">

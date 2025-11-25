@@ -30,3 +30,15 @@ export interface UpdateProfileResponse {
   message: string;
   updatedProfile: UserProfile;
 }
+
+export interface UploadProfilePictureResponse {
+  status: number;
+  message: string;
+  data: string;
+}
+
+export interface ApiResponse<T> {
+  status: number;
+  message: string;
+  data: T;
+}

@@ -3,7 +3,7 @@
 import { CourseService } from "@/services/course.services";
 import { GetCourseEnrollmentsQuery } from "@/types/courses/course.payload";
 import { GetCourseEnrollmentsResponse } from "@/types/courses/course.response";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 export function useCourseEnrollments() {
   const [data, setData] = useState<GetCourseEnrollmentsResponse | null>(null);
@@ -27,5 +27,11 @@ export function useCourseEnrollments() {
     }
   };
 
-  return { data, loading, fetchEnrollments };
+    /** ✅ reset state khi rời màn hình */
+  const reset = useCallback(() => {
+    setData(null);
+    setLoading(false);
+  }, []);
+
+  return { data, loading, fetchEnrollments, reset };
 }

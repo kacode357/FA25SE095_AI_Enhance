@@ -19,5 +19,10 @@ export function useAssignments() {
     }
   }, []);
 
-  return { listData, loading, fetchAssignments };
+    const reset = useCallback(() => {
+    setListData(null);
+    setLoading(false);
+  }, []);
+
+  return { listData, loading, fetchAssignments, reset };
 }

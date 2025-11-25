@@ -322,3 +322,50 @@ export interface GetCourseJoinInfoResponse {
   /** Current user đã enroll course này chưa */
   isEnrolled: boolean;
 }
+
+
+/** ✅ GET /api/Courses/{id}/statistics */
+export interface GetCourseStatisticsResponse {
+  success: boolean;
+  message: string;
+  statistics: CourseStatistics;
+}
+
+export interface CourseStatistics {
+  course: Course;
+  totalEnrollments: number;
+  totalAssignments: number;
+  totalGroups: number;
+  totalChatMessages: number;
+  totalNotifications: number;
+  recentEnrollments: number;
+  lastActivity: string | null; // ISO datetime hoặc null nếu chưa có
+  enrollmentsByMonth: Record<string, number>; // key: 'YYYY-MM', value: count
+}
+
+export interface Course {
+  id: string;
+  courseCode: string;
+  courseCodeTitle: string;
+  name: string;
+  description: string;
+  term: string;
+  year: number;
+  lecturerId: string;
+  lecturerName: string;
+  createdAt: string;
+  enrollmentCount: number;
+  status: number;
+  approvedBy: string | null;
+  approvedByName: string | null;
+  approvedAt: string | null;
+  approvalComments: string | null;
+  rejectionReason: string | null;
+  canEnroll: boolean;
+  requiresAccessCode: boolean;
+  accessCode: string | null;
+  accessCodeCreatedAt: string | null;
+  accessCodeExpiresAt: string | null;
+  isAccessCodeExpired: boolean;
+  department: string;
+}

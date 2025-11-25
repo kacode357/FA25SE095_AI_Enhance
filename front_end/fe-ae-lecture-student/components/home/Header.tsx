@@ -6,28 +6,68 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { CircleArrowOutUpRight } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Header() {
   const { user } = useAuth();
   const { logout, loading: logoutLoading } = useLogout();
   const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const onScroll = () => {
-      if (typeof window === "undefined") return;
-      setScrolled(window.scrollY > 20);
+    if (typeof document === "undefined") return;
+
+    const main = document.querySelector("main") as HTMLElement | null;
+
+    const readAnyScroll = () => {
+      const winY = typeof window !== "undefined" ? window.scrollY || 0 : 0;
+      const mainY = main ? main.scrollTop || 0 : 0;
+      const docY = document.documentElement?.scrollTop || document.body?.scrollTop || 0;
+      return Math.max(winY, mainY, docY);
     };
 
-    // set initial state
+    const onScroll = () => {
+      setScrolled(readAnyScroll() > 20);
+    };
+
+    // initial
     onScroll();
+
+    // attach listeners
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    if (main) main.addEventListener("scroll", onScroll, { passive: true });
+
+    let observer: IntersectionObserver | null = null;
+    try {
+      const headerEl = headerRef.current as HTMLElement | null;
+      const sentinel = (main && main.firstElementChild) || document.body.firstElementChild;
+      if (sentinel && headerEl && 'IntersectionObserver' in window) {
+        const offset = headerEl.offsetHeight || 64;
+        observer = new IntersectionObserver(
+          (entries) => {
+            const e = entries[0];
+            // if sentinel is not intersecting (scrolled past), mark scrolled true
+            setScrolled(!e.isIntersecting);
+          },
+          { root: null, rootMargin: `-${offset}px 0px 0px 0px`, threshold: 0 }
+        );
+        observer.observe(sentinel as Element);
+      }
+    } catch (err) {
+      // ignore observer errors
+    }
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (main) main.removeEventListener("scroll", onScroll);
+      if (observer) observer.disconnect();
+    };
   }, []);
   return (
     <header
+      ref={headerRef}
       className={`fixed top-0 w-full h-16 z-[99] backdrop-blur-sm transition-colors duration-200 ${
-        scrolled ? "bg-white/95" : "bg-transparent"
+        scrolled ? "bg-white" : "bg-transparent"
       }`}
     >
       <div className="mx-auto flex h-full w-full items-center gap-6 max-w-[1400px] pl-8">

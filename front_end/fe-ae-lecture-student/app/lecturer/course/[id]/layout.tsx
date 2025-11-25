@@ -11,7 +11,7 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
 
     // ...existing code...
     return (
-        <div className="p-3">
+        <div className="p-3 flex-1 min-h-0">
             {children}
         </div>
     );
