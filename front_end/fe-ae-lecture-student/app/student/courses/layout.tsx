@@ -11,6 +11,7 @@ import {
   MessageSquare,
   FilePlus2,
   Headset,
+  ListTodo, // 👈 thêm icon cho Assignments
 } from "lucide-react";
 import { useEffect } from "react";
 
@@ -25,6 +26,7 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
 
   const tabs = [
     { label: "Course", href: `${basePath}`, icon: BookOpen },
+    { label: "Assignments", href: `${basePath}/assignments`, icon: ListTodo }, // 👈 tab mới
     { label: "Groups", href: `${basePath}/groups`, icon: Users },
     { label: "My Groups", href: `${basePath}/my-groups`, icon: ListChecks },
     { label: "Grades", href: `${basePath}/grades`, icon: BarChart3 },

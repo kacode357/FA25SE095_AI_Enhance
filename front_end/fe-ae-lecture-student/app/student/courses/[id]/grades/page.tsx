@@ -129,13 +129,7 @@ export default function GradesPage() {
           <Award className="w-7 h-7 text-nav-active" />
           Grades
         </h1>
-        <button
-          className="btn bg-white border border-brand text-nav hover:text-nav-active"
-          onClick={() => router.push(`/student/courses/${courseId}`)}
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back to course
-        </button>
+    
       </div>
 
       {/* Summary cards */}
