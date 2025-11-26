@@ -102,6 +102,8 @@ export interface GetCourseByIdItems {
   announcement?: string | null;
   term: string;
   year: number;
+  uniqueCode: string;
+  lecturerImage: string | null;
   lecturerId: string;
   lecturerName: string;
   createdAt: string;

@@ -40,7 +40,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
 
   const [decodedUser, setDecodedUser] = useState<UserProfile | null>(null);
 
-  // Load encoded user + listen event để reload khi subscriptionTier thay đổi
+  // Load encoded user + listen event
   useEffect(() => {
     let mounted = true;
 
@@ -55,10 +55,8 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
       }
     };
 
-    // Lần đầu
     fetchUser();
 
-    // Khi trang khác cập nhật user (ví dụ trang subscription success)
     const handleUserUpdated = () => {
       fetchUser();
     };
@@ -75,7 +73,6 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
     };
   }, []);
 
-  // Ưu tiên info từ decodedUser, fallback prop user
   const effectiveFirstName = decodedUser?.firstName || user?.firstName || "";
   const effectiveLastName = decodedUser?.lastName || user?.lastName || "";
   const effectiveEmail = decodedUser?.email || user?.email || "";
@@ -99,7 +96,6 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
     return name || "Student";
   }, [effectiveFirstName, effectiveLastName]);
 
-  // Đóng menu khi click ra ngoài
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!rootRef.current) return;
@@ -123,11 +119,11 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
 
   return (
     <div ref={rootRef} className="relative">
-      {/* Trigger */}
+      {/* Trigger Button - Đã sửa màu border tại đây */}
       <button
         type="button"
         onClick={handleToggle}
-        className="flex items-center gap-2 rounded-full border border-border/60 bg-white px-3 py-1.5 text-sm shadow-sm transition hover:border-brand/60 hover:bg-slate-50"
+        className="flex items-center gap-2 rounded-full border border-[rgba(129,140,248,0.35)] bg-white px-3 py-1.5 text-sm shadow-sm transition hover:border-brand/60 hover:bg-slate-50"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold uppercase text-brand">
           {initials}

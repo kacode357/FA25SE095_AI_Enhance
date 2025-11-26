@@ -77,7 +77,7 @@ export default function MyGroupsByCoursePage() {
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold text-nav flex items-center gap-2">
             <ListChecks className="w-6 h-6 text-nav-active" />
-            My Group
+            My Groupsss
           </h1>
 
           {/* Course info từ courseName */}
@@ -107,17 +107,6 @@ export default function MyGroupsByCoursePage() {
               </b>
             </p>
           )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/student/courses/${courseId}`)}
-            className="border-brand text-brand hover:bg-[color:var(--brand)]/5"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Course
-          </Button>
         </div>
       </div>
 
