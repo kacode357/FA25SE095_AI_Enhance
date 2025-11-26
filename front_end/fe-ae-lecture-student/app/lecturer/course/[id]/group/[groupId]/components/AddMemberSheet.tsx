@@ -5,13 +5,13 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
-import { useAddGroupMember } from "@/hooks/group-member/useAddGroupMember";
+// bulk add + assign lead hooks used below
+import { useAddGroupMembers } from "@/hooks/group-member/useAddGroupMembers";
+import { useAssignLead } from "@/hooks/group-member/useAssignLead";
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
 import { GroupMembersService } from "@/services/group-member.services";
-import { AddGroupMemberPayload, MemberRole } from "@/types/group-members/group-member.payload";
 import { UserRoundPen, UserRoundX } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 interface AddGroupMemberSheetProps {
     open: boolean;
@@ -32,7 +32,8 @@ export default function AddGroupMemberSheet({
     groupHasLeader = false,
     onAdded,
 }: AddGroupMemberSheetProps) {
-    const { addGroupMember } = useAddGroupMember();
+    const { addGroupMembers } = useAddGroupMembers();
+    const { assignLead } = useAssignLead();
     const { students, loading: enrollmentsLoading, fetchCourseStudents } = useCourseStudents(courseId);
     const { listData: groups, loading: groupsLoading, fetchByCourseId } = useGroupsByCourseId();
 
@@ -165,17 +166,21 @@ export default function AddGroupMemberSheet({
         setSubmitting(true);
 
         try {
-            for (const studentId of selectedStudents) {
-                const payload: AddGroupMemberPayload = {
-                    groupId,
-                    studentId,
-                    isLeader: studentId === leaderId,
-                    role: MemberRole.Member,
-                };
-                await addGroupMember(payload, false); // không toast trong hook
+            // Use bulk endpoint so backend returns a single success/error message
+            const res = await addGroupMembers({ groupId, studentIds: selectedStudents });
+
+            if (!res) {
+                setError("Failed to add members");
+                setSubmitting(false);
+                return;
             }
 
-            toast.success("Members added successfully");
+            // If a leader was selected and the group doesn't already have one,
+            // call assign leader (this hook will show backend message toasts).
+            if (leaderId && !groupHasLeader) {
+                await assignLead({ groupId, studentId: leaderId });
+            }
+
             onAdded?.();
             onOpenChange(false);
         } catch (e: any) {

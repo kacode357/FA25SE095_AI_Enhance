@@ -207,7 +207,6 @@ export default function CreateCoursePage() {
             // store uploaded url to show link and clear file input
             setUploadedSyllabusUrl(fileUrl);
             setForm((f) => ({ ...f, syllabus: null }));
-            toast.success("Syllabus uploaded.");
         }
     };
 
