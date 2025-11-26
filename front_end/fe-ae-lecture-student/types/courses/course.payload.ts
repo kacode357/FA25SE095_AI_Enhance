@@ -3,6 +3,7 @@ export interface CreateCoursePayload {
   description: string;
   termId: string;
   year: number;
+  announcement?: string | null;
   requiresAccessCode: boolean;
   accessCodeType?: number;
   customAccessCode?: string;
@@ -12,6 +13,7 @@ export interface CreateCoursePayload {
 export interface UpdateCoursePayload {
   courseId: string;
   description: string;
+  announcement?: string | null;
   termId: string;
   year: number;
 }
@@ -92,4 +94,8 @@ export interface GetCourseByUniqueCodePayload {
 
 export interface GetCourseJoinInfoPayload {
   courseId: string;
+}
+
+export interface UploadSyllabusPayload {
+  file: File;
 }

@@ -14,7 +14,7 @@ import { useUpdateCourse } from "@/hooks/course/useUpdateCourse";
 import { useTerms } from "@/hooks/term/useTerms";
 import { CourseStatus } from "@/types/courses/course.response";
 import { AnimatePresence, motion } from "framer-motion";
-import { Book, ChevronRight, ClipboardCopy, Eye, EyeOff, FolderLock, Loader2, RefreshCw, SquarePen, X } from "lucide-react";
+import { Book, ChevronRight, ClipboardCopy, CloudDownload, Eye, EyeOff, FolderLock, Loader2, RefreshCw, SquarePen, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,6 +26,7 @@ export default function EditCourse() {
     const [selectedTermId, setSelectedTermId] = useState<string>("");
     const [year, setYear] = useState<string>("");
     const [description, setDescription] = useState("");
+    const [announcement, setAnnouncement] = useState("");
 
     const { listData: myCourses, fetchMyCourses } = useMyCourses();
     const { data: terms, fetchTerms } = useTerms();
@@ -60,6 +61,7 @@ export default function EditCourse() {
 
             setYear(course?.year?.toString() || "");
             setDescription(course?.description || "");
+            setAnnouncement(course?.announcement || "");
         }
     }, [editMode, course]);
 
@@ -84,6 +86,7 @@ export default function EditCourse() {
                 termId: selectedTermId,
                 year: Number(year),
                 description,
+                announcement: announcement ?? undefined,
             });
 
             await refetch(id);
@@ -264,6 +267,12 @@ export default function EditCourse() {
                                             second: "2-digit",
                                         })}
                                     />
+                                    <InfoV2
+                                        label="Ends"
+                                        value={course.termEndDate
+                                            ? new Date(course.termEndDate).toLocaleDateString("en-GB")
+                                            : "-"}
+                                    />
                                 </div>
 
                                 {course.description && (
@@ -273,6 +282,17 @@ export default function EditCourse() {
                                         </p>
                                         <div className="!bg-white p-3 rounded-md border border-slate-200 text-slate-800 text-sm leading-relaxed">
                                             {course.description}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {course.announcement && (
+                                    <div className="pt-6">
+                                        <p className="text-slate-500 text-xs uppercase mb-1 tracking-wide">
+                                            Announcement
+                                        </p>
+                                        <div className="!bg-white p-3 rounded-md border border-slate-200 text-slate-800 text-sm leading-relaxed">
+                                            {course.announcement}
                                         </div>
                                     </div>
                                 )}
@@ -330,6 +350,18 @@ export default function EditCourse() {
                                         className="resize-none bg-white focus:ring-2 focus:border-emerald-100 border rounded-lg border-slate-200 focus:ring-emerald-500"
                                     />
                                 </div>
+                                <div className="flex flex-col col-span-2">
+                                    <label className="text-slate-500 cursor-text text-xs uppercase mb-1">
+                                        Announcement (optional)
+                                    </label>
+                                    <Textarea
+                                        rows={2}
+                                        value={announcement}
+                                        onChange={(e) => setAnnouncement(e.target.value)}
+                                        placeholder="Enter announcement for students (optional)"
+                                        className="resize-none bg-white focus:ring-2 focus:border-emerald-100 border rounded-lg border-slate-200 focus:ring-emerald-500"
+                                    />
+                                </div>
                             </motion.form>
                         )}
                     </AnimatePresence>
@@ -355,7 +387,39 @@ export default function EditCourse() {
                 </Card>
 
                 {/* RIGHT */}
-                <div className="flex-[0.35] flex flex-col gap-5 overflow-auto">
+                <div className="flex-[0.35] flex flex-col gap-6.5 overflow-auto">
+                    <Card className="flex p-5 border-slate-200 shadow-sm">
+                        <div className="text-base">
+                            {course?.syllabusFile ? (
+                                typeof course.syllabusFile === "string" ? (
+                                    <a
+                                        href={course.syllabusFile}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-violet-900 justify-center hover:text-violet-500 flex font-bold items-center"
+                                    >
+                                        <CloudDownload className="size-4 mr-2" />Download Syllabus
+                                    </a>
+                                ) : (
+                                    ((course.syllabusFile as any)?.url) ? (
+                                        <a
+                                            href={(course.syllabusFile as any).url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-violet-600 hover:text-violet-900"
+                                        >
+                                            {(course.syllabusFile as any).name || "Download syllabus"}
+                                        </a>
+                                    ) : (
+                                        <span className="text-slate-600">{String((course.syllabusFile as any).name ?? course.syllabusFile)}</span>
+                                    )
+                                )
+                            ) : (
+                                <span className="text-slate-500">No syllabus</span>
+                            )}
+                        </div>
+                    </Card>
+                    
                     <Card className="p-5 border-slate-200 shadow-sm">
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-semibold text-[#000D83]">Access Code</h3>

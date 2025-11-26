@@ -11,6 +11,7 @@ export interface CourseItem {
   courseCodeTitle: string;
   name: string;
   description: string;
+  announcement?: string | null;
   term: string;
   year: number;
   lecturerId: string;
@@ -24,6 +25,9 @@ export interface CourseItem {
   isAccessCodeExpired: boolean;
   department: string;
   img: string;
+  termStartDate?: string | null;
+  termEndDate?: string | null;
+  syllabusFile?: string | null;
   status?: CourseStatus;
 }
 
@@ -60,6 +64,8 @@ export interface UpdatedCourseItems {
   description: string;
   term: string;
   year: number;
+  termStartDate?: string | null;
+  termEndDate?: string | null;
   lecturerId: string;
   lecturerName: string;
   createdAt: string;
@@ -77,6 +83,7 @@ export interface UpdatedCourseItems {
   accessCodeExpiresAt: string;
   isAccessCodeExpired: boolean;
   department: string;
+  syllabusFile?: string | null;
 }
 
 export interface GetCourseByIdResponse {
@@ -92,6 +99,7 @@ export interface GetCourseByIdItems {
   courseCodeTitle: string;
   name: string;
   description: string;
+  announcement?: string | null;
   term: string;
   year: number;
   lecturerId: string;
@@ -111,6 +119,9 @@ export interface GetCourseByIdItems {
   accessCodeExpiresAt: string | null;
   isAccessCodeExpired: boolean | null;
   department: string;
+  termStartDate?: string | null;
+  termEndDate?: string | null;
+  syllabusFile?: string | null;
 }
 
 export interface DeleteCourseResponse {
@@ -135,6 +146,7 @@ export interface GetCourseEnrollmentsResponse {
   currentPage: number;
   pageSize: number;
   totalPages: number;
+  syllabusFile?: string | null;
   hasPreviousPage: boolean;
   hasNextPage: boolean;
 }
@@ -164,6 +176,7 @@ export interface AvailableCourseItem {
   courseCode: string;
   name: string;
   description: string;
+  announcement: string | null;
   lecturerId: string;
   lecturerName: string;
   createdAt: string;
@@ -216,6 +229,7 @@ export interface CoursesByTermYearItem {
   courseCodeTitle: string;
   name: string;
   description: string;
+  announcement?: string | null;
   term: string;
   termStartDate: string;
   termEndDate: string;
@@ -258,6 +272,7 @@ export interface CourseByUniqueCodeItem {
   courseCodeTitle: string;
   name: string;
   description: string;
+  announcement?: string | null;
   term: string;
   termStartDate: string;
   termEndDate: string;
@@ -322,6 +337,7 @@ export interface Course {
   courseCodeTitle: string;
   name: string;
   description: string;
+  announcement?: string | null;
   term: string;
   year: number;
   lecturerId: string;
@@ -341,4 +357,10 @@ export interface Course {
   accessCodeExpiresAt: string | null;
   isAccessCodeExpired: boolean;
   department: string;
+}
+
+export interface UploadSyllabusResponse {
+  success: boolean;
+  message: string;
+  fileUrl: string;
 }

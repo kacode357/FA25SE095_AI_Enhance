@@ -11,6 +11,7 @@ import {
   UpdateAccessCodeRequest,
   UpdateCoursePayload,
   UploadCourseImageRequest,
+  UploadSyllabusPayload,
 } from "@/types/courses/course.payload";
 import {
   CreateCourseResponse,
@@ -28,6 +29,7 @@ import {
   UpdateAccessCodeResponse,
   UpdateCourseResponse,
   UploadCourseImageResponse,
+  UploadSyllabusResponse,
 } from "@/types/courses/course.response";
 
 export const CourseService = {
@@ -160,4 +162,23 @@ inactivateCourse: async (
     const res = await courseAxiosInstance.get<GetCourseStatisticsResponse>(`/Courses/${id}/statistics`);
     return res.data;
   },
+
+  uploadSyllabus: async (
+    courseId: string,
+    payload: UploadSyllabusPayload
+  ): Promise<UploadSyllabusResponse> => {
+    const formData = new FormData();
+    formData.append("file", payload.file);
+
+    const res = await courseAxiosInstance.post<UploadSyllabusResponse>(
+      `/Courses/${courseId}/syllabus/upload`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return res.data;
+  },
+
 };

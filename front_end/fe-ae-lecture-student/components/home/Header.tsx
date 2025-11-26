@@ -27,7 +27,8 @@ export default function Header() {
     };
 
     const onScroll = () => {
-      setScrolled(readAnyScroll() > 20);
+      // mark as scrolled as soon as user scrolls at all
+      setScrolled(readAnyScroll() > 0);
     };
 
     // initial
@@ -66,9 +67,9 @@ export default function Header() {
   return (
     <header
       ref={headerRef}
-      className={`fixed top-0 w-full h-16 z-[99] backdrop-blur-sm transition-colors duration-200 ${
-        scrolled ? "bg-white" : "bg-transparent"
-      }`}
+      // inline style to force full white background and remove any backdrop blur
+      style={{ backgroundColor: "#ffffff", backdropFilter: "none" }}
+      className="fixed top-0 w-full h-16 z-[99] bg-white opacity-100 backdrop-blur-none shadow-sm"
     >
       <div className="mx-auto flex h-full w-full items-center gap-6 max-w-[1400px] pl-8">
         {/* Left: logo */}
@@ -115,9 +116,8 @@ export default function Header() {
                   onClick={() => logout()}
                   disabled={logoutLoading}
                   className={`ml-3 inline-flex cursor-pointer items-center gap-2 text-sm font-medium px-3 py-1 rounded-full transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-violet-300 ${
-                    scrolled
-                      ? "bg-white text-violet-700 border border-violet-100 shadow-sm"
-                      : "bg-white/90 text-violet-700 border border-white/30"
+                    // always use solid white background for the button to avoid translucency
+                    "bg-white text-violet-700 border border-gray-100 shadow-sm"
                   }`}
                 >
                   Logout <CircleArrowOutUpRight className="size-3" />

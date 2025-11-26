@@ -196,7 +196,7 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
         )}
 
         <div className="flex items-center justify-between gap-1 mt-auto pt-2">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {(course.term || course.year) && (
                 <Badge className="text-xs bg-brand/10 text-brand border border-brand/20">
@@ -206,8 +206,13 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
                 </Badge>
               )}
             </div>
-            <div className="flex-1 text-xs text-slate-500">
-              Created: {fmtDate(course.createdAt)}
+            <div className="flex flex-col items-start gap-1 text-xs text-slate-500">
+              <div className="truncate">Created: {fmtDate(course.createdAt)}</div>
+              {course.termEndDate ? (
+                <div className="text-right truncate">Ends: {fmtDate(course.termEndDate)}</div>
+              ) : (
+                <div className="text-right truncate">Ends: -</div>
+              )}
             </div>
           </div>
           <div
