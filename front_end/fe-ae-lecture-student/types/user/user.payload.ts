@@ -10,5 +10,5 @@ export interface UpdateProfilePayload {
 }
 
 export interface UploadAvatarPayload {
-  file: File;
+  ProfilePicture: File;
 }

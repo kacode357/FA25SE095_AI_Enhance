@@ -29,3 +29,14 @@ export interface UpdateProfileResponse {
   message: string;
   updatedProfile: UserProfile;
 }
+
+// upload avatar
+export interface UploadAvatarData {
+  userId: string;
+  profilePictureUrl: string;
+}
+export interface UploadAvatarResponse {
+  status: number;
+  message: string;
+  data: UploadAvatarData;
+}

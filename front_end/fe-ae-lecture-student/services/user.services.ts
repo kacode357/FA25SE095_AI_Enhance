@@ -2,7 +2,7 @@
 import { userAxiosInstance } from "@/config/axios.config";
 import type { ApiResponse } from "@/types/auth/auth.response";
 import type { UpdateProfilePayload, UploadAvatarPayload } from "@/types/user/user.payload";
-import type { UpdateProfileResponse, UserProfile } from "@/types/user/user.response";
+import type { UpdateProfileResponse, UploadAvatarResponse, UserProfile } from "@/types/user/user.response";
 
 /**
  * Lưu ý:
@@ -27,13 +27,13 @@ export const UserService = {
     return res.data;
   },
 
-  uploadAvatar: async (
+    uploadAvatar: async (
     payload: UploadAvatarPayload
-  ): Promise<ApiResponse<string>> => {
+  ): Promise<UploadAvatarResponse> => {
     const formData = new FormData();
-    formData.append("file", payload.file);
+    formData.append("ProfilePicture", payload.ProfilePicture);
 
-    const res = await userAxiosInstance.post<ApiResponse<string>>(
+    const res = await userAxiosInstance.post<UploadAvatarResponse>(
       "/User/profile/picture",
       formData,
       {
@@ -43,5 +43,4 @@ export const UserService = {
 
     return res.data;
   },
-
 };

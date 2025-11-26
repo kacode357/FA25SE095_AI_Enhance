@@ -3,9 +3,10 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateProfile } from "@/hooks/user/useUpdateProfile";
+import { useUploadAvatar } from "@/hooks/user/useUploadAvatar";
 import type { UpdateProfilePayload } from "@/types/user/user.payload";
-import { Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CircleFadingArrowUp, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type ProfileForm = {
   firstName: string;
@@ -19,6 +20,16 @@ type ProfileForm = {
 export default function MyProfilePage() {
   const { user } = useAuth();
   const { updateProfile, loading } = useUpdateProfile();
+  const { uploadAvatar, loading: uploading } = useUploadAvatar();
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   const [form, setForm] = useState<ProfileForm>({
     firstName: "",
@@ -89,15 +100,73 @@ export default function MyProfilePage() {
       {/* Header */}
       <div className="card p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-6">
-          <div
-            className="h-16 w-16 rounded-xl grid place-items-center text-base font-semibold border border-[var(--border)]"
-            style={{
-              color: "var(--brand-700)",
-              background: "color-mix(in oklab, var(--brand) 10%, white)",
-            }}
-            aria-hidden
-          >
-            {initials(user.firstName, user.lastName)}
+          <div className="relative group" aria-hidden>
+            <div
+              className="h-16 w-16 rounded-xl overflow-hidden grid place-items-center text-base font-semibold border border-[var(--border)]"
+              style={{
+                color: "var(--brand-700)",
+                background: "color-mix(in oklab, var(--brand) 10%, white)",
+              }}
+            >
+              {preview ? (
+                <img src={preview} alt="avatar preview" className="h-full w-full object-cover" />
+              ) : user.profilePictureUrl ? (
+                <img src={user.profilePictureUrl} alt={`${user.firstName} ${user.lastName}`} className="h-full w-full object-cover" />
+              ) : (
+                initials(user.firstName, user.lastName)
+              )}
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-150 opacity-0 group-hover:opacity-100">
+              <div className="absolute inset-0 cursor-pointer bg-white/50" aria-hidden />
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="relative z-10 rounded cursor-pointer text-nav text-sm flex items-center gap-2"
+                aria-label="Upload avatar"
+                disabled={uploading}
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                <CircleFadingArrowUp className="w-5 h-5 text-violet-500" />
+              </button>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              aria-hidden="true"
+              aria-label="Upload avatar"
+              className="hidden"
+              onChange={async (e) => {
+                const input = e.currentTarget as HTMLInputElement;
+                const f = input.files?.[0];
+                if (!f) return;
+
+                const url = URL.createObjectURL(f);
+                setPreview(url);
+
+                const uploadedUrl = await uploadAvatar({ ProfilePicture: f });
+
+                if (uploadedUrl) {
+                  if (url && url.startsWith("blob:")) {
+                    try {
+                      URL.revokeObjectURL(url);
+                    } catch (err) {
+                      // ignore
+                    }
+                  }
+                  setPreview(uploadedUrl);
+                }
+
+                try {
+                  input.value = "";
+                } catch (err) {
+                  // ignore
+                }
+              }}
+            />
           </div>
 
           <div className="flex-1 min-w-0">

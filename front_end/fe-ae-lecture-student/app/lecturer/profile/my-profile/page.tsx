@@ -26,7 +26,7 @@ export default function LecturerMyProfilePage() {
 
     useEffect(() => {
         return () => {
-            if (preview) URL.revokeObjectURL(preview);
+            if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
         };
     }, [preview]);
 
@@ -135,16 +135,37 @@ export default function LecturerMyProfilePage() {
                             aria-label="Upload avatar"
                             className="hidden"
                             onChange={async (e) => {
-                                const f = e.target.files?.[0];
+                                // capture DOM input element before any await to avoid synthetic event pooling
+                                const input = e.currentTarget as HTMLInputElement;
+                                const f = input.files?.[0];
                                 if (!f) return;
+
                                 // show local preview immediately
                                 const url = URL.createObjectURL(f);
                                 setPreview(url);
 
-                                await uploadAvatar({ file: f });
+                                // call updated hook (expects { ProfilePicture: File })
+                                const uploadedUrl = await uploadAvatar({ ProfilePicture: f });
+
+                                // if upload returned a hosted URL, use it and revoke our blob preview
+                                if (uploadedUrl) {
+                                    if (url && url.startsWith("blob:")) {
+                                        try {
+                                            URL.revokeObjectURL(url);
+                                        } catch (err) {
+                                            // ignore
+                                        }
+                                    }
+
+                                    setPreview(uploadedUrl);
+                                }
 
                                 // clear input so same file can be selected again later
-                                e.currentTarget.value = "";
+                                try {
+                                    input.value = "";
+                                } catch (err) {
+                                    // ignore if input removed
+                                }
                             }}
                         />
                     </div>

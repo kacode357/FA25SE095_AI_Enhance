@@ -2,18 +2,20 @@
 "use client";
 
 import { ROLE_LECTURER, ROLE_STUDENT, UserServiceRole } from "@/config/user-service/user-role";
+import { UserService } from "@/services/user.services";
 import type { UserProfile } from "@/types/user/user.response";
-import { clearEncodedUser, loadDecodedUser } from "@/utils/secure-user";
 import { clearAuthTokens } from "@/utils/auth/access-token";
+import { clearEncodedUser, loadDecodedUser, saveEncodedUser } from "@/utils/secure-user";
+import Cookies from "js-cookie";
 import { usePathname } from "next/navigation";
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useState,
 } from "react";
 
 type AuthContextType = {
@@ -94,6 +96,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [allow, loaded, user, pathname]);
 
   const refreshProfile = useCallback(async () => {
+    try {
+      // Try to fetch latest profile from server
+      const res = await UserService.getProfile();
+      if (res && (res.status === 200 || res.status === 100) && res.data) {
+        // persist updated profile into the same storage (cookie vs session)
+        const STORAGE_KEY = "a:u";
+        const remember = !!Cookies.get(STORAGE_KEY);
+        await saveEncodedUser(res.data, remember);
+        setUser(res.data);
+        return;
+      }
+    } catch (err) {
+      // fallback to cached value if network fails
+    }
+
     const cached = await loadDecodedUser();
     setUser(cached);
   }, []);

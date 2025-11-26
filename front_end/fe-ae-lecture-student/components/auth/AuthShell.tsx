@@ -61,7 +61,7 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
         </div>
 
         {/* Right form area */}
-        <div className="w-full md:w-1/2 p-8 md:p-12">
+        <div className="w-full md:w-1/2 p-8 md:px-12 md:py-8">
           <div className="flex justify-end mb-4">
               <div className="">
                 <Logo />

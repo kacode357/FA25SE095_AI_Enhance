@@ -46,7 +46,7 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
               aria-label={visible ? "Hide password" : "Show password"}
               title={visible ? "Hide password" : "Show password"}
               onClick={() => setVisible((v) => !v)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               tabIndex={0}
             >
               {visible ? (

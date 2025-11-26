@@ -8,3 +8,7 @@ export interface UpdateProfilePayload {
   department: string;
   studentId?: string;  
 }
+
+export interface UploadAvatarPayload {
+  ProfilePicture: File;
+}

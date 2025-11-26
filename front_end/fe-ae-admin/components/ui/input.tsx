@@ -49,37 +49,13 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
               onClick={() => setVisible((v) => !v)}
               className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors
                 ${variant === 'light'
-                  ? 'text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'}
+                  ? 'text-purple-600 hover:text-purple-800 hover:bg-purple-50'
+                  : 'text-purple-300 hover:text-white hover:bg-white/5'}
               `}
               tabIndex={0}
             >
               {visible ? (
-                // Eye-off icon
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M3 3l18 18"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M10.58 10.58A3 3 0 0012 15a3 3 0 002.42-4.42M9.88 5.09A10.92 10.92 0 0112 5c5 0 9.27 3.11 10.5 7.5-.37 1.28-.98 2.46-1.78 3.5m-3.16 2.41A10.93 10.93 0 0112 19C7 19 2.73 15.89 1.5 11.5c.55-1.89 1.64-3.56 3.06-4.84"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : (
-                // Eye icon
+                // Eye (open) icon when password is visible (click to hide)
                 <svg
                   width="18"
                   height="18"
@@ -101,6 +77,30 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
                     r="3.5"
                     stroke="currentColor"
                     strokeWidth="2"
+                  />
+                </svg>
+              ) : (
+                // Eye-off icon when password is hidden (click to show)
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 3l18 18"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M10.58 10.58A3 3 0 0012 15a3 3 0 002.42-4.42M9.88 5.09A10.92 10.92 0 0112 5c5 0 9.27 3.11 10.5 7.5-.37 1.28-.98 2.46-1.78 3.5m-3.16 2.41A10.93 10.93 0 0112 19C7 19 2.73 15.89 1.5 11.5c.55-1.89 1.64-3.56 3.06-4.84"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </svg>
               )}

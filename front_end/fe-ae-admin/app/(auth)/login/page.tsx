@@ -23,7 +23,7 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 console.log("GOOGLE_CLIENT_ID::", GOOGLE_CLIENT_ID);
 export default function LoginPage() {
   const { login, loading } = useLogin();
-  const { googleLogin, loading: googleAuthLoading } = useGoogleLogin(); 
+  const { googleLogin, loading: googleAuthLoading } = useGoogleLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -157,14 +157,21 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Welcome back!"
-      // subtitle={
-      //   <span>
-      //     New here?{" "}
-      //     <a className="underline" href="/register" rel="nofollow">
-      //       Create an account
-      //     </a>
-      //   </span>
-      // }
+      subtitle={
+        <div className="mb-2">
+          <span className="inline-block text-sm font-semibold text-purple-700 uppercase tracking-wide drop-shadow-lg">
+            Administration Panel
+          </span>
+        </div>
+      }
+    // subtitle={
+    //   <span>
+    //     New here?{" "}
+    //     <a className="underline" href="/register" rel="nofollow">
+    //       Create an account
+    //     </a>
+    //   </span>
+    // }
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <Input
@@ -174,6 +181,7 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          variant="light"
         />
         <Input
           label="Password"
@@ -182,15 +190,16 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          variant="light"
         />
 
         <div className="mb-6 flex items-center justify-between text-sm text-slate-600">
-          <label className="inline-flex select-none items-center gap-2">
+          <label className="inline-flex select-none cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border border-slate-300 bg-white"
+              className="h-4 w-4 rounded border !cursor-pointer border-slate-300 bg-white"
             />
             Remember me
           </label>
@@ -227,8 +236,8 @@ export default function LoginPage() {
 
         {/* Container ẩn nếu sau này muốn render Google button gốc (không bắt buộc) */}
         <div id="g-btn-container" className="hidden" />
-  {/* Hidden container for Cloudflare Turnstile invisible widget */}
-  <div ref={turnstileContainerRef} className="hidden" />
+        {/* Hidden container for Cloudflare Turnstile invisible widget */}
+        <div ref={turnstileContainerRef} className="hidden" />
 
         <motion.div
           initial={{ opacity: 0 }}

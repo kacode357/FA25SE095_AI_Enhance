@@ -31,14 +31,13 @@ export interface UpdateProfileResponse {
   updatedProfile: UserProfile;
 }
 
-export interface UploadProfilePictureResponse {
-  status: number;
-  message: string;
-  data: string;
+// upload avatar
+export interface UploadAvatarData {
+  userId: string;
+  profilePictureUrl: string;
 }
-
-export interface ApiResponse<T> {
+export interface UploadAvatarResponse {
   status: number;
   message: string;
-  data: T;
+  data: UploadAvatarData;
 }

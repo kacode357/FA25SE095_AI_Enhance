@@ -23,7 +23,7 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 console.log("GOOGLE_CLIENT_ID::", GOOGLE_CLIENT_ID);
 export default function LoginPage() {
   const { login, loading } = useLogin();
-  const { googleLogin, loading: googleAuthLoading } = useGoogleLogin(); 
+  const { googleLogin, loading: googleAuthLoading } = useGoogleLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -157,16 +157,22 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Welcome back!"
-      // subtitle={
-      //   <span>
-      //     New here?{" "}
-      //     <a className="underline" href="/register" rel="nofollow">
-      //       Create an account
-      //     </a>
-      //   </span>
-      // }
+    // subtitle={
+    //   <span>
+    //     New here?{" "}
+    //     <a className="underline" href="/register" rel="nofollow">
+    //       Create an account
+    //     </a>
+    //   </span>
+    // }
     >
       <form onSubmit={onSubmit} className="space-y-4">
+        {/* Small panel label for staff login (centered) */}
+        <div className="w-full text-center mb-7">
+          <span className="inline-block text-sm font-semibold text-purple-700 uppercase tracking-wide drop-shadow-lg">
+            STAFF PANEL
+          </span>
+        </div>
         <Input
           label="Email"
           placeholder="example@crawldata.com"
@@ -217,7 +223,7 @@ export default function LoginPage() {
         <Button
           type="button"
           variant="ghost"
-          className="w-full hover:bg-white cursor-pointer"
+          className="w-full mt-2 hover:bg-white cursor-pointer"
           onClick={handleGoogleLogin}
           loading={googleLoading || googleAuthLoading}
           aria-label="Đăng nhập với Google"
@@ -227,14 +233,14 @@ export default function LoginPage() {
 
         {/* Container ẩn nếu sau này muốn render Google button gốc (không bắt buộc) */}
         <div id="g-btn-container" className="hidden" />
-  {/* Hidden container for Cloudflare Turnstile invisible widget */}
-  <div ref={turnstileContainerRef} className="hidden" />
+        {/* Hidden container for Cloudflare Turnstile invisible widget */}
+        <div ref={turnstileContainerRef} className="hidden" />
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15 }}
-          className="text-center text-xs text-slate-500"
+          className="text-center text-xs mt-3 text-slate-500"
         >
           By continuing, you agree to our{" "}
           <a href="#" className="text-green-600" rel="nofollow">

@@ -61,7 +61,7 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
         </div>
 
         {/* Right form area */}
-        <div className="w-full md:w-1/2 p-8 md:p-12">
+        <div className="w-full md:w-1/2 p-8 md:px-12 md:py-10">
           <div className="flex justify-end mb-4">
               <div className="">
                 <Logo />
@@ -69,8 +69,8 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
           </div>
 
           <div className="max-w-md mx-auto">
-            <h2 className="text-2xl font-semibold text-slate-900 mb-2">Welcome to <span className="text-violet-800">AIDS-LMS!</span></h2>
-            {subtitle && <div className="text-sm text-slate-600 mb-6">{subtitle}</div>}
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">Welcome to <span className="text-2xl text-violet-800">AIDS-LMS!</span></h2>
+            {subtitle && <div className="text-sm text-center justify-center text-slate-600 mb-4">{subtitle}</div>}
 
             <div className="bg-white rounded-xl p-6 shadow-md">
               {children}
