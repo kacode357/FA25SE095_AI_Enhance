@@ -1,6 +1,6 @@
 // services/payments.services.ts
 
-import { courseAxiosInstance } from "@/config/axios.config";
+import { userAxiosInstance } from "@/config/axios.config";
 
 import type {
   CreateSubscriptionPaymentPayload,
@@ -22,7 +22,7 @@ export const PaymentsService = {
     payload: CreateSubscriptionPaymentPayload
   ): Promise<CreateSubscriptionPaymentResponse> => {
     const res =
-      await courseAxiosInstance.post<CreateSubscriptionPaymentResponse>(
+      await userAxiosInstance.post<CreateSubscriptionPaymentResponse>(
         "/Payments/subscription",
         payload
       );
@@ -34,7 +34,7 @@ export const PaymentsService = {
     payload: ConfirmSubscriptionPaymentPayload
   ): Promise<ConfirmSubscriptionPaymentResponse> => {
     const res =
-      await courseAxiosInstance.post<ConfirmSubscriptionPaymentResponse>(
+      await userAxiosInstance.post<ConfirmSubscriptionPaymentResponse>(
         "/Payments/subscription/confirm",
         payload
       );
@@ -46,7 +46,7 @@ export const PaymentsService = {
     payload: PayOSWebhookPayload
   ): Promise<PayOSWebhookResponse> => {
     const res =
-      await courseAxiosInstance.post<PayOSWebhookResponse>(
+      await userAxiosInstance.post<PayOSWebhookResponse>(
         "/Payments/payos/webhook",
         payload
       );
@@ -58,7 +58,7 @@ export const PaymentsService = {
     params: PayOSReturnQuery
   ): Promise<PayOSReturnResponse> => {
     const res =
-      await courseAxiosInstance.get<PayOSReturnResponse>(
+      await userAxiosInstance.get<PayOSReturnResponse>(
         "/Payments/payos/return",
         { params }
       );

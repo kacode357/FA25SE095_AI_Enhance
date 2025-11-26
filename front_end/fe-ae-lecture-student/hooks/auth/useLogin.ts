@@ -43,15 +43,13 @@ export function useLogin() {
       const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER]; // "Lecturer"
       const isAllowed = isStudent || isLecturer;
 
-      // ❌ Sai role -> không cho vào hệ thống
+      //  Sai role -> không cho vào hệ thống
       if (!isAllowed) {
-        // clear token tạm (overwrite bằng rỗng)
         saveTokensFromLogin("", "", false);
         toast.error("You don't have permission to access this system.");
         return { ok: false, data: null, role: profile.role } as const;
       }
 
-      // ✅ Đúng role -> mã hoá & lưu user + redirect
       await saveEncodedUser(profile, rememberMe);
 
       let target = "/";

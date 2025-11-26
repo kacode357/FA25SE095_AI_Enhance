@@ -11,7 +11,7 @@ export default function StudentLayout({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Header />
-      {/* chừa chỗ cố định cho header cao 64px */}
+     
       <main className="pt-16">{children}</main>
     </div>
   );

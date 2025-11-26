@@ -138,17 +138,25 @@ export default function CourseCodeSearch() {
       if (!res || !res.course) return;
 
       // Lưu + merge vào history (tối đa 4) rồi set lại state
-      const updated = await saveLastSearchedCourseFromResponse(res);
-      if (Array.isArray(updated)) {
-        setRecentCourses(updated);
+      try {
+        const updated = await saveLastSearchedCourseFromResponse(res);
+
+        if (Array.isArray(updated) && updated.length > 0) {
+          setRecentCourses(updated);
+          handleSelectCourse(updated[0]);
+          return;
+        }
+      } catch {
+        // ignore history error, vẫn điều hướng bằng dữ liệu res bên dưới
       }
 
-      const newest = updated[0];
-      if (newest) {
-        handleSelectCourse(newest);
+      // fallback: nếu không lưu được history thì vẫn điều hướng bằng course.id
+      if (res.course.id) {
+        closePalette();
+        router.push(`/student/courses/search-by-code/${res.course.id}`);
       }
     },
-    [code, loading, searchByCode, handleSelectCourse]
+    [code, loading, searchByCode, handleSelectCourse, closePalette, router]
   );
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {

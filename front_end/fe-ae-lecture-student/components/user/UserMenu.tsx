@@ -1,9 +1,19 @@
+// components/user/UserMenu.tsx
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, CircleArrowOutUpRight } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  MouseEvent as ReactMouseEvent,
+} from "react";
+
+import { loadDecodedUser } from "@/utils/secure-user";
+import type { UserProfile } from "@/types/user/user.response";
 
 type UserLite =
   | {
@@ -26,137 +36,156 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  const initials = useMemo(() => {
-    if (!user) return "ST";
-    const f = user.firstName?.[0] ?? "";
-    const l = user.lastName?.[0] ?? "";
-    const res = `${f}${l}`.trim();
-    return res || "ST";
-  }, [user]);
+  const [decodedUser, setDecodedUser] = useState<UserProfile | null>(null);
 
-  const fullName = user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() : "Bob Wilson";
-
-  const toggle = () => onOpenChange(!open);
-
-  // Outside click + ESC
+  // Load user đã mã hoá từ cookie/session
   useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (!rootRef.current?.contains(target)) onOpenChange(false);
-    };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onOpenChange(false);
-    };
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onEsc);
+    let mounted = true;
+
+    (async () => {
+      try {
+        const u = await loadDecodedUser();
+        if (mounted) setDecodedUser(u);
+      } catch {
+        if (mounted) setDecodedUser(null);
+      }
+    })();
+
     return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onEsc);
+      mounted = false;
     };
+  }, []);
+
+  // Ưu tiên lấy info từ decodedUser, fallback user prop
+  const effectiveFirstName =
+    decodedUser?.firstName || user?.firstName || "";
+  const effectiveLastName =
+    decodedUser?.lastName || user?.lastName || "";
+  const effectiveEmail = decodedUser?.email || user?.email || "";
+  const subscriptionTier = decodedUser?.subscriptionTier || "Basic";
+
+  const initials = useMemo(() => {
+    const f = effectiveFirstName?.trim();
+    const l = effectiveLastName?.trim();
+
+    if (!f && !l) return "ST";
+    if (f && !l) return f[0]?.toUpperCase() || "U";
+    if (!f && l) return l[0]?.toUpperCase() || "U";
+
+    return `${f[0]?.toUpperCase() ?? ""}${l[0]?.toUpperCase() ?? ""}` || "U";
+  }, [effectiveFirstName, effectiveLastName]);
+
+  const fullName = useMemo(() => {
+    const name = `${effectiveFirstName} ${effectiveLastName}`.trim();
+    return name || "Student";
+  }, [effectiveFirstName, effectiveLastName]);
+
+  // Đóng khi click ra ngoài
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target as Node)) {
+        onOpenChange(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
   }, [onOpenChange]);
 
+  const handleToggle = (e: ReactMouseEvent) => {
+    e.stopPropagation();
+    onOpenChange(!open);
+  };
+
+  const handleLogout = () => {
+    onOpenChange(false);
+    onLogout();
+  };
+
   return (
-    <div ref={rootRef} className="relative cursor-pointer border-slate-100">
+    <div ref={rootRef} className="relative">
+      {/* Trigger */}
       <button
-        onClick={toggle}
-        aria-expanded={open ? "true" : "false"}
-        aria-haspopup="menu"
-        className="flex items-center gap-3 px-3 py-1 rounded-lg transition-all hover:shadow-md"
-        style={{
-          background:
-            "linear-gradient(135deg, color-mix(in oklab, var(--brand) 8%, #fff), color-mix(in oklab, var(--brand) 16%, #fff))",
-          border: "0.5px solid rgba(15,23,42,0.06)",
-        }}
+        type="button"
+        onClick={handleToggle}
+        className="flex items-center gap-2 rounded-full border border-border/60 bg-white px-3 py-1.5 text-sm shadow-sm transition hover:border-brand/60 hover:bg-slate-50"
       >
-        <div className="relative">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shadow-sm"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--brand), var(--nav-active))",
-              color: "var(--white)",
-            }}
-          >
-            {initials}
-          </div>
-          <div
-            className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
-            style={{
-              background: "var(--accent)",
-              borderColor: "var(--card)",
-            }}
-          />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand uppercase">
+          {initials}
         </div>
-
-        <div className="hidden sm:block text-left min-w-0">
-          <p className="text-sm font-semibold truncate" style={{ color: "var(--foreground)" }}>
+        <div className="hidden text-left text-xs sm:block">
+          <div className="max-w-[140px] truncate font-medium text-nav">
             {fullName}
-          </p>
-          <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
-            {user?.role ?? "Student"}
-          </p>
+          </div>
+          <div className="max-w-[160px] truncate text-[11px] text-muted-foreground">
+            {effectiveEmail || "No email"}
+          </div>
         </div>
-
-        <ChevronDown
-          className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
-          style={{ color: "var(--text-muted)" }}
-        />
+        <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
 
+      {/* Dropdown */}
       <AnimatePresence>
         {open && (
           <motion.div
-            key="usermenu"
-            role="menu"
-            initial={{ opacity: 0, y: -6, scale: 0.99 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.99 }}
-              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
-            className="absolute right-0 top-12 w-56 rounded-2xl shadow-lg py-2 z-50"
-            style={{
-              background: "var(--card)",
-              border: "1px solid rgba(15,23,42,0.06)",
-              color: "var(--foreground)",
-            }}
+            initial={
+              prefersReducedMotion
+                ? undefined
+                : { opacity: 0, y: -4, scale: 0.98 }
+            }
+            animate={
+              prefersReducedMotion
+                ? { opacity: 1 }
+                : { opacity: 1, y: 0, scale: 1 }
+            }
+            exit={
+              prefersReducedMotion
+                ? { opacity: 0 }
+                : { opacity: 0, y: -4, scale: 0.98 }
+            }
+            transition={{ duration: 0.16 }}
+            className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-border/60 bg-white/95 p-3 text-sm shadow-lg backdrop-blur"
           >
-              {/* If user prefers reduced motion, transition is shortened above. */}
-          <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
-            <p className="font-semibold cursor-text" style={{ color: "var(--foreground)" }}>
-              {fullName}
-            </p>
-            <p className="text-sm cursor-text" style={{ color: "var(--text-muted)" }}>
-              {user?.email ?? "student.bob@university.edu"}
-            </p>
-          </div>
+            {/* Current plan block */}
+            <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+              <div className="flex flex-col">
+                <span className="text-[11px] text-muted-foreground">
+                  Current plan
+                </span>
+                <span className="text-sm font-semibold text-nav">
+                  {subscriptionTier}
+                </span>
+              </div>
+              <Link
+                href="/student/my-subscription"
+                className="inline-flex items-center gap-1 rounded-full border border-brand/40 px-2 py-1 text-[11px] font-medium text-brand hover:border-brand hover:bg-brand/5"
+                onClick={() => onOpenChange(false)}
+              >
+                Manage
+                <CircleArrowOutUpRight className="h-3 w-3" />
+              </Link>
+            </div>
 
-          <div className="py-1">
-            <Link
-              href="/student/profile/my-profile"
-              role="menuitem"
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm no-underline transition-colors rounded-md"
-            >
-              <span
-                className="inline-block w-4 h-4 rounded-sm"
-                style={{ background: "var(--brand)" }}
-              />
-              <span style={{ color: "var(--foreground)" }}>Profile</span>
-            </Link>
+            <div className="my-2 h-px bg-slate-100" />
 
-            <hr className="my-1" style={{ borderColor: "var(--border)" }} />
+            {/* Actions */}
+            <div className="space-y-1">
+              <Link
+                href="/student/profile"
+                className="block rounded-md px-2 py-1.5 text-xs font-medium text-nav hover:bg-slate-50"
+                onClick={() => onOpenChange(false)}
+              >
+                Profile
+              </Link>
 
-            <button
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm rounded-md transition-colors"
-              onClick={() => {
-                onOpenChange(false);
-                onLogout();
-              }}
-              role="menuitem"
-              style={{ color: "var(--accent)" }}
-            >
-              <CircleArrowOutUpRight className="w-4 h-4" />
-              Logout
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="mt-1 flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+              >
+                <span>Log out</span>
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -6,12 +6,13 @@ import { Bell } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
+// UI chỉ cần mấy field này
 export type NotificationItem = {
   id: string;
-  title?: string;
-  message?: string;
-  createdAt?: string;
-  read?: boolean;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
 };
 
 type Props = {
@@ -20,7 +21,7 @@ type Props = {
   badgeCount?: number;
   notifications?: NotificationItem[];
 
-  // trạng thái hub (auto)
+  // trạng thái hub
   connected?: boolean;
   connecting?: boolean;
   lastError?: string;
@@ -65,7 +66,7 @@ export default function NotificationsMenu({
   const effectiveBadge =
     typeof badgeCount === "number"
       ? badgeCount
-      : notifications.filter((n) => !n.read).length;
+      : notifications.filter((n) => !n.isRead).length;
 
   // status hub
   let statusText = "Disconnected";
@@ -84,12 +85,19 @@ export default function NotificationsMenu({
 
   return (
     <div ref={rootRef} className="relative">
+      {/* NÚT CHUÔNG — chỉ 1 khung duy nhất */}
       <button
         onClick={toggle}
-        className="relative p-1.5 rounded-lg cursor-pointer transition-colors text-nav hover:bg-[var(--focus-ring)] focus:bg-[var(--focus-ring)] focus:outline-none"
+        className="relative flex items-center justify-center rounded-2xl shadow-sm cursor-pointer transition-transform hover:-translate-y-[1px] focus:outline-none"
         aria-label="Notifications"
         aria-expanded={open ? "true" : "false"}
         aria-haspopup="menu"
+        style={{
+          padding: "0.6rem",
+        background: "rgba(255, 255, 255, 0.12)",
+          border: "1px solid rgba(129, 140, 248, 0.35)",
+          color: "var(--accent)",
+        }}
       >
         <Bell className="w-5 h-5" />
         {effectiveBadge > 0 && (
@@ -110,6 +118,7 @@ export default function NotificationsMenu({
         )}
       </button>
 
+      {/* DROPDOWN */}
       {open && (
         <motion.div
           role="menu"
@@ -147,7 +156,7 @@ export default function NotificationsMenu({
               notifications.map((item) => (
                 <button
                   key={item.id}
-                  title="Menu"
+                  title="Notification"
                   type="button"
                   className="w-full text-left px-4 py-3 transition-colors"
                   onClick={() => onOpenChange(false)}
@@ -160,16 +169,15 @@ export default function NotificationsMenu({
                     >
                       {item.title || "New notification"}
                     </p>
-                    {item.message && (
+                    {item.content && (
                       <p
                         className="text-xs mt-1"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        {item.message}
+                        {item.content}
                       </p>
                     )}
                     {item.createdAt && (
-                      // Tao thêm text-right vào đây 👇
                       <p
                         className="text-[11px] mt-1 text-right"
                         style={{ color: "var(--text-muted)" }}

@@ -1,6 +1,6 @@
 // services/subscription.services.ts
 
-import { courseAxiosInstance } from "@/config/axios.config";
+import { userAxiosInstance } from "@/config/axios.config";
 
 import type {
   UpgradeSubscriptionPayload,
@@ -17,7 +17,7 @@ import type {
 export const SubscriptionService = {
   /** GET /api/Subscription – lấy thông tin subscription hiện tại của user */
   getCurrentSubscription: async (): Promise<GetSubscriptionResponse> => {
-    const res = await courseAxiosInstance.get<GetSubscriptionResponse>("/Subscription");
+    const res = await userAxiosInstance.get<GetSubscriptionResponse>("/Subscription");
     return res.data;
   },
 
@@ -25,7 +25,7 @@ export const SubscriptionService = {
   upgradeSubscription: async (
     payload: UpgradeSubscriptionPayload
   ): Promise<UpgradeSubscriptionResponse> => {
-    const res = await courseAxiosInstance.post<UpgradeSubscriptionResponse>(
+    const res = await userAxiosInstance.post<UpgradeSubscriptionResponse>(
       "/Subscription/upgrade",
       payload
     );
@@ -36,7 +36,7 @@ export const SubscriptionService = {
   cancelSubscription: async (
     payload: CancelSubscriptionPayload
   ): Promise<CancelSubscriptionResponse> => {
-    const res = await courseAxiosInstance.post<CancelSubscriptionResponse>(
+    const res = await userAxiosInstance.post<CancelSubscriptionResponse>(
       "/Subscription/cancel",
       payload
     );
@@ -46,7 +46,7 @@ export const SubscriptionService = {
   /** GET /api/Subscription/tiers – danh sách các gói subscription */
   getSubscriptionTiers: async (): Promise<GetSubscriptionTiersResponse> => {
     const res =
-      await courseAxiosInstance.get<GetSubscriptionTiersResponse>("/Subscription/tiers");
+      await userAxiosInstance.get<GetSubscriptionTiersResponse>("/Subscription/tiers");
     return res.data;
   },
 };

@@ -1,21 +1,41 @@
-// types/subscription/subscription.response.ts
-
 export type BaseSubscriptionApiResponse<T = unknown> = {
   status: number;
   message: string;
   data: T;
 };
 
-// GET /api/Subscription
-export type GetSubscriptionResponse = BaseSubscriptionApiResponse<string>;
+export interface SubscriptionProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  role: string;
+  status: string;
+  subscriptionTier: string;
+  isEmailConfirmed: boolean;
+  emailConfirmedAt: string | null;
+  lastLoginAt: string | null;
+  crawlQuotaUsed: number;
+  crawlQuotaLimit: number;
+  quotaResetDate: string;
+  subscriptionStartDate: string | null;
+  subscriptionEndDate: string | null;
+  institutionName: string | null;
+  institutionAddress: string | null;
+  studentId: string | null;
+  department: string | null;
+  profilePictureUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// POST /api/Subscription/upgrade
+export type GetSubscriptionResponse = BaseSubscriptionApiResponse<SubscriptionProfile>;
+
 export type UpgradeSubscriptionResponse = BaseSubscriptionApiResponse<string>;
 
-// POST /api/Subscription/cancel
 export type CancelSubscriptionResponse = BaseSubscriptionApiResponse<string>;
 
-// GET /api/Subscription/tiers
 export type SubscriptionTier = {
   tier: string;
   description: string;

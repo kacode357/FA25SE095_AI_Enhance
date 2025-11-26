@@ -6,9 +6,22 @@ export type BasePaymentApiResponse<T = unknown> = {
   data: T;
 };
 
+// Dữ liệu trả về khi tạo payment link subscription
+export type SubscriptionPaymentLink = {
+  paymentId: string;
+  paymentLinkId: string;
+  orderCode: string;
+  checkoutUrl: string;
+  qrCode: string;
+  amount: number;
+  currency: string;
+  expiresAt: string;
+  confirmationToken: string;
+};
+
 // POST /api/Payments/subscription
 export type CreateSubscriptionPaymentResponse =
-  BasePaymentApiResponse<string>;
+  BasePaymentApiResponse<SubscriptionPaymentLink>;
 
 // POST /api/Payments/subscription/confirm
 export type ConfirmSubscriptionPaymentResponse =

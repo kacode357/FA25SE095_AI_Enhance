@@ -67,6 +67,7 @@ const mapTermCourseToAvailable = (
   enrollmentStatus: null,
   canJoin: c.canEnroll,
   joinUrl: null,
+  announcement: null
 });
 
 export default function AllCoursesPage() {

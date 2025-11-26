@@ -48,7 +48,6 @@ async function decryptJSON(blob: string): Promise<any> {
 /** Lưu user đã mã hoá: remember=true -> cookie, false -> sessionStorage */
 export async function saveEncodedUser(user: UserProfile | null, remember: boolean): Promise<void> {
   if (typeof window === "undefined") return;
-  // Xoá trước để tránh lệch nguồn
   sessionStorage.removeItem(STORAGE_KEY);
   Cookies.remove(STORAGE_KEY, { path: "/" });
 
@@ -70,7 +69,6 @@ export async function loadDecodedUser(): Promise<UserProfile | null> {
     const obj = await decryptJSON(blob);
     return obj as UserProfile;
   } catch {
-    // dữ liệu lỗi -> dọn
     sessionStorage.removeItem(STORAGE_KEY);
     Cookies.remove(STORAGE_KEY, { path: "/" });
     return null;
