@@ -5,6 +5,7 @@ export interface CreateGroupPayload {
   maxMembers: number;
   isLocked: boolean;
 }
+
 export interface UpdateGroupPayload extends Partial<CreateGroupPayload> {
   groupId: string;
   courseId?: string;

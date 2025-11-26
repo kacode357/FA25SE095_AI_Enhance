@@ -1,3 +1,20 @@
+export interface GroupDetail {
+  id: string;
+  courseId: string;
+  courseName: string;
+  name: string;
+  description: string;
+  maxMembers: number;
+  isLocked: boolean;
+  assignmentId: string;
+  assignmentTitle: string;
+  memberCount: number;
+  leaderName: string;
+  leaderId: string;
+  createdAt: string;
+  createdBy: string;
+}
+
 export interface CreateGroupResponse {
   success: boolean;
   message: string;
@@ -5,44 +22,12 @@ export interface CreateGroupResponse {
   group: GroupDetail;
 }
 
-export interface GroupDetail {
-  id: string;
-  courseId: string;
-  courseName: string;
-  name: string;
-  description: string;
-  maxMembers: number;
-  isLocked: boolean;
-  assignmentId: string;
-  assignmentTitle: string;
-  memberCount: number;
-  leaderName: string;
-  leaderId: string;
-  createdAt: string;     // ISO datetime
-  createdBy: string;
-}
-
 export interface GetGroupsByCourseIdResponse {
   success: boolean;
   message: string;
   groups: GroupDetail[];
 }
-export interface GroupDetail {
-  id: string;
-  courseId: string;
-  courseName: string;
-  name: string;
-  description: string;
-  maxMembers: number;
-  isLocked: boolean;
-  assignmentId: string;
-  assignmentTitle: string;
-  memberCount: number;
-  leaderName: string;
-  leaderId: string;
-  createdAt: string; // ISO datetime
-  createdBy: string;
-}
+
 export interface GetGroupByIdResponse {
   success: boolean;
   message: string;
@@ -60,15 +45,6 @@ export interface DeleteGroupResponse {
   message: string;
 }
 
-export interface RandomizeGroupsResponse {
-  success: boolean;
-  message: string;
-  courseId: string;
-  groupsCreated: number;
-  studentsAssigned: number;
-  groups: RandomizedGroup[];
-}
-
 export interface RandomizedGroup {
   id: string;
   name: string;
@@ -77,6 +53,14 @@ export interface RandomizedGroup {
   leaderName: string;
 }
 
+export interface RandomizeGroupsResponse {
+  success: boolean;
+  message: string;
+  courseId: string;
+  groupsCreated: number;
+  studentsAssigned: number;
+  groups: RandomizedGroup[];
+}
 
 export type MyGroupRole = "Leader" | "Member" | "Pending" | "Unknown" | string;
 
@@ -94,8 +78,8 @@ export interface MyGroupItem {
   assignmentTitle: string | null;
   isLeader: boolean;
   role: MyGroupRole;
-  joinedAt: string;  // ISO datetime
-  createdAt: string; // ISO datetime
+  joinedAt: string;
+  createdAt: string;
 }
 
 export interface GetMyGroupsResponse {

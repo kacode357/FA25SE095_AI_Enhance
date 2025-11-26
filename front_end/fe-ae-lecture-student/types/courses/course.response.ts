@@ -24,7 +24,6 @@ export interface CourseItem {
   isAccessCodeExpired: boolean;
   department: string;
   img: string;
-  /** Course status per backend enum */
   status?: CourseStatus;
 }
 
@@ -52,6 +51,7 @@ export interface UpdateCourseResponse {
   message: string;
   updatedCourse: UpdatedCourseItems;
 }
+
 export interface UpdatedCourseItems {
   id: string;
   courseCode: string;
@@ -83,8 +83,9 @@ export interface GetCourseByIdResponse {
   success: boolean;
   message: string;
   course: GetCourseByIdItems;
-   isEnrolled: boolean;
+  isEnrolled: boolean;
 }
+
 export interface GetCourseByIdItems {
   id: string;
   courseCode: string;
@@ -147,7 +148,7 @@ export interface Enrollment {
   studentName: string;
   joinedAt: string;
   unenrolledAt: string | null;
-  status: number; // 1 = Active, 2 = Unenrolled, ...
+  status: number;
   unenrollmentReason: string | null;
   createdAt: string;
 }
@@ -158,13 +159,10 @@ export interface EnrollmentStatus {
   status: string | null;
 }
 
-/** ✅ Available course item cho student (khớp API /api/Courses/available) */
 export interface AvailableCourseItem {
   id: string;
   courseCode: string;
-  /** Tên hiển thị (Data Analysis & Visualization, Web Development 101, ...) */
   name: string;
-  /** Mô tả khoá học */
   description: string;
   lecturerId: string;
   lecturerName: string;
@@ -172,31 +170,16 @@ export interface AvailableCourseItem {
   enrollmentCount: number;
   requiresAccessCode: boolean;
   isAccessCodeExpired: boolean;
-
-  /** Ảnh thumbnail chung của course; backend có thể trả null */
   img: string | null;
-
-  /** 🔹 Mã unique riêng của course (F24002, F24001, ...) */
   uniqueCode: string;
-
-  /** 🔹 Avatar giảng viên nếu có, null nếu chưa set */
   lecturerImage: string | null;
-
-  /** 🔹 Thời gian bắt đầu/kết thúc term (string ISO) */
   termStartDate: string;
   termEndDate: string;
-
-  /** Trạng thái enrollment của current student, hoặc null nếu chưa join */
   enrollmentStatus: EnrollmentStatus | null;
-
-  /** Có được phép join (theo rule backend) */
   canJoin: boolean;
-
-  /** Link join trực tiếp; có thể null khi không đủ điều kiện */
   joinUrl: string | null;
 }
 
-/** ✅ Response GET /api/Courses/available */
 export interface GetAvailableCoursesResponse {
   success: boolean;
   message: string;
@@ -257,20 +240,17 @@ export interface CoursesByTermYearItem {
   department: string | null;
 }
 
-/** ✅ Response GET /api/Courses/by-term-year */
 export interface GetCoursesByTermYearResponse {
   success: boolean;
   message: string;
   courses: CoursesByTermYearItem[];
-
   totalCount: number;
   page: number;
   pageSize: number;
   totalPages: number;
-
-  /** Tên term tương ứng với termId */
   termName: string;
 }
+
 export interface CourseByUniqueCodeItem {
   id: string;
   courseCode: string;
@@ -302,29 +282,22 @@ export interface CourseByUniqueCodeItem {
   department: string | null;
 }
 
-/** ✅ Response GET /api/Courses/by-code/{uniqueCode} */
 export interface GetCourseByUniqueCodeResponse {
   success: boolean;
   message: string;
   course: CourseByUniqueCodeItem;
-  /** Current user đã enroll course này chưa */
   isEnrolled: boolean;
 }
 
-/** 🆕 Course item cho join-info – tái dùng cấu trúc CourseByUniqueCodeItem */
 export type CourseJoinInfoItem = CourseByUniqueCodeItem;
 
-/** 🆕 Response GET /api/Courses/{id}/join-info */
 export interface GetCourseJoinInfoResponse {
   success: boolean;
   message: string;
   course: CourseJoinInfoItem;
-  /** Current user đã enroll course này chưa */
   isEnrolled: boolean;
 }
 
-
-/** ✅ GET /api/Courses/{id}/statistics */
 export interface GetCourseStatisticsResponse {
   success: boolean;
   message: string;
@@ -339,8 +312,8 @@ export interface CourseStatistics {
   totalChatMessages: number;
   totalNotifications: number;
   recentEnrollments: number;
-  lastActivity: string | null; // ISO datetime hoặc null nếu chưa có
-  enrollmentsByMonth: Record<string, number>; // key: 'YYYY-MM', value: count
+  lastActivity: string | null;
+  enrollmentsByMonth: Record<string, number>;
 }
 
 export interface Course {

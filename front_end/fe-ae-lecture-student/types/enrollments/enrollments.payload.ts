@@ -7,10 +7,9 @@ export interface ImportEnrollmentsPayload {
 export interface ImportStudentsSpecificCoursePayload {
   courseId: string;
   file: File;
-  createAccountIfNotFound: boolean; // Whether to create accounts automatically
+  createAccountIfNotFound: boolean;
 }
 
-/** ✅ Payload khi sinh viên join course */
 export interface JoinCoursePayload {
   accessCode?: string;
 }

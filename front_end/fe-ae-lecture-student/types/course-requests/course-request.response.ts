@@ -1,4 +1,3 @@
-
 export enum CourseRequestStatus {
   Pending = 1,
   Approved = 2,
@@ -27,10 +26,10 @@ export interface CreateCourseRequestResponse {
   requestReason: string;
   processedBy: string;
   processedByName: string;
-  processedAt: string; // ISO datetime
+  processedAt: string;
   processingComments: string;
   createdCourseId: string;
-  createdAt: string; // ISO datetime
+  createdAt: string;
   department: string;
 }
 

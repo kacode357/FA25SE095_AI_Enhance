@@ -9,15 +9,14 @@ export interface CourseRequestPayload {
 }
 
 export interface GetMyCourseRequestsQuery {
-  page?: number; // default 1
-  pageSize?: number; // default 10
-  sortBy?: string; // e.g., "CreatedAt"
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
   sortDirection?: "asc" | "desc";
-  // Filters
   name?: string;
   courseCode?: string;
   lecturerName?: string;
-  createdAfter?: string; // ISO yyyy-MM-dd
-  createdBefore?: string; // ISO yyyy-MM-dd
+  createdAfter?: string;
+  createdBefore?: string;
   status?: number | string;
 }

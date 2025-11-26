@@ -26,7 +26,7 @@ import {
   ScheduleAssignmentResponse,
   UnassignGroupsResponse,
   UpdateAssignmentResponse,
-  GetStudentCourseGradesResponse, // 👈 NEW
+  GetStudentCourseGradesResponse,
 } from "@/types/assignments/assignment.response";
 
 export const AssignmentService = {

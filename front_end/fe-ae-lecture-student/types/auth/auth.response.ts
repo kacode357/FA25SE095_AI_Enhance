@@ -1,10 +1,7 @@
-// types/auth/auth.response.ts
-
-
 export type ApiResponse<T> = {
-  status: number;    
-  message: string;     
-  data: T;            
+  status: number;
+  message: string;
+  data: T;
 };
 
 export interface RegisterResponse {

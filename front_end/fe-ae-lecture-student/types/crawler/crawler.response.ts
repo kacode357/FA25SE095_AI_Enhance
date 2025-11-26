@@ -1,10 +1,9 @@
-// types/crawler/crawler.response.ts
 import { CrawlerType, JobStatus, Priority } from "@/config/crawl-services/crawler.enums";
 
 export interface StartCrawlerResponse {
-  jobId: string;      // uuid
-  status: JobStatus;  // number enum
-  createdAt: string;  // ISO
+  jobId: string;
+  status: JobStatus;
+  createdAt: string;
   message: string;
 }
 
@@ -25,23 +24,23 @@ export interface CrawlerResultItem {
   title: string | null;
   description: string | null;
   errorMessage: string | null;
-  crawledAt: string;      // ISO
+  crawledAt: string;
   images: string[];
   links: string[];
 }
 
 export interface GetCrawlerStatusResponse {
-  id: string;                 // jobId
+  id: string;
   userId: string;
   assignmentId: string | null;
   urls: string[];
   status: JobStatus;
   priority: Priority;
   crawlerType: CrawlerType;
-  createdAt: string;          // ISO
-  startedAt: string | null;   // ISO|nullable
-  completedAt: string | null; // ISO|nullable
-  failedAt: string | null;    // ISO|nullable
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  failedAt: string | null;
   errorMessage: string | null;
   retryCount: number;
   maxRetries: number;
@@ -71,8 +70,8 @@ export interface ListCrawlerJobsItem {
   status: JobStatus;
   priority: Priority;
   crawlerType: CrawlerType;
-  createdAt: string;          // ISO
-  completedAt: string | null; // ISO
+  createdAt: string;
+  completedAt: string | null;
   urlsProcessed: number;
   urlsSuccessful: number;
   urlsFailed: number;

@@ -1,4 +1,3 @@
-// types/auth/auth.payload.ts
 export interface RegisterPayload {
   email: string;
   password: string;
@@ -19,7 +18,7 @@ export interface LoginPayload {
   rememberMe?: boolean;
   ipAddress?: string;
   userAgent?: string;
-  captchaToken?: string; // optional token from CAPTCHA (reCAPTCHA v3 or similar)
+  captchaToken?: string;
 }
 
 export interface ConfirmEmailPayload {

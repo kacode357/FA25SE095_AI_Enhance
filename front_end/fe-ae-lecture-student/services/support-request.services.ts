@@ -1,5 +1,3 @@
-// services/support-request.services.ts
-
 import { courseAxiosInstance } from "@/config/axios.config";
 
 import type {
@@ -22,7 +20,6 @@ import type {
 } from "@/types/support/support-request.response";
 
 export const SupportRequestService = {
-  /** POST /api/SupportRequests – tạo mới support request (Student/Lecturer) */
   createSupportRequest: async (
     payload: CreateSupportRequestPayload
   ): Promise<CreateSupportRequestResponse> => {
@@ -33,7 +30,6 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /** GET /api/SupportRequests/my – lấy các request của chính mình */
   getMySupportRequests: async (
     params?: GetMySupportRequestsQuery
   ): Promise<GetMySupportRequestsResponse> => {
@@ -44,7 +40,6 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /** GET /api/SupportRequests/pending – list pending requests (Staff only) */
   getPendingSupportRequests: async (
     params?: GetPendingSupportRequestsQuery
   ): Promise<GetPendingSupportRequestsResponse> => {
@@ -56,7 +51,6 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /** GET /api/SupportRequests/assigned – list request đã được assign cho staff hiện tại */
   getAssignedSupportRequests: async (
     params?: GetAssignedSupportRequestsQuery
   ): Promise<GetAssignedSupportRequestsResponse> => {
@@ -68,7 +62,6 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /** POST /api/SupportRequests/{id}/accept – staff nhận xử lý 1 request (Pending → InProgress) */
   acceptSupportRequest: async (
     id: string
   ): Promise<AcceptSupportRequestResponse> => {
@@ -78,7 +71,6 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /** PATCH /api/SupportRequests/{id} – requester cancel 1 request (Pending → Cancelled) */
   cancelSupportRequest: async (
     id: string
   ): Promise<CancelSupportRequestResponse> => {
@@ -88,10 +80,6 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /**
-   * POST /api/SupportRequests/{id}/reject – staff reject 1 request (Pending → Rejected)
-   * Truyền reason + optional comments
-   */
   rejectSupportRequest: async (
     id: string,
     payload: Omit<RejectSupportRequestPayload, "supportRequestId">
@@ -109,10 +97,6 @@ export const SupportRequestService = {
     return res.data;
   },
 
-  /**
-   * POST /api/SupportRequests/{id}/resolve – requester đánh dấu resolved (InProgress → Resolved)
-   * Đóng conversation, không gửi thêm message được nữa
-   */
   resolveSupportRequest: async (
     id: string
   ): Promise<ResolveSupportRequestResponse> => {

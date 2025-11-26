@@ -1,8 +1,7 @@
-// types/chat.ts
 export interface SendMessageDto {
   message: string;
-  receiverId: string; // Guid string
-  courseId: string;   // Guid string
+  receiverId: string;
+  courseId: string;
 }
 
 export interface ChatMessageDto {
@@ -12,6 +11,6 @@ export interface ChatMessageDto {
   receiverId: string;
   receiverName: string;
   message: string;
-  sentAt: string; // ISO
+  sentAt: string;
   isDeleted: boolean;
 }

@@ -1,8 +1,3 @@
-// types/enrollments/enrollments.response.ts
-
-/**
- * ✅ Generic API response for successful import of enrollments
- */
 export interface ImportEnrollmentsResponse {
   success: boolean;
   message: string;
@@ -14,9 +9,6 @@ export interface ImportEnrollmentsResponse {
   createdStudentEmails: string[];
 }
 
-/**
- * ⚠️ Standardized error response (used across API)
- */
 export interface ApiErrorResponse {
   type: string;
   title: string;
@@ -67,9 +59,6 @@ export interface EnrollmentInfo {
   createdAt: string;
 }
 
-/**
- * Enrollment status values used across the frontend and backend.
- */
 export enum EnrollmentStatus {
   Active = 1,
   Inactive = 2,
@@ -78,7 +67,6 @@ export enum EnrollmentStatus {
   Completed = 5,
 }
 
-/** 🧑‍🎓 Response khi join course */
 export interface JoinCourseResponse {
   success: boolean;
   message: string;
@@ -86,14 +74,12 @@ export interface JoinCourseResponse {
   enrollment: EnrollmentInfo;
 }
 
-/** 🚪 Response khi leave course */
 export interface LeaveCourseResponse {
   success: boolean;
   message: string;
   unenrolledStudent: EnrollmentInfo;
 }
 
-/** ✅ Một khóa học mà user đã ghi danh */
 export interface MyEnrolledCourse {
   courseId: string;
   courseCode: string;
@@ -108,7 +94,6 @@ export interface MyEnrolledCourse {
   department?: string;
 }
 
-/** ✅ Response khi gọi /api/enrollments/my-courses */
 export interface GetMyEnrolledCoursesResponse {
   success: boolean;
   message: string;
@@ -116,7 +101,6 @@ export interface GetMyEnrolledCoursesResponse {
   totalCount: number;
 }
 
-// --- Course enrolled students (for a specific course) ---
 export interface CourseEnrolledStudent {
   studentId: string;
   email: string;
@@ -125,8 +109,8 @@ export interface CourseEnrolledStudent {
   fullName: string;
   studentIdNumber: string;
   profilePictureUrl: string;
-  joinedAt: string;        // ISO string
-  status: EnrollmentStatus;          // use EnrollmentStatus enum
+  joinedAt: string;
+  status: EnrollmentStatus;
   enrollmentId: string;
 }
 
@@ -139,7 +123,6 @@ export interface GetCourseEnrolledStudentsResponse {
   totalStudents: number;
 }
 
-// types/enrollments/unenroll-student.response.ts
 export interface UnenrolledStudent {
   id: string;
   courseId: string;

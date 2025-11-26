@@ -1,6 +1,3 @@
-// types/assignments/assignment.response.ts
-
-// Server trả status 1-based và "Draft" ứng với 1
 export enum AssignmentStatus {
   Draft = 1,
   Scheduled = 2,
@@ -14,12 +11,12 @@ export enum AssignmentStatus {
 export interface GroupItem {
   id: string;
   courseId: string;
-  courseName: string;                 // có thể rỗng ""
+  courseName: string;
   name: string;
   description: string | null;
   maxMembers: number;
   isLocked: boolean;
-  assignmentId: string | null;        // có thể null khi chưa gán
+  assignmentId: string | null;
   assignmentTitle: string | null;
   memberCount: number;
   leaderName: string | null;
@@ -48,11 +45,10 @@ export interface AssignmentItem {
   daysUntilDue: number;
   assignedGroupsCount: number;
   createdAt: string;
-  updatedAt?: string | null;          // server có thể trả null
-  description?: string;               // có thể rỗng ""
-  format?: string;                    // ví dụ "PDF"
-  gradingCriteria?: string;           // có thể rỗng ""
-  /** Included for detailed payloads (GET by id, create, update, extend, close) */
+  updatedAt?: string | null;
+  description?: string;
+  format?: string;
+  gradingCriteria?: string;
   assignedGroups?: GroupItem[];
 }
 
@@ -228,7 +224,7 @@ export interface Assignment {
   topicId: string;
   topicName: string;
   title: string;
-  startDate: string;          // ISO datetime
+  startDate: string;
   dueDate: string;
   extendedDueDate: string;
   status: number;
@@ -263,16 +259,17 @@ export interface AssignedGroup {
   createdAt: string;
   createdBy: string;
 }
+
 export interface StudentAssignmentGradeItem {
   assignmentId: string;
   assignmentName: string;
-  dueDate: string; // ISO datetime
+  dueDate: string;
   weight: number;
   score: number;
   maxPoints: number;
   percentage: number;
   weightedScore: number;
-  status: string; // server trả string theo doc
+  status: string;
 }
 
 export interface StudentCourseGradeStatistics {

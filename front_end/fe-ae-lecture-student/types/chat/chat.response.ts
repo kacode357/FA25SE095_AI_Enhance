@@ -1,6 +1,3 @@
-// types/chat/chat.response.ts
-
-/** Item hội thoại từ GET /api/Chat/conversations */
 export interface ConversationItemResponse {
   id: string;
   courseId: string | null;
@@ -9,11 +6,9 @@ export interface ConversationItemResponse {
   otherUserName: string;
   otherUserRole: string;
   lastMessagePreview: string | null;
-  /** ISO datetime */
   lastMessageAt: string | null;
 }
 
-/** Item tin nhắn từ GET /api/Chat/conversations/{id}/messages */
 export interface ChatMessageItemResponse {
   id: string;
   senderId: string;
@@ -21,14 +16,10 @@ export interface ChatMessageItemResponse {
   receiverId: string;
   receiverName: string;
   message: string;
-  /** ISO datetime */
   sentAt: string;
   isDeleted: boolean;
 }
 
-/** =========================
- *  API: GET /api/Chat/conversations/{conversationId}/messages
- *  ========================= */
 export interface GetMessagesApiResponse {
   success: boolean;
   message: string;
@@ -37,32 +28,27 @@ export interface GetMessagesApiResponse {
   readOnlyReason: string | null;
 }
 
-/** Người dùng có thể chat trong 1 course */
 export interface CourseChatUserItemResponse {
   id: string;
   email: string;
   firstName: string | null;
   lastName: string | null;
   fullName: string;
-  role: string;                 // "Student" | "Lecturer" | ...
-  status: string;               // "Active" | ...
-  studentId: string | null;     // Lecturer có thể null
+  role: string;
+  status: string;
+  studentId: string | null;
   profilePictureUrl: string | null;
-  /** ISO datetime */
   createdAt: string;
 }
 
-/** API: GET /api/Chat/courses/{courseId}/users */
 export interface CourseUsersApiResponse {
   success: boolean;
   message: string;
   users: CourseChatUserItemResponse[];
 }
 
-/** Hợp nhất để code cũ vẫn chạy nếu hook trả về mảng thuần */
 export type GetUsersInCourseResponse =
   | CourseUsersApiResponse
   | CourseChatUserItemResponse[];
 
-/** Alias tiện dụng cho code cũ đang import ChatMessageDto */
 export type ChatMessageDto = ChatMessageItemResponse;

@@ -1,5 +1,3 @@
-// types/course-codes/course-codes.payload.ts
-
 export interface CreateCourseCodePayload {
   code: string;
   title: string;
@@ -22,12 +20,17 @@ export interface GetCourseCodesQuery {
   title?: string;
   department?: string;
   isActive?: boolean;
-  createdAfter?: string;   // ISO date
-  createdBefore?: string;  // ISO date
+  createdAfter?: string;
+  createdBefore?: string;
   hasActiveCourses?: boolean;
   page?: number;
   pageSize?: number;
-  sortBy?: "Code" | "Title" | "Department" | "CreatedAt" | "ActiveCoursesCount";
+  sortBy?:
+    | "Code"
+    | "Title"
+    | "Department"
+    | "CreatedAt"
+    | "ActiveCoursesCount";
   sortDirection?: "asc" | "desc";
 }
 

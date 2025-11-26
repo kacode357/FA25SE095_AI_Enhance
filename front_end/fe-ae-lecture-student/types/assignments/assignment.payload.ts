@@ -1,28 +1,25 @@
-// types/assignments/assignment.payload.ts
-
 export type AssignmentStatusFilter = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface CreateAssignmentPayload {
-  courseId: string;                 // uuid
+  courseId: string;
   title: string;
   topicId: string;
   description?: string;
-  startDate: string;                // ISO datetime
-  dueDate: string;                  // ISO datetime
+  startDate: string;
+  dueDate: string;
   format?: string;
   gradingCriteria?: string;
   isGroupAssignment: boolean;
   maxPoints?: number;
   weight: number;
-  /** Only when isGroupAssignment = true */
-  groupIds?: string[];              // uuid[]
+  groupIds?: string[];
 }
 
 export interface UpdateAssignmentPayload {
   title?: string;
   description?: string;
-  startDate?: string;               // ISO
-  dueDate?: string;                 // ISO
+  startDate?: string;
+  dueDate?: string;
   format?: string;
   gradingCriteria?: string;
   maxPoints?: number;
@@ -30,25 +27,19 @@ export interface UpdateAssignmentPayload {
 }
 
 export interface GetAssignmentsQuery {
-  courseId: string; // required
-  statuses?: AssignmentStatusFilter[];  // array of integers
+  courseId: string;
+  statuses?: AssignmentStatusFilter[];
   isGroupAssignment?: boolean;
-
-  /** Group-related filters */
   assignedToGroupId?: string;
   hasAssignedGroups?: boolean;
-
-  /** Date filters */
-  dueDateFrom?: string; // ISO
-  dueDateTo?: string;   // ISO
+  dueDateFrom?: string;
+  dueDateTo?: string;
   isUpcoming?: boolean;
   isOverdue?: boolean;
-
-  /** Paging + sort + search */
-  pageNumber?: number;        // default 1
-  pageSize?: number;          // default 10
-  sortBy?: "DueDate" | "Title" | "CreatedAt" | "Status"; // default DueDate
-  sortOrder?: "asc" | "desc"; // default asc
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: "DueDate" | "Title" | "CreatedAt" | "Status";
+  sortOrder?: "asc" | "desc";
   searchQuery?: string;
 }
 
@@ -57,10 +48,10 @@ export interface MyAssignmentsQuery {
   statuses?: AssignmentStatusFilter[];
   isUpcoming?: boolean;
   isOverdue?: boolean;
-  pageNumber?: number;      // default 1
-  pageSize?: number;        // default 20
-  sortBy?: string;          // default DueDate
-  sortOrder?: "asc" | "desc"; // default asc
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 export interface AssignGroupsPayload {
@@ -74,7 +65,7 @@ export interface UnassignGroupsPayload {
 }
 
 export interface ExtendDueDatePayload {
-  extendedDueDate: string; // ISO
+  extendedDueDate: string;
 }
 
 export interface ScheduleAssignmentRequest {

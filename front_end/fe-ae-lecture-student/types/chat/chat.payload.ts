@@ -13,8 +13,8 @@ export interface GetMessagesQuery {
 /** Payload dùng cho Hub (SignalR) */
 export interface SendMessagePayload {
   message: string;
-  receiverId: string;   
-  courseId: string;       
+  receiverId: string;
+  courseId: string;
   conversationId?: string;
-   supportRequestId?: string | null;
+  supportRequestId?: string | null;
 }

@@ -1,7 +1,8 @@
 export enum MemberRole {
-    Member = 1,
-    Leader = 2,
+  Member = 1,
+  Leader = 2,
 }
+
 export interface AddGroupMemberPayload {
   groupId: string;
   studentId: string;
@@ -20,14 +21,11 @@ export interface GetAllMembersPayload {
   courseId?: string;
 }
 
-
-//
 export interface AddGroupMembersPayload {
   groupId: string;
   studentIds: string[];
 }
 
-//
 export interface AssignLeadPayload {
   groupId: string;
   studentId: string;

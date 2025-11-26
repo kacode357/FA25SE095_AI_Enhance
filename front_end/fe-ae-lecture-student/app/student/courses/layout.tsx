@@ -10,7 +10,7 @@ import {
   ListChecks,
   MessageSquare,
   FilePlus2,
-  Headset, // icon cho Support
+  Headset,
 } from "lucide-react";
 import { useEffect } from "react";
 
@@ -21,7 +21,6 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
   const segments = pathname.split("/"); // ["", "student", "courses", "{courseId}", ...]
   const courseId = segments[3] || "";
 
-  // ✅ Theo yêu cầu: chỉ còn /student/courses/${courseId}
   const basePath = `/student/courses/${courseId}`;
 
   const tabs = [
@@ -38,7 +37,6 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  // Shortcut: R -> Create Report (KHÔNG còn check assignment detail nữa)
   useEffect(() => {
     if (!courseId) return;
 
@@ -66,11 +64,10 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [ basePath, router]);
+  }, [basePath, router, courseId]);
 
   return (
     <div className="flex flex-col">
-      {/* Tabs Bar */}
       <div
         className="sticky z-30 backdrop-blur-sm"
         style={{
@@ -83,7 +80,6 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
           className="mx-auto flex items-center justify-between gap-6"
           style={{ maxWidth: 1280, padding: "8px 24px" }}
         >
-          {/* Tabs (buttons) */}
           <div className="flex items-center gap-6">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -95,7 +91,7 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
                   onClick={() => router.push(tab.href)}
                   aria-current={active ? "page" : undefined}
                   className={clsx(
-                    "no-underline flex items-center gap-2 px-2 py-1.5 text-sm font-semibold transition-colors border-b-2 bg-transparent",
+                    "no-underline flex items-center gap-2 px-2 py-1.5 text-sm font-semibold transition-colors border-b-2 bg-transparent cursor-pointer",
                     active
                       ? "text-nav-active border-brand"
                       : "text-nav hover:text-nav-active focus:text-nav-active border-transparent"
@@ -108,12 +104,11 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
             })}
           </div>
 
-          {/* Create Report CTA — luôn hiển thị khi có courseId */}
           {courseId && (
             <button
               type="button"
               className={clsx(
-                "btn btn-gradient",
+                "btn btn-gradient cursor-pointer",
                 "hidden sm:inline-flex items-center gap-2 px-3 py-2 text-sm"
               )}
               onClick={() => router.push(`${basePath}/reports/create`)}
@@ -132,7 +127,6 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
         </div>
       </div>
 
-      {/* Content */}
       <div className="container mx-auto px-16">{children}</div>
     </div>
   );
