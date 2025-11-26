@@ -77,8 +77,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
   const effectiveLastName = decodedUser?.lastName || user?.lastName || "";
   const effectiveEmail = decodedUser?.email || user?.email || "";
 
-  const subscriptionTier =
-    decodedUser?.subscriptionTier?.trim() || "Basic";
+  const subscriptionTier = decodedUser?.subscriptionTier?.trim() || "Basic";
 
   const initials = useMemo(() => {
     const f = effectiveFirstName?.trim();
@@ -119,7 +118,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
 
   return (
     <div ref={rootRef} className="relative">
-      {/* Trigger Button - Đã sửa màu border tại đây */}
+      {/* Trigger Button */}
       <button
         type="button"
         onClick={handleToggle}
@@ -159,7 +158,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
                 : { opacity: 0, y: -4, scale: 0.98 }
             }
             transition={{ duration: 0.16 }}
-            className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-border/60 bg-white/95 p-3 text-sm shadow-lg backdrop-blur"
+            className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-[rgba(129,140,248,0.35)] bg-white/95 p-3 text-sm shadow-lg backdrop-blur"
           >
             {/* Current plan */}
             <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">

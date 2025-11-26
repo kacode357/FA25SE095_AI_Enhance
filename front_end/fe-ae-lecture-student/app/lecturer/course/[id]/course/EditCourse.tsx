@@ -20,6 +20,7 @@ import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AccessCodeDialog from "../../components/AccessCodeDialog";
 import InactivateCourseDialog from "./components/InactivateCourseDialog";
+import LiteRichTextEditor from "@/components/common/TinyMCE";
 
 export default function EditCourse() {
     const [editMode, setEditMode] = useState(false);
@@ -291,11 +292,19 @@ export default function EditCourse() {
                                         <p className="text-slate-500 text-xs uppercase mb-1 tracking-wide">
                                             Announcement
                                         </p>
-                                        <div className="!bg-white p-3 rounded-md border border-slate-200 text-slate-800 text-sm leading-relaxed">
-                                            {course.announcement}
+
+                                        <div className="rounded-md border border-slate-200 bg-white">
+                                            <LiteRichTextEditor
+                                                value={course.announcement}
+                                                onChange={() => { }}
+                                                readOnly
+                                                className="rounded-md overflow-hidden"
+                                                placeholder="No announcement yet"
+                                            />
                                         </div>
                                     </div>
                                 )}
+
                             </motion.div>
                         ) : (
                             <motion.form
@@ -419,7 +428,7 @@ export default function EditCourse() {
                             )}
                         </div>
                     </Card>
-                    
+
                     <Card className="p-5 border-slate-200 shadow-sm">
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-semibold text-[#000D83]">Access Code</h3>
@@ -449,7 +458,7 @@ export default function EditCourse() {
                                     )}
                                 </Button>
                             )}
-                            
+
                         </div>
                         <div className="flex flex-col gap-5 text-sm">
                             {accessLoading ? (
@@ -486,7 +495,7 @@ export default function EditCourse() {
                                                             await navigator.clipboard.writeText(access.accessCode!);
                                                             setCopied(true);
                                                             setTimeout(() => setCopied(false), 1200);
-                                                        } catch {}
+                                                        } catch { }
                                                     }}
                                                     className="text-slate-500 hover:text-slate-700 transition"
                                                     title={copied ? "Copied!" : "Copy code"}
