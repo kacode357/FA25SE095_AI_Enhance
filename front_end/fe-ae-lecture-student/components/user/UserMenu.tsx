@@ -1,9 +1,6 @@
 // components/user/UserMenu.tsx
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, CircleArrowOutUpRight } from "lucide-react";
-import Link from "next/link";
 import {
   useEffect,
   useMemo,
@@ -11,6 +8,9 @@ import {
   useState,
   MouseEvent as ReactMouseEvent,
 } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ChevronDown, CircleArrowOutUpRight } from "lucide-react";
+import Link from "next/link";
 
 import { loadDecodedUser } from "@/utils/secure-user";
 import type { UserProfile } from "@/types/user/user.response";
@@ -32,37 +32,56 @@ type Props = {
   onLogout: () => void;
 };
 
+const STORAGE_EVENT_NAME = "app:user-updated";
+
 export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
   const [decodedUser, setDecodedUser] = useState<UserProfile | null>(null);
 
-  // Load user đã mã hoá từ cookie/session
+  // Load encoded user + listen event để reload khi subscriptionTier thay đổi
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
+    const fetchUser = async () => {
       try {
         const u = await loadDecodedUser();
-        if (mounted) setDecodedUser(u);
+        if (!mounted) return;
+        setDecodedUser(u);
       } catch {
-        if (mounted) setDecodedUser(null);
+        if (!mounted) return;
+        setDecodedUser(null);
       }
-    })();
+    };
+
+    // Lần đầu
+    fetchUser();
+
+    // Khi trang khác cập nhật user (ví dụ trang subscription success)
+    const handleUserUpdated = () => {
+      fetchUser();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(STORAGE_EVENT_NAME, handleUserUpdated);
+    }
 
     return () => {
       mounted = false;
+      if (typeof window !== "undefined") {
+        window.removeEventListener(STORAGE_EVENT_NAME, handleUserUpdated);
+      }
     };
   }, []);
 
-  // Ưu tiên lấy info từ decodedUser, fallback user prop
-  const effectiveFirstName =
-    decodedUser?.firstName || user?.firstName || "";
-  const effectiveLastName =
-    decodedUser?.lastName || user?.lastName || "";
+  // Ưu tiên info từ decodedUser, fallback prop user
+  const effectiveFirstName = decodedUser?.firstName || user?.firstName || "";
+  const effectiveLastName = decodedUser?.lastName || user?.lastName || "";
   const effectiveEmail = decodedUser?.email || user?.email || "";
-  const subscriptionTier = decodedUser?.subscriptionTier || "Basic";
+
+  const subscriptionTier =
+    decodedUser?.subscriptionTier?.trim() || "Basic";
 
   const initials = useMemo(() => {
     const f = effectiveFirstName?.trim();
@@ -80,7 +99,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
     return name || "Student";
   }, [effectiveFirstName, effectiveLastName]);
 
-  // Đóng khi click ra ngoài
+  // Đóng menu khi click ra ngoài
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!rootRef.current) return;
@@ -110,7 +129,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
         onClick={handleToggle}
         className="flex items-center gap-2 rounded-full border border-border/60 bg-white px-3 py-1.5 text-sm shadow-sm transition hover:border-brand/60 hover:bg-slate-50"
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand uppercase">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold uppercase text-brand">
           {initials}
         </div>
         <div className="hidden text-left text-xs sm:block">
@@ -146,7 +165,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
             transition={{ duration: 0.16 }}
             className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-border/60 bg-white/95 p-3 text-sm shadow-lg backdrop-blur"
           >
-            {/* Current plan block */}
+            {/* Current plan */}
             <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">
               <div className="flex flex-col">
                 <span className="text-[11px] text-muted-foreground">

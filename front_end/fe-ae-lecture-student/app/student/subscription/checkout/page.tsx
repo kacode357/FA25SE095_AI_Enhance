@@ -1,13 +1,15 @@
 // app/student/subscription/checkout/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, CreditCard, Crown, Check } from "lucide-react";
+import { toast } from "sonner";
 
 import { useSubscriptionTiers } from "@/hooks/subscription/useSubscriptionTiers";
 import { useCreateSubscriptionPayment } from "@/hooks/payments/useCreateSubscriptionPayment";
+import { useConfirmSubscriptionPayment } from "@/hooks/payments/useConfirmSubscriptionPayment";
 import type { SubscriptionTier } from "@/types/subscription/subscription.response";
 
 function formatQuota(limit: number) {
@@ -26,9 +28,61 @@ export default function SubscriptionCheckoutPage() {
     useSubscriptionTiers();
   const { createSubscriptionPayment, loading: creatingPayment } =
     useCreateSubscriptionPayment();
+  const { confirmSubscriptionPayment, loading: confirming } =
+    useConfirmSubscriptionPayment();
 
   const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
+  const hasHandledReturnRef = useRef(false);
 
+  // ✅ Handle PayOS return: lấy token + orderCode và confirm
+  useEffect(() => {
+    const confirmationToken =
+      searchParams.get("confirmationToken") ||
+      searchParams.get("ConfirmationToken");
+    const orderCode =
+      searchParams.get("orderCode") || searchParams.get("OrderCode");
+
+    const status = searchParams.get("status"); // PAID / ...
+    const cancel = searchParams.get("cancel"); // "true" / "false"
+
+    if (!confirmationToken || !orderCode) return;
+    if (status && status.toUpperCase() !== "PAID") return;
+    if (cancel === "true") return;
+
+    if (hasHandledReturnRef.current) return;
+    hasHandledReturnRef.current = true;
+
+    (async () => {
+      try {
+        const res = await confirmSubscriptionPayment({
+          orderCode,
+          token: confirmationToken,
+        });
+
+        if (!res || res.status !== 200) {
+          toast.error(
+            res?.message || "Could not confirm your subscription payment."
+          );
+          return;
+        }
+
+        toast.success("Your subscription has been updated successfully.");
+
+        const tierName = searchParams.get("tier") || "";
+
+        // ✅ Redirect sang trang success (để hiện UI + update cookie)
+        router.replace(
+          `/student/subscription/success${
+            tierName ? `?tier=${encodeURIComponent(tierName)}` : ""
+          }`
+        );
+      } catch (err) {
+        toast.error("Something went wrong when confirming your payment.");
+      }
+    })();
+  }, [searchParams, confirmSubscriptionPayment, router]);
+
+  // Load list tiers
   useEffect(() => {
     let cancelled = false;
 
@@ -68,9 +122,14 @@ export default function SubscriptionCheckoutPage() {
 
     const origin = window.location.origin;
 
+    // returnUrl về lại đúng trang checkout (giữ tier)
+    const returnUrl = `${origin}/student/subscription/checkout?tier=${encodeURIComponent(
+      selectedTierName
+    )}`;
+
     const res = await createSubscriptionPayment({
       tier: tierIndex,
-      returnUrl: `${origin}/student/subscription`,
+      returnUrl,
       cancelUrl: `${origin}/student/subscription`,
     });
 
@@ -113,19 +172,21 @@ export default function SubscriptionCheckoutPage() {
           </div>
         </div>
 
-        {loading && (
+        {(loading || confirming) && (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Loading plan details...
+            {confirming
+              ? "Confirming your payment..."
+              : "Loading plan details..."}
           </p>
         )}
 
-        {!loading && !selectedTier && (
+        {!loading && !confirming && !selectedTier && (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             Plan not found. Please go back and choose a plan again.
           </p>
         )}
 
-        {!loading && selectedTier && (
+        {!loading && !confirming && selectedTier && (
           <>
             <div className="mb-4 rounded-lg border border-border bg-white/80 px-4 py-3">
               <div className="flex items-baseline justify-between gap-2">
