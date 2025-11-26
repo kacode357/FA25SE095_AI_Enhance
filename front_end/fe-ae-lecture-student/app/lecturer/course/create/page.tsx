@@ -4,6 +4,7 @@ import { Book, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import TinyMCE from "@/components/common/TinyMCE";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -271,13 +272,13 @@ export default function CreateCoursePage() {
                                 {/* Announcement (optional) */}
                                 <div className="sm:col-span-2">
                                     <Label className="text-base mb-2">Announcement <span className="text-slate-400 text-xs">(optional)</span></Label>
-                                    <Textarea
-                                        value={form.announcement ?? ""}
-                                        onChange={(e) => setForm((f) => ({ ...f, announcement: e.target.value }))}
-                                        className="mt-1 min-h-20 bg-white border-slate-200"
-                                        placeholder="An optional announcement for students (short)."
-                                        disabled={disableMainForm}
-                                    />
+                                        <TinyMCE
+                                            value={form.announcement ?? ""}
+                                            onChange={(html) => setForm((f) => ({ ...f, announcement: html }))}
+                                            placeholder="An optional announcement for students (short)."
+                                            className="mt-1 bg-white border-slate-200"
+                                            readOnly={disableMainForm}
+                                        />
                                 </div>
                             </div>
                         </Card>

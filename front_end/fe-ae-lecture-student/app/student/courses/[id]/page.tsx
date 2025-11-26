@@ -16,12 +16,12 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { AssignmentStatus } from "@/config/classroom-service/assignment-status.enum";
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import { AssignmentStatus } from "@/config/classroom-service/assignment-status.enum";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 /** Safe parse datetime */
@@ -145,11 +145,9 @@ export default function CourseDetailPage() {
 
   // termStartDate / termEndDate (handle 0001-01-01)
   const termStartLabel = formatTermDateVN(
-    // @ts-expect-error: field from BE
     course.termStartDate
   );
   const termEndLabel = formatTermDateVN(
-    // @ts-expect-error: field from BE
     course.termEndDate
   );
 

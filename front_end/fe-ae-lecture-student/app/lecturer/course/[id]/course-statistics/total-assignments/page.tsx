@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAssignments } from "@/hooks/assignment/useAssignments";
-import { CalendarDays, ClipboardList, Eye, Loader2, Users2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardList, Eye, Loader2, Users2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
@@ -74,7 +74,7 @@ export default function TotalAssignmentsPage() {
           Assignments ({total})
         </h1>
         <Button onClick={() => router.push(`/lecturer/course/${id}/course-statistics`)} className="rounded-xl text-sm btn btn-gradient-slow">
-          ← Back
+          <ArrowLeft className="size-4" /> Back
         </Button>
       </div>
 
@@ -165,7 +165,7 @@ export default function TotalAssignmentsPage() {
 
                   {/* Actions: View detail */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <Link href={`/staff/courses/${id}/total-assignments/${a.id}`}>
+                    <Link href={`/lecturer/course/${id}/course-statistics/total-assignments/${a.id}`}>
                       <Button className="rounded-xl" variant="outline">
                         <Eye className="mr-2 size-4" />
                         View detail

@@ -32,11 +32,14 @@ export function useAllMembers() {
       if (res?.success === false) {
         toast.error(res?.message || "Failed to load members");
       }
-      setMembers(Array.isArray(list) ? list : []);
+      const finalList = Array.isArray(list) ? list : [];
+      setMembers(finalList);
+      return finalList;
     } catch (err: any) {
       const msg = err?.message || "Error fetching members";
       setError(msg);
       toast.error(msg);
+      return [];
     } finally {
       setLoading(false);
     }

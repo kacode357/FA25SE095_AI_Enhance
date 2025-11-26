@@ -4,8 +4,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAssignmentDetail } from "@/hooks/assignment/useAssignmentDetail";
-import { useGroupMembersByGroup } from "@/hooks/group-members/useGroupMembersByGroup";
+import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
+import { useAllMembers } from "@/hooks/group-member/useAllMembers";
 import { cleanIncomingHtml } from "@/utils/html-normalize";
 import {
   ArrowLeft,
@@ -29,8 +29,9 @@ export default function AssignmentDetailPage() {
   const router = useRouter();
 
   // --- Hooks cố định thứ tự ---
-  const { assignment, loading, fetchAssignment, reset } = useAssignmentDetail();
-  const { fetchGroupMembers } = useGroupMembersByGroup(); // dùng để fetch theo group khi cần
+  const { data: assignmentRes, loading, fetchAssignment } = useAssignmentById();
+  const assignment = assignmentRes?.assignment ?? null;
+  const { fetchAllMembers } = useAllMembers();
 
   // Guard chống gọi lặp
   const fetchedFor = useRef<string | null>(null);
@@ -54,8 +55,8 @@ export default function AssignmentDetailPage() {
       fetchedFor.current = aId;
       fetchAssignment(aId);
     }
-    return () => reset();
-  }, [assignmentId, fetchAssignment, reset]);
+    // no cleanup needed for useAssignmentById
+  }, [assignmentId, fetchAssignment]);
 
   // Mô tả: normalize HTML (đặt trước mọi return)
   const descriptionHtml = useMemo(
@@ -93,13 +94,13 @@ export default function AssignmentDetailPage() {
 
       // fetch lần đầu
       setLoadingGroupId(groupId);
-      const res = await fetchGroupMembers(groupId);
+      const list = await fetchAllMembers(groupId);
       setLoadingGroupId(null);
 
-      if (res?.members) {
+      if (list && list.length) {
         setMembersCache((prev) => ({
           ...prev,
-          [groupId]: res.members.map((m) => ({
+          [groupId]: list.map((m) => ({
             id: m.id,
             studentName: m.studentName,
             studentEmail: m.studentEmail,
@@ -110,7 +111,7 @@ export default function AssignmentDetailPage() {
         }));
       }
     },
-    [expandedGroupId, membersCache, fetchGroupMembers]
+    [expandedGroupId, membersCache, fetchAllMembers]
   );
 
   // --- Returns sau cùng, không thay đổi thứ tự hooks ---
@@ -126,8 +127,8 @@ export default function AssignmentDetailPage() {
     return (
       <div className="p-6 text-center" style={{ color: "var(--color-muted)" }}>
         Assignment not found.
-        <div className="mt-4">
-          <Button onClick={() => router.push(`/staff/courses/${id}/total-assignments`)} className="rounded-xl btn btn-gradient-slow">
+        <div className="mt-4 text-sm">
+          <Button onClick={() => router.push(`/staff/courses/${id}/total-assignments`)} className="rounded-xl text-sm btn btn-gradient-slow">
             ← Back
           </Button>
         </div>
@@ -136,7 +137,7 @@ export default function AssignmentDetailPage() {
   }
 
   return (
-    <div className="p-5 space-y-6">
+    <div className="p-5 space-y-6 overflow-y-auto max-h-[calc(100vh-6rem)]">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="min-w-0">
@@ -147,10 +148,10 @@ export default function AssignmentDetailPage() {
             {assignment.courseName}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href={`/staff/courses/${id}/total-assignments`}>
-            <Button className="rounded-xl btn btn-gradient-slow" variant="outline">
-              <ArrowLeft className="mr-2 size-4" />
+        <div className="flex items-center gap-5">
+          <Link href={`/lecturer/course/${id}/course-statistics/total-assignments`}>
+            <Button className="rounded-xl btn text-sm btn-gradient-slow" variant="outline">
+              <ArrowLeft className="mr-1 size-4" />
               Back
             </Button>
           </Link>
@@ -162,12 +163,12 @@ export default function AssignmentDetailPage() {
 
       {/* Overview */}
       <Card className="border card rounded-2xl">
-        <CardHeader className="pb-2">
+        <CardHeader className="">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Overview
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 border-slate-300 gap-4">
           <InfoRow icon={<ClipboardList className="size-4" />} label="Points" value={String(assignment.maxPoints)} />
           <InfoRow icon={<CalendarDays className="size-4" />} label="Start" value={fmtDate(assignment.startDate)} />
           <InfoRow icon={<CalendarDays className="size-4" />} label="Due" value={fmtDate(assignment.dueDate)} />
@@ -349,12 +350,11 @@ function InfoRow({
 }) {
   return (
     <div
-      className="flex items-center justify-between gap-3 rounded-xl border p-3"
-      style={{ borderColor: "var(--color-border)" }}
+          className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"
     >
-      <div className="flex items-center gap-2" style={{ color: "var(--color-muted)" }}>
+      <div className="flex items-center gap-2 border-slate-300" style={{ color: "var(--color-muted)" }}>
         <div
-          className="p-2 rounded-xl border"
+          className="p-2 rounded-xl border border-slate-300"
           style={{
             background: "color-mix(in oklab, var(--color-brand) 8%, transparent)",
             borderColor: "color-mix(in oklab, var(--color-brand) 18%, var(--color-border))",

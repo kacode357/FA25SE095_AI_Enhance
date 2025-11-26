@@ -40,9 +40,9 @@ function normalizeNotification(raw: any): NotificationItem {
   return {
     id,
     title: raw?.title || raw?.subject || "New notification",
-    message: raw?.message || raw?.content || raw?.body || "",
+    content: raw?.content || raw?.message || raw?.body || "",
     createdAt: raw?.createdAt || raw?.timestamp || nowIso,
-    read: readFlag,
+    isRead: readFlag,
   };
 }
 
@@ -143,7 +143,7 @@ export default function Header() {
       setDropdownOpen(false);
 
       if (unreadCount > 0) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
         setUnreadCount(0);
 
         // fire-and-forget
