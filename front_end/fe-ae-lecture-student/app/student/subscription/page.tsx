@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Crown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { useSubscriptionTiers } from "@/hooks/subscription/useSubscriptionTiers";
 import type { SubscriptionTier } from "@/types/subscription/subscription.response";
@@ -33,6 +33,7 @@ export default function SubscriptionPage() {
   const { getSubscriptionTiers, loading } = useSubscriptionTiers();
   const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
   const [currentTier, setCurrentTier] = useState<string | null>(null);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
 
   // Load list plan từ API
   useEffect(() => {
@@ -74,8 +75,8 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <section className="relative bg-slate-50 py-5">
-      <div className="mx-auto max-w-6xl px-6 text-center">
+    <section className="relative bg-slate-50 pt-7 pb-15">
+      <div className="mx-auto max-w-7xl gap-0 px-6 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-full shadow-md bg-gradient-to-r from-indigo-500 to-purple-500">
           <Crown className="h-4 w-4" />
           Pricing Plan
@@ -98,8 +99,14 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {tiers.map((tier, i) => {
+        <div className="mt-16 relative">
+          {/* Carousel wrapper: on md+ use horizontal scroll with up to 3 cards visible.
+              Cards are full width on small screens, and fixed 33.333% width on md+. */}
+          <div
+            ref={carouselRef}
+            className="flex gap-10 md:overflow-x-auto md:py-10 md:px-2 no-scrollbar"
+          >
+            {tiers.map((tier, i) => {
             const tierName = tier.tier ?? "";
             const isCurrent =
               currentTier &&
@@ -121,17 +128,16 @@ export default function SubscriptionPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06, duration: 0.25 }}
-                className={`relative flex h-full flex-col rounded-3xl border p-8 shadow-lg transition-all duration-300 ${cardHighlight}`}
+                className={`relative flex flex-col rounded-3xl border p-8 shadow-lg transition-all duration-300 ${cardHighlight} flex-shrink-0 w-full md:w-[31%] h-[500px]`}
                 style={{
-                  backgroundImage:
-                    "linear-gradient(180deg,#fff9fb 0%,#fff4f2 45%,#ffffff 100%)",
+                  backgroundImage: `url('https://live.themewild.com/edubo/assets/img/shape/04.png')`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }}
               >
                 {/* Label tên plan */}
-                <div className="absolute left-1/2 -top-4 -translate-x-1/2 flex flex-col items-center gap-1">
-                  <span className="rounded-full bg-[var(--brand)] px-5 py-1 text-sm font-semibold text-white shadow-md">
+                <div className="absolute left-1/2 -top-4 -translate-x-1/2 flex flex-col items-center gap-3">
+                  <span className="rounded-full bg-indigo-500 px-5 py-1 text-sm font-semibold text-white shadow-md">
                     {tierName}
                   </span>
                   {isCurrent && (
@@ -149,11 +155,22 @@ export default function SubscriptionPage() {
 
                 {/* Giá */}
                 <div className="mt-8 mb-4">
-                  <div className="flex items-end justify-center leading-tight">
-                    <span className="text-4xl font-bold text-[#000D83] md:text-5xl">
-                      {formatPriceLabel(tier)}
+                  <div className="flex items-end justify-center leading-tight flex-nowrap">
+                    <span className="text-xl md:text-3xl lg:text-4xl font-bold text-indigo-900 whitespace-nowrap">
+                      {tier.price === 0 ? (
+                        "Free"
+                      ) : (
+                        <>
+                          <span className="price-digits">
+                            {tier.price.toLocaleString()}
+                          </span>
+                          <span className="ml-2 text-indigo-900">
+                            {tier.currency}
+                          </span>
+                        </>
+                      )}
                     </span>
-                    <span className="ml-1 text-lg font-medium text-[var(--brand)]">
+                    <span className="ml-2 text-lg font-medium text-indigo-600 whitespace-nowrap">
                       {formatPeriod(tier)}
                     </span>
                   </div>
@@ -181,14 +198,11 @@ export default function SubscriptionPage() {
                 </div>
 
                 {/* Features: flex-1 để nút luôn đáy, mọi block trên thẳng hàng */}
-                <ul className="space-y-4 text-left flex-1">
+                <ul className="space-y-6 text-left flex-1 overflow-auto pr-2">
                   {tier.features.map((feature, idx) => {
                     const isNegative = feature.toLowerCase().includes("no ");
                     return (
-                      <li
-                        key={idx}
-                        className="flex items-center gap-3 font-bold text-[#000D83]"
-                      >
+                      <li key={idx} className="flex items-center gap-3 font-bold text-[#000D83]">
                         {isNegative ? (
                           <span className="text-red-500">✗</span>
                         ) : (
@@ -221,7 +235,24 @@ export default function SubscriptionPage() {
                 </button>
               </motion.div>
             );
-          })}
+            })}
+
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!carouselRef.current) return;
+              carouselRef.current.scrollBy({
+                left: carouselRef.current.clientWidth * 0.75,
+                behavior: "smooth",
+              });
+            }}
+            className="absolute right-4 top-[-40] z-20 hidden sm:inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium shadow-lg"
+            aria-label="See more plans"
+          >
+            Swipe →
+          </button>
 
           {!loading && tiers.length === 0 && (
             <p

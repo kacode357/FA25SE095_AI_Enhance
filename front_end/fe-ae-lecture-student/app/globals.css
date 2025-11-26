@@ -47,17 +47,8 @@ body {
 
 body {
   margin: 0;
-  background: radial-gradient(
-      1400px 900px at 85% -10%,
-      color-mix(in oklab, var(--brand) 12%, transparent),
-      transparent
-    ),
-    radial-gradient(
-      900px 700px at 0% 100%,
-      color-mix(in oklab, var(--brand) 8%, transparent),
-      transparent
-    ),
-    linear-gradient(180deg, #f7fafc, #f8fbff);
+    /* Use Tailwind `slate-50` equivalent for a very light neutral background. */
+    background: #f8fafc;
   color: var(--foreground);
   /* Global font for lecture-student app */
   font-family: var(--font-sans);
@@ -126,6 +117,14 @@ select {
 }
 .visited\:text-nav:visited {
   color: var(--nav) !important;
+}
+
+/* Ensure the top header is always a solid background (no translucency) */
+header.fixed, header {
+  background-color: #ffffff !important; /* solid white */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
 }
 
 .card {
@@ -367,3 +366,18 @@ select {
     scrollbar-gutter: stable;
   }
 }
+
+/* Utility to hide native scrollbars for horizontal carousels */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit browsers */
+}
+
+/* Subscription price digits shadow */
+.price-digits {
+  text-shadow: 0 10px 30px rgba(15,23,42,0.14), 0 4px 10px rgba(15,23,42,0.06);
+}
+
