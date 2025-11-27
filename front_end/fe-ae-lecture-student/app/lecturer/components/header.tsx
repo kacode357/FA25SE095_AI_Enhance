@@ -3,9 +3,12 @@
 
 import { useEffect, useState } from "react";
 
+import UserMenu from "@/components/user/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useNotificationHub } from "@/hooks/hubNotification/useNotificationHub";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import Logo from "@/components/logo/Logo";
 import NotificationsMenu, {
@@ -14,7 +17,6 @@ import NotificationsMenu, {
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 
 // ✅ hooks notifications
-import { useStudentNav } from "@/app/student/components/nav-items";
 import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
 import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
 
@@ -49,12 +51,12 @@ function normalizeNotification(raw: any): NotificationItem {
 export default function Header() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const pathname = usePathname();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const { user } = useAuth();
   const { logout } = useLogout();
-  const navs = useStudentNav();
 
   const { getNotifications } = useGetNotifications();
   const { markAllNotificationsAsRead } = useMarkAllNotificationsAsRead();
@@ -171,21 +173,59 @@ export default function Header() {
         style={{ maxWidth: 1400, paddingLeft: "2rem", paddingRight: "1rem" }}
       >
         {/* Left: logo + nav */}
-        <div className="flex items-center gap-8 min-w-0">
+        <div className="flex items-center gap-10 min-w-0">
           <Logo />
+
+          <nav className="ml-6 flex items-center gap-10">
+            <Link
+              href="/lecturer/course"
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/course") ? "text-gray-900 border-b-2 border-brand pb-1" : "text-gray-700 hover:text-gray-900"}`}
+            >
+              My Course
+            </Link>
+
+            <Link
+              href="/lecturer/manage-courses"
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/manage-courses") ? "text-gray-900 border-b-2 border-brand pb-1" : "text-gray-700 hover:text-gray-900"}`}
+            >
+              Manager Course
+            </Link>
+
+            <Link
+              href="/lecturer/dashboard"
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/dashboard") ? "text-gray-900 border-b-2 border-brand pb-1" : "text-gray-700 hover:text-gray-900"}`}
+            >
+              Dashboard
+            </Link>
+          </nav>
         </div>
 
         {/* Right */}
-        <div className="ml-auto flex bg-slate-100 p-0 rounded-xl shadow-lg items-center gap-2">
-          <NotificationsMenu
-            open={notificationOpen}
-            onOpenChange={handleNotificationOpenChange}
-            badgeCount={unreadCount}
-            notifications={notifications}
-            connected={connected}
-            connecting={connecting}
-            lastError={lastError ?? undefined}
-          />
+        <div className="ml-auto flex items-center gap-3">
+          {/* Bell / notifications box */}
+          <div className="flex bg-slate-100 p-0 rounded-xl shadow-lg items-center gap-2">
+            <NotificationsMenu
+              open={notificationOpen}
+              onOpenChange={handleNotificationOpenChange}
+              badgeCount={unreadCount}
+              notifications={notifications}
+              connected={connected}
+              connecting={connecting}
+              lastError={lastError ?? undefined}
+            />
+          </div>
+
+          {/* User menu separated from bell */}
+          <div className="ml-2 shadow-md rounded-full">
+            <UserMenu
+              open={dropdownOpen}
+              onOpenChange={(v: boolean) => setDropdownOpen(v)}
+              onLogout={() => {
+                setDropdownOpen(false);
+                logout();
+              }}
+            />
+          </div>
         </div>
       </div>
     </header>

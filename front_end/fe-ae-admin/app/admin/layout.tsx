@@ -17,7 +17,7 @@ export default function ManagerLayout({
         <div className="min-h-screen flex bg-white">
             {/* Sidebar: desktop fixed */}
             <aside
-                className={`fixed left-0 top-0 bottom-0 z-40 hidden sm:block border-r border-gray-200 bg-white transition-all duration-300 ${collapsed ? "w-16" : "w-64"
+                className={`fixed left-0 top-0 bottom-0 z-40 hidden sm:block border-r border-gray-200 bg-white transition-all duration-300 ${collapsed ? "w-20" : "w-64"
                     }`}
             >
                 <ManagerSidebar collapsed={collapsed} setCollapsed={setCollapsed} />
@@ -43,11 +43,11 @@ export default function ManagerLayout({
 
             {/* Main content */}
             <div
-                className={`flex-1 w-full flex flex-col min-h-screen bg-white transition-all duration-300 ${collapsed ? "sm:ml-16" : "sm:ml-64"
+                className={`flex-1 w-full flex flex-col min-h-screen bg-white transition-all duration-300 ${collapsed ? "sm:ml-20" : "sm:ml-64"
                     }`}
             >
                 <div
-                    className={`fixed top-0 right-0 z-50 h-16 bg-white/80 border-b border-gray-200 supports-[backdrop-filter]:backdrop-blur-md transition-all duration-300 ${collapsed ? "sm:left-16" : "sm:left-64"
+                    className={`fixed top-0 right-0 z-50 h-20 bg-white/80 border-b border-gray-200 supports-[backdrop-filter]:backdrop-blur-md transition-all duration-300 ${collapsed ? "sm:left-20" : "sm:left-64"
                         }`}
                 >
                     <ManagerHeader onMenuClick={() => setSidebarOpen(true)} />

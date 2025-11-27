@@ -20,12 +20,13 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
     <div
       className={clsx(
         "h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        // slightly wider when collapsed so the purple gradient frame has more room
+        collapsed ? "w-20" : "w-64"
       )}
     >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+      {/* Header (match top header height so borders align) */}
+      <div className="h-20 border-b border-gray-200 flex items-center">
+        <div className="flex items-center justify-between w-full px-4">
           {!collapsed && (
             <div>
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -39,12 +40,14 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
             onClick={() => setCollapsed(!collapsed)}
             size="icon"
             variant="ghost"
-            className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-md hover:shadow-lg hover:opacity-90"
+            // keep button size consistent so chevron doesn't visually jump
+            className="rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-md hover:shadow-lg hover:opacity-90 flex items-center justify-center h-10 w-10"
           >
             <ChevronRight
               className={clsx(
                 "text-white transition-transform",
-                collapsed ? "w-7 h-7 rotate-0" : "w-5 h-5 rotate-180"
+                // use a consistent chevron size (rotate based on collapsed)
+                collapsed ? "w-6 h-6 rotate-0" : "w-6 h-6 rotate-180"
               )}
             />
           </Button>
@@ -67,7 +70,10 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                 key={href}
                 href={href}
                 className={clsx(
-                  "group flex items-center gap-3 p-3 rounded-lg transition-all duration-200 relative",
+                  "group flex items-center rounded-lg transition-all duration-200 relative",
+                  // when collapsed: center the icon, align heights with chevron button, remove horizontal gap
+                  // when collapsed: center the icon, increase horizontal padding so the purple frame is wider
+                  collapsed ? "justify-center px-4 py-3 gap-0 h-12" : "gap-3 p-3 h-auto",
                   active
                     ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25"
                     : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600"
@@ -76,8 +82,9 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
               >
                 <Icon
                   className={clsx(
-                    "transition-transform group-hover:scale-110",
-                 collapsed ? "w-9 h-9" : "w-5 h-5",
+                    "transition-transform group-hover:scale-110 flex-shrink-0",
+                    // reduce icon a bit when collapsed, keep default when expanded
+                    collapsed ? "w-4 h-4" : "w-5 h-5",
                     active ? "text-white" : "text-gray-500 group-hover:text-blue-600"
                   )}
                 />
@@ -86,7 +93,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                     <div className="flex items-center justify-between">
                       <span
                         className={clsx(
-                          "font-medium transition-colors",
+                          "font-medium transition-colors text-sm",
                           active ? "text-white" : "group-hover:text-blue-600"
                         )}
                       >
