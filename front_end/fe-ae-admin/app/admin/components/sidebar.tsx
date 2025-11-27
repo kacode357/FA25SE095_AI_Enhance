@@ -2,26 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { clsx } from "clsx";
-import { ChevronRight, FileText, Settings2, Users2 } from "lucide-react";
+import { ChevronRight, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const mainNav = [
-  {
-    href: "/admin/users",
-    label: "Users",
-    icon: Users2,
-    description: "Manage All Users",
-    count: 12,
-  },
-  {
-    href: "/admin/pending-approval",
-    label: "Pending Approval",
-    icon: FileText,
-    description: "Manage Pending Approvals",
-    count: 8,
-  },
-];
+import { mainNav } from "./admin-main-nav";
 
 type SidebarProps = {
   collapsed: boolean;
@@ -52,12 +37,14 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
           )}
           <Button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 cursor-pointer rounded-md btn btn-gradient-slow hover:bg-gray-100 transition-colors"
+            size="icon"
+            variant="ghost"
+            className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-md hover:shadow-lg hover:opacity-90"
           >
             <ChevronRight
               className={clsx(
-                "w-4 h-4 text-white transition-transform",
-                collapsed ? "rotate-0" : "rotate-180"
+                "text-white transition-transform",
+                collapsed ? "w-7 h-7 rotate-0" : "w-5 h-5 rotate-180"
               )}
             />
           </Button>
@@ -89,7 +76,8 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
               >
                 <Icon
                   className={clsx(
-                    "w-5 h-5 transition-transform group-hover:scale-110",
+                    "transition-transform group-hover:scale-110",
+                 collapsed ? "w-9 h-9" : "w-5 h-5",
                     active ? "text-white" : "text-gray-500 group-hover:text-blue-600"
                   )}
                 />
