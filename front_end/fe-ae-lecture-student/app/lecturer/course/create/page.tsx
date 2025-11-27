@@ -207,6 +207,12 @@ export default function CreateCoursePage() {
             // store uploaded url to show link and clear file input
             setUploadedSyllabusUrl(fileUrl);
             setForm((f) => ({ ...f, syllabus: null }));
+            // navigate back to Courses list after successful upload
+            try {
+                router.push("/lecturer/course");
+            } catch (e) {
+                // ignore navigation errors
+            }
         }
     };
 

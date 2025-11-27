@@ -10,7 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
-import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, MessageSquareDot, PanelLeftOpen, PanelRightOpen, Sparkles, TableOfContents, Upload, User, Wrench } from "lucide-react";
+import { CircleArrowOutUpRight, EllipsisVertical, GitPullRequest, LayoutGrid, PanelLeftOpen, PanelRightOpen, Sparkles, TableOfContents, Upload, User, Wrench } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -107,20 +107,6 @@ export default function CourseLayout({ children }: { children: React.ReactNode }
                                     >
                                         <Upload className={`size-4 transition-colors ${isImport ? "text-brand" : "text-slate-400 group-hover:text-slate-600"}`} />
                                         <span className={`${collapsed ? "hidden" : "flex-1 text-left"}`}>Import enrollments</span>
-                                    </button>
-                                </li>
-                                {/* Message */}
-                                <li>
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push("/lecturer/course/messages")}
-                                        className={`group cursor-pointer w-full rounded-md px-2.5 py-2 text-sm flex items-center gap-2 transition ${isMessages
-                                            ? "bg-brand/10 text-brand ring-1 ring-brand/20"
-                                            : "text-slate-700 hover:bg-slate-100"
-                                            }`}
-                                    >
-                                        <MessageSquareDot className={`size-4 transition-colors ${isMessages ? "text-brand" : "text-slate-400 group-hover:text-slate-600"}`} />
-                                        <span className={`${collapsed ? "hidden" : "flex-1 text-left"}`}>Message</span>
                                     </button>
                                 </li>
                                 {/* Reports */}
