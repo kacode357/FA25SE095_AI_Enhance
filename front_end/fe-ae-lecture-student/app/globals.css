@@ -7,7 +7,7 @@
 @import "../styles/support-request-rejection-reason.css";
 @import "../styles/support-request-status.css";
 @import "../styles/support-request-priority.css";
-
+@import "../styles/student-shell.css";
 :root {
   --font-sans: 'Sansation', 'Roboto', sans-serif;
 
@@ -360,6 +360,68 @@ header.fixed, header {
 .btn-blue-slow:hover::after {
   clip-path: circle(150% at 50% 50%);
 }
+/* Joyride primary button = .btn-gradient */
+.react-joyride__tooltip button[data-action="primary"],
+.react-joyride__button--primary {
+  background: linear-gradient(135deg, #f4a7df 0%, #7f71f4 100%);
+  color: #ffffff;
+  border-radius: 7px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: color 0.7s ease-in-out;
+
+  /* 🔥 kill viền + shadow */
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Hover overlay giống .btn-gradient */
+.react-joyride__tooltip button[data-action="primary"]::after,
+.react-joyride__button--primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #13127d;
+  z-index: -1;
+  transition: clip-path 0.7s cubic-bezier(0.2, 1, 0.3, 1);
+  clip-path: circle(0% at 50% 50%);
+}
+
+.react-joyride__tooltip button[data-action="primary"]:hover::after,
+.react-joyride__button--primary:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
+
+/* 🔥 tắt luôn outline khi focus/focus-visible */
+.react-joyride__tooltip button[data-action="primary"]:focus,
+.react-joyride__tooltip button[data-action="primary"]:focus-visible,
+.react-joyride__button--primary:focus,
+.react-joyride__button--primary:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+/* === Joyride SKIP button === */
+.react-joyride__tooltip button[data-action="skip"],
+.react-joyride__button--skip {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-weight: 500;
+  padding: 8px 10px;
+  transition: color 0.2s ease;
+}
+
+.react-joyride__tooltip button[data-action="skip"]:hover,
+.react-joyride__button--skip:hover {
+  color: var(--brand) !important;
+}
+
+
 /* Utility: keep scrollbar space to avoid layout shift (where supported) */
 @supports (scrollbar-gutter: stable) {
   .scrollbar-stable {

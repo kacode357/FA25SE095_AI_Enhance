@@ -10,15 +10,17 @@ import { clearEncodedUser } from "@/utils/secure-user";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
-
+const REMEMBER_ME = "rememberMe";
+// Xóa toàn bộ token ở cookie + sessionStorage
 function clearTokens() {
   Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
   Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
+  Cookies.remove(REMEMBER_ME, { path: "/" });
+
   if (typeof window !== "undefined") {
     sessionStorage.removeItem(ACCESS_TOKEN_KEY);
     sessionStorage.removeItem(REFRESH_TOKEN_KEY);
   }
-  console.log("[auth] tokens cleared (cookies + sessionStorage)");
 }
 
 export function useLogout() {
@@ -30,35 +32,39 @@ export function useLogout() {
       try {
         let data: LogoutResponse | null = null;
 
-        if (typeof AuthService.logout === "function") {
-          const res = (await AuthService.logout(payload as LogoutPayload)) as unknown;
+        if (typeof AuthService.logout === "function" && payload) {
+          const res = (await AuthService.logout(payload)) as unknown;
 
+          // chấp nhận cả dạng ApiResponse<LogoutResponse> lẫn LogoutResponse thuần
           if (
             res &&
             typeof res === "object" &&
             "data" in (res as Record<string, unknown>) &&
             "status" in (res as Record<string, unknown>)
           ) {
-            const env = res as ApiResponse<LogoutResponse>;
-            console.log("[auth] logout:", env.status, env.message);
-            data = env.data;
+            data = (res as ApiResponse<LogoutResponse>).data;
           } else {
             data = (res as LogoutResponse) ?? null;
           }
         }
 
-        // Clear token + clear encrypted user (a:u) rồi điều hướng
+        // Logout = clear token + clear user + về /login
         clearTokens();
         clearEncodedUser();
 
-        if (typeof window !== "undefined") window.location.href = "/login";
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
 
         return data;
-      } catch (err) {
-        console.error("[auth] logout error:", err);
+      } catch {
+        // Trong mọi trường hợp lỗi vẫn clear session + cookie và về /login
         clearTokens();
         clearEncodedUser();
-        if (typeof window !== "undefined") window.location.href = "/login";
+
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
         return null;
       } finally {
         setLoading(false);

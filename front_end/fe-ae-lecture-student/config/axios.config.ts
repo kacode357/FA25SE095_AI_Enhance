@@ -1,12 +1,13 @@
 // config/axios.config.ts
+import axios, { AxiosError, AxiosInstance } from "axios";
+import Cookies from "js-cookie";
+import { toast } from "sonner";
+
 import {
   updateAccessToken,
   updateRefreshToken,
 } from "@/utils/auth/access-token";
 import { clearEncodedUser } from "@/utils/secure-user";
-import axios, { AxiosError, AxiosInstance } from "axios";
-import Cookies from "js-cookie";
-import { toast } from "sonner";
 
 /** ===== ENVs ===== */
 const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;
@@ -22,24 +23,27 @@ const REFRESH_TOKEN_KEY = "refreshToken";
 function readAccessToken(): string | undefined {
   const fromCookie = Cookies.get(ACCESS_TOKEN_KEY);
   if (fromCookie) return fromCookie;
+
   if (typeof window !== "undefined") {
     const fromSession = window.sessionStorage.getItem(ACCESS_TOKEN_KEY);
     return fromSession || undefined;
   }
+
   return undefined;
 }
 
-/** Chỉ đọc refreshToken từ cookie */
+/** Chỉ đọc refreshToken từ cookie (dùng cho flow refresh) */
 function readRefreshTokenFromCookie(): string | undefined {
   const token = Cookies.get(REFRESH_TOKEN_KEY);
   return token || undefined;
 }
 
-/** Decode role từ JWT payload (để chặn API theo route/role nếu cần) */
+/** Decode role từ JWT payload (dùng để chặn route sai role) */
 function readRoleFromToken(token?: string): string | undefined {
   if (!token) return undefined;
   const parts = token.split(".");
   if (parts.length < 2) return undefined;
+
   try {
     const payload = JSON.parse(atob(parts[1]));
     return payload.role;
@@ -52,6 +56,7 @@ function readRoleFromToken(token?: string): string | undefined {
 function pickErrorMessage(data: any, fallback: string): string {
   if (!data) return fallback;
   if (typeof data === "string") return data;
+
   return (
     data.message ||
     data.error ||
@@ -67,6 +72,7 @@ function forceLogoutToLogin() {
 
   Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
   Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
+
   try {
     window.sessionStorage.removeItem(ACCESS_TOKEN_KEY);
     window.sessionStorage.removeItem(REFRESH_TOKEN_KEY);
@@ -99,7 +105,7 @@ const createAxiosInstance = (
     validateStatus: () => true,
   });
 
-  // ----- Request: gắn Bearer + chặn theo role (nếu có role) -----
+  /** Request: gắn Bearer + chặn theo role (student/lecturer) */
   instance.interceptors.request.use((config) => {
     if (typeof window !== "undefined") {
       const path = window.location.pathname;
@@ -114,6 +120,7 @@ const createAxiosInstance = (
         (config.headers as any).Authorization = `Bearer ${token}`;
       }
 
+      // Nếu route là student/lecturer nhưng role không khớp -> cancel request
       if (role) {
         if (isStudentRoute && role !== "Student") {
           return Promise.reject(new axios.Cancel("role-mismatch: student route"));
@@ -125,10 +132,11 @@ const createAxiosInstance = (
         }
       }
     }
+
     return config;
   });
 
-  // ----- Response + refresh token -----
+  /** Response: xử lý 401 + refresh token + toast lỗi chung */
   instance.interceptors.response.use(
     async (response) => {
       const { status, data, config } = response;
@@ -142,12 +150,15 @@ const createAxiosInstance = (
 
         // Login / refresh-token bị 401 -> báo lỗi, không auto refresh
         if (isAuthLogin || isAuthRefresh) {
-          const msg = pickErrorMessage(data, response.statusText || "Unauthorized");
+          const msg = pickErrorMessage(
+            data,
+            response.statusText || "Unauthorized"
+          );
           toast.error(`${msg}`);
           return response;
         }
 
-        // Đã retry rồi mà vẫn 401 → logout
+        // Đã retry rồi mà vẫn 401 -> buộc logout
         if (originalRequest._retry) {
           forceLogoutToLogin();
           return response;
@@ -155,7 +166,7 @@ const createAxiosInstance = (
 
         const refreshToken = readRefreshTokenFromCookie();
 
-        // Không có refreshToken (không remember / hết hạn) → logout
+        // Không có refreshToken (không remember / hết hạn) -> logout
         if (!refreshToken) {
           forceLogoutToLogin();
           return response;
@@ -203,7 +214,7 @@ const createAxiosInstance = (
             return response;
           }
 
-          // giao cho utils/auth-access-token lo chuyện lưu + TTL
+          // Giao cho utils/auth-access-token lo chuyện lưu + TTL
           updateAccessToken(newAccessToken);
           if (newRefreshToken) {
             updateRefreshToken(newRefreshToken);
@@ -213,6 +224,7 @@ const createAxiosInstance = (
           (originalRequest.headers as any).Authorization =
             `Bearer ${newAccessToken}`;
 
+          // Gửi lại request gốc với token mới
           return instance(originalRequest);
         } catch {
           toast.error("Your session has expired. Please sign in again.");
@@ -221,8 +233,9 @@ const createAxiosInstance = (
         }
       }
 
-      // If the request set suppressToast, skip global toasts for this response
       const reqConfig: any = config || {};
+
+      // Nếu request set suppressToast thì skip toast lỗi global
       if (reqConfig.suppressToast) {
         return response;
       }
@@ -242,6 +255,7 @@ const createAxiosInstance = (
       if (axios.isCancel(error)) {
         return Promise.reject(error);
       }
+
       toast.error(error.message || "Unable to connect to server");
       return Promise.reject(error);
     }

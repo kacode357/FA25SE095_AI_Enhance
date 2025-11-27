@@ -1,26 +1,25 @@
 // app/student/components/header.tsx
-
 "use client";
 
-import Cookies from "js-cookie";
-import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import Cookies from "js-cookie";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
-import { useNotificationHub } from "@/hooks/hubnotification/useNotificationHub";
-
-import Logo from "@/components/logo/Logo";
-import NotificationsMenu, {
-  NotificationItem,
-} from "@/components/notifications/NotificationsMenu";
-import UserMenu from "@/components/user/UserMenu";
-import { getSavedAccessToken } from "@/utils/auth/access-token";
-import { useStudentNav } from "./nav-items";
-
+import { useNotificationHub } from "@/hooks/hubNotification/useNotificationHub";
 import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
 import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
 
+import { getSavedAccessToken } from "@/utils/auth/access-token";
+
+import Logo from "@/components/logo/Logo";
+import UserMenu from "@/components/user/UserMenu";
+import NotificationsMenu, {
+  NotificationItem,
+} from "@/components/notifications/NotificationsMenu";
+
+import { useStudentNav } from "./nav-items";
 import CourseCodeSearch from "./CourseCodeSearch";
 
 const COOKIE_ACCESS_TOKEN_KEY = "accessToken";
@@ -40,14 +39,11 @@ export default function Header() {
   const { getNotifications } = useGetNotifications();
   const { markAllNotificationsAsRead } = useMarkAllNotificationsAsRead();
 
-  /** Lấy token cho hub */
   const getTokenForHub = useCallback(() => {
     return getSavedAccessToken() || "";
   }, []);
 
-  /** Nhận noti real-time từ Hub */
   const handleHubNotification = useCallback((raw: any) => {
-    // map raw BE -> UI type
     const incoming: NotificationItem = {
       id: raw.id,
       title: raw.title,
@@ -63,14 +59,12 @@ export default function Header() {
     }
   }, []);
 
-  /** HUB connection */
   const { connect, disconnect, connected, connecting, lastError } =
     useNotificationHub({
       getAccessToken: getTokenForHub,
       onNotification: handleHubNotification,
     });
 
-  /** Load lịch sử notifications lần đầu */
   useEffect(() => {
     if (!user?.id || historyLoaded) return;
 
@@ -95,7 +89,6 @@ export default function Header() {
     })();
   }, [user?.id, historyLoaded, getNotifications]);
 
-  /** Kết nối hub khi có user + token */
   useEffect(() => {
     if (!user?.id) return;
 
@@ -103,7 +96,7 @@ export default function Header() {
     if (!token) return;
 
     connect().catch(() => {
-      // ignore, UI đã show status qua lastError
+      // ignore
     });
 
     return () => {
@@ -111,7 +104,6 @@ export default function Header() {
     };
   }, [user?.id, connect, disconnect]);
 
-  /** Logout */
   const handleLogout = () => {
     setDropdownOpen(false);
     disconnect();
@@ -123,12 +115,10 @@ export default function Header() {
     });
   };
 
-  /** Mở menu notifications => mark all as read */
   const handleNotificationOpenChange = (v: boolean) => {
     setNotificationOpen(v);
 
     if (v && unreadCount > 0) {
-      // update UI
       setNotifications((prev) =>
         prev.map((n) => ({
           ...n,
@@ -137,9 +127,8 @@ export default function Header() {
       );
       setUnreadCount(0);
 
-      // call BE
       markAllNotificationsAsRead().catch(() => {
-        // BE lỗi thì lần sau list từ server vẫn phản ánh đúng
+        // ignore
       });
     }
 
@@ -148,35 +137,29 @@ export default function Header() {
 
   return (
     <header
-      className="fixed top-0 z-50 w-full h-16 backdrop-blur-sm"
-      style={{
-        background: "rgba(255,255,255,0.72)",
-        borderBottom: "1px solid var(--border)",
-      }}
+      className="student-header fixed top-0 z-50 w-full h-16"
+      data-tour="header-shell"
     >
-      {/* Wrapper căn giữa header */}
-      <div
-        className="relative mx-auto flex h-full w-full items-center gap-6"
-        style={{ paddingLeft: "2rem", paddingRight: "1rem" }}
-      >
-        {/* Logo + Nav + Search + Right actions */}
-        <div className="flex h-full w-full items-center gap-6">
-          {/* Logo */}
+      <div className="mx-auto flex h-full w-full max-w-7xl items-center gap-4 px-6">
+        {/* LEFT: Logo + Nav */}
+        <div
+          className="flex min-w-0 flex-1 items-center gap-6"
+          data-tour="header-main-nav"
+        >
           <div className="shrink-0">
             <Logo />
           </div>
 
-          {/* Nav links */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6 overflow-x-hidden">
             {navs.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="no-underline"
+                className="no-underline whitespace-nowrap"
                 aria-current={item.isActive ? "page" : undefined}
               >
                 <span
-                  className={`text-base font-medium leading-none transition-colors visited:text-nav ${
+                  className={`text-sm md:text-base font-medium leading-none transition-colors visited:text-nav ${
                     item.isActive
                       ? "text-nav-active"
                       : "text-nav hover:text-nav-active focus:text-nav-active active:text-nav-active"
@@ -187,39 +170,37 @@ export default function Header() {
               </Link>
             ))}
           </nav>
+        </div>
 
-          {/* 🔍 Search course by unique code */}
-          <div className="relative ml-32">
+        {/* RIGHT: Search + Notifications + User */}
+        <div
+          className="flex items-center gap-4 flex-shrink-0"
+          data-tour="header-actions"
+        >
+          {/* Search by code */}
+          <div className="hidden sm:block">
             <CourseCodeSearch />
           </div>
 
-          {/* RIGHT: Notifications + User menu */}
-          <div className="ml-auto flex items-center gap-3">
-            {/* CHUÔNG: bỏ bg/sadow wrapper, chỉ để component */}
-            <div className="flex items-center mr-3">
-              <NotificationsMenu
-                open={notificationOpen}
-                onOpenChange={handleNotificationOpenChange}
-                badgeCount={unreadCount}
-                notifications={notifications}
-                connected={connected}
-                connecting={connecting}
-                lastError={lastError ?? undefined}
-              />
-            </div>
+          <div className="flex items-center gap-3">
+            <NotificationsMenu
+              open={notificationOpen}
+              onOpenChange={handleNotificationOpenChange}
+              badgeCount={unreadCount}
+              notifications={notifications}
+              connected={connected}
+              connecting={connecting}
+              lastError={lastError ?? undefined}
+            />
 
-            {/* User menu vẫn giữ card sáng */}
-            <div className="flex items-center border-slate-100 bg-slate-100 rounded-xl shadow-lg">
-              <UserMenu
-                open={dropdownOpen}
-                onOpenChange={(v) => {
-                  setDropdownOpen(v);
-                  if (v) setNotificationOpen(false);
-                }}
-                user={user ?? null}
-                onLogout={handleLogout}
-              />
-            </div>
+            <UserMenu
+              open={dropdownOpen}
+              onOpenChange={(v) => {
+                setDropdownOpen(v);
+                if (v) setNotificationOpen(false);
+              }}
+              onLogout={handleLogout}
+            />
           </div>
         </div>
       </div>

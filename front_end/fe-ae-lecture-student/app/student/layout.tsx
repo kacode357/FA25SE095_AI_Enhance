@@ -2,6 +2,7 @@
 "use client";
 
 import Header from "./components/header";
+import HotkeySettings from "./components/HotkeySettings";
 
 export default function StudentLayout({
   children,
@@ -9,10 +10,12 @@ export default function StudentLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="student-shell min-h-screen text-slate-900">
       <Header />
-     
       <main className="pt-16">{children}</main>
+
+      {/* Floating hotkey button + global listener */}
+      <HotkeySettings />
     </div>
   );
 }

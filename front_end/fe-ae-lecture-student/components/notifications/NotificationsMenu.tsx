@@ -6,7 +6,6 @@ import { Bell } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
-// UI chỉ cần mấy field này
 export type NotificationItem = {
   id: string;
   title: string;
@@ -21,7 +20,6 @@ type Props = {
   badgeCount?: number;
   notifications?: NotificationItem[];
 
-  // trạng thái hub
   connected?: boolean;
   connecting?: boolean;
   lastError?: string;
@@ -46,7 +44,6 @@ export default function NotificationsMenu({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const toggle = () => onOpenChange(!open);
 
-  // Outside click + ESC
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -68,36 +65,30 @@ export default function NotificationsMenu({
       ? badgeCount
       : notifications.filter((n) => !n.isRead).length;
 
-  // status hub
   let statusText = "Disconnected";
-  let statusClass = "text-[11px] mt-0.5 text-red-500";
+  let statusClass = "student-noti-status student-noti-status--disconnected";
 
   if (connecting) {
     statusText = "Connecting...";
-    statusClass = "text-[11px] mt-0.5 text-blue-600";
+    statusClass = "student-noti-status student-noti-status--connecting";
   } else if (connected) {
     statusText = "Connected";
-    statusClass = "text-[11px] mt-0.5 text-emerald-600";
+    statusClass = "student-noti-status student-noti-status--connected";
   } else if (lastError) {
     statusText = "Error";
-    statusClass = "text-[11px] mt-0.5 text-red-500";
+    statusClass = "student-noti-status student-noti-status--error";
   }
 
   return (
     <div ref={rootRef} className="relative">
-      {/* NÚT CHUÔNG — chỉ 1 khung duy nhất */}
+      {/* Nút chuông */}
       <button
         onClick={toggle}
-        className="relative flex items-center justify-center rounded-2xl shadow-sm cursor-pointer transition-transform hover:-translate-y-[1px] focus:outline-none"
+        className="student-header-button student-header-icon-btn relative flex items-center justify-center cursor-pointer focus:outline-none"
         aria-label="Notifications"
         aria-expanded={open ? "true" : "false"}
         aria-haspopup="menu"
-        style={{
-          padding: "0.6rem",
-        background: "rgba(255, 255, 255, 0.12)",
-          border: "1px solid rgba(129, 140, 248, 0.35)",
-          color: "var(--accent)",
-        }}
+        style={{ padding: "0.6rem" }}
       >
         <Bell className="w-5 h-5" />
         {effectiveBadge > 0 && (
@@ -118,38 +109,27 @@ export default function NotificationsMenu({
         )}
       </button>
 
-      {/* DROPDOWN */}
+      {/* Dropdown */}
       {open && (
         <motion.div
           role="menu"
           initial={{ opacity: 0, y: -6, scale: 0.99 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
-          className="absolute right-0 top-12 w-80 rounded-2xl shadow-lg py-2 z-50"
-          style={{
-            background: "var(--card)",
-            border: "1px solid rgba(15,23,42,0.06)",
-            color: "var(--foreground)",
-          }}
+          className="student-popover absolute right-0 top-12 w-80 py-2 z-50"
         >
           {/* Header + status */}
-          <div
-            className="px-4 py-2 flex items-center justify-between gap-2"
-            style={{ borderBottom: "1px solid var(--border)" }}
-          >
+          <div className="px-4 py-2 flex items-center justify-between gap-2 border-b student-popover-divider">
             <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>
               Notifications
             </h3>
             <span className={statusClass}>{statusText}</span>
           </div>
 
-          {/* List notifications */}
+          {/* List */}
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div
-                className="px-4 py-3 text-sm"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <div className="px-4 py-3 text-sm student-text-muted">
                 You&apos;re all caught up. No notifications yet.
               </div>
             ) : (
@@ -170,18 +150,12 @@ export default function NotificationsMenu({
                       {item.title || "New notification"}
                     </p>
                     {item.content && (
-                      <p
-                        className="text-xs mt-1"
-                        style={{ color: "var(--text-muted)" }}
-                      >
+                      <p className="text-xs mt-1 student-text-muted">
                         {item.content}
                       </p>
                     )}
                     {item.createdAt && (
-                      <p
-                        className="text-[11px] mt-1 text-right"
-                        style={{ color: "var(--text-muted)" }}
-                      >
+                      <p className="text-[11px] mt-1 text-right student-text-muted">
                         {formatTime(item.createdAt)}
                       </p>
                     )}
@@ -191,11 +165,8 @@ export default function NotificationsMenu({
             )}
           </div>
 
-          {/* Footer: View all */}
-          <div
-            className="px-4 py-2 flex justify-end"
-            style={{ borderTop: "1px solid var(--border)" }}
-          >
+          {/* Footer */}
+          <div className="px-4 py-2 flex justify-end border-t student-popover-divider">
             <Link
               href="/student/notifications"
               className="text-xs font-medium"

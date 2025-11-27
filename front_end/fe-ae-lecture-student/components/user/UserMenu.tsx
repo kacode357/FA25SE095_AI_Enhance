@@ -3,7 +3,6 @@
 
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   MouseEvent as ReactMouseEvent,
@@ -14,33 +13,23 @@ import Link from "next/link";
 
 import { loadDecodedUser } from "@/utils/secure-user";
 import type { UserProfile } from "@/types/user/user.response";
-
-type UserLite =
-  | {
-      id?: string;
-      firstName?: string;
-      lastName?: string;
-      email?: string;
-      role?: string;
-    }
-  | null;
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getUserShortName } from "@/utils/user/display-name";
 
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  user: UserLite;
   onLogout: () => void;
 };
 
 const STORAGE_EVENT_NAME = "app:user-updated";
 
-export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) {
+export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
   const [decodedUser, setDecodedUser] = useState<UserProfile | null>(null);
 
-  // Load encoded user + listen event
   useEffect(() => {
     let mounted = true;
 
@@ -73,27 +62,14 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
     };
   }, []);
 
-  const effectiveFirstName = decodedUser?.firstName || user?.firstName || "";
-  const effectiveLastName = decodedUser?.lastName || user?.lastName || "";
-  const effectiveEmail = decodedUser?.email || user?.email || "";
+  // Only decodedUser
+  const fullName = decodedUser?.fullName || "Student";
+  const email = decodedUser?.email || "";
+  const profilePictureUrl = decodedUser?.profilePictureUrl || "";
+  const subscriptionTier = decodedUser?.subscriptionTier || "Basic";
 
-  const subscriptionTier = decodedUser?.subscriptionTier?.trim() || "Basic";
-
-  const initials = useMemo(() => {
-    const f = effectiveFirstName?.trim();
-    const l = effectiveLastName?.trim();
-
-    if (!f && !l) return "ST";
-    if (f && !l) return f[0]?.toUpperCase() || "U";
-    if (!f && l) return l[0]?.toUpperCase() || "U";
-
-    return `${f[0]?.toUpperCase() ?? ""}${l[0]?.toUpperCase() ?? ""}` || "U";
-  }, [effectiveFirstName, effectiveLastName]);
-
-  const fullName = useMemo(() => {
-    const name = `${effectiveFirstName} ${effectiveLastName}`.trim();
-    return name || "Student";
-  }, [effectiveFirstName, effectiveLastName]);
+  const displayName = fullName || "Student";
+  const shortName = getUserShortName(fullName);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -111,7 +87,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
     onOpenChange(!open);
   };
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
     onOpenChange(false);
     onLogout();
   };
@@ -122,17 +98,25 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
       <button
         type="button"
         onClick={handleToggle}
-        className="flex items-center gap-2 rounded-full border border-[rgba(129,140,248,0.35)] bg-white px-3 py-1.5 text-sm shadow-sm transition hover:border-brand/60 hover:bg-slate-50"
+        className="student-header-button flex items-center gap-2 px-3 py-1.5 text-sm"
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold uppercase text-brand">
-          {initials}
-        </div>
+        {/* Avatar với fallback text từ util */}
+        <Avatar className="h-8 w-8">
+          {profilePictureUrl ? (
+            <AvatarImage src={profilePictureUrl} alt={displayName} />
+          ) : (
+            <AvatarFallback className="text-[11px] font-semibold uppercase text-brand">
+              {shortName}
+            </AvatarFallback>
+          )}
+        </Avatar>
+
         <div className="hidden text-left text-xs sm:block">
           <div className="max-w-[140px] truncate font-medium text-nav">
-            {fullName}
+            {displayName}
           </div>
           <div className="max-w-[160px] truncate text-[11px] text-muted-foreground">
-            {effectiveEmail || "No email"}
+            {email || "No email"}
           </div>
         </div>
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -158,10 +142,10 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
                 : { opacity: 0, y: -4, scale: 0.98 }
             }
             transition={{ duration: 0.16 }}
-            className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-[rgba(129,140,248,0.35)] bg-white/95 p-3 text-sm shadow-lg backdrop-blur"
+            className="student-popover absolute right-0 z-50 mt-2 w-56 p-3 text-sm backdrop-blur"
           >
             {/* Current plan */}
-            <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+            <div className="student-popover-section-muted mb-3 flex items-center justify-between gap-2 px-3 py-2 text-xs">
               <div className="flex flex-col">
                 <span className="text-[11px] text-muted-foreground">
                   Current plan
@@ -172,7 +156,8 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
               </div>
               <Link
                 href="/student/my-subscription"
-                className="inline-flex items-center gap-1 rounded-full border border-brand/40 px-2 py-1 text-[11px] font-medium text-brand hover:border-brand hover:bg-brand/5"
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium text-brand hover:bg-brand/5"
+                style={{ borderColor: "var(--border)" }}
                 onClick={() => onOpenChange(false)}
               >
                 Manage
@@ -180,7 +165,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
               </Link>
             </div>
 
-            <div className="my-2 h-px bg-slate-100" />
+            <div className="my-2 h-px border-t student-popover-divider" />
 
             {/* Actions */}
             <div className="space-y-1">
@@ -194,7 +179,7 @@ export default function UserMenu({ open, onOpenChange, user, onLogout }: Props) 
 
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="mt-1 flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
               >
                 <span>Log out</span>

@@ -1,0 +1,125 @@
+/* styles/student-shell.css */
+
+/* Layout tổng cho student area */
+.student-shell {
+  background: #f8fafc; /* giống bg-slate-50 */
+  color: var(--foreground);
+}
+
+/* Header bar */
+.student-header {
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+
+/* Nút / surface trên header (search, user, notifications) */
+.student-header-button {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.student-header-button:hover {
+  background: #f1f5f9; /* gần với hover bg-slate-50 */
+}
+
+/* Icon-only button trên header (chuông) */
+.student-header-icon-btn {
+  border-radius: 16px;
+}
+
+/* Keycap nhỏ (phím F) */
+.student-header-keycap {
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* Popover/dropdown chung (user menu, notifications, search panel) */
+.student-popover {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  color: var(--foreground);
+}
+
+/* Section nhạt trong popover (ví dụ Current plan box) */
+.student-popover-section-muted {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+/* Header/footer line trong popover */
+.student-popover-divider {
+  border-color: var(--border);
+}
+
+/* Badge / chip nhỏ (mã uniqueCode) */
+.student-badge-pill {
+  border-radius: 9999px;
+  background: rgba(127, 113, 244, 0.1);
+  color: var(--brand, #7f71f4);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Avatar vòng tròn nhẹ màu brand */
+.student-avatar-circle {
+  border-radius: 9999px;
+  background: rgba(127, 113, 244, 0.1);
+  color: var(--brand, #7f71f4);
+}
+
+/* Backdrop overlay cho command palette */
+.student-overlay-backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Panel command palette (search by code) */
+.student-command-panel {
+  max-width: 42rem;
+  width: 100%;
+  border-radius: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Command input row */
+.student-command-input-row {
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Command list body */
+.student-command-body {
+  background: var(--card);
+}
+
+/* Muted text trong list */
+.student-text-muted {
+  color: var(--text-muted, #64748b);
+}
+
+/* Notification status text */
+.student-noti-status {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* Những trạng thái riêng (color) */
+.student-noti-status--connected {
+  color: #059669;
+}
+.student-noti-status--connecting {
+  color: #2563eb;
+}
+.student-noti-status--error,
+.student-noti-status--disconnected {
+  color: #dc2626;
+}

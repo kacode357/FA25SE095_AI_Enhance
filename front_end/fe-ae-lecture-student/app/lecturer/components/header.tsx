@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
-import { useNotificationHub } from "@/hooks/hubnotification/useNotificationHub";
+import { useNotificationHub } from "@/hooks/hubNotification/useNotificationHub";
 
 import Logo from "@/components/logo/Logo";
 import NotificationsMenu, {

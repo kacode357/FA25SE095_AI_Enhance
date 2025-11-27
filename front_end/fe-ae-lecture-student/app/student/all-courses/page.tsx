@@ -19,6 +19,9 @@ import type {
   CoursesByTermYearItem,
 } from "@/types/courses/course.response";
 
+// 🔹 NEW: global tour component (ở app/student/components)
+import AllCoursesTour from "../components/AllCoursesTour";
+
 type SortBy = "CreatedAt" | "Name" | "EnrollmentCount";
 type SortDirection = "desc" | "asc";
 
@@ -67,7 +70,7 @@ const mapTermCourseToAvailable = (
   enrollmentStatus: null,
   canJoin: c.canEnroll,
   joinUrl: null,
-  announcement: null
+  announcement: null,
 });
 
 export default function AllCoursesPage() {
@@ -273,7 +276,7 @@ export default function AllCoursesPage() {
   const isLoading = usingTermFilter ? termCoursesLoading : loading;
 
   return (
-    <div className="py-6">
+    <div className="py-6" data-tour="allcourses-layout">
       <div
         className="mx-auto"
         style={{
@@ -284,7 +287,10 @@ export default function AllCoursesPage() {
       >
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
           {/* LEFT 4: sidebar */}
-          <aside className="lg:col-span-4">
+          <aside
+            className="lg:col-span-4"
+            data-tour="allcourses-sidebar-filters"
+          >
             <SidebarFilters
               courseCode={courseCode}
               lecturerName={lecturerName}
@@ -301,47 +307,54 @@ export default function AllCoursesPage() {
 
           {/* RIGHT 6: kết quả */}
           <section className="lg:col-span-6 space-y-4">
-            <ResultsHeader
-              total={totalItems}
-              page={displayPage}
-              pageSize={displayPageSize}
-              sortBy={sortBy}
-              onSortChange={handleSortChange}
-            />
-
-            {isLoading && (
-              <div
-                className="flex justify-center py-10"
-                style={{ color: "var(--brand)" }}
-              >
-                <Loader2 className="w-6 h-6 animate-spin" />
-                <span className="ml-2 text-sm">Loading courses...</span>
-              </div>
-            )}
-
-            {!isLoading && displayCourses.length === 0 && (
-              <div className="text-center py-14">
-                <BookOpen
-                  className="w-10 h-10 mx-auto mb-2"
-                  style={{ color: "var(--muted)" }}
-                />
-                <p style={{ color: "var(--text-muted)" }}>
-                  No available courses found.
-                </p>
-              </div>
-            )}
-
-            {!isLoading && displayCourses.length > 0 && (
-              <CourseList
-                courses={displayCourses}
-                loadingCourseId={loadingCourseId}
-                onGoToCourse={handleGoToCourse}
-                onJoinClick={handleJoinClick}
+            <div data-tour="allcourses-results-header">
+              <ResultsHeader
+                total={totalItems}
+                page={displayPage}
+                pageSize={displayPageSize}
+                sortBy={sortBy}
+                onSortChange={handleSortChange}
               />
-            )}
+            </div>
+
+            <div data-tour="allcourses-course-list">
+              {isLoading && (
+                <div
+                  className="flex justify-center py-10"
+                  style={{ color: "var(--brand)" }}
+                >
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span className="ml-2 text-sm">Loading courses...</span>
+                </div>
+              )}
+
+              {!isLoading && displayCourses.length === 0 && (
+                <div className="text-center py-14">
+                  <BookOpen
+                    className="w-10 h-10 mx-auto mb-2"
+                    style={{ color: "var(--muted)" }}
+                  />
+                  <p style={{ color: "var(--text-muted)" }}>
+                    No available courses found.
+                  </p>
+                </div>
+              )}
+
+              {!isLoading && displayCourses.length > 0 && (
+                <CourseList
+                  courses={displayCourses}
+                  loadingCourseId={loadingCourseId}
+                  onGoToCourse={handleGoToCourse}
+                  onJoinClick={handleJoinClick}
+                />
+              )}
+            </div>
           </section>
         </div>
       </div>
+
+      {/* 🔹 Tour overlay cho trang /student/all-courses */}
+      <AllCoursesTour />
     </div>
   );
 }

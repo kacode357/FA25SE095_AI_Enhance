@@ -11,9 +11,14 @@ import {
   MessageSquare,
   FilePlus2,
   Headset,
-  ListTodo, // 👈 thêm icon cho Assignments
+  ListTodo,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import {
+  loadHotkeysFromStorage,
+  HOTKEY_CHANGED_EVENT,
+  type HotkeyConfig,
+} from "@/utils/hotkeys";
 
 export default function CoursesLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -24,9 +29,11 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
 
   const basePath = `/student/courses/${courseId}`;
 
+  const [reportHotkeyLabel, setReportHotkeyLabel] = useState<string>("");
+
   const tabs = [
     { label: "Course", href: `${basePath}`, icon: BookOpen },
-    { label: "Assignments", href: `${basePath}/assignments`, icon: ListTodo }, // 👈 tab mới
+    { label: "Assignments", href: `${basePath}/assignments`, icon: ListTodo },
     { label: "Groups", href: `${basePath}/groups`, icon: Users },
     { label: "My Groups", href: `${basePath}/my-groups`, icon: ListChecks },
     { label: "Grades", href: `${basePath}/grades`, icon: BarChart3 },
@@ -39,34 +46,38 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
+  // 🔥 Nghe hotkey event "open report" (bắn từ HotkeySettings)
   useEffect(() => {
     if (!courseId) return;
 
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      const typing =
-        t &&
-        (t.tagName === "INPUT" ||
-          t.tagName === "TEXTAREA" ||
-          t.isContentEditable);
-
-      if (typing) return;
-
-      if (
-        (e.key === "r" || e.key === "R") &&
-        !e.shiftKey &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.altKey
-      ) {
-        e.preventDefault();
-        router.push(`${basePath}/reports/create`);
-      }
+    const handler = () => {
+      router.push(`${basePath}/reports/create`);
     };
 
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("student:hotkey:open-report-create", handler);
+    return () => {
+      window.removeEventListener("student:hotkey:open-report-create", handler);
+    };
   }, [basePath, router, courseId]);
+
+  // 🔥 Đọc hotkey hiện tại + subscribe khi user đổi trong HotkeySettings
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const cfg = loadHotkeysFromStorage();
+    setReportHotkeyLabel(cfg.openReportCreate.toUpperCase());
+
+    const onHotkeyChanged = (e: Event) => {
+      const ev = e as CustomEvent<HotkeyConfig>;
+      if (!ev.detail) return;
+      setReportHotkeyLabel(ev.detail.openReportCreate.toUpperCase());
+    };
+
+    window.addEventListener(HOTKEY_CHANGED_EVENT, onHotkeyChanged);
+    return () => {
+      window.removeEventListener(HOTKEY_CHANGED_EVENT, onHotkeyChanged);
+    };
+  }, []);
 
   return (
     <div className="flex flex-col">
@@ -82,6 +93,7 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
           className="mx-auto flex items-center justify-between gap-6"
           style={{ maxWidth: 1280, padding: "8px 24px" }}
         >
+          {/* Tabs */}
           <div className="flex items-center gap-6">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -106,6 +118,7 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
             })}
           </div>
 
+          {/* View Report button + hotkey label */}
           {courseId && (
             <button
               type="button"
@@ -114,16 +127,22 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
                 "hidden sm:inline-flex items-center gap-2 px-3 py-2 text-sm"
               )}
               onClick={() => router.push(`${basePath}/reports/create`)}
-              title="View Report (R)"
+              title={
+                reportHotkeyLabel
+                  ? `View Report (${reportHotkeyLabel})`
+                  : "View Report"
+              }
             >
               <FilePlus2 className="w-4 h-4" />
               <span>View Report</span>
-              <kbd
-                className="ml-1 hidden md:inline-block rounded px-1 text-[10px]"
-                style={{ background: "rgba(255,255,255,.2)" }}
-              >
-                R
-              </kbd>
+              {reportHotkeyLabel && (
+                <kbd
+                  className="ml-1 hidden md:inline-block rounded px-1 text-[10px]"
+                  style={{ background: "rgba(255,255,255,.2)" }}
+                >
+                  {reportHotkeyLabel}
+                </kbd>
+              )}
             </button>
           )}
         </div>
