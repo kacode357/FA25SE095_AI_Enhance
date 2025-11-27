@@ -95,7 +95,7 @@ const createAxiosInstance = (
   const instance = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json; charset=UTF-8" },
-    timeout: opts.timeout ?? 20000,
+    timeout: opts.timeout ?? 30000,
     validateStatus: () => true,
   });
 
