@@ -11,7 +11,7 @@ const RAW_NAVS: NavItem[] = [
   { label: "Home",           href: "/home" },
   { label: "All Courses",    href: "/all-courses" },
   { label: "My Courses",     href: "/my-courses" },
-  { label: "My Assignments", href: "/my-assignments" },
+  { label: "Dashboard",      href: "/my-assignments" },
 ];
 
 // Hook trả về nav đã chuẩn hoá: fullHref + isActive

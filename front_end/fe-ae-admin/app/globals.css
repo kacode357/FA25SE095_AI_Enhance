@@ -40,17 +40,8 @@ body {
 
 body {
   margin: 0;
-  background: radial-gradient(
-      1400px 900px at 85% -10%,
-      color-mix(in oklab, var(--brand) 12%, transparent),
-      transparent
-    ),
-    radial-gradient(
-      900px 700px at 0% 100%,
-      color-mix(in oklab, var(--brand) 8%, transparent),
-      transparent
-    ),
-    linear-gradient(180deg, #f7fafc, #f8fbff);
+    /* Use Tailwind `slate-50` equivalent for a very light neutral background. */
+    background: #f8fafc;
   color: var(--foreground);
   /* Global font for lecture-student app */
   font-family: var(--font-sans);
@@ -119,6 +110,14 @@ select {
 }
 .visited\:text-nav:visited {
   color: var(--nav) !important;
+}
+
+/* Ensure the top header is always a solid background (no translucency) */
+header.fixed, header {
+  background-color: #ffffff !important; /* solid white */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
 }
 
 .card {
@@ -354,6 +353,68 @@ select {
 .btn-blue-slow:hover::after {
   clip-path: circle(150% at 50% 50%);
 }
+/* Joyride primary button = .btn-gradient */
+.react-joyride__tooltip button[data-action="primary"],
+.react-joyride__button--primary {
+  background: linear-gradient(135deg, #f4a7df 0%, #7f71f4 100%);
+  color: #ffffff;
+  border-radius: 7px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: color 0.7s ease-in-out;
+
+  /* 🔥 kill viền + shadow */
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Hover overlay giống .btn-gradient */
+.react-joyride__tooltip button[data-action="primary"]::after,
+.react-joyride__button--primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #13127d;
+  z-index: -1;
+  transition: clip-path 0.7s cubic-bezier(0.2, 1, 0.3, 1);
+  clip-path: circle(0% at 50% 50%);
+}
+
+.react-joyride__tooltip button[data-action="primary"]:hover::after,
+.react-joyride__button--primary:hover::after {
+  clip-path: circle(150% at 50% 50%);
+}
+
+/* 🔥 tắt luôn outline khi focus/focus-visible */
+.react-joyride__tooltip button[data-action="primary"]:focus,
+.react-joyride__tooltip button[data-action="primary"]:focus-visible,
+.react-joyride__button--primary:focus,
+.react-joyride__button--primary:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+/* === Joyride SKIP button === */
+.react-joyride__tooltip button[data-action="skip"],
+.react-joyride__button--skip {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-weight: 500;
+  padding: 8px 10px;
+  transition: color 0.2s ease;
+}
+
+.react-joyride__tooltip button[data-action="skip"]:hover,
+.react-joyride__button--skip:hover {
+  color: var(--brand) !important;
+}
+
+
 /* Utility: keep scrollbar space to avoid layout shift (where supported) */
 @supports (scrollbar-gutter: stable) {
   .scrollbar-stable {
@@ -361,43 +422,17 @@ select {
   }
 }
 
-/* DateTimePicker: enable smooth touchpad/touch scrolling in small scrollable lists */
-.dtp-scroll {
-  -webkit-overflow-scrolling: touch; /* smoother scrolling on iOS / WebKit */
-  touch-action: pan-y; /* allow vertical two-finger swipes on touchpads */
-  overscroll-behavior: contain; /* prevent parent scroll from interfering */
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: rgba(2,6,23,0.12) transparent; /* subtle thumb */
-  --dtp-scroll-thumb-bg: rgba(2,6,23,0.12);
+/* Utility to hide native scrollbars for horizontal carousels */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit browsers */
 }
 
-/* WebKit / Blink scrollbar styling (Chrome, Edge, Safari) */
-.dtp-scroll::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.dtp-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.dtp-scroll::-webkit-scrollbar-thumb {
-  background: var(--dtp-scroll-thumb-bg);
-  border-radius: 9999px;
-  min-height: 28px;
-}
-.dtp-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(2,6,23,0.18);
+/* Subscription price digits shadow */
+.price-digits {
+  text-shadow: 0 10px 30px rgba(15,23,42,0.14), 0 4px 10px rgba(15,23,42,0.06);
 }
 
-/* Make the thumb very subtle (almost invisible) until the user interacts, to avoid the large overlay thumb feeling */
-.dtp-scroll {
-  --dtp-scroll-thumb-opacity: 0.0;
-}
-.dtp-scroll::-webkit-scrollbar-thumb {
-  opacity: var(--dtp-scroll-thumb-opacity);
-  transition: opacity 120ms ease;
-}
-.dtp-scroll:active::-webkit-scrollbar-thumb,
-.dtp-scroll:focus-within::-webkit-scrollbar-thumb,
-.dtp-scroll:hover::-webkit-scrollbar-thumb {
-  --dtp-scroll-thumb-opacity: 1.0;
-}
