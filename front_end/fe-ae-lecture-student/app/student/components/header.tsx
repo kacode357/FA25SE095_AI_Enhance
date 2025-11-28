@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
-import { useNotificationHub } from "@/hooks/hubNotification/useNotificationHub";
+import { useNotificationHub } from "@/hooks/hubnotification/useNotificationHub";
 import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
 import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
 
