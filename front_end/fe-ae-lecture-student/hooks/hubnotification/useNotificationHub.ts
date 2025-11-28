@@ -15,7 +15,7 @@ type Options = {
   onError?: (message: string) => void;
   debounceMs?: number;
 };
-
+// Hook to manage SignalR Notification Hub connection and events
 export function useNotificationHub({
   baseUrl =
     process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL ||
