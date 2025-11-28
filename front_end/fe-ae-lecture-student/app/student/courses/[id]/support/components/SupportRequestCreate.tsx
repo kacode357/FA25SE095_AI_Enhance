@@ -1,8 +1,8 @@
-// app/student/courses/[id]/support/components/SupportRequestCreate.tsx
 "use client";
 
-import { Loader2 } from "lucide-react";
+import type React from "react";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,9 +93,9 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                   </SelectItem>
                   <SelectItem value={String(SupportRequestPriority.High)}>
                     High
-                    </SelectItem>
-                    <SelectItem value={String(SupportRequestPriority.Urgent)}>
-                      Urgent
+                  </SelectItem>
+                  <SelectItem value={String(SupportRequestPriority.Urgent)}>
+                    Urgent
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -160,6 +160,13 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
               className="min-h-[120px] text-sm"
               required
             />
+            <p className="mt-1 text-[11px] text-slate-500">
+              You can upload screenshots or images{" "}
+              <span className="font-semibold">after</span> the request is
+              created, in the{" "}
+              <span className="font-medium">“My Support Requests”</span> list on
+              the right.
+            </p>
           </div>
 
           <div className="flex items-center justify-between pt-2">

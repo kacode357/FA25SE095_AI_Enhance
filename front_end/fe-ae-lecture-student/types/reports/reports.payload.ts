@@ -109,3 +109,14 @@ export interface UpdateReportStatusPayload {
   targetStatus: number;
   comment?: string;
 }
+
+export interface RevertReportPayload {
+  reportId: string;
+  version: number;
+  comment: string;
+}
+
+export interface GetReportHistoryVersionPayload {
+  reportId: string; // path param
+  version: number;  // path param
+}

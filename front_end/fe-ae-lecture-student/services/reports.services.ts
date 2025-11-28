@@ -15,6 +15,7 @@ import type {
   RejectReportPayload,
   RequestReportRevisionPayload,
   ResubmitReportPayload,
+  RevertReportPayload,
   UpdateReportPayload,
   UpdateReportStatusPayload,
 } from "@/types/reports/reports.payload";
@@ -34,6 +35,7 @@ import type {
   MyReportsResponse,
   RejectReportResponse,
   RequestReportRevisionResponse,
+  RevertReportResponse,
   UpdateReportStatusResponse,
   UploadReportFileResponse,
 } from "@/types/reports/reports.response";
@@ -157,7 +159,7 @@ export const ReportsService = {
     return res.data;
   },
 
-  getHistory: async (
+   getHistory: async (
     params: GetReportHistoryQuery
   ): Promise<GetReportHistoryResponse> => {
     const { reportId, ...query } = params;
@@ -174,9 +176,11 @@ export const ReportsService = {
     payload: GetReportHistoryVersionPayload
   ): Promise<GetReportHistoryVersionResponse> => {
     const { reportId, version } = payload;
+
     const res = await api.get<GetReportHistoryVersionResponse>(
       `/Reports/${reportId}/history/${version}`
     );
+
     return res.data;
   },
 
@@ -241,4 +245,11 @@ export const ReportsService = {
     );
     return res.data;
   },
+  revert: async (
+    payload: RevertReportPayload
+  ): Promise<RevertReportResponse> => {
+    const res = await api.post<RevertReportResponse>("/Reports/revert", payload);
+    return res.data;
+  },
+  
 };
