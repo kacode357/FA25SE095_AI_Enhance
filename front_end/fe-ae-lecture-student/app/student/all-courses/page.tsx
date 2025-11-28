@@ -9,6 +9,7 @@ import { useAvailableCourses } from "@/hooks/course/useAvailableCourses";
 import { useJoinCourse } from "@/hooks/enrollments/useJoinCourse";
 import { useTermsQuery } from "@/hooks/term/useTermsQuery";
 import { useCoursesByTermYear } from "@/hooks/course/useCoursesByTermYear";
+import { useLecturers } from "@/hooks/lecturers/useLecturers"; // ✅ NEW
 
 import SidebarFilters from "./components/SidebarFilters";
 import ResultsHeader from "./components/ResultsHeader";
@@ -115,6 +116,13 @@ export default function AllCoursesPage() {
     sortDirection: "asc",
   });
 
+  // ===== Lecturers suggestions =====
+  const {
+    listData: lecturerSuggestions,
+    loading: lecturersLoading,
+    fetchLecturers,
+  } = useLecturers(); // mặc định pageSize = 5 trong hook
+
   const [courseCode, setCourseCode] = useState("");
   const [lecturerName, setLecturerName] = useState("");
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
@@ -133,10 +141,22 @@ export default function AllCoursesPage() {
   });
 
   useEffect(() => {
+    // load courses + terms + lecturers
     fetchAvailableCourses(lastQueryRef.current as any);
     fetchTerms();
+    fetchLecturers({ page: 1 }); // ✅ lấy 5 lecturer đầu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ––– Nếu muốn gợi ý lecturer theo tên user gõ, có thể bật block này (optional) –––
+  useEffect(() => {
+    // chỉ refetch nếu user gõ gì đó, hoặc clear -> lấy top 5
+    fetchLecturers({
+      page: 1,
+      // truyền searchTerm để back lọc (nếu API hỗ trợ)
+      searchTerm: lecturerName.trim() || undefined,
+    });
+  }, [lecturerName, fetchLecturers]);
 
   const usingTermFilter = !!selectedTermId;
 
@@ -275,6 +295,10 @@ export default function AllCoursesPage() {
   const displayPageSize = usingTermFilter ? termMeta.pageSize : pageSize;
   const isLoading = usingTermFilter ? termCoursesLoading : loading;
 
+  const handleLecturerSuggestionClick = (name: string) => {
+    runQuery({ lecturerName: name, page: 1 });
+  };
+
   return (
     <div className="py-6" data-tour="allcourses-layout">
       <div
@@ -302,6 +326,10 @@ export default function AllCoursesPage() {
               onTermToggle={handleTermToggle}
               terms={termList}
               termsLoading={termsLoading}
+              // ✅ NEW: lecturer suggestions
+              lecturers={lecturerSuggestions}
+              lecturersLoading={lecturersLoading}
+              onLecturerSuggestionClick={handleLecturerSuggestionClick}
             />
           </aside>
 

@@ -112,7 +112,7 @@ export default function LiteRichTextEditor({
           forced_root_block: "p",
 
           // 🔽 chiều cao tối thiểu 400, autoresize sẽ grow thêm theo content
-          min_height: 300,
+          min_height: 400,
           autoresize_bottom_margin: 0,
           autoresize_overflow_padding: 0,
 

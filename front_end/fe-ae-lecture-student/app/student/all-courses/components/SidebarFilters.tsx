@@ -2,8 +2,9 @@
 "use client";
 
 import { KeyboardEvent } from "react";
-import { Filter, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import type { TermResponse } from "@/types/term/term.response";
+import type { LecturerItem } from "@/types/lecturers/lecturer.response";
 
 type Props = {
   courseCode: string;
@@ -16,6 +17,11 @@ type Props = {
   onTermToggle: (termId: string) => void;
   terms: TermResponse[];
   termsLoading: boolean;
+
+  // lecturer suggestion
+  lecturers: LecturerItem[];
+  lecturersLoading: boolean;
+  onLecturerSuggestionClick: (name: string) => void;
 };
 
 function formatDate(dateStr?: string) {
@@ -29,6 +35,13 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString("en-GB"); // 17/11/2025
 }
 
+function getInitials(name?: string | null) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function SidebarFilters({
   courseCode,
   lecturerName,
@@ -40,6 +53,9 @@ export default function SidebarFilters({
   onTermToggle,
   terms,
   termsLoading,
+  lecturers,
+  lecturersLoading,
+  onLecturerSuggestionClick,
 }: Props) {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") onSearchSubmit();
@@ -79,19 +95,77 @@ export default function SidebarFilters({
         </div>
 
         {/* Lecturer filter */}
-        <div className="mt-3 space-y-1">
+        <div className="mt-3 space-y-2">
           <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
             Lecturer
           </label>
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4" style={{ color: "var(--brand)" }} />
-            <input
-              value={lecturerName}
-              onChange={(e) => onLecturerChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Filter by lecturer name..."
-              className="flex-1 h-9 rounded-lg px-2 text-xs border border-[rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[var(--brand)] bg-white"
-            />
+          <input
+            value={lecturerName}
+            onChange={(e) => onLecturerChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Filter by lecturer name..."
+            className="w-full h-9 rounded-lg px-2 text-xs border border-[rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[var(--brand)] bg-white"
+          />
+
+          {/* Suggested lecturers (vertical list) */}
+          <div className="mt-2 space-y-2">
+            <p
+              className="text-[11px] font-medium uppercase tracking-wide"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Suggested lecturers
+            </p>
+
+            {lecturersLoading && (
+              <p className="text-[11px]" style={{ color: "var(--brand)" }}>
+                Loading lecturers...
+              </p>
+            )}
+
+            {!lecturersLoading && lecturers.length === 0 && (
+              <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                No lecturers found.
+              </p>
+            )}
+
+            {!lecturersLoading && lecturers.length > 0 && (
+              <ul className="space-y-1">
+                {lecturers.map((lec) => {
+                  const initials = getInitials(lec.fullName);
+                  return (
+                    <li key={lec.id}>
+                      <button
+                        type="button"
+                        onClick={() => onLecturerSuggestionClick(lec.fullName)}
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-xs transition hover:bg-white/80 border border-transparent hover:border-[var(--brand)]"
+                      >
+                        {/* avatar */}
+                        <div className="h-7 w-7 rounded-full overflow-hidden flex items-center justify-center bg-[var(--brand)] text-white text-[11px] font-semibold shrink-0">
+                          {lec.profilePictureUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={lec.profilePictureUrl}
+                              alt={lec.fullName}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            initials
+                          )}
+                        </div>
+
+                        {/* full name */}
+                        <span
+                          className="truncate text-[12px] text-left"
+                          style={{ color: "var(--foreground)" }}
+                        >
+                          {lec.fullName}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
 

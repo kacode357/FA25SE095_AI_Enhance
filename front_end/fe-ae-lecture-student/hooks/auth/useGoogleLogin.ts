@@ -54,7 +54,7 @@ export function useGoogleLogin() {
         const isLecturer = profile.role === UserServiceRole[ROLE_LECTURER];
 
         let target = "/";
-        if (isStudent) target = "/student/all-courses";
+        if (isStudent) target = "/student/home";
         else if (isLecturer) target = "/lecturer/course";
 
         if (typeof window !== "undefined") window.location.href = target;

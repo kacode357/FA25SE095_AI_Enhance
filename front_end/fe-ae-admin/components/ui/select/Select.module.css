@@ -1,0 +1,7 @@
+.portal {
+  position: fixed;
+  left: var(--select-left, 0px);
+  top: var(--select-top, 0px);
+  width: var(--select-width, auto);
+  z-index: 9999;
+}

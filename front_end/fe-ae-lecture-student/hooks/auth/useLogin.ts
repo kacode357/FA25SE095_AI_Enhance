@@ -53,7 +53,7 @@ export function useLogin() {
       await saveEncodedUser(profile, rememberMe);
 
       let target = "/";
-      if (isStudent) target = "/student/all-courses";
+      if (isStudent) target = "/student/home";
       else if (isLecturer) target = "/lecturer/course";
 
       if (typeof window !== "undefined") {

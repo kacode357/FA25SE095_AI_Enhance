@@ -50,7 +50,7 @@ export default function HeroSection() {
             }
 
             const role = user.role;
-            const STUDENT_ROUTE = "/student/all-courses";
+            const STUDENT_ROUTE = "/student/home";
             const LECTURER_ROUTE = "/lecturer/course";
 
             if (role === "Student") router.push(STUDENT_ROUTE);

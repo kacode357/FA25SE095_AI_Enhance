@@ -195,7 +195,7 @@ export default function AvailableCoursesSection({
                 <div className="flex justify-center mt-5">
                     <button
                         title="View All"
-                        onClick={() => router.push("/student/all-courses")} // ✅ thêm sự kiện
+                        onClick={() => router.push("/student/home")} // ✅ thêm sự kiện
                         className="group inline-flex cursor-pointer items-center gap-0.5 text-violet-500 hover:underline hover:decoration-violet-500 hover:underline-offset-4 transition-all"
                     >
                         <span className="group-hover:underline group-hover:decoration-violet-500 group-hover:underline-offset-4">

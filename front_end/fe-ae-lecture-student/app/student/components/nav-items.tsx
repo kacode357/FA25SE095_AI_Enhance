@@ -11,10 +11,11 @@ const RAW_NAVS: NavItem[] = [
   { label: "Home",           href: "/home" },
   { label: "All Courses",    href: "/all-courses" },
   { label: "My Courses",     href: "/my-courses" },
-  { label: "Dashboard",      href: "/my-assignments" },
+  { label: "My Assignments", href: "/my-assignments" },
+  { label: "Dashboard",      href: "/dashboard" },
 ];
 
-// Hook trả về nav đã chuẩn hoá: fullHref + isActive
+// Hook returns nav items with normalized href and active flag
 export function useStudentNav() {
   const pathname = usePathname();
   const basePrefix = "/student";

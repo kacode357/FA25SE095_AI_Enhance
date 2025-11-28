@@ -34,7 +34,7 @@ const AuthContext = createContext<AuthContextType>({
 function homeByRole(role?: string) {
   const STUDENT = UserServiceRole[ROLE_STUDENT];
   const LECTURER = UserServiceRole[ROLE_LECTURER];
-  if (role === STUDENT) return "/student/all-courses";
+  if (role === STUDENT) return "/student/home";
   if (role === LECTURER) return "/lecturer/course";
   return "/";
 }

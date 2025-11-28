@@ -4,6 +4,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
@@ -25,6 +26,7 @@ import CourseCodeSearch from "./CourseCodeSearch";
 const COOKIE_ACCESS_TOKEN_KEY = "accessToken";
 
 export default function Header() {
+  const router = useRouter();
   const { user } = useAuth();
   const { logout } = useLogout();
   const navs = useStudentNav();
@@ -135,6 +137,9 @@ export default function Header() {
     if (v) setDropdownOpen(false);
   };
 
+  // 🔹 Active nav cho fallback select
+  const activeNav = navs.find((n) => (n as any).isActive);
+
   return (
     <header
       className="student-header fixed top-0 z-50 w-full h-16"
@@ -143,15 +148,16 @@ export default function Header() {
       <div className="mx-auto flex h-full w-full max-w-7xl items-center gap-4 px-6">
         {/* LEFT: Logo + Nav */}
         <div
-          className="flex min-w-0 flex-1 items-center gap-6"
+          className="flex min-w-0 flex-1 items-center gap-4"
           data-tour="header-main-nav"
         >
           <div className="shrink-0">
             <Logo />
           </div>
 
-          <nav className="hidden md:flex items-center gap-6 overflow-x-hidden">
-            {navs.map((item) => (
+          {/* Desktop nav (giữ nguyên, dùng cho màn rộng) */}
+          <nav className="hidden md:flex items-center gap-6 overflow-x-auto">
+            {navs.map((item: any) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -170,6 +176,27 @@ export default function Header() {
               </Link>
             ))}
           </nav>
+
+          {/* 🔥 Fallback nav (select) cho khi zoom to / màn nhỏ */}
+          <div className="md:hidden">
+            <select
+              className="h-9 rounded-md border border-slate-200 bg-white px-2 text-xs"
+              value={activeNav?.href ?? ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value) router.push(value);
+              }}
+            >
+              <option value="" disabled>
+                Navigate...
+              </option>
+              {navs.map((item: any) => (
+                <option key={item.href} value={item.href}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* RIGHT: Search + Notifications + User */}

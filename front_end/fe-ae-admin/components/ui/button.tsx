@@ -1,68 +1,83 @@
 "use client";
 
 import LogoLoader from "@/components/common/logo-loader";
-import { motion } from "framer-motion";
+import { motion, type HTMLMotionProps } from "framer-motion";
 import React from "react";
-import clsx from "clsx";
+import { cn } from "@/lib/utils";
 
-type MotionButtonBase = React.ComponentPropsWithoutRef<typeof motion.button>;
-
-type Props = MotionButtonBase & {
-  variant?: "primary" | "ghost" | "outline" | "secondary" | "default" | "destructive";
+export type ButtonProps = HTMLMotionProps<"button"> & {
+  variant?:
+    | "primary"
+    | "gradient"
+    | "ghost"
+    | "outline"
+    | "secondary"
+    | "default"
+    | "destructive";
   loading?: boolean;
   size?: "xs" | "sm" | "md" | "lg" | "icon" | "default";
   children?: React.ReactNode;
 };
 
-export function Button({
-  variant = "primary",
-  size = "md",
-  loading = false,
-  className = "",
-  children,
-  disabled,
-  ...props
-}: Props) {
-  const sizeClass =
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (
     {
-      xs: "btn-xs",
-      sm: "btn-sm",
-      md: "btn-md",
-      lg: "btn-lg",
-      icon: "btn-icon",
-      default: "btn-md",
-    }[size] ?? "btn-md";
+      variant = "primary",
+      size = "md",
+      loading,
+      className,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const sizeClass =
+      {
+        xs: "px-2 py-1 text-xs",
+        sm: "px-3 py-1.5 text-sm",
+        md: "px-4 py-2.5 text-base",
+        lg: "px-6 py-3 text-lg",
+        icon: "p-2",
+        default: "px-4 py-2 text-base",
+      }[size] ?? "px-4 py-2 text-base";
 
-  const variantClass =
-    {
-      primary: "btn-primary",
-      secondary: "btn-secondary",
-      outline: "btn-outline",
-      ghost: "btn-ghost",
-      default: "btn-default",
-      destructive: "btn-destructive",
-    }[variant] ?? "btn-primary";
+    const variantClass =
+      variant === "gradient"
+        ? "btn-gradient"
+        : variant === "primary"
+        ? "btn-primary"
+        : "btn-ghost"; // tuỳ bạn map thêm outline/secondary/... nếu muốn
 
-  return (
-    <motion.button
-      whileHover={{ y: -1 }}
-      whileTap={{ scale: 0.98 }}
-      className={clsx("btn", sizeClass, variantClass, loading && "is-loading", className)}
-      {...props}
-      disabled={loading || disabled}
-      aria-busy={loading || undefined}
-      aria-disabled={loading || disabled ? true : undefined}
-    >
-      {loading ? (
-        <span className="inline-flex items-center justify-center gap-2">
-          <LogoLoader size={18} />
-          {children}
-        </span>
-      ) : (
-        children
-      )}
-    </motion.button>
-  );
-}
+    return (
+      <motion.button
+        ref={ref}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.98 }}
+        className={cn(
+          "btn",
+          variantClass,
+          sizeClass,
+          loading && "opacity-90",
+          className
+        )}
+        {...props}
+        disabled={loading || props.disabled}
+        aria-busy={loading}
+        aria-disabled={loading || props.disabled ? true : undefined}
+      >
+        {loading ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <LogoLoader size={20} />
+            {children}
+          </span>
+        ) : (
+          <>{children}</>
+        )}
+      </motion.button>
+    );
+  }
+);
+
+Button.displayName = "Button";
 
 export default Button;

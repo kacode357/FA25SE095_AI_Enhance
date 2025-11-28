@@ -1,135 +1,232 @@
+// app/student/home/page.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Megaphone, Bell, Info, ArrowRight } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { ChevronRight } from "lucide-react";
 
-type Announcement = {
-  id: string;
-  title: string;
-  body: string;
-  createdAt: string; // ISO string
-  category?: "System" | "Course" | "Maintenance" | "General";
-  linkHref?: string;
-  linkLabel?: string;
-};
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-// TODO: replace with API data
-const announcements: Announcement[] = [
-  // ví dụ (có thể xoá nếu cần)
-  // {
-  //   id: "1",
-  //   title: "Planned maintenance on Saturday",
-  //   body: "The system will be temporarily unavailable from 10:00 PM to 11:30 PM for scheduled maintenance.",
-  //   createdAt: "2025-11-26T10:00:00Z",
-  //   category: "Maintenance",
-  // },
-];
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { useStudentAnnouncements } from "@/hooks/announcements/useStudentAnnouncements";
+import { parseServerDate, dayLabel, timeHHmm } from "@/utils/chat/time";
 
 export default function StudentHomePage() {
-  const { user } = useAuth();
+  const {
+    loading,
+    items,
+    pagination,
+    fetchStudentAnnouncements,
+  } = useStudentAnnouncements();
 
-  const displayName =
-    user?.firstName || user?.lastName || user?.email || "Student";
+  const [searchInput, setSearchInput] = useState("");
+  const [currentQuery, setCurrentQuery] = useState<{
+    page: number;
+    pageSize: number;
+    searchTerm?: string;
+  }>({
+    page: 1,
+    pageSize: 10,
+    searchTerm: "",
+  });
+
+  // load list
+  useEffect(() => {
+    fetchStudentAnnouncements({
+      page: currentQuery.page,
+      pageSize: currentQuery.pageSize,
+      searchTerm: currentQuery.searchTerm,
+    });
+  }, [
+    fetchStudentAnnouncements,
+    currentQuery.page,
+    currentQuery.pageSize,
+    currentQuery.searchTerm,
+  ]);
+
+  const handleSearch = () => {
+    const next = {
+      ...currentQuery,
+      page: 1,
+      searchTerm: searchInput.trim() || undefined,
+    };
+    setCurrentQuery(next);
+    fetchStudentAnnouncements(next);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    const next = { ...currentQuery, page: 1, searchTerm: undefined };
+    setCurrentQuery(next);
+    fetchStudentAnnouncements(next);
+  };
+
+  const handleChangePage = (direction: "prev" | "next") => {
+    if (direction === "prev" && !pagination.hasPreviousPage) return;
+    if (direction === "next" && !pagination.hasNextPage) return;
+
+    const nextPage =
+      direction === "prev" ? pagination.page - 1 : pagination.page + 1;
+
+    const next = { ...currentQuery, page: nextPage };
+    setCurrentQuery(next);
+    fetchStudentAnnouncements(next);
+  };
+
+  const formatTime = (ts: string) => {
+    const d = parseServerDate(ts);
+    if (Number.isNaN(d.getTime())) return "";
+    return `${dayLabel(d)} • ${timeHHmm(d)}`;
+  };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      {/* Header */}
-      <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Welcome back
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-50">
-            Hi, {displayName}
-          </h1>
-          <p className="mt-2 text-sm text-slate-400">
-            This page shows important announcements and updates from the admin
-            team.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs text-slate-300">
-          <Megaphone className="h-4 w-4 text-slate-300" />
-          <span>Admin announcements center</span>
-        </div>
-      </header>
-
-      {/* Announcements list */}
-      <section className="space-y-4">
-        {announcements.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-900/60 px-6 py-10 text-center">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800">
-              <Bell className="h-5 w-5 text-slate-200" />
-            </div>
-            <h2 className="text-sm font-semibold text-slate-50">
-              You&apos;re all caught up
-            </h2>
-            <p className="mt-1 max-w-md text-xs text-slate-400">
-              There are no new announcements from the admin team. When there is
-              something important about your account, courses, or the system,
-              it will show up here.
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      {/* Gộp header + search + list trong 1 card cho đồng màu nền */}
+      <section className="card flex flex-col gap-4 px-6 py-5">
+        {/* Header + search row */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-nav">
+              Announcements
+            </h1>
+            <p className="mt-1 text-sm text-[color:var(--text-muted)]">
+              Latest notices from the admin team.
             </p>
           </div>
-        )}
 
-        {announcements.length > 0 && (
-          <div className="space-y-3">
-            {announcements.map((a) => (
-              <article
-                key={a.id}
-                className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-sm"
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="flex-1 sm:w-72">
+              <Input
+                placeholder="Search announcements..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+                // dùng style input của globals cho đồng brand
+                className="input !px-3 !py-2 text-sm"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="btn btn-yellow-slow text-xs sm:text-sm px-3 py-2"
+                onClick={handleSearch}
+                disabled={loading}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-slate-800">
-                      <Info className="h-4 w-4 text-slate-100" />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-sm font-semibold text-slate-50">
-                          {a.title}
-                        </h2>
-                        {a.category && (
-                          <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
-                            {a.category}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1 text-xs text-slate-300">{a.body}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-1 text-right">
-                    <span className="text-[11px] text-slate-500">
-                      {formatDate(a.createdAt)}
-                    </span>
-                    {a.linkHref && a.linkLabel && (
-                      <Link
-                        href={a.linkHref}
-                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-sky-300 hover:text-sky-200"
-                      >
-                        <span>{a.linkLabel}</span>
-                        <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </article>
-            ))}
+                Search
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs sm:text-sm border-brand/60 text-brand px-3 py-2"
+                onClick={handleClearSearch}
+                disabled={loading && !searchInput}
+              >
+                Clear
+              </Button>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* List */}
+        <div className="mt-2 rounded-2xl border border-[color:var(--border)] bg-white">
+          <div className="flex items-center justify-between rounded-t-2xl border-b border-[color:var(--border)] px-4 py-3">
+            <h2 className="text-sm font-medium text-nav">All announcements</h2>
+            <p className="text-xs text-[color:var(--text-muted)]">
+              {pagination.totalItems > 0
+                ? `${pagination.totalItems} items`
+                : "No items"}
+            </p>
+          </div>
+
+          <div className="scrollbar-stable max-h-[480px] overflow-y-auto">
+            {loading && !items.length ? (
+              <div className="flex h-40 items-center justify-center text-xs text-[color:var(--text-muted)]">
+                Loading announcements...
+              </div>
+            ) : !items.length ? (
+              <div className="flex h-40 flex-col items-center justify-center px-4 text-center text-sm text-[color:var(--text-muted)]">
+                <p>No announcements yet.</p>
+                <p className="mt-1 text-xs opacity-80">
+                  When the admin posts something, it will appear here.
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-[color:var(--border)]">
+                {items.map((item) => (
+                  <li key={item.id}>
+                    {/* Click => sang trang detail (tạo route /student/announcements/[id]) */}
+                    <Link
+                      href={`/student/announcements/${item.id}`}
+                      className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition"
+                    >
+                      <div className="min-w-0 flex-1">
+                        {/* title */}
+                        <p className="truncate text-sm font-medium text-slate-900">
+                          {item.title}
+                        </p>
+                        {/* meta: người thông báo + thời gian */}
+                        <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          {item.createdByName && (
+                            <span className="font-medium">
+                              {item.createdByName}
+                            </span>
+                          )}
+                          {item.createdByName && item.publishedAt && " • "}
+                          {item.publishedAt && formatTime(item.publishedAt)}
+                        </p>
+                      </div>
+
+                      {/* icon next */}
+                      <ChevronRight className="h-4 w-4 shrink-0 text-nav-active" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {items.length > 0 && (
+            <div className="flex items-center justify-between rounded-b-2xl border-t border-[color:var(--border)] px-4 py-2.5 text-xs text-[color:var(--text-muted)]">
+              <div>
+                Page{" "}
+                <span className="font-medium text-slate-900">
+                  {pagination.page || 1}
+                </span>{" "}
+                of{" "}
+                <span className="font-medium text-slate-900">
+                  {pagination.totalPages || 1}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  className="px-3 py-1 text-xs border-[color:var(--border)] text-[color:var(--text-muted)]"
+                  onClick={() => handleChangePage("prev")}
+                  disabled={loading || !pagination.hasPreviousPage}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  className="px-3 py-1 text-xs border-[color:var(--border)] text-[color:var(--text-muted)]"
+                  onClick={() => handleChangePage("next")}
+                  disabled={loading || !pagination.hasNextPage}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
