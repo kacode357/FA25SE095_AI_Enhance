@@ -133,7 +133,7 @@ export default function ReportDetailsPage() {
           <ol className="flex items-center gap-0 mt-1.5 text-slate-500 flex-nowrap overflow-hidden">
             <Book className="size-4" />
             <li>
-              <button onClick={() => router.push('/lecturer/course')} className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition">Courses Management</button>
+              <button onClick={() => router.push('/lecturer/course')} className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition">My Courses</button>
             </li>
 
             <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />

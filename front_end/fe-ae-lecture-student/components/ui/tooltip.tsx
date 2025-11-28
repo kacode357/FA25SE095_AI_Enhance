@@ -51,6 +51,7 @@ function TooltipContent({
         )}
         {...props}
       >
+        <TooltipPrimitive.Arrow className="fill-current text-slate-900" />
         {children}
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>

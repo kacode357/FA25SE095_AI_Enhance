@@ -1,6 +1,6 @@
 "use client";
 
-import MessagesScreen from "@/app/lecturer/course/messages/components/MessagesScreen";
+import MessagesScreen from "@/app/lecturer/messages/components/MessagesScreen";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 import { useEffect, useState } from "react";
 

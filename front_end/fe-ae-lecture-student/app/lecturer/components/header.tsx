@@ -36,8 +36,8 @@ function normalizeNotification(raw: any): NotificationItem {
     typeof raw?.read === "boolean"
       ? raw.read
       : typeof raw?.isRead === "boolean"
-      ? raw.isRead
-      : false;
+        ? raw.isRead
+        : false;
 
   return {
     id,
@@ -169,33 +169,47 @@ export default function Header() {
     >
       {/* Container full-width */}
       <div
-        className="mx-auto flex h-full w-full items-center gap-0"
+        className="mx-auto relative flex h-full w-full items-center gap-0"
         style={{ maxWidth: 1400, paddingLeft: "2rem", paddingRight: "1rem" }}
       >
         {/* Left: logo + nav */}
         <div className="flex items-center gap-10 min-w-0">
           <Logo />
 
-          <nav className="ml-6 flex items-center gap-10">
+          <nav className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center gap-10">
             <Link
               href="/lecturer/course"
-              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/course") ? "text-gray-900 border-b-2 border-brand pb-1" : "text-gray-700 hover:text-gray-900"}`}
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/course") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
+            >
+              Announment
+            </Link>
+
+            <Link
+              href="/lecturer/course"
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/course") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
             >
               My Course
             </Link>
 
             <Link
               href="/lecturer/manage-courses"
-              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/manage-courses") ? "text-gray-900 border-b-2 border-brand pb-1" : "text-gray-700 hover:text-gray-900"}`}
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/manage-courses") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
             >
               Manager Course
             </Link>
 
             <Link
               href="/lecturer/dashboard"
-              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/dashboard") ? "text-gray-900 border-b-2 border-brand pb-1" : "text-gray-700 hover:text-gray-900"}`}
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/dashboard") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
             >
               Dashboard
+            </Link>
+
+            <Link
+              href="/lecturer/messages"
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/messages") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
+            >
+              Chat
             </Link>
           </nav>
         </div>
@@ -216,7 +230,7 @@ export default function Header() {
           </div>
 
           {/* User menu separated from bell */}
-          <div className="ml-2 shadow-md rounded-full">
+          <div className="ml-2 rounded-full">
             <UserMenu
               open={dropdownOpen}
               onOpenChange={(v: boolean) => setDropdownOpen(v)}

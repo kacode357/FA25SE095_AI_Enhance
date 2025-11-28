@@ -20,6 +20,7 @@ export interface UpdateCoursePayload {
 
 export interface GetMyCoursesQuery {
   asLecturer: boolean;
+  status?: number;
   name?: string;
   courseCode?: string;
   lecturerName?: string;

@@ -129,7 +129,7 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
                 toast.success(msg);
                 if (onSuccess) onSuccess();
                 try {
-                    router.push(`/lecturer/course/support-requests`);
+                    router.push(`/lecturer/manage-courses/support-requests`);
                 } catch (e) {
                     // ignore navigation errors
                 }

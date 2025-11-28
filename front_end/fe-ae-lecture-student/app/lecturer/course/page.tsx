@@ -1,104 +1,149 @@
-// app/lecturer/course/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-
+import {
+  CourseStatus,
+  getCourseStatusColor,
+  getCourseStatusText,
+  LecturerCourseStatusFilterOptions,
+} from "@/config/course-status";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 import type { GetMyCoursesQuery } from "@/types/courses/course.payload";
+import { LayoutGrid, List } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import CourseCard from "./components/CourseCard";
 
 export default function LecturerCoursesPage() {
   const {
     listData,
     totalCount,
-    currentPage,
     pageSize,
     loading,
     fetchMyCourses,
   } = useMyCourses();
 
-  // 🔎 filter basic: name + courseCode
   const [name, setName] = useState("");
   const [courseCode, setCourseCode] = useState("");
-
-  // dùng state riêng cho page để control
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"list" | "card">("list");
 
-  // build params cho API
-  const buildParams = (): GetMyCoursesQuery => ({
-    asLecturer: true, // ✅ BẮT BUỘC: lecturer mode
+  const [statusFilter, setStatusFilter] = useState<CourseStatus>(CourseStatus.Active);
+
+  const buildParams = (overrides?: Partial<GetMyCoursesQuery>): GetMyCoursesQuery => ({
+    asLecturer: true,
     name: name || undefined,
     courseCode: courseCode || undefined,
     page,
     pageSize,
     sortBy: "CreatedAt",
     sortDirection: "desc",
+    ...overrides,
   });
 
-  // lần đầu load + mỗi khi filter/page đổi thì fetch
+  const [clientFilterMode, setClientFilterMode] = useState(false);
+  const prevStatusRef = useRef<CourseStatus | null>(null);
+
   useEffect(() => {
-    const params = buildParams();
-    fetchMyCourses(params);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, name, courseCode]);
+    const prev = prevStatusRef.current;
+
+    if (prev !== statusFilter) {
+      setClientFilterMode(true);
+      setPage(1);
+      fetchMyCourses(buildParams({ page: 1, pageSize: 1000 }), true);
+    } else {
+      setClientFilterMode(false);
+      fetchMyCourses(buildParams());
+    }
+
+    prevStatusRef.current = statusFilter;
+  }, [page, name, courseCode, statusFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // reset về page 1 mỗi lần search
     setPage(1);
-    const params = buildParams();
-    fetchMyCourses(params, true);
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const filteredList = clientFilterMode
+      ? listData.filter((c) => Number(c.status) === Number(statusFilter))
+    : listData;
 
-  const handlePrev = () => {
-    if (page <= 1) return;
-    const nextPage = page - 1;
-    setPage(nextPage);
+  if (clientFilterMode) {
+    // Debug: show fetched vs filtered counts and sample statuses
+    // (temporary - remove or gate this in production)
+    // eslint-disable-next-line no-console
+    console.debug(
+      'Course list fetch: total=',
+      listData.length,
+      'statusFilter=',
+      statusFilter,
+      'filtered=',
+      filteredList.length,
+      'sampleStatuses=',
+      listData.slice(0, 10).map((c) => c.status)
+    );
+  }
+  const displayedTotal = filteredList.length;
+
+  const totalPages = clientFilterMode
+    ? Math.max(1, Math.ceil(displayedTotal / pageSize))
+    : Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const pagedList = clientFilterMode
+    ? filteredList.slice((page - 1) * pageSize, page * pageSize)
+    : listData;
+
+  const handlePrev = () => page > 1 && setPage(page - 1);
+  const handleNext = () => page < totalPages && setPage(page + 1);
+
+  const router = useRouter();
+
+  const handleCourseUpdated = async () => {
+    // refetch appropriately depending on clientFilterMode
+    if (clientFilterMode) {
+      await fetchMyCourses(buildParams({ page: 1, pageSize: 1000 }), true);
+    } else {
+      await fetchMyCourses(buildParams(), true);
+    }
   };
 
-  const handleNext = () => {
-    if (page >= totalPages) return;
-    const nextPage = page + 1;
-    setPage(nextPage);
+  const handleEdit = (courseId: string) => {
+    router.push(`/lecturer/course/${courseId}/course`);
+  };
+
+  const handleDelete = async (courseId: string) => {
+    // after deletion elsewhere, refetch the list
+    await handleCourseUpdated();
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <header className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            My Courses (Lecturer)
-          </h1>
-          <p className="text-sm text-slate-500">
-            Manage all courses where you are the lecturer.
-          </p>
-        </div>
+    <div className="mx-auto max-w-7xl px-4 py-8">
+      {/* Header */}
+      <header className="mb-8">
+        <h1 className="text-2xl font-semibold text-slate-900">My Courses</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Manage all courses where you are the lecturer.
+        </p>
       </header>
 
-      {/* Filters */}
+      {/* Search Form */}
       <form
         onSubmit={handleSearchSubmit}
-        className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+        className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white px-5 py-2 pb-4 shadow-sm"
       >
-        <div className="flex flex-1 min-w-[220px] flex-col gap-1">
-          <label className="text-xs font-medium text-slate-600">
-            Course name
-          </label>
+        <div className="flex-1 min-w-[220px]">
+          <label className="text-xs font-medium text-slate-600">Course name</label>
           <input
-            className="h-9 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300"
-            placeholder="Search by course name..."
+            className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            placeholder="Search by name..."
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
         </div>
 
-        <div className="flex flex-1 min-w-[180px] flex-col gap-1">
-          <label className="text-xs font-medium text-slate-600">
-            Course code
-          </label>
+        <div className="min-w-[180px]">
+          <label className="text-xs font-medium text-slate-600">Course code</label>
           <input
-            className="h-9 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300"
+            className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
             placeholder="Search by code..."
             value={courseCode}
             onChange={(e) => setCourseCode(e.target.value)}
@@ -107,83 +152,150 @@ export default function LecturerCoursesPage() {
 
         <button
           type="submit"
-          className="h-9 rounded-lg px-4 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={loading}
+          className="h-10 px-5 rounded-lg bg-slate-900 btn btn-gradient-slow text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
         >
-          {loading ? "Loading..." : "Search"}
+          {loading ? "Searching..." : "Search"}
         </button>
       </form>
 
-      {/* List */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 px-4 py-3 text-xs font-medium uppercase tracking-wide text-slate-500">
-          Courses ({totalCount})
+      {/* Status Filter + View Mode */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+        {/* Status Filter */}
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium text-slate-700">Status:</span>
+          <div className="flex flex-wrap gap-2">
+            {LecturerCourseStatusFilterOptions.map((option) => {
+              const isActive = statusFilter === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter(option.value);
+                    setPage(1);
+                  }}
+                  className={`rounded-full cursor-pointer px-4 py-2 text-xs font-medium transition-all ${
+                    isActive
+                      ? "bg-violet-50 text-violet-700 shadow-md"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {loading && listData.length === 0 ? (
-          <div className="flex items-center justify-center py-10 text-sm text-slate-500">
-            Loading courses...
+        {/* View Toggle */}
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-slate-600">View:</span>
+          <div className="flex rounded-lg bg-slate-100 p-1">
+            <button
+              onClick={() => setViewMode("card")}
+              className={`p-2 rounded-md cursor-pointer transition-colors ${viewMode === "card" ? "bg-white shadow-sm" : ""}`}
+              aria-label="Card view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded-md cursor-pointer transition-colors ${viewMode === "list" ? "bg-white shadow-sm" : ""}`}
+              aria-label="List view"
+            >
+              <List className="h-4 w-4" />
+            </button>
           </div>
-        ) : listData.length === 0 ? (
-          <div className="flex items-center justify-center py-10 text-sm text-slate-500">
-            No courses found.
-          </div>
-        ) : (
+        </div>
+      </div>
+
+      {/* Course List */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="border-b border-slate-100 px-6 py-4 text-sm font-semibold text-slate-700">
+          Courses <span className="font-medium text-slate-500">({clientFilterMode ? displayedTotal : totalCount})</span>
+        </div>
+
+        {loading && filteredList.length === 0 ? (
+          <div className="py-12 text-center text-slate-500">Loading courses...</div>
+        ) : filteredList.length === 0 ? (
+          <div className="py-12 text-center text-slate-500">No courses found.</div>
+        ) : viewMode === "list" ? (
+          /* List View */
           <ul className="divide-y divide-slate-100">
-            {listData.map((course) => (
-              <li
-                key={course.id}
-                className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm font-semibold text-slate-900">
-                      {course.name}
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                      {course.courseCode}
-                    </span>
+            {pagedList.map((course) => (
+              <li key={course.id} className="px-6 py-5 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h3 className="text-sm font-semibold text-slate-900 truncate max-w-md">
+                        {course.name}
+                      </h3>
+                      <span className="text-xs bg-slate-100 px-2.5 py-1 rounded-full">
+                        {course.courseCode}
+                      </span>
+                      <span className={`text-xs font-medium ${getCourseStatusColor(course.status)}`}>
+                        {getCourseStatusText(course.status)}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      <span>Term {course.term}</span>
+                      <span className="mx-2">•</span>
+                      <span>{course.enrollmentCount} students</span>
+                      {course.requiresAccessCode && course.accessCode && (
+                        <>
+                          <span className="mx-2">•</span>
+                          <span className="text-emerald-700 font-medium">Access code enabled</span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                    {course.description || "No description"}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Term {course.term} {course.year} ·{" "}
-                    {course.enrollmentCount} students
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-500">
-                  {course.requiresAccessCode && course.accessCode && (
-                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                      Access code enabled
-                    </span>
-                  )}
+
+                  <div className="ml-auto">
+                    <button
+                      onClick={() => handleEdit(course.id)}
+                      className="h-9 px-4 rounded-lg btn btn-gradient-slow text-sm font-medium text-white"
+                    >
+                      Details
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
+        ) : (
+          /* Card View */
+          <div className="p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {pagedList.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                onEdit={() => handleEdit(course.id)}
+                onDelete={() => handleDelete(course.id)}
+                onUpdated={handleCourseUpdated}
+              />
+            ))}
+          </div>
         )}
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-xs text-slate-600">
-            <span>
-              Page {page} / {totalPages}
+          <div className="border-t border-slate-100 px-6 py-4 flex items-center justify-between text-sm">
+            <span className="text-slate-600">
+              Page {page} of {totalPages}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex gap-3">
               <button
-                type="button"
                 onClick={handlePrev}
-                disabled={page <= 1 || loading}
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={page === 1 || loading}
+                className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition"
               >
                 Previous
               </button>
               <button
-                type="button"
                 onClick={handleNext}
-                disabled={page >= totalPages || loading}
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={page === totalPages || loading}
+                className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition"
               >
                 Next
               </button>

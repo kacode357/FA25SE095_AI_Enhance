@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   /** Lấy contentEditable từ parent */
@@ -188,7 +188,7 @@ function ToolbarBtn({
       onClick={onClick}
       disabled={disabled}
       className={`${base} ${state}`}
-      aria-pressed={!!active}
+      aria-pressed={active ? "true" : "false"}
       title={label}
     >
       {label}

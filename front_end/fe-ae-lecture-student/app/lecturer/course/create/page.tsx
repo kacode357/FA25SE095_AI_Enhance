@@ -36,7 +36,7 @@ function BreadcrumbCreate({ router }: { router: ReturnType<typeof useRouter> }) 
                         onClick={() => router.push("/lecturer/course")}
                         className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition max-w-[130px] truncate"
                     >
-                        Courses Management
+                        My Courses
                     </button>
                 </li>
                 <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />

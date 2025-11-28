@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Select from "@/components/ui/select/Select";
-import { Calendar, Filter, GitPullRequestClosed, Search, SlidersHorizontal, Tag } from "lucide-react";
+import { Calendar, Filter, GitPullRequestClosed, Search, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
@@ -33,7 +33,7 @@ export default function RequestsFilterBar({
 }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   return (
-    <div className="sm:px-2 sm:pb-2.5 sm:pt-1 border-b border-slate-200">
+    <div className="sm:px-2 sm:pb-2.5 sm:pt-1">
       <div className={stacked ? "flex flex-col gap-3" : "flex items-center gap-3 flex-wrap sm:flex-nowrap"}>
         {/* Filters label + results */}
         <div className="flex flex-row items-center gap-2 text-slate-700">
@@ -127,7 +127,7 @@ export default function RequestsFilterBar({
             <div className="flex flex-col">
               <label className="text-xs text-slate-500 mb-1 cursor-text">Status</label>
               <div className="relative">
-                <Tag className="size-3 cursor-pointer text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {/* <Tag className="size-3 cursor-pointer text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" /> */}
                 <Select<string>
                   value={status ?? ""}
                   options={[
@@ -139,7 +139,7 @@ export default function RequestsFilterBar({
                   ]}
                   placeholder="All Statuses"
                   onChange={(v) => setStatus(v)}
-                  className="h-9 text-xs border border-slate-300 cursor-pointer rounded-md pl-6 bg-white w-full"
+                  className="h-9 text-xs cursor-pointer rounded-md pl-6 bg-slate-50 w-full"
                 />
               </div>
             </div>

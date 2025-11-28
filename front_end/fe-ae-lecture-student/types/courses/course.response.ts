@@ -4,31 +4,38 @@ export enum CourseStatus {
   Inactive = 3,
   Rejected = 4,
 }
-
+ 
 export interface CourseItem {
   id: string;
   courseCode: string;
+  uniqueCode?: string;
   courseCodeTitle: string;
   name: string;
   description: string;
   announcement?: string | null;
   term: string;
-  year: number;
   lecturerId: string;
   lecturerName: string;
+  lecturerImage?: string | null;
   createdAt: string;
   enrollmentCount: number;
+  status?: CourseStatus | number;
+  approvedBy?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  approvalComments?: string | null;
+  rejectionReason?: string | null;
+  canEnroll?: boolean;
   requiresAccessCode: boolean;
   accessCode: string | null;
   accessCodeCreatedAt: string | null;
   accessCodeExpiresAt: string | null;
-  isAccessCodeExpired: boolean;
+  isAccessCodeExpired: boolean | null;
   department: string;
-  img: string;
+  img: string | null;
   termStartDate?: string | null;
   termEndDate?: string | null;
   syllabusFile?: string | null;
-  status?: CourseStatus;
 }
 
 export interface CreateCourseResponse {
@@ -96,34 +103,35 @@ export interface GetCourseByIdResponse {
 export interface GetCourseByIdItems {
   id: string;
   courseCode: string;
+  uniqueCode: string;
   courseCodeTitle: string;
   name: string;
   description: string;
-  announcement?: string | null;
   term: string;
   year: number;
-  uniqueCode: string;
-  lecturerImage: string | null;
+  termStartDate: string | null;
+  termEndDate: string | null;
   lecturerId: string;
   lecturerName: string;
+  lecturerImage: string;
   createdAt: string;
   enrollmentCount: number;
   status: number;
   approvedBy: string;
-  approvedByName: string | null;
+  approvedByName: string;
   approvedAt: string;
-  approvalComments: string | null;
-  rejectionReason: string | null;
+  approvalComments: string;
+  rejectionReason: string;
   canEnroll: boolean;
   requiresAccessCode: boolean;
-  accessCode: string | null;
-  accessCodeCreatedAt: string | null;
-  accessCodeExpiresAt: string | null;
-  isAccessCodeExpired: boolean | null;
+  accessCode: string;
+  accessCodeCreatedAt: string;
+  accessCodeExpiresAt: string;
+  isAccessCodeExpired: boolean;
+  img: string;
+  announcement: string;
+  syllabusFile: string;
   department: string;
-  termStartDate?: string | null;
-  termEndDate?: string | null;
-  syllabusFile?: string | null;
 }
 
 export interface DeleteCourseResponse {

@@ -396,7 +396,7 @@ export default function LecturerSupportChatPage() {
     }
 
     return (
-        <div className="h-screen flex flex-col">
+        <div className="h-screen max-w-7xl mx-auto flex flex-col">
             {/* Back + title */}
             <div className="mb-3 flex items-center gap-3">
                 <button

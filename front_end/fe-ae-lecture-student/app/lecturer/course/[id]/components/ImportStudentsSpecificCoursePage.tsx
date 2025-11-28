@@ -169,7 +169,7 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
                 <Card className="p-5 mr-4 border-slate-200 shadow-sm">
                     <h3 className="text-base font-semibold text-slate-900 mb-3">Download Template</h3>
                     <p className="text-sm text-slate-600 mb-4">Use this Excel template to prepare your student list for this course. Keep headers unchanged for best results.</p>
-                    <Button onClick={downloadTemplate} disabled={downloading} className="bg-gradient-to-br from-orange-200 to-orange-500 text-white">
+                    <Button onClick={downloadTemplate} disabled={downloading} className="bg-gradient-to-br from-green-500 to-green-600 text-white">
                         <HardDriveDownload className="size-4 mr-2" />
                         {downloading ? "Downloading..." : "Download Template (.xlsx)"}
                     </Button>

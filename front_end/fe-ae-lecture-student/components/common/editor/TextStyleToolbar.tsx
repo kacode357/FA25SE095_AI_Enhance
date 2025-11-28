@@ -298,7 +298,7 @@ function ToolbarBtn({
       type="button"
       onClick={onClick}
       className={`${base} ${state}`}
-      aria-pressed={!!active}
+      aria-pressed={active ? "true" : "false"}
       title={label}
     >
       {label}

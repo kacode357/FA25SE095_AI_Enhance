@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   /** Lấy contentEditable từ parent */
@@ -133,7 +133,7 @@ function SegBtn({
       type="button"
       onClick={onClick}
       className={`${base} ${state}`}
-      aria-pressed={!!active}
+      aria-pressed={active ? "true" : "false"}
       title={label}
     >
       {label}

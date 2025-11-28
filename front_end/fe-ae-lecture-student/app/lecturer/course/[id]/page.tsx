@@ -71,7 +71,7 @@ export default function CourseDetailPage() {
   const isDetailRoute = !isEditRoute && pathname?.includes(`/lecturer/course/${id}`);
 
   return (
-    <div className="space-y-0 px-3">
+    <div className="space-y-0 max-w-7xl mx-auto">
       <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mr-3">
         <div className="flex items-center justify-between">
           <ol className="flex items-center gap-1 text-slate-500 flex-nowrap overflow-hidden">
@@ -81,7 +81,7 @@ export default function CourseDetailPage() {
                 onClick={() => router.push('/lecturer/course')}
                 className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition max-w-[130px] truncate"
               >
-                Courses Management
+                My Courses
               </button>
             </li>
 

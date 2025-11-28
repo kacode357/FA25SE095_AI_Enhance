@@ -70,7 +70,7 @@ export default function CourseRequests({ active = true }: Props) {
     <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Top filter bar (same position as courses) */}
       <div className="mb-3 sticky top-0 bg-slate-50 backdrop-blur z-10">
-        <Card className="p-0 border-none shadow-none rounded-none">
+        <Card className="p-0 py-2 px-12 border-none shadow-none rounded-none">
           <RequestsFilterBar
             filterName={filterName}
             setFilterName={setFilterName}
@@ -121,8 +121,8 @@ export default function CourseRequests({ active = true }: Props) {
         )}
 
         {!loadingReqs && (reqs?.length ?? 0) > 0 && (
-          <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="flex flex-col max-w-7xl mx-auto p-2 gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-5">
               {reqs.map((r) => {
                 const s = statusInfo(r.status);
                 return (
