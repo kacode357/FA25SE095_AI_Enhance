@@ -8,6 +8,7 @@ import {
 } from "@/config/course-status";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
 import type { GetMyCoursesQuery } from "@/types/courses/course.payload";
+import { formatToVN, toVNLocalISOString } from "@/utils/datetime/time";
 import { LayoutGrid, List } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -82,6 +83,26 @@ export default function LecturerCoursesPage() {
       listData.slice(0, 10).map((c) => c.status)
     );
   }
+  
+  useEffect(() => {
+    if (!listData || listData.length === 0) return;
+    const sample = listData[0];
+    // If backend returns a createdAt or updatedAt in UTC ISO string, demonstrate VN formatting
+    // This is only a demo log — remove or replace with UI formatting as needed.
+    // @ts-ignore
+    const utc = sample.createdAt || sample.created_at || sample.updatedAt || sample.updated_at;
+    if (utc) {
+      try {
+        // formatted human string in VN timezone
+        // @ts-ignore
+        console.debug('Sample time (UTC):', utc, '-> VN formatted:', formatToVN(utc, { dateStyle: 'medium', timeStyle: 'short' }));
+        // @ts-ignore
+        console.debug('Sample VN ISO-like:', toVNLocalISOString(utc));
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [listData]);
   const displayedTotal = filteredList.length;
 
   const totalPages = clientFilterMode

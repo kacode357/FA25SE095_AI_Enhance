@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import type { AssignmentStatusFilter, GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
+import { formatToVN } from "@/utils/datetime/time";
 
 import { useDeleteAssignment } from "@/hooks/assignment/useDeleteAssignment";
 import type { AssignmentItem } from "@/types/assignments/assignment.response";
@@ -308,15 +309,15 @@ export default function AssignmentsPanel({
 
                         <div className="flex gap-2 flex-wrap items-center mr-2">
                           <span>Start:</span>
-                          <span className="text-slate-900">{a.startDate ? new Date(a.startDate).toLocaleString() : "-"}</span>
+                          <span className="text-slate-900">{a.startDate ? formatToVN(a.startDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
                           <span className="text-slate-400">·</span>
 
                           <span>Due:</span>
-                          <span className="text-slate-900">{a.dueDate ? new Date(a.dueDate).toLocaleString() : "-"}</span>
+                          <span className="text-slate-900">{a.dueDate ? formatToVN(a.dueDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
                           <span className="text-slate-400">·</span>
 
                           <span>Extended Due:</span>
-                          <span className="text-slate-900">{a.extendedDueDate ? new Date(a.extendedDueDate).toLocaleString() : "-"}</span>
+                          <span className="text-slate-900">{a.extendedDueDate ? formatToVN(a.extendedDueDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
                           <span className="text-slate-400">·</span>
 
                           {a.isOverdue ? (
@@ -327,7 +328,7 @@ export default function AssignmentsPanel({
                         </div>
 
                         <div className="text-xs text-slate-400">
-                          Created: {a.createdAt ? new Date(a.createdAt).toLocaleString() : "-"}
+                          Created: {a.createdAt ? formatToVN(a.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}
                         </div>
                       </div>
                     </div>
