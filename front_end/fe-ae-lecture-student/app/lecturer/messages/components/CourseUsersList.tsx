@@ -27,7 +27,11 @@ export default function CourseUsersList({ courseId, onSelectUser }: Props) {
         return;
       }
       const res = await getUsersInCourse(courseId);
-      if (mounted && res) setUsers(res);
+      if (mounted) {
+        // Ensure we always store an array in state to avoid runtime errors
+        if (Array.isArray(res)) setUsers(res);
+        else setUsers([]);
+      }
     })();
     return () => {
       mounted = false;
@@ -36,8 +40,10 @@ export default function CourseUsersList({ courseId, onSelectUser }: Props) {
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
-    if (!kw) return users;
-    return users.filter((u) =>
+    // Make sure users is an array at runtime
+    const all = Array.isArray(users) ? users : [];
+    if (!kw) return all;
+    return all.filter((u) =>
       [u.fullName, u.email, u.role]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(kw))
@@ -45,7 +51,7 @@ export default function CourseUsersList({ courseId, onSelectUser }: Props) {
   }, [users, keyword]);
 
   return (
-    <Card className="h-full w-full min-w-0 flex flex-col gap-2 p-2">
+    <Card className="h-full w-full min-w-0 flex border-slate-300 flex-col gap-2 p-2">
       <Input
         placeholder="Find users in class..."
         value={keyword}
@@ -63,7 +69,7 @@ export default function CourseUsersList({ courseId, onSelectUser }: Props) {
             <ul className="space-y-1 pr-2 flex-1">
               {loading && users.length === 0 ? (
                 <li className="text-sm text-muted-foreground p-2">Loading...</li>
-              ) : filtered.length === 0 ? (
+              ) : (Array.isArray(filtered) && filtered.length === 0) ? (
                 <li className="text-sm text-muted-foreground p-2">No users.</li>
               ) : (
                 filtered.map((u) => (

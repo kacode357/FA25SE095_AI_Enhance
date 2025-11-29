@@ -229,7 +229,7 @@ export default function LecturerCoursesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
                       <h3 className="text-sm font-semibold text-slate-900 truncate max-w-md">
-                        {course.name}
+                        {course.courseCode} — {course.courseCodeTitle}
                       </h3>
                       <span className="text-xs bg-slate-100 px-2.5 py-1 rounded-full">
                         {course.courseCode}

@@ -13,18 +13,19 @@ import { useAssignmentReports } from "@/hooks/reports/useAssignmentReports";
 import { useExportAssignmentGrades } from "@/hooks/reports/useExportAssignmentGrades";
 import { useGetLateSubmissions } from "@/hooks/reports/useGetLateSubmissions";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
-import { useGetReportsRequiringGrading } from "@/hooks/reports/useGetReportsRequiringGrading";
 import type { ReportBase } from "@/types/reports/reports.response";
 import { ReportStatus } from "@/types/reports/reports.response";
-import LateSubmissions from "../../reports/late-submitssion/LateSubmissions";
 import ReportListItem from "./components/ReportListItem";
 import ReportsHeader from "./components/ReportsHeader";
+import LateSubmissions from "./late-submitssion/LateSubmissions";
+import ReportsRequiringGradingPage from "./requiring-grading/page";
 
 export default function LecturerAssignmentReportsPage() {
     const params = useParams();
     const sp = useSearchParams();
     const courseId = typeof params?.id === "string" ? params.id : "";
     const assignmentId = sp.get("assignmentId") || "";
+    const initialTab = (sp.get("tab") as "all" | "late" | "requiring") || "all";
 
     const { fetchAssignmentReports, loading: loadingList } = useAssignmentReports();
     const { data: assignmentData, fetchAssignment } = useAssignmentById();
@@ -36,15 +37,13 @@ export default function LecturerAssignmentReportsPage() {
     const [items, setItems] = useState<ReportBase[]>([]);
     const [error, setError] = useState<string | null>(null);
 
-    const [activeTab, setActiveTab] = useState<"all" | "late" | "requiring">("all");
+    const [activeTab, setActiveTab] = useState<"all" | "late" | "requiring">(initialTab);
 
     // Late submissions
     const { getLateSubmissions, loading: loadingLate } = useGetLateSubmissions();
     const [lateItems, setLateItems] = useState<any[]>([]);
 
-    // Reports requiring grading
-    const { getReportsRequiringGrading, loading: loadingRequiring } = useGetReportsRequiringGrading();
-    const [requiringItems, setRequiringItems] = useState<any[]>([]);
+    // Reports requiring grading handled by separate component
 
     const [selectedReport, setSelectedReport] = useState<string | null>(null);
     const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
@@ -79,19 +78,7 @@ export default function LecturerAssignmentReportsPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, courseId, assignmentId]);
 
-    useEffect(() => {
-        // Fetch requiring-grading when tab selected
-        if (activeTab !== "requiring") return;
-        (async () => {
-            try {
-                const res = await getReportsRequiringGrading({ courseId: courseId || undefined, assignmentId: assignmentId || undefined, pageNumber: 1, pageSize: 500 });
-                setRequiringItems(res?.reports || []);
-            } catch (e: any) {
-                // ignore for now
-            }
-        })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, courseId, assignmentId]);
+    // requiring-grading fetch moved into `ReportsRequiringGradingPage`
 
     useEffect(() => {
         if (!assignmentId) return;
@@ -125,6 +112,17 @@ export default function LecturerAssignmentReportsPage() {
     }, [items]);
 
     const router = useRouter();
+
+    const syncTab = (tab: "all" | "late" | "requiring") => {
+        try {
+            const qs = new URLSearchParams(sp?.toString());
+            if (tab) qs.set("tab", tab); else qs.delete("tab");
+            const base = courseId ? `/lecturer/course/${courseId}/reports` : `/lecturer/course/reports`;
+            router.replace(`${base}?${qs.toString()}`);
+        } catch (err) {
+            // fallback: ignore
+        }
+    };
 
     return (
         <div className="max-w-7xl mx-auto mt-2 min-h-screen overflow-auto">
@@ -167,33 +165,33 @@ export default function LecturerAssignmentReportsPage() {
                     <ul role="tablist" className="flex gap-8 -mb-px">
                         <li role="presentation">
                             <button
-                                role="tab"
-                                    aria-selected={activeTab === "all" ? "true" : "false"}
-                                    onClick={() => setActiveTab("all")}
-                                    className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "all" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
-                            >
+                                    role="tab"
+                                        aria-selected={activeTab === "all"}
+                                        onClick={() => { setActiveTab("all"); syncTab("all"); }}
+                                        className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "all" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
+                                >
                                 All Reports
                             </button>
                         </li>
 
                         <li role="presentation">
                             <button
-                                role="tab"
-                                    aria-selected={activeTab === "late" ? "true" : "false"}
-                                    onClick={() => setActiveTab("late")}
-                                    className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "late" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
-                            >
+                                    role="tab"
+                                        aria-selected={activeTab === "late"}
+                                        onClick={() => { setActiveTab("late"); syncTab("late"); }}
+                                        className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "late" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
+                                >
                                 Late Submissions
                             </button>
                         </li>
 
                         <li role="presentation">
                             <button
-                                role="tab"
-                                    aria-selected={activeTab === "requiring" ? "true" : "false"}
-                                    onClick={() => setActiveTab("requiring")}
-                                    className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "requiring" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
-                            >
+                                    role="tab"
+                                        aria-selected={activeTab === "requiring"}
+                                        onClick={() => { setActiveTab("requiring"); syncTab("requiring"); }}
+                                        className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "requiring" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
+                                >
                                 Requiring Grading
                             </button>
                         </li>
@@ -265,57 +263,8 @@ export default function LecturerAssignmentReportsPage() {
                     )}
 
                     {activeTab === "requiring" && (
-                        <div>
-                            {loadingRequiring ? (
-                                <div className="flex items-center justify-center p-8 text-slate-600">
-                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading...
-                                </div>
-                            ) : requiringItems.length === 0 ? (
-                                <div className="p-6 text-slate-600">No reports requiring grading found.</div>
-                            ) : (
-                                <div className="overflow-auto max-h-[calc(100vh-220px)]">
-                                    <table className="w-full text-sm">
-                                        <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600">
-                                            <tr>
-                                                <th className="text-left font-medium px-4 py-2">Assignment</th>
-                                                <th className="text-left font-medium px-4 py-2">Group / By</th>
-                                                <th className="text-left font-medium px-4 py-2">Submitted</th>
-                                                <th className="text-left font-medium px-4 py-2">Status</th>
-                                                <th className="text-left font-medium px-4 py-2">Grade</th>
-                                                <th className="text-left font-medium px-4 py-2">Feedback</th>
-                                                <th className="text-left font-medium px-4 py-2">Graded By</th>
-                                                <th className="text-left font-medium px-4 py-2">Graded At</th>
-                                                <th className="text-left font-medium px-4 py-2">Version</th>
-                                                <th className="text-left font-medium px-4 py-2">File</th>
-                                                <th className="text-left font-medium px-4 py-2">Updated</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {requiringItems.map((r: any) => (
-                                                <tr key={r.id} className="border-b last:border-0 hover:bg-slate-50 align-top">
-                                                    <td className="px-4 py-2">
-                                                        <div className="font-medium text-slate-900 truncate max-w-[280px]">{r.assignmentTitle || r.assignmentId}</div>
-                                                        <div className="text-xs text-slate-500">#{r.id?.slice?.(0, 8)}</div>
-                                                    </td>
-                                                    <td className="px-4 py-2">
-                                                        <div className="text-slate-800">{r.groupName || r.submittedBy || "—"}</div>
-                                                        {r.groupId && <div className="text-xs text-slate-500">Group: {r.groupId}</div>}
-                                                    </td>
-                                                    <td className="px-4 py-2">{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "—"}</td>
-                                                    <td className="px-4 py-2">{String(r.status)}</td>
-                                                    <td className="px-4 py-2">{r.grade ?? "—"}</td>
-                                                    <td className="px-4 py-2 max-w-[260px]"><div className="truncate" title={r.feedback || undefined}>{r.feedback ?? "—"}</div></td>
-                                                    <td className="px-4 py-2">{r.gradedBy ?? "—"}</td>
-                                                    <td className="px-4 py-2">{r.gradedAt ? new Date(r.gradedAt).toLocaleString() : "—"}</td>
-                                                    <td className="px-4 py-2">{r.version}</td>
-                                                    <td className="px-4 py-2">{r.fileUrl ? (<a href={r.fileUrl} target="_blank" rel="noreferrer" className="text-brand hover:underline">Download</a>) : "—"}</td>
-                                                    <td className="px-4 py-2">{r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "—"}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
+                        <div className="px-3 pb-3 sm:px-3 lg:px-4 sm:pb-3 lg:pb-4 h-full">
+                            <ReportsRequiringGradingPage />
                         </div>
                     )}
                 </CardContent>

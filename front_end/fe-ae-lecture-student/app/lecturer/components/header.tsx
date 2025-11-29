@@ -178,8 +178,8 @@ export default function Header() {
 
           <nav className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center gap-10">
             <Link
-              href="/lecturer/course"
-              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/course") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
+              href="/lecturer/announcements"
+              className={`text-sm font-medium ${pathname?.startsWith("/lecturer/announcements") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
             >
               Announment
             </Link>
@@ -217,7 +217,7 @@ export default function Header() {
         {/* Right */}
         <div className="ml-auto flex items-center gap-3">
           {/* Bell / notifications box */}
-          <div className="flex bg-slate-100 p-0 rounded-xl shadow-lg items-center gap-2">
+          <div className="flex p-0 items-center gap-2">
             <NotificationsMenu
               open={notificationOpen}
               onOpenChange={handleNotificationOpenChange}

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AccessCodeType } from "@/config/access-code-type";
 import { Book } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 type FormState = {
@@ -31,10 +32,11 @@ type Props = {
 
 export default function UploadSyllabus({ createdCourseId, form, setForm, uploadRef, uploading, handleUpload, uploadedSyllabusUrl }: Props) {
     const uploadDisabled = uploading || !form.syllabus;
+    const router = useRouter();
 
     return (
-        <div className="w-1/2">
-            <Card ref={uploadRef} className="p-4 border-dashed border-2 border-slate-200 bg-white">
+        <div className="w-full">
+            <Card ref={uploadRef} className="w-full p-4 border-dashed border-2 border-slate-200 bg-white">
                 <h3 className="text-sm font-semibold mb-2">Upload Syllabus</h3>
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 flex items-center justify-center bg-violet-50 rounded-lg">
@@ -50,28 +52,29 @@ export default function UploadSyllabus({ createdCourseId, form, setForm, uploadR
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 mt-4">
-                    <label className="inline-flex items-center px-3 py-2 border rounded-md cursor-pointer text-sm bg-white hover:bg-slate-50">
-                        Choose file
-                        <input
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            onChange={(e) => setForm((f) => ({ ...f, syllabus: e.target.files?.[0] ?? null }))}
-                            disabled={!createdCourseId}
-                            className="sr-only"
-                        />
-                    </label>
+                <div className="flex items-center justify-between gap-3 mt-4">
+                    <div className="flex items-center gap-4">
+                        <label className="inline-flex items-center px-3 py-2 border rounded-md cursor-pointer text-sm bg-white hover:bg-slate-50">
+                            Choose file
+                            <input
+                                type="file"
+                                accept=".pdf,.doc,.docx"
+                                onChange={(e) => setForm((f) => ({ ...f, syllabus: e.target.files?.[0] ?? null }))}
+                                disabled={!createdCourseId}
+                                className="sr-only"
+                            />
+                        </label>
 
-                    {form.syllabus && (
-                        <button
-                            onClick={() => setForm((f) => ({ ...f, syllabus: null }))}
-                            className="text-sm cursor-pointer text-red-500 hover:text-red-600 px-2 py-1 rounded"
-                            disabled={!createdCourseId}
-                        >
-                            Remove
-                        </button>
-                    )}
-
+                        {form.syllabus && (
+                            <button
+                                onClick={() => setForm((f) => ({ ...f, syllabus: null }))}
+                                className="text-sm cursor-pointer text-red-500 hover:text-red-600 px-2 py-1 rounded"
+                                disabled={!createdCourseId}
+                            >
+                                Remove
+                            </button>
+                        )}
+                    </div>
                     <Button
                         onClick={handleUpload}
                         loading={uploading}
@@ -83,6 +86,12 @@ export default function UploadSyllabus({ createdCourseId, form, setForm, uploadR
                     </Button>
                 </div>
             </Card>
+
+            <div className="mt-3 flex justify-end">
+                <Button onClick={() => router.push('/lecturer/course')} className=" text-violet-800 hover:text-violet-500">
+                    Back
+                </Button>
+            </div>
         </div>
     );
 }

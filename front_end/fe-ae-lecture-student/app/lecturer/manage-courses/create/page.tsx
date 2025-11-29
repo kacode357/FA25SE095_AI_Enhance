@@ -222,7 +222,7 @@ export default function CreateCoursePage() {
                     </div>
 
                     {/* bottom row: left - Upload Syllabus, right - actions */}
-                    <div className="mt-6 flex items-start gap-4">
+                    <div className="mt-6 flex items-center justify-center">
                         {/* Upload area is hidden until a course is successfully created */}
                         {createdCourseId && (
                             <UploadSyllabus
@@ -256,15 +256,7 @@ export default function CreateCoursePage() {
                                         Create
                                     </Button>
                                 </>
-                            ) : (
-                                <Button
-                                    variant="ghost"
-                                    className="text-violet-800 hover:text-violet-500"
-                                    onClick={() => router.push("/lecturer/course")}
-                                >
-                                    Back
-                                </Button>
-                            )}
+                            ) : null}
                         </div>
                     </div>
 

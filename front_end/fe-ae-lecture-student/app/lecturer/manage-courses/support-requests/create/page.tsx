@@ -28,7 +28,7 @@ export default function Page() {
   const router = useRouter();
 
   return (
-    <div className="py-4 pl-3 pr-6 gap-2">
+    <div className="py-4 pl-3 max-w-7xl mx-auto pr-6 gap-2">
       <div className="sticky top-0 z-30 backdrop-blur w-full pb-3 pt-1 flex items-center justify-between">
         <h1 className="text-sm font-semibold uppercase tracking-wide whitespace-nowrap mr-4">Create Support Request</h1>
         <BreadcrumbCreateSupport router={router} />

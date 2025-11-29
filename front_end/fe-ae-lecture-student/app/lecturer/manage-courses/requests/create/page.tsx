@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
     Select,
@@ -16,6 +15,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { CourseCodeService } from "@/services/course-codes.services";
 import { CourseRequestService } from "@/services/course-requests.services";
@@ -71,6 +71,7 @@ export default function CreateCourseRequestPage() {
     });
 
     const [submitting, setSubmitting] = useState(false);
+    const [showCourseTooltip, setShowCourseTooltip] = useState(false);
     const isValid = useMemo(() => {
         return !!(form.courseCodeId && form.termId && form.year && form.description);
     }, [form]);
@@ -121,97 +122,100 @@ export default function CreateCourseRequestPage() {
                 <BreadcrumbRequest router={router} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                <div className="lg:col-span-2 flex flex-col gap-3">
+            <div className="grid grid-cols-1 gap-3">
+                <div className="flex flex-col gap-3">
                     <Card className="p-6 border-slate-200 shadow-sm relative overflow-hidden">
                         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
-                            {/* Course code */}
-                            <div>
-                                <Label className="text-lg mb-2">Course Code</Label>
-                                <div className="mt-1">
-                                    <Select value={form.courseCodeId} onValueChange={(v) => setForm((f) => ({ ...f, courseCodeId: v }))}>
-                                        <SelectTrigger className="w-full border-slate-200">
-                                            <SelectValue placeholder={loadingOptions ? "Loading..." : "Select course code"} />
-                                        </SelectTrigger>
-                                        <SelectContent className="border-slate-300">
-                                            {codes.map((c) => (
-                                                <SelectItem key={c.id} value={c.id}>
-                                                    <div className="flex flex-col text-start">
-                                                        <span className="text-sm font-medium">{c.code} — {c.title}</span>
-                                                        <span className="text-[11px] text-slate-500">{c.department}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 h-[calc(100vh-300)]">
+                            {/* Left: form fields (Course Code, Term, Reason) */}
+                            <div className="flex flex-col gap-6" onMouseEnter={() => setShowCourseTooltip(true)} onMouseLeave={() => setShowCourseTooltip(false)}>
+                                <div>
+                                    <Tooltip open={showCourseTooltip} onOpenChange={(v) => setShowCourseTooltip(Boolean(v))}>
+                                        <TooltipTrigger asChild>
+                                            <Label className="text-sm mb-2">Course Code <span className="text-slate-500">(*)</span></Label>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="left" className="max-w-xs text-xs">
+                                            This is the course code (e.g. CS101). Used to identify the course in the system.
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    <div className="mt-1">
+                                        <Select value={form.courseCodeId} onValueChange={(v) => setForm((f) => ({ ...f, courseCodeId: v }))}>
+                                            <SelectTrigger className="w-full border-slate-200">
+                                                <SelectValue placeholder={loadingOptions ? "Loading..." : "Select course code"} />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-slate-300">
+                                                {codes.map((c) => (
+                                                    <SelectItem key={c.id} value={c.id}>
+                                                        <div className="flex flex-col text-start">
+                                                            <span className="text-sm font-medium">{c.code} — {c.title}</span>
+                                                            <span className="text-[11px] text-slate-500">{c.department}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label className="text-sm mb-2">Term</Label>
+                                    <div className="mt-1">
+                                        <Select value={form.termId} onValueChange={(v) => setForm((f) => ({ ...f, termId: v }))}>
+                                            <SelectTrigger className="w-full border-slate-200">
+                                                <SelectValue placeholder={loadingOptions ? "Loading..." : "Select term"} />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-slate-300">
+                                                {terms.map((t) => (
+                                                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label className="text-sm mb-2">Reason (optional)</Label>
+                                    <Textarea
+                                        value={form.requestReason ?? ""}
+                                        onChange={(e) => setForm((f) => ({ ...f, requestReason: e.target.value }))}
+                                        className="mt-1 min-h-[96px] placeholder:text-slate-400 border-slate-200"
+                                        placeholder="e.g., private class for department"
+                                    />
                                 </div>
                             </div>
 
-                            {/* Term */}
-                            <div>
-                                <Label className="text-lg mb-2">Term</Label>
-                                <div className="mt-1">
-                                    <Select value={form.termId} onValueChange={(v) => setForm((f) => ({ ...f, termId: v }))}>
-                                        <SelectTrigger className="w-full border-slate-200">
-                                            <SelectValue placeholder={loadingOptions ? "Loading..." : "Select term"} />
-                                        </SelectTrigger>
-                                        <SelectContent className="border-slate-300">
-                                            {terms.map((t) => (
-                                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                            {/* Right: Description */}
+                            <div className="flex flex-col h-full">
+                                <Label className="text-sm mb-2">Description</Label>
+                                <div className="mt-1 w-full flex-1 min-h-0">
+                                    <Textarea
+                                        value={form.description}
+                                        onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                                        className="w-full h-full min-h-0 placeholder:text-slate-400 border-slate-200"
+                                        placeholder="Describe the request.."
+                                    />
                                 </div>
-                            </div>
-
-                            {/* Description */}
-                            <div className="sm:col-span-2">
-                                <Label className="text-lg mb-2">Description</Label>
-                                <Textarea
-                                    value={form.description}
-                                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                                    className="mt-1 min-h-24 placeholder:text-slate-400 border-slate-200"
-                                    placeholder="Describe the request.."
-                                />
-                            </div>
-
-                            {/* Reason (optional) */}
-                            <div className="sm:col-span-2">
-                                <Label className="text-lg mb-2">Reason (optional)</Label>
-                                <Input
-                                    value={form.requestReason ?? ""}
-                                    onChange={(e) => setForm((f) => ({ ...f, requestReason: e.target.value }))}
-                                    className="mt-1 h-9 placeholder:text-sm placeholder:text-slate-400"
-                                    placeholder="e.g., private class for department"
-                                />
                             </div>
                         </div>
-                    </Card>
-                </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-3">
-                    <Card className="p-4 border-slate-200 shadow-sm">
-                        <div className="flex flex-col gap-2">
+                        <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-3 pt-4 border-t border-slate-300">
+                            <Button
+                                onClick={() => router.push("/lecturer/course")}
+                                variant="ghost"
+                                className="text-violet-800 hover:text-violet-500"
+                            >
+                                Cancel
+                            </Button>
+
                             <Button
                                 onClick={handleSubmit}
                                 loading={submitting}
-                                className="btn btn-gradient text-white"
+                                className="btn text-sm btn-gradient text-white"
                                 disabled={!isValid}
                             >
                                 Submit Request
                             </Button>
-                            <Button
-                                variant="ghost"
-                                className="text-violet-800 hover:text-violet-500"
-                                onClick={() => router.push("/lecturer/course")}
-                            >
-                                Cancel
-                            </Button>
-                            {!isValid && (
-                                <div className="text-xs text-amber-600">Please complete all required fields.</div>
-                            )}
                         </div>
                     </Card>
                 </div>

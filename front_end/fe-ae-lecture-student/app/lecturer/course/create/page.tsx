@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Select from "@/components/ui/select/Select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { AccessCodeType } from "@/config/access-code-type";
 import { invalidateMyCoursesCache } from "@/hooks/course/useMyCourses";
@@ -84,6 +85,7 @@ export default function CreateCoursePage() {
 
     const [submitting, setSubmitting] = useState(false);
     const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
+    const [showCourseTooltip, setShowCourseTooltip] = useState(false);
     // disable main form after course created, but allow syllabus upload
     const disableMainForm = Boolean(createdCourseId);
     const isValid = useMemo(() => {
@@ -221,7 +223,7 @@ export default function CreateCoursePage() {
 
     return (
         <div className="p-3 mr-3 h-screen flex flex-col">
-            <div className="sticky top-0 z-30 backdrop-blur w-full pb-3 pt-3 flex items-center justify-between">
+            <div className="sticky top-0 z-30 backdrop-blur w-full pt-3 flex items-center justify-between">
                 <h1 className="text-sm font-semibold uppercase tracking-wide whitespace-nowrap mr-4">Create Course</h1>
                 <BreadcrumbCreate router={router} />
             </div>
@@ -233,8 +235,15 @@ export default function CreateCoursePage() {
                             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
                                 {/* Course code */}
-                                <div>
-                                    <Label className="text-base mb-2">Course Code <span className="text-red-500 text-xs">(* required)</span></Label>
+                                <div onMouseEnter={() => setShowCourseTooltip(true)} onMouseLeave={() => setShowCourseTooltip(false)}>
+                                    <Tooltip open={showCourseTooltip} onOpenChange={(v) => setShowCourseTooltip(Boolean(v))}>
+                                        <TooltipTrigger asChild>
+                                            <Label className="text-base mb-2">Course Code <span className="text-red-500 text-xs">(* required)</span></Label>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="left" className="max-w-xs text-xs">
+                                            This is the course code (e.g. CS101). Used to identify the course in the system.
+                                        </TooltipContent>
+                                    </Tooltip>
                                     <div className="mt-1">
                                         <Select
                                             value={form.courseCodeId ?? ""}

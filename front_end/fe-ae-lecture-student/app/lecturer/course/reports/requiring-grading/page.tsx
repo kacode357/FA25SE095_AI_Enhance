@@ -88,7 +88,7 @@ export default function ReportsRequiringGradingPage() {
     }, [courseId]);
 
     return (
-        <div className="p-3 sm:p-3 lg:p-4 h-full">
+        <div className="p-3 sm:px-3 lg:pb-4 sm:pb-3 lg:px-4 h-full">
             {/* Breadcrumb */}
             <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mb-4">
                 <div className="flex items-center justify-between">
@@ -159,16 +159,18 @@ export default function ReportsRequiringGradingPage() {
                                 <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600">
                                     <tr>
                                         <th className="text-left font-medium px-4 py-2">Assignment</th>
-                                        <th className="text-left font-medium px-4 py-2">Group / By</th>
+                                        <th className="text-left font-medium px-4 py-2">Group</th>
+                                        <th className="text-left font-medium px-4 py-2">Submitted By</th>
                                         <th className="text-left font-medium px-4 py-2">Submitted</th>
                                         <th className="text-left font-medium px-4 py-2">Status</th>
                                         <th className="text-left font-medium px-4 py-2">Grade</th>
                                         <th className="text-left font-medium px-4 py-2">Feedback</th>
                                         <th className="text-left font-medium px-4 py-2">Graded By</th>
-                                        <th className="text-left font-medium px-4 py-2">Graded At</th>
                                         <th className="text-left font-medium px-4 py-2">Version</th>
                                         <th className="text-left font-medium px-4 py-2">File</th>
                                         <th className="text-left font-medium px-4 py-2">Updated</th>
+                                        <th className="text-left font-medium px-4 py-2">Created</th>
+                                        <th className="text-left font-medium px-4 py-2">Group Submission</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -177,19 +179,27 @@ export default function ReportsRequiringGradingPage() {
                                             <td className="px-4 py-2">
                                                 <div className="font-medium text-slate-900 truncate max-w-[280px]">{r.assignmentTitle}</div>
                                             </td>
+
                                             <td className="px-4 py-2">
-                                                <div className="text-slate-800">{r.groupName || r.submittedBy || "—"}</div>
-                                                {r.groupId && <div className="text-xs text-slate-500">Group: {r.groupName}</div>}
+                                                <div className="text-slate-800">{r.groupName ?? "—"}</div>
                                             </td>
+
+                                            <td className="px-4 py-2">{r.submittedByName ?? r.submittedBy ?? "—"}</td>
+
                                             <td className="px-4 py-2">{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "—"}</td>
+
                                             <td className="px-4 py-2">{String(r.status)}</td>
+
                                             <td className="px-4 py-2">{r.grade ?? "—"}</td>
+
                                             <td className="px-4 py-2 max-w-[260px]">
                                                 <div className="truncate" title={r.feedback || undefined}>{r.feedback ?? "—"}</div>
                                             </td>
-                                            <td className="px-4 py-2">{r.gradedBy ?? "—"}</td>
-                                            <td className="px-4 py-2">{r.gradedAt ? new Date(r.gradedAt).toLocaleString() : "—"}</td>
-                                            <td className="px-4 py-2">{r.version}</td>
+
+                                            <td className="px-4 py-2">{r.gradedByName ?? r.gradedBy ?? "—"}</td>
+
+                                            <td className="px-4 py-2">{r.version ?? "—"}</td>
+
                                             <td className="px-4 py-2">
                                                 {r.fileUrl ? (
                                                     <a href={r.fileUrl} target="_blank" rel="noreferrer" className="text-brand hover:underline">Download</a>
@@ -197,7 +207,12 @@ export default function ReportsRequiringGradingPage() {
                                                     "—"
                                                 )}
                                             </td>
+
                                             <td className="px-4 py-2">{r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "—"}</td>
+
+                                            <td className="px-4 py-2">{r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"}</td>
+
+                                            <td className="px-4 py-2">{typeof r.isGroupSubmission === "boolean" ? (r.isGroupSubmission ? "Yes" : "No") : (r.groupId ? "Yes" : "No")}</td>
                                         </tr>
                                     ))}
                                 </tbody>

@@ -226,10 +226,10 @@ export default function AssignmentsPanel({
 
   return (
     <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
-      <div className="flex-1 overflow-auto border border-slate-200 rounded-sm space-y-3 px-3 pb-10">
+      <div className="flex-1 overflow-auto border border-slate-200 rounded-sm space-y-0 pb-10">
         {/* Top: Full-width filter bar styled like Courses FilterBar and sticky */}
-        <div className="sticky top-0 z-20">
-          <Card className="p-0 rounded-t-sm rounded-b-none -mx-3 border-none border-b bg-slate-50 border-slate-200 shadow-sm">
+        <div className="sticky top-0 z-50">
+          <Card className="p-0 rounded-t-sm rounded-b-none mx-0 border-none border-b bg-slate-50 border-slate-200 shadow-sm min-h-[64px]">
             <AssignmentsFilterBar
               value={filter}
               loading={loading}
@@ -242,8 +242,8 @@ export default function AssignmentsPanel({
         </div>
 
         {/* Assignment items list */}
-        <Card className="border-slate-200 rounded-sm shadow-md py-0">
-          <CardHeader className="sticky top-16 z-30 bg-gradient-to-r from-indigo-50 to-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
+        <Card className="border-none rounded-sm shadow-md py-0">
+          <CardHeader className="sticky top-16 z-30 bg-white shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
             <div className="text-sm text-slate-600">
               {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
             </div>

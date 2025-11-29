@@ -156,11 +156,13 @@ export interface RequiringGradingReportItem {
   groupId: string | null;
   groupName: string | null;
   submittedBy: string | null;
+  submittedByName?: string | null;
   submittedAt: string | null;
-  status: number;
+  status: ReportStatus;
   grade: number | null;
   feedback: string | null;
   gradedBy: string | null;
+  gradedByName?: string | null;
   gradedAt: string | null;
   isGroupSubmission: boolean;
   version: number;

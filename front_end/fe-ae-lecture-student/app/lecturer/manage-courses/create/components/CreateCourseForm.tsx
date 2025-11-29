@@ -37,6 +37,7 @@ type Props = {
 
 export default function CreateCourseForm({ codes, terms, loadingOptions, form, setForm, disableMainForm }: Props) {
     const [showAccessTooltip, setShowAccessTooltip] = useState(false);
+    const [showCourseTooltip, setShowCourseTooltip] = useState(false);
 
     const codeTypeLabel = useMemo(() => {
         try {
@@ -49,12 +50,23 @@ export default function CreateCourseForm({ codes, terms, loadingOptions, form, s
 
     return (
         <div className="md:col-span-1 flex flex-col gap-5">
-            <Card className="p-6 gap-0 border-slate-200 shadow-sm relative overflow-hidden h-full">
+            <Card
+                className="p-6 gap-0 border-slate-200 shadow-sm relative overflow-hidden h-full"
+                onMouseEnter={() => setShowCourseTooltip(true)}
+                onMouseLeave={() => setShowCourseTooltip(false)}
+            >
                 <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#7f71f4] via-[#8b7cf8] to-[#f4a23b]" />
-                <h1 className="text-lg font-semibold mb-7">Create Course</h1>
+                <h1 className="text-sm uppercase font-semibold mb-4">Create new a Course</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                        <Label className="text-sm mb-2">Course Code <span className="text-red-500 text-xs">(* required)</span></Label>
+                        <Tooltip open={showCourseTooltip} onOpenChange={(v) => setShowCourseTooltip(Boolean(v))}>
+                            <TooltipTrigger asChild>
+                                <Label className="text-sm mb-2">Course Code <span className="text-red-500 text-xs">(* required)</span></Label>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                                This is the course code (e.g. CS101). Used to identify the course in the system.
+                            </TooltipContent>
+                        </Tooltip>
                         <Select
                             value={form.courseCodeId ?? ""}
                             options={codes.map((c) => ({ value: c.id, label: `${c.code} — ${c.title}` }))}
