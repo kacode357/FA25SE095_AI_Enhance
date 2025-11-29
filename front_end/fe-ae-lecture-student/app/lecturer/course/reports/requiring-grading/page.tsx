@@ -152,7 +152,7 @@ export default function ReportsRequiringGradingPage() {
                     ) : error ? (
                         <div className="p-6 text-red-600">{error}</div>
                     ) : items.length === 0 ? (
-                        <div className="p-6 text-slate-600">No reports requiring grading found.</div>
+                        <div className="p-6 text-sm italic text-slate-600">No reports requiring grading found.</div>
                     ) : (
                         <div className="overflow-auto max-h-[calc(100vh-220px)]">
                             <table className="w-full text-sm">
@@ -175,12 +175,11 @@ export default function ReportsRequiringGradingPage() {
                                     {items.map((r) => (
                                         <tr key={r.id} className="border-b last:border-0 hover:bg-slate-50 align-top">
                                             <td className="px-4 py-2">
-                                                <div className="font-medium text-slate-900 truncate max-w-[280px]">{r.assignmentTitle || r.assignmentId}</div>
-                                                <div className="text-xs text-slate-500">#{r.id.slice(0, 8)}</div>
+                                                <div className="font-medium text-slate-900 truncate max-w-[280px]">{r.assignmentTitle}</div>
                                             </td>
                                             <td className="px-4 py-2">
                                                 <div className="text-slate-800">{r.groupName || r.submittedBy || "—"}</div>
-                                                {r.groupId && <div className="text-xs text-slate-500">Group: {r.groupId}</div>}
+                                                {r.groupId && <div className="text-xs text-slate-500">Group: {r.groupName}</div>}
                                             </td>
                                             <td className="px-4 py-2">{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "—"}</td>
                                             <td className="px-4 py-2">{String(r.status)}</td>

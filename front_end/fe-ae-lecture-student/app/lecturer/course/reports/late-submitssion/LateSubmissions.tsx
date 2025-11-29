@@ -19,7 +19,7 @@ export default function LateSubmissions({ items, loading, error }: Props) {
       ) : error ? (
         <div className="p-6 text-red-600">{error}</div>
       ) : items.length === 0 ? (
-        <div className="p-6 text-slate-600">No late submissions found for this course/assignment.</div>
+        <div className="p-6 text-sm italic text-slate-600">No late submissions found for this course/assignment.</div>
       ) : (
         <div className="overflow-auto max-h-[calc(100vh-220px)]">
           <table className="w-full text-sm">

@@ -1,10 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import { Book, ChevronRight, FileDown, FileText, Loader2 } from "lucide-react";
+import { Book, ChevronRight, Loader2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -12,11 +11,14 @@ import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useAssignmentReports } from "@/hooks/reports/useAssignmentReports";
 import { useExportAssignmentGrades } from "@/hooks/reports/useExportAssignmentGrades";
+import { useGetLateSubmissions } from "@/hooks/reports/useGetLateSubmissions";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
+import { useGetReportsRequiringGrading } from "@/hooks/reports/useGetReportsRequiringGrading";
 import type { ReportBase } from "@/types/reports/reports.response";
 import { ReportStatus } from "@/types/reports/reports.response";
-import { formatDistanceToNow, parseISO } from "date-fns";
-import StatusBadge from "./utils/status";
+import LateSubmissions from "../../reports/late-submitssion/LateSubmissions";
+import ReportListItem from "./components/ReportListItem";
+import ReportsHeader from "./components/ReportsHeader";
 
 export default function LecturerAssignmentReportsPage() {
     const params = useParams();
@@ -33,6 +35,16 @@ export default function LecturerAssignmentReportsPage() {
 
     const [items, setItems] = useState<ReportBase[]>([]);
     const [error, setError] = useState<string | null>(null);
+
+    const [activeTab, setActiveTab] = useState<"all" | "late" | "requiring">("all");
+
+    // Late submissions
+    const { getLateSubmissions, loading: loadingLate } = useGetLateSubmissions();
+    const [lateItems, setLateItems] = useState<any[]>([]);
+
+    // Reports requiring grading
+    const { getReportsRequiringGrading, loading: loadingRequiring } = useGetReportsRequiringGrading();
+    const [requiringItems, setRequiringItems] = useState<any[]>([]);
 
     const [selectedReport, setSelectedReport] = useState<string | null>(null);
     const [selectedDetail, setSelectedDetail] = useState<any | null>(null);
@@ -52,6 +64,34 @@ export default function LecturerAssignmentReportsPage() {
             }
         })();
     }, [assignmentId]);
+
+    useEffect(() => {
+        // Fetch late submissions when tab selected
+        if (activeTab !== "late") return;
+        (async () => {
+            try {
+                const res = await getLateSubmissions({ courseId: courseId || undefined, assignmentId: assignmentId || undefined, pageNumber: 1, pageSize: 500 });
+                setLateItems(res?.reports || []);
+            } catch (e: any) {
+                // keep simple error handling per-tab
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, courseId, assignmentId]);
+
+    useEffect(() => {
+        // Fetch requiring-grading when tab selected
+        if (activeTab !== "requiring") return;
+        (async () => {
+            try {
+                const res = await getReportsRequiringGrading({ courseId: courseId || undefined, assignmentId: assignmentId || undefined, pageNumber: 1, pageSize: 500 });
+                setRequiringItems(res?.reports || []);
+            } catch (e: any) {
+                // ignore for now
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, courseId, assignmentId]);
 
     useEffect(() => {
         if (!assignmentId) return;
@@ -80,21 +120,14 @@ export default function LecturerAssignmentReportsPage() {
         );
     }, [items, assignmentId, assignmentData]);
 
-    const openDetail = async (id: string) => {
-        setSelectedReport(id);
-        const res = await getReportById(id);
-        if (res?.report) setSelectedDetail(res.report);
-    };
-
-    const closeDetail = () => {
-        setSelectedReport(null);
-        setSelectedDetail(null);
-    };
+    const hasGraded = useMemo(() => {
+        return items.some((r) => r.status === ReportStatus.Graded);
+    }, [items]);
 
     const router = useRouter();
 
     return (
-        <div className="py-1.5 px-2 sm:px-2 lg:px-3 min-h-screen overflow-auto">
+        <div className="max-w-7xl mx-auto mt-2 min-h-screen overflow-auto">
             {/* Breadcrumb (follow CourseDetailPage style) */}
             <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mb-4">
                 <div className="flex items-center justify-between">
@@ -128,224 +161,162 @@ export default function LecturerAssignmentReportsPage() {
                 </div>
             </nav>
 
+            {/* Tabs (styled like horizontal link tabs with underline) */}
+            <div className="mb-3">
+                <nav aria-label="Report tabs" className="border-b border-slate-100">
+                    <ul role="tablist" className="flex gap-8 -mb-px">
+                        <li role="presentation">
+                            <button
+                                role="tab"
+                                    aria-selected={activeTab === "all" ? "true" : "false"}
+                                    onClick={() => setActiveTab("all")}
+                                    className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "all" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
+                            >
+                                All Reports
+                            </button>
+                        </li>
+
+                        <li role="presentation">
+                            <button
+                                role="tab"
+                                    aria-selected={activeTab === "late" ? "true" : "false"}
+                                    onClick={() => setActiveTab("late")}
+                                    className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "late" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
+                            >
+                                Late Submissions
+                            </button>
+                        </li>
+
+                        <li role="presentation">
+                            <button
+                                role="tab"
+                                    aria-selected={activeTab === "requiring" ? "true" : "false"}
+                                    onClick={() => setActiveTab("requiring")}
+                                    className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "requiring" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
+                            >
+                                Requiring Grading
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
             <Card className="shadow-md py-0 gap-0 border-slate-200 max-h-[calc(100vh-160px)] overflow-y-auto">
                 <CardHeader className="flex flex-row items-start justify-between p-4">
-                    <div>
-                        <div className="flex gap-1 items-end">
-                            <h2 className="text-lg font-normal text-slate-600">Reports for - </h2>
-                            <div className="text-xl text-slate-900 mt-1">{assignmentTitle}</div>
-                        </div>
-                        <div className="text-sm text-slate-500">{items.length} report(s)</div>
-                    </div>
-                    <Button
-                        className="bg-green-100 shadow-lg text-sm text-green-900"
-                        onClick={() => exportGrades(assignmentId)}
-                        disabled={!assignmentId || exporting}
-                    >
-                        {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="size-4" />}
-                        Export Grade
-                    </Button>
+                    <ReportsHeader
+                        assignmentTitle={assignmentTitle}
+                        count={items.length}
+                        hasGraded={hasGraded}
+                        exporting={exporting}
+                        assignmentId={assignmentId}
+                        exportGrades={exportGrades}
+                    />
                 </CardHeader>
+
+
 
                 <CardContent className="p-0">
                     <Separator />
 
-                    {loadingList && (
-                        <div className="flex items-center justify-center p-8 text-slate-600">
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading reports...
+                    {activeTab === "all" && (
+                        <>
+                            {loadingList && (
+                                <div className="flex items-center justify-center p-8 text-slate-600">
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading reports...
+                                </div>
+                            )}
+
+                            {!loadingList && error && (
+                                <div className="p-6 text-red-600">{error}</div>
+                            )}
+
+                            {!loadingList && !error && items.length === 0 && (
+                                <div className="p-6 text-slate-600">No reports were submitted yet for this assignment.</div>
+                            )}
+
+                            {!loadingList && items.length > 0 && (
+                                <ul className="divide-y">
+                                    {items.map((r) => (
+                                        <ReportListItem
+                                            key={r.id}
+                                            report={r}
+                                            getStudentName={getStudentName}
+                                            router={router}
+                                            courseId={courseId}
+                                            expandedId={expandedId}
+                                            setExpandedId={setExpandedId}
+                                        />
+                                    ))}
+                                </ul>
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === "late" && (
+                        <div>
+                            {loadingLate ? (
+                                <div className="flex items-center justify-center p-8 text-slate-600">
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading late submissions...
+                                </div>
+                            ) : (
+                                <LateSubmissions items={lateItems} loading={loadingLate} error={null} />
+                            )}
                         </div>
                     )}
 
-                    {!loadingList && error && (
-                        <div className="p-6 text-red-600">{error}</div>
-                    )}
-
-                    {!loadingList && !error && items.length === 0 && (
-                        <div className="p-6 text-slate-600">No reports were submitted yet for this assignment.</div>
-                    )}
-
-                    {!loadingList && items.length > 0 && (
-                        <ul className="divide-y">
-                            {items.map((r) => (
-                                <li key={r.id} className="p-4 hover:bg-slate-50">
-                                    <div className="grid grid-cols-1 sm:grid-cols-[1fr,320px] gap-4 items-start">
-                                        {/* Left: main content */}
-                                        <div className="min-w-0">
-                                            <div className="flex items-start gap-3">
-                                                <FileText className="w-7 h-7 text-indigo-600 mt-1" />
-                                                <div className="truncate w-full">
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="font-semibold text-slate-900 text-lg truncate">
-                                                                {r.groupName ?? getStudentName(r.submittedBy) ?? `Report ${r.id.slice(0, 8)}`}
-                                                            </div>
-                                                            <div className="text-sm text-slate-600 mt-1 truncate">
-                                                                Assignment: {r.assignmentTitle ?? `Assignment ${r.assignmentId}`}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-slate-600">
-                                                        <div>
-                                                            <div className="text-xs mb-2 text-slate-500">Submitted At</div>
-                                                            <div className="font-normal">{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "—"}</div>
-                                                            {r.submittedAt && (
-                                                                <div className="text-xs text-slate-400">{formatDistanceToNow(parseISO(r.submittedAt), { addSuffix: true })}</div>
-                                                            )}
-                                                        </div>
-
-                                                        <div>
-                                                            <div className="text-xs text-slate-500 mb-2">Created</div>
-                                                            <div className="font-normal">{r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"}</div>
-                                                        </div>
-
-                                                        <div>
-                                                            <div className="text-xs text-slate-500 mb-2">Updated</div>
-                                                            <div className="font-normal">{r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "—"}</div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 sm:items-center sm:justify-between gap-3">
-                                                        <div className="text-sm text-slate-700">
-                                                            <div className="flex flex-col gap-2">
-                                                                <span className="text-xs text-slate-500">Group</span>
-                                                                <span className="font-medium">{r.groupName ?? '-'}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="text-sm text-slate-700">
-                                                            <div className="flex flex-col gap-2">
-                                                                <span className="text-xs text-slate-500">Submitted by</span>
-                                                                <span className="font-medium">{getStudentName(r.submittedBy)}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="text-sm text-slate-700">
-                                                            <div className="flex flex-col gap-2">
-                                                                <span className="text-xs text-slate-500">File URL</span>
-                                                                <div className="text-xs font-mono">
-                                                                    {r.fileUrl ? (
-                                                                        <a href={r.fileUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{r.fileUrl}</a>
-                                                                    ) : (
-                                                                        '-'
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex justify-end gap-2">
-                                                        {r.fileUrl && (
-                                                            <a
-                                                                href={r.fileUrl}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="btn bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded"
-                                                            >
-                                                                Download
-                                                            </a>
-                                                        )}
-
-                                                        <Button size="sm" className="btn btn-gradient-slow" onClick={() => router.push(`/lecturer/course/${courseId}/reports/${r.id}`)}>
-                                                            Details
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Right: compact info card */}
-                                        <div className="flex-shrink-0">
-                                            <div className="bg-white flex border justify-around border-slate-100 rounded-xl p-4 shadow-sm flex-row items-center text-center gap-3">
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="text-xs text-slate-500">Group submission</div>
-                                                    <div className="font-medium">{r.isGroupSubmission ? 'Yes' : 'No'}</div>
-                                                </div>
-
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="text-xs text-slate-500">Status</div>
-                                                    <div className=""><StatusBadge status={r.status} /></div>
-                                                </div>
-
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="text-xs text-slate-500">Version</div>
-                                                    <div className="font-medium">{r.version}</div>
-                                                </div>
-
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="text-xs text-slate-500">Grade</div>
-                                                    <div className="font-semibold text-slate-900">{r.grade ?? <span className="italic text-slate-400 font-normal text-sm">Not updated yet</span>}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Expanded details panel */}
-                                    {expandedId === r.id && (
-                                        <div className="mt-3 bg-white border border-slate-100 rounded p-4 text-sm text-slate-700">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Assignment Title</div>
-                                                    <div className="font-medium">{r.assignmentTitle}</div>
-                                                </div>
-
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Group ID</div>
-                                                    <div className="font-medium">{r.groupId ?? '—'}</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Group name</div>
-                                                    <div className="font-medium">{r.groupName ?? '—'}</div>
-                                                </div>
-
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Submitted By</div>
-                                                    <div className="font-medium">{getStudentName(r.submittedBy)}</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Submitted At</div>
-                                                    <div className="font-medium">{r.submittedAt ?? '—'}</div>
-                                                </div>
-
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Status</div>
-                                                    <div className="font-medium mt-1"><StatusBadge status={r.status} /></div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Grade</div>
-                                                    <div className="font-medium">{r.grade ?? '—'}</div>
-                                                </div>
-
-                                                <div className="sm:col-span-2">
-                                                    <div className="text-xs text-slate-500">Feedback</div>
-                                                    <div className="font-medium whitespace-pre-wrap">{r.feedback ?? '—'}</div>
-                                                </div>
-
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Graded By</div>
-                                                    <div className="font-medium">{r.gradedBy ?? '—'}</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Graded At</div>
-                                                    <div className="font-medium">{r.gradedAt ?? '—'}</div>
-                                                </div>
-
-                                                <div>
-                                                    <div className="text-xs text-slate-500">File URL</div>
-                                                    <div className="text-xs font-mono truncate">{r.fileUrl ?? '—'}</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-slate-500">Version</div>
-                                                    <div className="font-medium">{r.version}</div>
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-3">
-                                            </div>
-                                        </div>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
+                    {activeTab === "requiring" && (
+                        <div>
+                            {loadingRequiring ? (
+                                <div className="flex items-center justify-center p-8 text-slate-600">
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading...
+                                </div>
+                            ) : requiringItems.length === 0 ? (
+                                <div className="p-6 text-slate-600">No reports requiring grading found.</div>
+                            ) : (
+                                <div className="overflow-auto max-h-[calc(100vh-220px)]">
+                                    <table className="w-full text-sm">
+                                        <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600">
+                                            <tr>
+                                                <th className="text-left font-medium px-4 py-2">Assignment</th>
+                                                <th className="text-left font-medium px-4 py-2">Group / By</th>
+                                                <th className="text-left font-medium px-4 py-2">Submitted</th>
+                                                <th className="text-left font-medium px-4 py-2">Status</th>
+                                                <th className="text-left font-medium px-4 py-2">Grade</th>
+                                                <th className="text-left font-medium px-4 py-2">Feedback</th>
+                                                <th className="text-left font-medium px-4 py-2">Graded By</th>
+                                                <th className="text-left font-medium px-4 py-2">Graded At</th>
+                                                <th className="text-left font-medium px-4 py-2">Version</th>
+                                                <th className="text-left font-medium px-4 py-2">File</th>
+                                                <th className="text-left font-medium px-4 py-2">Updated</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {requiringItems.map((r: any) => (
+                                                <tr key={r.id} className="border-b last:border-0 hover:bg-slate-50 align-top">
+                                                    <td className="px-4 py-2">
+                                                        <div className="font-medium text-slate-900 truncate max-w-[280px]">{r.assignmentTitle || r.assignmentId}</div>
+                                                        <div className="text-xs text-slate-500">#{r.id?.slice?.(0, 8)}</div>
+                                                    </td>
+                                                    <td className="px-4 py-2">
+                                                        <div className="text-slate-800">{r.groupName || r.submittedBy || "—"}</div>
+                                                        {r.groupId && <div className="text-xs text-slate-500">Group: {r.groupId}</div>}
+                                                    </td>
+                                                    <td className="px-4 py-2">{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "—"}</td>
+                                                    <td className="px-4 py-2">{String(r.status)}</td>
+                                                    <td className="px-4 py-2">{r.grade ?? "—"}</td>
+                                                    <td className="px-4 py-2 max-w-[260px]"><div className="truncate" title={r.feedback || undefined}>{r.feedback ?? "—"}</div></td>
+                                                    <td className="px-4 py-2">{r.gradedBy ?? "—"}</td>
+                                                    <td className="px-4 py-2">{r.gradedAt ? new Date(r.gradedAt).toLocaleString() : "—"}</td>
+                                                    <td className="px-4 py-2">{r.version}</td>
+                                                    <td className="px-4 py-2">{r.fileUrl ? (<a href={r.fileUrl} target="_blank" rel="noreferrer" className="text-brand hover:underline">Download</a>) : "—"}</td>
+                                                    <td className="px-4 py-2">{r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "—"}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </CardContent>
             </Card>

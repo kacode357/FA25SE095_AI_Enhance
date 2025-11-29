@@ -1,21 +1,15 @@
 "use client";
 
-import { getActionInfo } from '@/app/lecturer/course/[id]/reports/utils/actions-status';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import Select from "@/components/ui/select/Select";
-import { Separator } from "@/components/ui/separator";
 import { useGetReportHistory } from "@/hooks/reports/useGetReportHistory";
 import { useGetReportHistoryVersion } from "@/hooks/reports/useGetReportHistoryVersion";
-import { ReportHistoryItem } from "@/types/reports/reports.response";
-import { formatDistanceToNow, parseISO } from "date-fns";
 import DOMPurify from 'dompurify';
-import { Edit, Loader2, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Loader2, X } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import CompareVersionPanel from '../compare-version/CompareVersionPanel';
-
-// getActionInfo moved to hooks/reports/utils.ts for reuse across reports UI
+import HistoryDetails from './HistoryDetails';
+import HistoryEntries from './HistoryEntries';
+import HistoryVersions from './HistoryVersions';
 
 interface Props {
   reportId: string;
@@ -27,14 +21,38 @@ export default function HistoryReportLog({ reportId }: Props) {
   const [data, setData] = useState<any | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [pageSize] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(1);
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+  const [selectedFullVersion, setSelectedFullVersion] = useState<string | null>(null);
   const [versionData, setVersionData] = useState<any | null>(null);
   const [compareResult, setCompareResult] = useState<any | null>(null);
+  const pendingFetchRef = useRef<{ reportId: string | null; pageNumber: number | null }>({ reportId: null, pageNumber: null });
 
   const fetch = async (p = 1) => {
     if (!reportId) return;
-    const res = await getReportHistory({ reportId, pageNumber: p, pageSize });
-    if (res) setData(res);
+    // prevent duplicate fetches for the same reportId/pageNumber when effects fire
+    if (pendingFetchRef.current.reportId === reportId && pendingFetchRef.current.pageNumber === p) return;
+    pendingFetchRef.current = { reportId, pageNumber: p };
+    let res: any = null;
+    try {
+      res = await getReportHistory({ reportId, pageNumber: p, pageSize });
+      if (res) setData(res);
+      // derive total pages if API provides totalPages or total count
+      try {
+        const tp = res?.totalPages ?? (((res as any)?.total) ? Math.max(1, Math.ceil((res as any).total / pageSize)) : undefined);
+        if (tp) setTotalPages(tp);
+        else {
+          // fallback: if returned history length is less than pageSize and we're on first page, assume 1
+          const len = (res as any)?.history?.length ?? 0;
+          if (p === 1 && len < pageSize) setTotalPages(1);
+        }
+      } catch (e) {
+        // ignore
+      }
+    } finally {
+      // clear pending marker so future requests can run
+      pendingFetchRef.current = { reportId: null, pageNumber: null };
+    }
   };
 
   const fetchVersion = async (version: number | null) => {
@@ -44,34 +62,64 @@ export default function HistoryReportLog({ reportId }: Props) {
       const res = await getReportHistoryVersion({ reportId, version });
       if (res) setVersionData(res);
     } catch (e) {
-      // ignore, leave versionData null
     }
   };
 
   useEffect(() => {
-    // If a compare is active, skip fetching the general history list to avoid
-    // showing all versions underneath the compare result.
     if (compareResult) return;
     fetch(pageNumber);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportId, pageNumber]);
+
+  useEffect(() => {
+    setPageNumber(1);
+  }, [reportId]);
+
+
 
   const history: any[] = data?.history ?? [];
 
-  const displayHistory = selectedVersion !== null
-    ? history.filter((h) => {
-      const v = typeof h.version === 'number' ? h.version : (typeof h.version === 'string' && /^\d+$/.test(h.version) ? Number(h.version) : null);
-      return v === selectedVersion;
-    })
-    : history;
+  const versionsList = useMemo(() => {
+    const arr = Array.isArray(history) ? [...history] : [];
+    arr.sort((a, b) => {
+      const ta = a?.changedAt ? new Date(a.changedAt).getTime() : 0;
+      const tb = b?.changedAt ? new Date(b.changedAt).getTime() : 0;
+      return tb - ta;
+    });
 
-  const availableVersions = Array.from(new Set(history.map((h) => (typeof h.version === 'number' ? h.version : (typeof h.version === 'string' && /^\d+$/.test(h.version) ? Number(h.version) : null))).filter(Boolean))).sort((a, b) => (b as number) - (a as number));
+    const map = new Map<string, any>();
+    for (const h of arr) {
+      const key = h?.fullVersion ?? (h?.version != null ? String(h.version) : String(h?.id ?? Math.random()));
+      if (!map.has(key)) map.set(key, h);
+    }
 
-  // reset page when reportId changes
+    return Array.from(map.values());
+  }, [history]);
+
   useEffect(() => {
-    setPageNumber(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reportId]);
+    if (compareResult) return;
+    if ((!selectedFullVersion && selectedVersion == null) && versionsList && versionsList.length > 0) {
+      const first = versionsList[0];
+      const num = typeof first.version === 'number' ? first.version : (typeof first.version === 'string' && /^\d+$/.test(first.version) ? Number(first.version) : null);
+      setSelectedFullVersion(first.fullVersion ?? null);
+      setSelectedVersion(num);
+      if (num !== null) fetchVersion(num);
+    }
+  }, [versionsList, compareResult]);
+
+  const displayHistory = selectedFullVersion !== null
+    ? history.filter((h) => (h.fullVersion ?? null) === selectedFullVersion)
+    : (selectedVersion !== null
+      ? history.filter((h) => {
+        const v = typeof h.version === 'number' ? h.version : (typeof h.version === 'string' && /^\d+$/.test(h.version) ? Number(h.version) : null);
+        return v === selectedVersion;
+      })
+      : history);
+
+  const availableVersions = Array.from(new Set(history.map((h) => {
+    if (typeof h.version === 'number') return h.version;
+    if (typeof h.version === 'string' && /^\d+$/.test(h.version)) return Number(h.version);
+    return null;
+  }).filter(Boolean))).sort((a, b) => (b as number) - (a as number));
 
   const renderColoredDiff = (input: any, wrapperClass = '') => {
     if (input === null || input === undefined || input === '') return <div className="text-sm text-slate-600 mt-2">—</div>;
@@ -82,7 +130,6 @@ export default function HistoryReportLog({ reportId }: Props) {
     return (
       <div className={`font-mono text-[13px] whitespace-pre-wrap ${wrapperClass}`}>
         {lines.map((line, idx) => {
-          // Split line into tokens that look like +123 or -123 or +word / -word
           const parts = line.split(/(\+[0-9A-Za-z_\-]+|\-[0-9A-Za-z_\-]+)/g);
           return (
             <div key={idx} className="leading-6">
@@ -99,17 +146,30 @@ export default function HistoryReportLog({ reportId }: Props) {
     );
   };
 
-  // no collapsed details - show everything by default
-
   return (
-    <Card className="shadow-sm -my-6 -mx-6 py-4 border-none">
-      <CardContent className="border-none -mt-3 pt-2">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">History Log</h3>
-          </div>
+    <div className="flex h-full gap-6">
+      <React.Suspense>
+      </React.Suspense>
+      {!compareResult && (
+        <HistoryVersions
+          versionsList={versionsList}
+          pageNumber={pageNumber}
+          setPageNumber={setPageNumber}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          selectedVersion={selectedVersion}
+          selectedFullVersion={selectedFullVersion}
+          setSelectedVersion={setSelectedVersion}
+          setSelectedFullVersion={setSelectedFullVersion}
+          fetchVersion={fetchVersion}
+          currentVersion={data?.currentVersion ?? null}
+        />
+      )}
 
-          <div className="flex items-center cursor-text gap-2">
+      <div className="flex-1 overflow-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold">History Log</h3>
+          <div className="flex items-center gap-3">
             {!compareResult && (
               <>
                 <label htmlFor="version-select" className="text-xs text-slate-500">Version</label>
@@ -118,7 +178,7 @@ export default function HistoryReportLog({ reportId }: Props) {
                     value={selectedVersion ?? ""}
                     options={availableVersions.map((v) => ({ value: v as number, label: `Version ${v}` }))}
                     placeholder="Latest"
-                    onChange={(v) => { setSelectedVersion(v); fetchVersion(v); }}
+                    onChange={(v) => { setSelectedFullVersion(null); setSelectedVersion(v); fetchVersion(v); }}
                     className="w-full"
                   />
                 </div>
@@ -129,302 +189,122 @@ export default function HistoryReportLog({ reportId }: Props) {
           </div>
         </div>
 
-        {/* If a specific version is selected, show its fetched details (hidden while comparing) */}
-        {selectedVersion !== null && !compareResult && (
-          <div className="mb-4 p-3 bg-slate-50 border border-slate-100 rounded">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-normal">Details for version <span className="font-bold text-violet-800">{selectedVersion}</span></div>
-              <div className="text-xs text-slate-500">{loadingVersion ? 'Loading...' : (versionData ? 'Fetched' : 'Not available')}</div>
-            </div>
-
-            {versionData && (
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-slate-500">Old changed</div>
-                  {/* Try common fields for old content, fall back to changeDetails or dash */}
-                  <div className="mt-1 bg-white p-3 rounded-md border border-slate-200 text-sm overflow-auto prose max-w-full h-40" dangerouslySetInnerHTML={{ __html: typeof versionData.old === 'string' ? DOMPurify.sanitize(versionData.old) : (typeof versionData.before === 'string' ? DOMPurify.sanitize(versionData.before) : (typeof versionData.previous === 'string' ? DOMPurify.sanitize(versionData.previous) : (versionData.changeDetailsOld ? DOMPurify.sanitize(String(versionData.changeDetailsOld)) : (versionData.changeDetails ? DOMPurify.sanitize(String(versionData.changeDetails)) : '—')))) }} />
-                </div>
-                <div>
-                  <div className="text-xs text-slate-500">New changed</div>
-                  {/* Try common fields for new content, fall back to unifiedDiff or dash */}
-                  <div className="mt-1 bg-white p-3 rounded-md border border-slate-200 text-sm overflow-auto prose max-w-full h-40" dangerouslySetInnerHTML={{ __html: typeof versionData.new === 'string' ? DOMPurify.sanitize(versionData.new) : (typeof versionData.after === 'string' ? DOMPurify.sanitize(versionData.after) : (typeof versionData.current === 'string' ? DOMPurify.sanitize(versionData.current) : (versionData.changeDetailsNew ? DOMPurify.sanitize(String(versionData.changeDetailsNew)) : (versionData.unifiedDiff ? DOMPurify.sanitize(String(versionData.unifiedDiff)) : '—')))) }} />
-                </div>
-              </div>
-            )}
-          </div>
+        {(selectedVersion !== null || selectedFullVersion !== null) && !compareResult && (
+          <HistoryDetails
+            versionData={versionData}
+            loadingVersion={loadingVersion}
+            selectedVersion={selectedVersion}
+            selectedFullVersion={selectedFullVersion}
+          />
         )}
 
-        {/* Compare result rendered below header so the header layout stays intact */}
         {compareResult && (
           <div className="mb-6 p-4 bg-white border border-slate-100 rounded shadow-sm">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold">Compare Result</h4>
+              <div className="text-xs text-slate-500 mr-3">Mode: <span className="font-medium">{compareResult.mode ?? '—'}</span></div>
+
               <div className="flex items-center gap-2">
-                <button onClick={() => setCompareResult(null)} className="text-slate-500 cursor-pointer hover:text-slate-700">Close ✕</button>
+                <button onClick={() => setCompareResult(null)} className="text-slate-500 flex items-center gap-1 shadow-md rounded-lg border-slate-400 border py-1 px-2 cursor-pointer hover:text-slate-700"><X className="size-4" />Close</button>
               </div>
             </div>
 
-            {/* <div className="mt-3">
-              <div className="text-xs text-slate-500">Change Summary</div>
-              {renderColoredDiff(compareResult.changeSummary ?? '—', 'mt-1 text-sm whitespace-pre-wrap break-words max-h-28 overflow-auto p-2 bg-white rounded')}
-            </div> */}
+            <div className="flex mt-5 items-center justify-between">
+              <div className=" flex gap-2 items-center">
+                <div className="text-xs text-slate-500">Change Summary:</div>
+                {renderColoredDiff(compareResult.changeSummary ?? '—', 'text-sm whitespace-pre-wrap break-words max-h-28 overflow-auto bg-white rounded')}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-slate-500">Contributors:</div>
+                <div className="text-sm">{(compareResult?.contributorNames && compareResult.contributorNames.join(', ')) ?? '—'}</div>
+              </div>
+            </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left panel (version 1) */}
-              <div className="p-3 border rounded border-slate-100 bg-slate-50 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="text-xs font-mono bg-slate-800 text-white px-2 py-0.5 rounded">v{compareResult.version1?.version ?? '—'}</div>
-                    {(() => {
-                      const act = compareResult.version1?.action ?? compareResult.version1?.status ?? '';
-                      const info = getActionInfo(act as string);
-                      const key = info?.key ?? '';
-                      const label = (info?.label ?? act) || '—';
-                      const colorClass = key === 'updated' ? ' bg-blue-50 text-blue-700' : key === 'created' ? 'bg-emerald-50 text-emerald-700' : key === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-700';
-                      return (
-                        <div role="status" aria-label={label} className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide ${colorClass} border border-slate-100 shadow-sm`}>
-                          <span className="w-4 h-4 flex items-center justify-center">
-                            {key === 'updated' ? <Edit className="w-3 h-3" /> : key === 'created' ? <PlusCircle className="w-3 h-3" /> : key === 'rejected' ? <Trash2 className="w-3 h-3" /> : <RefreshCw className="w-3 h-3" />}
-                          </span>
-                          <span className="text-xs normal-case">{label}</span>
-                        </div>
-                      );
-                    })()}
+              {/* Aggregated Version 1 */}
+              <div className="p-3 border rounded border-slate-100 bg-slate-50">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-xs text-slate-500">Aggregated Version 1</div>
+                    <div className="mt-2 font-mono text-sm">{compareResult.aggregatedVersion1 ? `v${compareResult.aggregatedVersion1.version} ${compareResult.aggregatedVersion1.fullVersionRange ? `(${compareResult.aggregatedVersion1.fullVersionRange})` : ''}` : '—'}</div>
+                    <div className="text-xs text-slate-500 mt-1">Sequences: {compareResult.aggregatedVersion1?.sequenceCount ?? '—'}</div>
                   </div>
                   <div className="text-xs text-slate-500 text-right">
-                    <div>{(compareResult.version1?.contributorNames && Array.isArray(compareResult.version1.contributorNames) && compareResult.version1.contributorNames.length > 0) ? compareResult.version1.contributorNames.join(', ') : (compareResult.version1?.changedBy ?? '—')}</div>
-                    <div className="mt-1">{compareResult.version1?.changedAt ? `${new Date(compareResult.version1.changedAt).toLocaleString()}` : '—'}</div>
+                    <div>First: {compareResult.aggregatedVersion1?.firstChangeAt ? new Date(compareResult.aggregatedVersion1.firstChangeAt).toLocaleString() : '—'}</div>
+                    <div className="mt-1">Last: {compareResult.aggregatedVersion1?.lastChangeAt ? new Date(compareResult.aggregatedVersion1.lastChangeAt).toLocaleString() : '—'}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Right panel (version 2) */}
-              <div className="p-3 border rounded border-slate-100 bg-slate-50 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="text-xs font-mono bg-slate-800 text-white px-2 py-0.5 rounded">v{compareResult.version2?.version ?? '—'}</div>
-                    {(() => {
-                      const act = compareResult.version2?.action ?? compareResult.version2?.status ?? '';
-                      const info = getActionInfo(act as string);
-                      const key = info?.key ?? '';
-                      const label = (info?.label ?? act) || '—';
-                      const colorClass = key === 'updated' ? ' bg-blue-50 text-blue-700' : key === 'created' ? 'bg-emerald-50 text-emerald-700' : key === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-700';
-                      return (
-                        <div role="status" aria-label={label} className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide ${colorClass} border border-slate-100 shadow-sm`}>
-                          <span className="w-4 h-4 flex items-center justify-center">
-                            {key === 'updated' ? <Edit className="w-3 h-3" /> : key === 'created' ? <PlusCircle className="w-3 h-3" /> : key === 'rejected' ? <Trash2 className="w-3 h-3" /> : <RefreshCw className="w-3 h-3" />}
-                          </span>
-                          <span className="text-xs normal-case">{label}</span>
-                        </div>
-                      );
-                    })()}
+              {/* Aggregated Version 2 */}
+              <div className="p-3 border rounded border-slate-100 bg-slate-50">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-xs text-slate-500">Aggregated Version 2</div>
+                    <div className="mt-2 font-mono text-sm">{compareResult.aggregatedVersion2 ? `v${compareResult.aggregatedVersion2.version} ${compareResult.aggregatedVersion2.fullVersionRange ? `(${compareResult.aggregatedVersion2.fullVersionRange})` : ''}` : '—'}</div>
+                    <div className="text-xs text-slate-500 mt-1">Sequences: {compareResult.aggregatedVersion2?.sequenceCount ?? '—'}</div>
                   </div>
                   <div className="text-xs text-slate-500 text-right">
-                    <div>{(compareResult.version2?.contributorNames && Array.isArray(compareResult.version2.contributorNames) && compareResult.version2.contributorNames.length > 0) ? compareResult.version2.contributorNames.join(', ') : (compareResult.version2?.changedBy ?? '—')}</div>
-                    <div className="mt-1">{compareResult.version2?.changedAt ? `${new Date(compareResult.version2.changedAt).toLocaleString()}` : '—'}</div>
+                    <div>First: {compareResult.aggregatedVersion2?.firstChangeAt ? new Date(compareResult.aggregatedVersion2.firstChangeAt).toLocaleString() : '—'}</div>
+                    <div className="mt-1">Last: {compareResult.aggregatedVersion2?.lastChangeAt ? new Date(compareResult.aggregatedVersion2.lastChangeAt).toLocaleString() : '—'}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-4">
-              <div>
-                <div className="text-xs text-slate-500">Change Summary</div>
-                {renderColoredDiff(compareResult.changeSummary ?? '—', 'mt-1 text-sm whitespace-pre-wrap break-words max-h-28 overflow-auto p-2 bg-white rounded')}
-
-                <div className="text-xs text-slate-500 mt-3">Differences</div>
-                {compareResult.differences && compareResult.differences.length > 0 ? (
-                  <div className="mt-2 space-y-2">
-                    {compareResult.differences.map((d: any) => (
-                      <div key={d.field} className="p-3 border rounded border-slate-200 bg-white flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="font-mono text-sm">{d.field}</div>
-                          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-0 items-stretch">
-                            <div className="flex flex-col">
-                              <div className="text-xs text-slate-500">Old</div>
-                              <div className="mt-1 bg-red-50 text-[12px] p-2 overflow-auto max-h-36 border border-red-50 flex-1 min-h-12">{renderColoredDiff(typeof d.oldValue === 'string' ? d.oldValue : JSON.stringify(d.oldValue, null, 2))}</div>
-                            </div>
-                            <div className="flex flex-col">
-                              <div className="text-xs text-slate-500">New</div>
-                              <div className="mt-1 bg-green-50 text-[12px] p-2 overflow-auto max-h-36 border border-green-50 flex-1 min-h-12">{renderColoredDiff(typeof d.newValue === 'string' ? d.newValue : JSON.stringify(d.newValue, null, 2))}</div>
-                            </div>
+            <div className="mt-4">
+              <div className="text-xs text-slate-500">Differences</div>
+              {compareResult.differences && compareResult.differences.length > 0 ? (
+                <div className="mt-2 space-y-2">
+                  {compareResult.differences.map((d: any) => {
+                    const isSubmission = String(d.field).toLowerCase() === 'submission';
+                    return (
+                      <div key={d.field} className="p-3 border rounded border-slate-200 bg-white">
+                        <div className="font-mono text-sm">{d.field}</div>
+                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-xs text-slate-500">Old</div>
+                            {isSubmission ? (
+                              <div className="mt-1 bg-red-50 p-3 overflow-auto border border-red-50 min-h-[160px] prose max-w-full">
+                                <div className="whitespace-pre-wrap text-sm text-slate-700">{DOMPurify.sanitize(typeof d.oldValue === 'string' ? d.oldValue : String(d.oldValue ?? '—'), { ALLOWED_TAGS: [] as any })}</div>
+                              </div>
+                            ) : (
+                              <div className="mt-1 bg-red-50 text-[12px] p-2 overflow-auto max-h-36 border border-red-50 min-h-12">{renderColoredDiff(typeof d.oldValue === 'string' ? d.oldValue : JSON.stringify(d.oldValue, null, 2))}</div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-xs text-slate-500">New</div>
+                            {isSubmission ? (
+                              <div className="mt-1 bg-green-50 p-3 overflow-auto border border-green-50 min-h-[160px] prose max-w-full">
+                                <div className="whitespace-pre-wrap text-sm text-slate-700">{DOMPurify.sanitize(typeof d.newValue === 'string' ? d.newValue : String(d.newValue ?? '—'), { ALLOWED_TAGS: [] as any })}</div>
+                              </div>
+                            ) : (
+                              <div className="mt-1 bg-green-50 text-[12px] p-2 overflow-auto max-h-36 border border-green-50 min-h-12">{renderColoredDiff(typeof d.newValue === 'string' ? d.newValue : JSON.stringify(d.newValue, null, 2))}</div>
+                            )}
                           </div>
                         </div>
-                        <div className={`ml-4 text-[11px] font-semibold self-start ${d.changed ? 'text-emerald-700' : 'text-slate-500'}`}>{d.changed ? 'Changed' : 'Unchanged'}</div>
+                        <div className={`mt-2 text-[11px] font-semibold ${d.changed ? 'text-emerald-700' : 'text-slate-500'}`}>{d.changed ? 'Changed' : 'Unchanged'}</div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-slate-600 mt-2">—</div>
-                )}
-
-                <div className="text-xs text-slate-500 mt-4">Unified Diff</div>
-                {compareResult.unifiedDiff ? (
-                  <div className="mt-2 h-48 border border-slate-200 rounded overflow-hidden bg-white">
-                    <ScrollArea className="h-full">
-                      <div className="p-3">
-                        {renderColoredDiff(DOMPurify.sanitize(String(compareResult.unifiedDiff)))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                ) : (
-                  <div className="text-sm text-slate-600 mt-2">—</div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-4 text-xs text-slate-500">Contributors</div>
-            <div className="text-sm">{(compareResult?.contributorNames && compareResult.contributorNames.join(', ')) ?? '—'}</div>
-
-            <div className="mt-3 text-right">
-              <button
-                className="text-sm cursor-pointer btn btn-gradient-slow text-slate-600 hover:text-slate-800"
-                onClick={() => setCompareResult(null)}
-              >
-                Clear compare
-              </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-600 mt-2">—</div>
+              )}
             </div>
           </div>
         )}
 
-        {/* When comparing, hide the history list and pagination below; the compare panel
-            itself displays the compare response. */}
         {!compareResult && !loading && history.length === 0 && (
           <div className="text-sm text-slate-600">No history entries found for this report.</div>
         )}
 
         {!compareResult && !loading && displayHistory.length > 0 && (
           <div className="space-y-4 border-slate-200">
-            {displayHistory.map((h) => (
-              <article key={h.id} className="border rounded-lg bg-white border-slate-100 shadow-sm overflow-hidden">
-                <div className="p-4 flex items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      {/* Styled action pill with icon */}
-                      {(() => {
-                        const entry = h as ReportHistoryItem;
-                        const info = getActionInfo(entry.action);
-                        const key = info.key;
-                        const label = info.label;
-                        const colorClass = key === 'updated' ? ' bg-blue-50 text-blue-700' : key === 'created' ? 'bg-emerald-50 text-emerald-700' : key === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-700';
-                        return (
-                          <div role="status" aria-label={label} className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide ${colorClass} border border-slate-100 shadow-sm`}>
-                            <span className="w-4 h-4 flex items-center justify-center">
-                              {key === 'updated' ? <Edit className="w-3 h-3" /> : key === 'created' ? <PlusCircle className="w-3 h-3" /> : key === 'rejected' ? <Trash2 className="w-3 h-3" /> : <RefreshCw className="w-3 h-3" />}
-                            </span>
-                            <span>{label}</span>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Show contributor names (readable) — fall back to changedBy if names not available */}
-                      <div className="text-sm font-medium">{(h.contributorNames && Array.isArray(h.contributorNames) && h.contributorNames.length > 0) ? `${h.contributorNames.join(', ')}` : (h.changedBy ?? '—')}</div>
-                      <div className="text-xs text-slate-400">{h.changedAt ? `${new Date(h.changedAt).toLocaleString()} • ${formatDistanceToNow(parseISO(h.changedAt), { addSuffix: true })}` : '—'}</div>
-                    </div>
-
-                    <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                      <div className="col-span-1">
-                        <div className="text-xs text-slate-500">Version</div>
-                        <div className="font-medium">{typeof h.version === 'number' ? h.version : '—'}</div>
-                        <div className="text-xs text-slate-500 mt-3">Contributors</div>
-                        <div className="text-sm font-mono text-slate-700">{(h.contributorNames && Array.isArray(h.contributorNames) && h.contributorNames.length > 0) ? h.contributorNames.join(', ') : '—'}</div>
-                      </div>
-
-                      <div className="col-span-1">
-                        <div className="text-xs text-slate-500">Comment</div>
-                        <div className="text-sm text-slate-700 whitespace-pre-wrap">{h.comment ?? '—'}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-36 text-right">
-                    <div className="text-xs text-slate-500">Changed At</div>
-                    <div className="text-sm text-slate-700">{h.changedAt ? formatDistanceToNow(parseISO(h.changedAt), { addSuffix: true }) : '—'}</div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs text-slate-500">Change Summary</div>
-                      {renderColoredDiff(h.changeSummary ?? '—', 'text-sm whitespace-pre-wrap break-words max-h-40 overflow-auto mt-2 p-2 bg-white rounded')}
-
-                      <div className="text-xs text-slate-500 mt-7">Change Details</div>
-                      <div className="text-sm text-slate-700 whitespace-pre-wrap break-words max-h-40 overflow-auto mt-2 p-2 bg-white rounded">{h.changeDetails ?? '—'}</div>
-                    </div>
-
-                    <div>
-                      <div className="text-xs text-slate-500">Unified Diff</div>
-                      {h.unifiedDiff ? (
-                        <div className="mt-1 h-40 border border-slate-200 rounded bg-slate-50 overflow-hidden">
-                          <ScrollArea className="h-full border-slate-200">
-                            <div className="p-3 text-[13px]">
-                              {renderColoredDiff(h.unifiedDiff)}
-                            </div>
-                          </ScrollArea>
-                        </div>
-                      ) : (
-                        <div className="text-sm text-slate-600 mt-1">—</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-8">
-                    <div className="text-xs text-slate-500">Field Changes</div>
-                    {h.changes && Object.keys(h.changes).length > 0 ? (
-                            <div className="mt-2 grid gap-2">
-                        {Object.entries(h.changes).map(([key, val]) => (
-                          <div key={key} className="p-3 border rounded border-slate-200 bg-white">
-                            <div className="mb-2">
-                              <div className="font-mono text-sm">{key}</div>
-                            </div>
-
-                            {/* If change value is an object with old/new, render them cleanly */}
-                            {val && typeof val === 'object' && (('old' in val) || ('new' in val)) ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
-                                  <div className="flex flex-col">
-                                    <div className="text-xs text-slate-500">Old changed</div>
-                                    {/* sanitize HTML before rendering to avoid XSS */}
-                                    <div className="mt-1 bg-slate-50 p-3 rounded text-sm overflow-auto prose max-w-full flex-1 min-h-20" dangerouslySetInnerHTML={{ __html: typeof (val as any).old === 'string' ? DOMPurify.sanitize((val as any).old) : String((val as any).old ?? '—') }} />
-                                  </div>
-
-                                  <div className="flex flex-col">
-                                    <div className="text-xs text-slate-500">New changed</div>
-                                    {/* sanitize HTML before rendering to avoid XSS */}
-                                    <div className="mt-1 bg-slate-50 p-3 rounded text-sm overflow-auto prose max-w-full flex-1 min-h-20" dangerouslySetInnerHTML={{ __html: typeof (val as any).new === 'string' ? DOMPurify.sanitize((val as any).new) : String((val as any).new ?? '—') }} />
-                                  </div>
-                                </div>
-                            ) : typeof val === 'string' ? (
-                              <div>
-                                <div className="text-xs text-slate-500">Value</div>
-                                <pre className="mt-1 bg-slate-50 text-[13px] p-2 rounded overflow-auto"><code>{val === 'null' ? '-' : val}</code></pre>
-                              </div>
-                            ) : (
-                              <div>
-                                <div className="text-xs text-slate-500">Value</div>
-                                {(() => {
-                                  const disp = JSON.stringify(val, null, 2);
-                                  return <pre className="mt-1 bg-slate-50 text-[13px] p-2 rounded overflow-auto"><code>{disp === 'null' ? '-' : disp}</code></pre>;
-                                })()}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-slate-600">—</div>
-                    )}
-                  </div>
-
-                </div>
-              </article>
-            ))}
+            <HistoryEntries displayHistory={displayHistory} renderColoredDiff={renderColoredDiff} />
           </div>
         )}
 
-        {/* If a version is selected but there are no entries for it, show a helpful message */}
         {!compareResult && !loading && history.length > 0 && displayHistory.length === 0 && (
           <div className="text-sm text-slate-600">No history entries found for the selected version.</div>
         )}
@@ -432,19 +312,7 @@ export default function HistoryReportLog({ reportId }: Props) {
         {loading && (
           <div className="flex items-center gap-2 text-slate-600"><Loader2 className="animate-spin" size={16} /> Loading history...</div>
         )}
-
-        {/* Pagination footer (hidden while compare is active) */}
-        {!compareResult && (
-          <div className="mt-6 border-t border-slate-200 pt-4 flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="text-sm text-slate-600">Page <span className="font-medium text-slate-800">{data?.pageNumber ?? pageNumber}</span> / <span className="text-slate-500">{data?.totalPages ?? 1}</span></div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" disabled={pageNumber <= 1 || loading} onClick={() => setPageNumber((p) => Math.max(1, p - 1))}>Previous</Button>
-              <span>/</span>
-              <Button size="sm" variant="outline" disabled={loading || (data && !data.hasNext)} onClick={() => setPageNumber((p) => p + 1)}>Next</Button>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

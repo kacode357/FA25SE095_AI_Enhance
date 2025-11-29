@@ -18,7 +18,7 @@ export default function CompareVersionPanel({ reportId, availableVersions, onRes
   // The actual compare result will be rendered by the parent via onResult.
 
   return (
-  <div className="relative text-center">
+    <div className="relative text-center">
       <button
         type="button"
         onClick={() => setOpen((s) => !s)}
@@ -79,19 +79,43 @@ export default function CompareVersionPanel({ reportId, availableVersions, onRes
                   type="button"
                   disabled={selection.length !== 2 || loadingCompare}
                   onClick={async () => {
-                      if (selection.length !== 2) return;
-                      onResult?.(null);
-                      try {
-                        const v1 = selection[0];
-                        const v2 = selection[1];
-                        const res = await compareReportVersions({ reportId, version1: v1, version2: v2 });
-                        // notify parent about the compare result so it can render it below the header
-                        onResult?.(res ?? null);
-                        setOpen(false);
-                      } catch (e) {
-                        // ignore
-                      }
-                    }}
+                    if (selection.length !== 2) return;
+                    onResult?.(null);
+                    try {
+                      const v1 = selection[0];
+                      const v2 = selection[1];
+                      const res = await compareReportVersions({ reportId, version1: v1, version2: v2 });
+
+                      const mapAggregated = (agg: any) => {
+                        if (!agg) return null;
+                        return {
+                          version: agg.version,
+                          fullVersion: agg.fullVersionRange ?? undefined,
+                          content: agg.finalContent ?? null,
+                          status: agg.finalStatus ?? null,
+                          changedBy: null,
+                          changedAt: agg.lastChangeAt ?? null,
+                          action: Array.isArray(agg.actionsPerformed) && agg.actionsPerformed.length > 0 ? agg.actionsPerformed[agg.actionsPerformed.length - 1] : null,
+                          contributorNames: Array.isArray(agg.contributors) ? agg.contributors : [],
+                        };
+                      };
+
+                      const normalized = {
+                        ...(res ?? {}),
+                        version1: (res && res.version1) ? res.version1 : mapAggregated(res?.aggregatedVersion1),
+                        version2: (res && res.version2) ? res.version2 : mapAggregated(res?.aggregatedVersion2),
+                        // ensure nullable fields are explicit
+                        unifiedDiff: res?.unifiedDiff ?? null,
+                        changeSummary: res?.changeSummary ?? null,
+                        sequenceTimeline: res?.sequenceTimeline ?? null,
+                      };
+
+                      onResult?.(normalized ?? null);
+                      setOpen(false);
+                    } catch (e) {
+                      // ignore
+                    }
+                  }}
                   className="px-3 cursor-pointer btn btn-gradient-slow text-sm py-1 bg-violet-700 text-white rounded disabled:opacity-50"
                 >
                   {loadingCompare ? 'Comparing...' : 'Compare'}

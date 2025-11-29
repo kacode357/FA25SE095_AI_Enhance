@@ -60,6 +60,8 @@ export interface ReportBase {
 
   isGroupSubmission: boolean;
   version: number;
+  sequenceNumber?: number;
+  fullVersion?: string;
   fileUrl: string | null;
 
   /** ISO datetime */
@@ -131,6 +133,8 @@ export interface CourseReportItem {
   gradedAt: string | null;
   isGroupSubmission: boolean;
   version: number;
+  sequenceNumber?: number;
+  fullVersion?: string;
   fileUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -222,11 +226,14 @@ export interface ReportHistoryItem {
   changedBy: string;
   changedAt: string; // ISO date
   version: number;
-  comment: string;
+  sequenceNumber?: number;
+  fullVersion?: string;
+  comment?: string | null;
   changes: Record<string, any>; // key-value diff
-  changeSummary: string;
-  changeDetails: string;
-  unifiedDiff: string;
+  changeSummary?: string | null;
+  changeDetails?: string | null;
+  unifiedDiff?: string | null;
+  contributorIds?: string[];
   contributorNames: string[];
 }
 
@@ -250,6 +257,8 @@ export interface GetReportHistoryVersionResponse {
   changedBy: string;
   changedAt: string; // ISO datetime
   version: number;
+  sequenceNumber: number;
+  fullVersion: string;
   comment: string;
   changes: Record<string, any>;
   changeSummary: string;
@@ -274,13 +283,31 @@ export interface ReportVersionFieldDiff {
   newValue: any;
 }
 
+export interface AggregatedReportVersion {
+  version: number;
+  fullVersionRange: string;
+  sequenceCount: number;
+  finalContent: string | null;
+  finalStatus: string | null;
+  finalGrade: number | null;
+  finalFeedback: string | null;
+  actionsPerformed: string[];
+  contributors: string[];
+  firstChangeAt: string; // ISO datetime
+  lastChangeAt: string; // ISO datetime
+}
+
 export interface CompareReportVersionsResponse {
   reportId: string;
-  version1: ReportVersionCompareItem;
-  version2: ReportVersionCompareItem;
+  mode: string;
+  version1: ReportVersionCompareItem | null;
+  version2: ReportVersionCompareItem | null;
+  aggregatedVersion1?: AggregatedReportVersion | null;
+  aggregatedVersion2?: AggregatedReportVersion | null;
+  sequenceTimeline?: ReportTimelineItem[] | null;
   differences: ReportVersionFieldDiff[];
-  unifiedDiff: string;
-  changeSummary: string;
+  unifiedDiff: string | null;
+  changeSummary: string | null;
   contributorNames: string[];
 }
 
@@ -289,6 +316,8 @@ export interface ReportTimelineItem {
   actor: string;
   action: string;
   version: number;
+  sequenceNumber?: number;
+  fullVersion?: string;
   details: string;
 }
 
