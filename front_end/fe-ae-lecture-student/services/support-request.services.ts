@@ -17,6 +17,7 @@ import type {
   CancelSupportRequestResponse,
   ResolveSupportRequestResponse,
   RejectSupportRequestResponse,
+  UploadSupportRequestImagesResponse,
 } from "@/types/support/support-request.response";
 
 export const SupportRequestService = {
@@ -103,6 +104,31 @@ export const SupportRequestService = {
     const res = await courseAxiosInstance.post<ResolveSupportRequestResponse>(
       `/SupportRequests/${id}/resolve`
     );
+    return res.data;
+  },
+ uploadSupportRequestImages: async (
+    id: string,
+    images: File[]
+  ): Promise<UploadSupportRequestImagesResponse> => {
+    const formData = new FormData();
+
+    images.forEach((file) => {
+      formData.append("images", file, file.name);
+    });
+
+    const res =
+      await courseAxiosInstance.post<UploadSupportRequestImagesResponse>(
+        `/SupportRequests/${id}/upload-images`,
+        formData,
+        {
+          headers: {
+            // giống curl mẫu trong swagger
+            "Content-Type": "multipart/form-data",
+            Accept: "text/plain",
+          },
+        }
+      );
+
     return res.data;
   },
 };

@@ -226,14 +226,11 @@ export interface ReportHistoryItem {
   changedBy: string;
   changedAt: string; // ISO date
   version: number;
-  sequenceNumber?: number;
-  fullVersion?: string;
-  comment?: string | null;
+  comment: string;
   changes: Record<string, any>; // key-value diff
-  changeSummary?: string | null;
-  changeDetails?: string | null;
-  unifiedDiff?: string | null;
-  contributorIds?: string[];
+  changeSummary: string;
+  changeDetails: string;
+  unifiedDiff: string;
   contributorNames: string[];
 }
 
@@ -257,8 +254,6 @@ export interface GetReportHistoryVersionResponse {
   changedBy: string;
   changedAt: string; // ISO datetime
   version: number;
-  sequenceNumber: number;
-  fullVersion: string;
   comment: string;
   changes: Record<string, any>;
   changeSummary: string;
@@ -331,7 +326,8 @@ export interface UploadReportFileResponse extends ApiSuccess {
   version: number;
 }
 
-
 export interface UpdateReportStatusResponse extends ApiSuccess {
   newStatus: number;
 }
+
+export type RevertReportResponse = ApiSuccess;

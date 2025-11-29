@@ -34,6 +34,7 @@ export interface SupportRequestItem {
   category: SupportRequestCategory;
   subject: string;
   description?: string;
+  images?: string | null;
   conversationId?: string | null;
   requestedAt: string;
   acceptedAt?: string | null;
@@ -93,4 +94,11 @@ export interface RejectSupportRequestResponse {
 export interface ResolveSupportRequestResponse {
   success: boolean;
   message: string;
+}
+
+export interface UploadSupportRequestImagesResponse {
+  success: boolean;
+  message: string;
+  uploadedImageUrls: string[];
+  uploadedCount: number;
 }

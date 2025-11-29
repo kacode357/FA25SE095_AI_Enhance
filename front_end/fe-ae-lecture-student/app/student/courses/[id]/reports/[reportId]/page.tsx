@@ -1,9 +1,9 @@
 // app/student/courses/[id]/reports/[reportId]/page.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   BookOpen,
@@ -15,11 +15,12 @@ import {
   ChevronDown,
   History,
   RotateCcw,
+  X,
 } from "lucide-react";
 
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
 import { useUpdateReportStatus } from "@/hooks/reports/useUpdateReportStatus";
-import ReportTimeline from "@/app/student/courses/[id]/reports/components/ReportTimeline";
+import ReportTimeline from "@/app/student/courses/[id]/reports/components/ReportHistory";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import type { ReportDetail } from "@/types/reports/reports.response";
 import { ReportStatus } from "@/types/reports/reports.response";
@@ -29,15 +30,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 
 import ReportSubmissionEditor from "@/app/student/courses/[id]/reports/components/ReportSubmissionEditor";
+import ReportFullHistory from "../components/ReportFullHistory";
 
 /** ============ utils ============ */
 const dt = (s?: string | null) => {
@@ -67,21 +62,23 @@ export default function ReportDetailPage() {
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const [showFullHistory, setShowFullHistory] = useState(false);
+
+  const refetchReport = useCallback(async () => {
+    if (!reportId) return;
+    const res = await getReportById(reportId);
+    const r = res?.report ?? null;
+    setReport(r);
+    setHtml(r?.submission ?? "");
+  }, [getReportById, reportId]);
 
   useEffect(() => {
     if (!reportId || didFetchRef.current) return;
     didFetchRef.current = true;
 
-    (async () => {
-      const res = await getReportById(reportId);
-      const r = res?.report ?? null;
-      setReport(r);
-
-      const safe = r?.submission ?? "";
-      setHtml(safe);
-    })();
+    refetchReport();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reportId]);
+  }, [reportId, refetchReport]);
 
   const handleRevertStatus = async () => {
     if (!report) return;
@@ -90,11 +87,9 @@ export default function ReportDetailPage() {
     let comment = "";
 
     if (report.status === ReportStatus.Submitted) {
-      // Submitted -> Draft
       targetStatus = ReportStatus.Draft;
       comment = "Revert submitted report back to draft for further editing.";
     } else if (report.status === ReportStatus.Resubmitted) {
-      // Resubmitted -> RequiresRevision
       targetStatus = ReportStatus.RequiresRevision;
       comment =
         "Revert resubmission back to revision state for more changes.";
@@ -108,10 +103,7 @@ export default function ReportDetailPage() {
     });
 
     // Refetch report to get latest status + content
-    const res = await getReportById(reportId);
-    const fresh = res?.report ?? null;
-    setReport(fresh);
-    setHtml(fresh?.submission ?? "");
+    await refetchReport();
   };
 
   if (!reportId) {
@@ -163,11 +155,22 @@ export default function ReportDetailPage() {
     report.status === ReportStatus.Submitted
       ? "Revert to draft"
       : report.status === ReportStatus.Resubmitted
-      ? "Back to revision"
-      : "";
+        ? "Back to revision"
+        : "";
+
+  const handleOpenHistory = () => {
+    setShowFullHistory(false); // vào latest trước
+    setTimelineOpen(true);
+  };
+
+  const handleCloseHistory = () => {
+    setTimelineOpen(false);
+    setShowFullHistory(false);
+  };
 
   return (
     <>
+      {/* MAIN PAGE */}
       <motion.div
         className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8"
         initial={{ opacity: 0, y: 14 }}
@@ -220,7 +223,7 @@ export default function ReportDetailPage() {
 
             <button
               type="button"
-              onClick={() => setTimelineOpen(true)}
+              onClick={handleOpenHistory}
               className="btn bg-white border border-slate-200 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
               title="View activity / version history"
             >
@@ -230,7 +233,7 @@ export default function ReportDetailPage() {
 
             <button
               onClick={() => router.back()}
-            className="btn bg-white border border-slate-200 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
+              className="btn bg-white border border-slate-200 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
               title="Back to Previous Page"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -295,7 +298,7 @@ export default function ReportDetailPage() {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Submission editor + (optional) live collab */}
+        {/* Submission editor */}
         <ReportSubmissionEditor
           report={report}
           html={html}
@@ -304,27 +307,72 @@ export default function ReportDetailPage() {
         />
       </motion.div>
 
-      {/* Dialog xem timeline / version history */}
-      <Dialog open={timelineOpen} onOpenChange={setTimelineOpen}>
-        <DialogContent className="max-w-2xl sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <History className="w-4 h-4 text-nav-active" />
-              <span>Report activity & versions</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
-              View the history of submissions, status changes, grading and other
-              edits for this report.
-            </DialogDescription>
-          </DialogHeader>
+      {/* SIDE HISTORY SCREEN - slide từ PHẢI sang TRÁI */}
+      <AnimatePresence>
+        {timelineOpen && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex flex-col bg-white"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
+          >
+            {/* Header history */}
+            <header className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-200">
+              {/* Left: title + subtitle */}
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-nav-active" />
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-nav">
+                    Report activity &amp; versions
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    {showFullHistory
+                      ? "Browse all versions and detailed changes."
+                      : "View the latest activity for this report."}
+                  </span>
+                </div>
+              </div>
 
-          {timelineOpen && (
-            <div className="mt-2">
-              <ReportTimeline reportId={report.id} />
+              {/* Right: actions (See full + Close) – DỒN SANG PHẢI */}
+              <div className="flex items-center gap-2">
+                {!showFullHistory && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFullHistory(true)}
+                    className="btn-blue-slow inline-flex items-center rounded-full px-6 py-2 text-xs font-medium text-white"
+                  >
+                    See full version history
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleCloseHistory}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-600"
+                  title="Close history"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </header>
+
+            {/* Body: full screen content (latest OR full) */}
+            <div className="flex-1 overflow-hidden p-2 sm:p-4">
+              {showFullHistory ? (
+                <ReportFullHistory
+                  reportId={report.id}
+                  className="h-full"
+                  onBackToLatest={() => setShowFullHistory(false)}
+                  onRevertSuccess={refetchReport}
+                />
+              ) : (
+                <ReportTimeline reportId={report.id} className="h-full" />
+              )}
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -13,7 +13,7 @@ export function formatDateTimeVN(value?: string | null): string {
       timeZone: "Asia/Ho_Chi_Minh",
     });
   } catch {
-    // fallback nếu runtime ko support timeZone (tránh crash)
+    // fallback nếu runtime ko support timeZone 
     return d.toLocaleString("vi-VN");
   }
 }

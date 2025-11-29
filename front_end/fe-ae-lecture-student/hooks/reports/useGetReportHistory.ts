@@ -1,32 +1,31 @@
+// hooks/reports/useGetReportHistory.ts
 "use client";
 
+import { useCallback, useState } from "react";
 import { ReportsService } from "@/services/reports.services";
-import { GetReportHistoryQuery } from "@/types/reports/reports.payload";
-import {
-    GetReportHistoryResponse,
-} from "@/types/reports/reports.response";
-import { useState } from "react";
-import { toast } from "sonner";
+import type { GetReportHistoryQuery } from "@/types/reports/reports.payload";
+import type { GetReportHistoryResponse } from "@/types/reports/reports.response";
 
 export function useGetReportHistory() {
   const [loading, setLoading] = useState(false);
 
-  const getReportHistory = async (
-    params: GetReportHistoryQuery
-  ): Promise<GetReportHistoryResponse | null> => {
-    if (loading) return null;
-
-    setLoading(true);
-    try {
-      const res = await ReportsService.getHistory(params);
-      return res;
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to load history.");
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const getReportHistory = useCallback(
+    async (
+      params: GetReportHistoryQuery
+    ): Promise<GetReportHistoryResponse | null> => {
+      setLoading(true);
+      try {
+        const res = await ReportsService.getHistory(params);
+        return res;
+      } catch (err) {
+        console.error("[reports] getReportHistory error", err);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   return { getReportHistory, loading };
 }

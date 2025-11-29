@@ -32,3 +32,4 @@ export interface RejectSupportRequestPayload {
   rejectionReason: number;
   rejectionComments?: string;
 }
+

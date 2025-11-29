@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import UserMenu from "@/components/user/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLogout } from "@/hooks/auth/useLogout";
-import { useNotificationHub } from "@/hooks/hubNotification/useNotificationHub";
+import { useNotificationHub } from "@/hooks/hubnotification/useNotificationHub";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
