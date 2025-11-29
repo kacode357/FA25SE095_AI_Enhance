@@ -228,6 +228,7 @@ export interface ReportHistoryItem {
   version: number;
   comment: string;
   changes: Record<string, any>; // key-value diff
+  fullVersion: string;
   changeSummary: string;
   changeDetails: string;
   unifiedDiff: string;

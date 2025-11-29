@@ -19,6 +19,7 @@ import type { GetReportHistoryQuery } from "@/types/reports/reports.payload";
 
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+import { buildHtmlWordDiff } from "@/utils/diff/htmlWordDiff";
 
 type Props = {
   reportId: string;
@@ -177,6 +178,22 @@ export default function ReportFullHistory({
       }
     };
 
+    // ===== Diff Submission dùng util buildHtmlWordDiff =====
+    const originalOldHtml = submissionChange?.old || "";
+    const originalNewHtml = submissionChange?.new || "";
+
+    let highlightedOldHtml = originalOldHtml;
+    let highlightedNewHtml = originalNewHtml;
+
+    if (originalOldHtml && originalNewHtml) {
+      const { oldHighlighted, newHighlighted } = buildHtmlWordDiff(
+        originalOldHtml,
+        originalNewHtml
+      );
+      highlightedOldHtml = oldHighlighted;
+      highlightedNewHtml = newHighlighted;
+    }
+
     return (
       <div className="flex flex-col gap-4">
         {/* Top info */}
@@ -238,7 +255,7 @@ export default function ReportFullHistory({
             CHANGED FIELDS
           </div>
           <div className="space-y-3">
-            {/* Submission (HTML) */}
+            {/* Submission (HTML) với diff màu */}
             {submissionChange && (
               <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
                 <div className="mb-2 text-xs font-semibold text-slate-700">
@@ -251,7 +268,7 @@ export default function ReportFullHistory({
                     </div>
                     {submissionChange.old ? (
                       <LiteRichTextEditor
-                        value={submissionChange.old}
+                        value={highlightedOldHtml}
                         onChange={() => {}}
                         readOnly
                         debounceMs={0}
@@ -269,7 +286,7 @@ export default function ReportFullHistory({
                     </div>
                     {submissionChange.new ? (
                       <LiteRichTextEditor
-                        value={submissionChange.new}
+                        value={highlightedNewHtml}
                         onChange={() => {}}
                         readOnly
                         debounceMs={0}
