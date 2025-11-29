@@ -10,6 +10,7 @@ import type { GetReportHistoryQuery } from "@/types/reports/reports.payload";
 
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+import { buildHtmlWordDiff } from "@/utils/diff/htmlWordDiff";
 
 type Props = {
   reportId: string;
@@ -54,7 +55,6 @@ export default function ReportHistory({
     const payload: GetReportHistoryQuery = {
       ...basePayload,
       ...overrides,
-      // ép lại cho chắc chắn
       reportId,
       pageNumber: 1,
       pageSize: 1,
@@ -121,6 +121,26 @@ export default function ReportHistory({
     const filePathChange = changes.FilePath;
     const statusChange = changes.Status;
 
+    const changeSummary = (item as any).changeSummary as
+      | string
+      | null
+      | undefined;
+
+    const renderChangeSummary = (summary: string) => {
+      const parts = summary.split(" ");
+      return parts.map((part, idx) => {
+        let cls = "";
+        if (part.startsWith("+")) cls = "text-emerald-600";
+        else if (part.startsWith("-")) cls = "text-rose-600";
+        return (
+          <span key={idx} className={cls}>
+            {part}
+            {idx < parts.length - 1 ? " " : ""}
+          </span>
+        );
+      });
+    };
+
     const renderPlainChange = (title: string, field?: FieldChange) => {
       const oldVal = field?.old ?? "";
       const newVal = field?.new ?? "";
@@ -154,9 +174,25 @@ export default function ReportHistory({
       );
     };
 
+    // ===== Submission diff dùng util buildHtmlWordDiff =====
+    const originalOldHtml = submissionChange?.old || "";
+    const originalNewHtml = submissionChange?.new || "";
+
+    let highlightedOldHtml = originalOldHtml;
+    let highlightedNewHtml = originalNewHtml;
+
+    if (originalOldHtml && originalNewHtml) {
+      const { oldHighlighted, newHighlighted } = buildHtmlWordDiff(
+        originalOldHtml,
+        originalNewHtml
+      );
+      highlightedOldHtml = oldHighlighted;
+      highlightedNewHtml = newHighlighted;
+    }
+
     return (
       <div className="flex flex-col gap-4">
-        {/* Top info giống thanh info trong ảnh */}
+        {/* Top info */}
         <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-0.5">
@@ -182,11 +218,18 @@ export default function ReportHistory({
 
         {/* Changed fields */}
         <div>
-          <div className="mb-2 text-xs font-semibold text-slate-500">
-            CHANGED FIELDS
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-xs font-semibold text-slate-500">
+              CHANGED FIELDS
+            </div>
+            {changeSummary && (
+              <div className="text-[11px] text-slate-500">
+                {renderChangeSummary(changeSummary)}
+              </div>
+            )}
           </div>
           <div className="space-y-3">
-            {/* Submission (HTML) */}
+            {/* Submission (HTML) với diff màu */}
             {submissionChange && (
               <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
                 <div className="mb-2 text-xs font-semibold text-slate-700">
@@ -199,7 +242,7 @@ export default function ReportHistory({
                     </div>
                     {submissionChange.old ? (
                       <LiteRichTextEditor
-                        value={submissionChange.old}
+                        value={highlightedOldHtml}
                         onChange={() => {}}
                         readOnly
                         debounceMs={0}
@@ -217,7 +260,7 @@ export default function ReportHistory({
                     </div>
                     {submissionChange.new ? (
                       <LiteRichTextEditor
-                        value={submissionChange.new}
+                        value={highlightedNewHtml}
                         onChange={() => {}}
                         readOnly
                         debounceMs={0}
@@ -248,7 +291,7 @@ export default function ReportHistory({
     <div
       className={`card rounded-2xl p-4 border border-slate-200 bg-white h-full flex flex-col ${className}`}
     >
-      {/* Header giống title bên trên trong panel */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-nav-active" />
