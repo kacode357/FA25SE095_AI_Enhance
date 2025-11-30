@@ -121,14 +121,7 @@ export default function CourseDetailPage() {
             {course.courseCode} - {course.courseCodeTitle || course.name}
           </h1>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => router.push("/student/my-courses")}
-          className="border-brand text-brand hover:bg-brand/5"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+       
       </div>
 
       {/* GRID INFO */}

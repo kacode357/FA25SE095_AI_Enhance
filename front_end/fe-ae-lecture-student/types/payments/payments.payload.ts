@@ -56,3 +56,12 @@ export type PayOSReturnQuery = {
   TargetUrl?: string;
   ConfirmationToken?: string;
 };
+
+export type SubscriptionHistoryQuery = {
+  Page?: number;
+  PageSize?: number;
+  Tier?: number;   // 0: Free, 1: Basic, 2: Premium, 3: Enterprise
+  Status?: number; // 0: Pending, 1: Processing, 2: Paid, 3: Failed, 4: Cancelled, 5: Expired
+  From?: string;   // Date string (ISO)
+  To?: string;     // Date string (ISO)
+};

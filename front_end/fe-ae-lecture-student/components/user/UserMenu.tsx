@@ -1,8 +1,7 @@
-// components/user/UserMenu.tsx
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, CircleArrowOutUpRight } from "lucide-react";
+import { ChevronDown, CircleArrowOutUpRight } from "lucide-react"; // Tao import thêm icon nếu mày muốn dùng
 import Link from "next/link";
 import {
   MouseEvent as ReactMouseEvent,
@@ -68,11 +67,9 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
   const profilePictureUrl = decodedUser?.profilePictureUrl || "";
   const subscriptionTier = decodedUser?.subscriptionTier || "Basic";
 
-  // Role detection: support either `role: string` or `roles: string[]`
+  // Role detection
   const isLecturer = (() => {
     if (!decodedUser) return false;
-    // common shapes: `role` or `roles`
-    // role could be e.g. 'lecturer' or 'LECTURER'
     const single = (decodedUser as any).role;
     if (typeof single === "string") {
       return single.toLowerCase() === "lecturer";
@@ -116,7 +113,6 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
         onClick={handleToggle}
         className="student-header-button flex items-center gap-2 px-3 py-1.5 text-sm"
       >
-        {/* Avatar với fallback text từ util */}
         <Avatar className="h-8 w-8">
           {profilePictureUrl ? (
             <AvatarImage src={profilePictureUrl} alt={displayName} />
@@ -188,12 +184,27 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
             {/* Actions */}
             <div className="space-y-1">
               <Link
-                href={isLecturer ? "/lecturer/profile/my-profile" : "/student/profile"}
+                href={
+                  isLecturer
+                    ? "/lecturer/profile/my-profile"
+                    : "/student/profile"
+                }
                 className="block rounded-md px-2 py-1.5 text-xs font-medium text-nav hover:bg-slate-50"
                 onClick={() => onOpenChange(false)}
               >
                 Profile
               </Link>
+
+              {/* --- MỚI THÊM: Payment History (Chỉ hiện cho Student) --- */}
+              {!isLecturer && (
+                <Link
+                  href="/student/payment-history"
+                  className="block rounded-md px-2 py-1.5 text-xs font-medium text-nav hover:bg-slate-50"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Payment History
+                </Link>
+              )}
 
               <button
                 type="button"

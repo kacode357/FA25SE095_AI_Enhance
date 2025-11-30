@@ -56,8 +56,9 @@ export default function SubscriptionSuccessPage() {
   };
 
   const handleGoToMySubscription = () => {
-    router.push("/student/my-subscription");
+    router.push("/student/payment-history");
   };
+
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-4 py-10 text-center">
@@ -69,7 +70,8 @@ export default function SubscriptionSuccessPage() {
         <div className="mb-4 flex justify-center">
           <div className="relative">
             <CheckCircle2 className="h-16 w-16 text-green-500" />
-            <Crown className="absolute -right-2 -top-2 h-6 w-6 text-[var(--brand)]" />
+            <Crown className="absolute -right-2 -top-2 h-6 w-6 text-yellow-400" />
+
           </div>
         </div>
 
@@ -103,7 +105,7 @@ export default function SubscriptionSuccessPage() {
             onClick={handleGoToMySubscription}
             className="btn btn-gradient inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold"
           >
-            Go to My Subscription
+            View payment history
             <ArrowRight className="h-4 w-4" />
           </button>
 

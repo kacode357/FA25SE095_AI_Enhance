@@ -1,4 +1,3 @@
-// app/student/courses/[id]/support/[conversationId]/page.tsx
 "use client";
 
 import {
@@ -63,7 +62,7 @@ export default function SupportChatPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
-  /* ===== Derived URL params ===== */
+  /* ===== URL params ===== */
   const courseId = useMemo(() => {
     const id = params?.id;
     return typeof id === "string" ? id : Array.isArray(id) ? id[0] : "";
@@ -77,7 +76,6 @@ export default function SupportChatPage() {
   const peerId = searchParams.get("peerId");
   const peerName = searchParams.get("peerName") ?? "Support Staff";
 
-  // Lấy supportRequestId từ URL (?requestId=... hoặc ?supportRequestId=...)
   const supportRequestId = useMemo(
     () =>
       searchParams.get("requestId") ??
@@ -88,7 +86,7 @@ export default function SupportChatPage() {
 
   const currentUserId = user?.id ?? null;
 
-  /* ===== States ===== */
+  /* ===== State ===== */
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -98,17 +96,17 @@ export default function SupportChatPage() {
   // resolve support request
   const { resolveSupportRequest, loading: resolving } =
     useResolveSupportRequest();
-  const [resolveHandled, setResolveHandled] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
 
   // read-only từ BE
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [readOnlyReason, setReadOnlyReason] = useState<string | null>(null);
 
-  // đã load history thành công 1 lần cho conversation + supportRequest hiện tại chưa
+  // đã load history lần đầu chưa
   const [loadedOnce, setLoadedOnce] = useState(false);
 
-  // flag tổng khóa chat
+  // khóa chat tổng
   const chatLocked = isResolved || isReadOnly;
 
   // scroll
@@ -142,8 +140,8 @@ export default function SupportChatPage() {
           const byId = new Map(prev.map((m) => [m.id, m]));
 
           for (const it of batch) {
-            // nếu là message của mình → cố gắng replace optimistic
             if (currentUserId && it.senderId === currentUserId) {
+              // replace optimistic
               for (const [tempId, p] of pendingRef.current) {
                 if (
                   p.receiverId === it.receiverId &&
@@ -189,17 +187,16 @@ export default function SupportChatPage() {
       debounceMs: 500,
     });
 
-  // hook xoá message dùng chung
+  // hook xoá message
   const { requestDelete, ConfirmDialog, deleting } = useChatDeleteMessage({
     currentUserId,
     setMessages,
     deleteMessageHub: (id) => deleteMessageHub(id),
   });
 
-  /* ===== Reset khi đổi conversation / supportRequest ===== */
+  /* ===== Reset khi đổi conversation ===== */
   useEffect(() => {
     setLoadedOnce(false);
-    setResolveHandled(false);
     setIsResolved(false);
     setIsReadOnly(false);
     setReadOnlyReason(null);
@@ -207,6 +204,7 @@ export default function SupportChatPage() {
     pendingRef.current.clear();
     setInput("");
     setOpenMenuId(null);
+    setResolveDialogOpen(false);
   }, [conversationId, supportRequestId, peerId]);
 
   /* ===== Load history ===== */
@@ -228,13 +226,10 @@ export default function SupportChatPage() {
       setMessages(sorted);
       scrollBottom();
 
-      // cập nhật trạng thái read-only từ BE
       setIsReadOnly(res.isReadOnly);
       setReadOnlyReason(res.readOnlyReason ?? null);
 
-      // nếu server nói conversation đã đóng thì không cần show dialog “Has your need been resolved?”
       if (res.isReadOnly) {
-        setResolveHandled(true);
         setIsResolved(true);
       }
 
@@ -295,7 +290,7 @@ export default function SupportChatPage() {
     };
   }, [input, peerId, startTyping, stopTyping, chatLocked]);
 
-  /* ===== Send message (đã fix double text) ===== */
+  /* ===== Send message ===== */
   const onSend = useCallback(async () => {
     if (chatLocked) return;
     if (!peerId || !courseId || !currentUserId || !conversationId) return;
@@ -303,7 +298,6 @@ export default function SupportChatPage() {
     const message = input.trim();
     if (!message) return;
 
-    // chặn double send trong cùng thời điểm
     if (sendingRef.current) return;
     sendingRef.current = true;
     setSending(true);
@@ -390,45 +384,33 @@ export default function SupportChatPage() {
       ? `${peerName} is typing…`
       : "";
 
-  // tìm message staff mới nhất hỏi "Has your need been resolved?"
-  const resolveQuestionId = useMemo(() => {
-    if (!currentUserId) return null;
-    const haystack = messages.filter(
-      (m) =>
-        m.senderId !== currentUserId &&
-        m.message.trim() === "Has your need been resolved?",
-    );
-    if (!haystack.length) return null;
-    return haystack[haystack.length - 1].id;
-  }, [messages, currentUserId]);
-
-  const showResolveDialog =
-    !!resolveQuestionId && !resolveHandled && !chatLocked && !isReadOnly;
+  // điều kiện show nút / dialog
+  const canResolve =
+    !!supportRequestId && !chatLocked && !isReadOnly;
 
   const handleConfirmResolved = async () => {
     if (!supportRequestId) {
-      setResolveHandled(true);
+      setResolveDialogOpen(false);
       return;
     }
 
     try {
       await resolveSupportRequest(supportRequestId);
-      setResolveHandled(true);
       setIsResolved(true);
+      setResolveDialogOpen(false);
     } catch {
-      // lỗi interceptor xử lý, không đổi state
+      // lỗi interceptor xử lý
     }
   };
 
   const handleNotResolved = () => {
-    setResolveHandled(true);
+    setResolveDialogOpen(false);
   };
 
-  // build timeline: Today / Yesterday / ... + showTime
-  const rendered = useMemo<ChatTimelineItem<ChatMessage>[]>(
-    () => buildChatTimeline(messages, currentUserId),
-    [messages, currentUserId],
-  );
+  // build timeline
+  const rendered = useMemo<ChatTimelineItem<ChatMessage>[]>(() => {
+    return buildChatTimeline(messages, currentUserId);
+  }, [messages, currentUserId]);
 
   if (!courseId || !conversationId) {
     return (
@@ -441,31 +423,43 @@ export default function SupportChatPage() {
   /* ===== Render ===== */
   return (
     <div className="p-4">
-      {/* Back + title */}
-      <div className="mb-3 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white text-slate-700"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div>
-          <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-[var(--brand)]" />
-            <h1 className="text-base font-semibold text-nav">
-              Support conversation
-            </h1>
+      {/* Top header: left text + right button */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white text-slate-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-[var(--brand)]" />
+              <h1 className="text-base font-semibold text-nav">
+                Support conversation
+              </h1>
+            </div>
+            <p className="text-xs text-[var(--text-muted)]">
+              Chat with <span className="font-medium">{peerName}</span>
+            </p>
           </div>
-          <p className="text-xs text-[var(--text-muted)]">
-            Chat with <span className="font-medium">{peerName}</span>
-          </p>
         </div>
+
+        {canResolve && (
+          <button
+            type="button"
+            onClick={() => setResolveDialogOpen(true)}
+            className="btn btn-green-slow h-8 px-4 text-xs font-semibold"
+          >
+            Mark as resolved
+          </button>
+        )}
       </div>
 
       <Card className="h-[520px] flex flex-col border-[var(--border)] bg-[var(--card)] shadow-sm">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+        {/* Header trong card: avatar staff */}
+        <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
           {!peerId ? (
             <div className="text-xs font-medium text-[var(--text-muted)]">
               Missing staff information.
@@ -619,7 +613,7 @@ export default function SupportChatPage() {
                 )}
             </div>
 
-            {/* typing dưới input */}
+            {/* typing */}
             {typingText && (
               <div className="px-4 pt-1 text-[11px] text-[var(--text-muted)]">
                 {typingText}
@@ -695,7 +689,7 @@ export default function SupportChatPage() {
 
       {/* Dialog xác nhận resolved */}
       <ResolveSupportRequestDialog
-        open={showResolveDialog}
+        open={resolveDialogOpen && canResolve}
         peerName={peerName}
         resolving={resolving}
         onConfirmResolved={handleConfirmResolved}

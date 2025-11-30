@@ -66,7 +66,7 @@ export default function SubscriptionCheckoutPage() {
           return;
         }
 
-        toast.success("Your subscription has been updated successfully.");
+     
 
         const tierName = searchParams.get("tier") || "";
 
