@@ -1,4 +1,4 @@
-import { User, LockKeyhole } from "lucide-react";
+import { LockKeyhole, User } from "lucide-react";
 
 export type NavItem = {
   label: string;
@@ -7,6 +7,6 @@ export type NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "My Profile", href: "/student/profile/my-profile", icon: User },
-  { label: "Change Password", href: "/student/profile/change-password", icon: LockKeyhole },
+  { label: "My Profile", href: "/lecturer/profile/my-profile", icon: User },
+  { label: "Change Password", href: "/lecturer/profile/change-password", icon: LockKeyhole },
 ];

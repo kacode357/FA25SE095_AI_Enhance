@@ -1,24 +1,45 @@
-// app/student/profile/layout.tsx
+"use client";
+
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import Sidebar from "./components/Sidebar";
+import { NAV_ITEMS } from "./components/nav-items";
 
-export default function ProfileLayout({ children }: { children: ReactNode }) {
-  return (
-    <div className="px-4 md:px-8 lg:px-12 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-nav">
-          Account Settings
-        </h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
-          Manage your profile information and change your password.
-        </p>
-      </header>
+export default function LecturerProfileLayout({ children }: { children: ReactNode }) {
+    const pathname = usePathname();
 
-      {/* items-stretch để 2 cột bằng chiều cao nhau */}
-      <div className="flex flex-col md:flex-row border border-slate-300 gap-6 items-stretch">
-        <Sidebar />
-        <main className="flex-1">{children}</main>
-      </div>
-    </div>
-  );
+    return (
+        // Tao thêm 'min-h-screen' và 'bg-background' vào đây
+        <div className="min-h-screen bg-background px-4 md:px-8 lg:px-12 py-2">
+
+            {/* Top navigation */}
+            <nav className="mb-6 border-b border-[var(--border)]">
+                <ul className="-mb-px flex flex-wrap gap-2">
+                    {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+                        const active = pathname.startsWith(href);
+                        return (
+                            <li key={href}>
+                                <Link
+                                    href={href}
+                                    className={`inline-flex items-center gap-2 px-3 py-2 border-b-2 text-sm font-medium transition-colors rounded-t-md
+                                        ${active
+                                            ? "border-brand text-nav bg-[var(--card)]" // Active: Nền card, viền brand
+                                            : "border-transparent text-foreground/70 hover:text-nav-active hover:bg-[var(--card)]" // Hover: Hiện nền card nhẹ
+                                        }
+                                    `}
+                                    aria-current={active ? "page" : undefined}
+                                >
+                                    <Icon className="w-4 h-4" />
+                                    {label}
+                                </Link>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </nav>
+
+            <main>{children}</main>
+        </div>
+    );
 }

@@ -1,4 +1,4 @@
-// app/student/profile/change-password/page.tsx
+// app/lecturer/profile/change-password/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -13,7 +13,7 @@ type FormState = {
   confirmPassword: string;
 };
 
-export default function ChangePasswordPage() {
+export default function LecturerChangePasswordPage() {
   const { changePassword, loading } = useChangePassword();
 
   const [form, setForm] = useState<FormState>({
@@ -164,11 +164,9 @@ export default function ChangePasswordPage() {
         </div>
 
         <div className="flex items-center gap-3 pt-2">
-          {/* Update Password — dùng Button component + gradient pill */}
+          {/* Update Password */}
           <Button
-            // dùng loader trong Button (LogoLoader)
             loading={loading}
-            // để áp gradient pill chậm theo globals.css
             variant="gradient"
             className={`btn-gradient-slow ${isDisabled ? " cursor-not-allowed" : ""}`}
             disabled={isDisabled}
@@ -177,7 +175,7 @@ export default function ChangePasswordPage() {
             {loading ? "Updating..." : "Update Password"}
           </Button>
 
-          {/* Reset — outline brand */}
+        
           <Button
             className={`bg-white border border-brand text-nav hover:text-nav-active ${
               loading ? "opacity-70 cursor-not-allowed" : ""

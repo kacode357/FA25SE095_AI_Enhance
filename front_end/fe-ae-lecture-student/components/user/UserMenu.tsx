@@ -187,7 +187,7 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
                 href={
                   isLecturer
                     ? "/lecturer/profile/my-profile"
-                    : "/student/profile"
+                    : "/student/profile/my-profile"
                 }
                 className="block rounded-md px-2 py-1.5 text-xs font-medium text-nav hover:bg-slate-50"
                 onClick={() => onOpenChange(false)}
