@@ -152,7 +152,7 @@ export default function EditCourse() {
             {/* Main Content */}
             <div className="flex flex-1 flex-col md:flex-row gap-6 mt-2 mb-10 overflow-hidden">
                 {/* LEFT: General Information */}
-                <Card className="flex-[0.65] flex flex-col p-6 border-slate-200 shadow-sm overflow-auto">
+                <Card className="flex-[0.65] flex flex-col p-6 border-slate-200 bg-slate-50 shadow-sm overflow-auto">
                     <div className="flex justify-between items-center mb-5">
                         <div className="flex items-center gap-3">
                             <h3 className="text-base font-semibold text-slate-700">General Information</h3>

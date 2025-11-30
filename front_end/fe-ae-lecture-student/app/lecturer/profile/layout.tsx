@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -19,16 +18,6 @@ export default function LecturerProfileLayout({ children }: { children: ReactNod
                     <p className="text-sm text-[var(--text-muted)] mt-1">
                         Manage your lecturer profile information and security.
                     </p>
-                </div>
-                {/* Back to courses */}
-                <div>
-                    <Link
-                        href="/lecturer/course"
-                        className="btn bg-white border border-brand text-nav hover:text-nav-active inline-flex items-center gap-2 w-fit"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back
-                    </Link>
                 </div>
             </header>
 

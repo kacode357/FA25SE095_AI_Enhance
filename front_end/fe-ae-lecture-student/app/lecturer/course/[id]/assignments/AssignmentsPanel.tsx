@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import type { AssignmentStatusFilter, GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
@@ -16,7 +16,7 @@ import { formatToVN } from "@/utils/datetime/time";
 import { useDeleteAssignment } from "@/hooks/assignment/useDeleteAssignment";
 import type { AssignmentItem } from "@/types/assignments/assignment.response";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import AssignmentDetailView from "./components/AssignmentDetailView";
@@ -134,6 +134,47 @@ export default function AssignmentsPanel({
     return m;
   }, [groups]);
 
+  // group assignments by topic for UI grouping
+  const topics = useMemo(() => {
+    const m = new Map<string, AssignmentItem[]>();
+    (assignments || []).forEach((a) => {
+      const t = (a as any).topicName || "Uncategorized";
+      if (!m.has(t)) m.set(t, []);
+      m.get(t)!.push(a as AssignmentItem);
+    });
+    return Array.from(m.entries()).map(([name, items]) => ({ name, items }));
+  }, [assignments]);
+
+  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
+  const topicRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+
+  const toggleTopic = (name: string) => {
+    setExpandedTopics((prev) => {
+      const opening = !prev[name];
+      const next = { ...prev, [name]: opening };
+
+      // if opening, schedule a smooth scroll to the topic's container
+      if (opening) {
+        // wait briefly for DOM to update
+        setTimeout(() => {
+          const el = topicRefs.current.get(name);
+          if (el && typeof el.scrollIntoView === "function") {
+            try {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            } catch (e) {
+              // fallback: compute position
+              const rect = el.getBoundingClientRect();
+              const top = window.scrollY + rect.top - 120;
+              window.scrollTo({ top, behavior: "smooth" });
+            }
+          }
+        }, 60);
+      }
+
+      return next;
+    });
+  };
+
   // handlers
   const patchFilter = (patch: Partial<FilterState>) => {
     setFilter((prev) => ({ ...prev, ...patch }));
@@ -227,10 +268,10 @@ export default function AssignmentsPanel({
 
   return (
     <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
-      <div className="flex-1 overflow-auto border border-slate-200 rounded-sm space-y-0 pb-10">
+      <div className="flex-1 overflow-auto border border-slate-200 rounded-sm space-y-0 pb-0">
         {/* Top: Full-width filter bar styled like Courses FilterBar and sticky */}
         <div className="sticky top-0 z-50">
-          <Card className="p-0 rounded-t-sm rounded-b-none mx-0 border-none border-b bg-slate-50 border-slate-200 shadow-sm min-h-[64px]">
+          <Card className="p-0 rounded-t-sm gap-0 rounded-b-none mx-0 border-none border-b bg-slate-50 border-slate-200 shadow-sm min-h-[64px]">
             <AssignmentsFilterBar
               value={filter}
               loading={loading}
@@ -272,131 +313,155 @@ export default function AssignmentsPanel({
                 </div>
               )}
 
-              {assignments.map((a) => (
-                <div
-                  key={a.id}
-                  className="px-4 border-b border-slate-200 hover:bg-slate-50 mb-5 pb-3 transition-colors"
-                >
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    {/* Left info */}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium truncate text-slate-800">{a.title ?? "Untitled"}</div>
-                        <Badge className={statusClass[a.status]}>{a.statusDisplay}</Badge>
-                        {a.isGroupAssignment ? (
-                          <Badge variant="outline">Group</Badge>
-                        ) : (
-                          <Badge variant="outline">Individual</Badge>
-                        )}
-                      </div>
-                      <div className="flex flex-col mt-2 gap-2 text-xs text-slate-500">
-                        <div className="flex gap-1 mr-2 items-center">
-                          <span>Topic:</span>
-                          <span className="text-slate-900">{a.topicName}</span>
-                          {a.isGroupAssignment && (
-                            <>
-                              &nbsp;&nbsp;•&nbsp;&nbsp; <span>Groups Counts:</span>
-                              <span className="text-slate-900">{a.assignedGroupsCount}</span>
-                              &nbsp;&nbsp;•&nbsp;&nbsp; <span>Group:</span>
-                              <span className="text-slate-900 truncate">
-                                {((a as any).groupIds && (a as any).groupIds.length > 0)
-                                  ? (a as any).groupIds.map((id: string) => groupNameMap.get(id) ?? id).join(", ")
-                                  : "-"}
-                              </span>
-                            </>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 flex-wrap items-center mr-2">
-                          <span>Start:</span>
-                          <span className="text-slate-900">{a.startDate ? formatToVN(a.startDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
-                          <span className="text-slate-400">·</span>
-
-                          <span>Due:</span>
-                          <span className="text-slate-900">{a.dueDate ? formatToVN(a.dueDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
-                          <span className="text-slate-400">·</span>
-
-                          <span>Extended Due:</span>
-                          <span className="text-slate-900">{a.extendedDueDate ? formatToVN(a.extendedDueDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
-                          <span className="text-slate-400">·</span>
-
-                          {a.isOverdue ? (
-                            <span className="text-red-600 ml-1">Overdue</span>
-                          ) : (
-                            <span className="text-slate-500">Days until Due: <span className="text-violet-800">{a.daysUntilDue}</span></span>
-                          )}
-                        </div>
-
-                        <div className="text-xs text-slate-400">
-                          Created: {a.createdAt ? formatToVN(a.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}
-                        </div>
-                      </div>
+              {topics.map((t) => (
+                <div key={t.name} className={`px-0 ${expandedTopics[t.name] ? 'mb-4' : ''}`}>
+                  <div
+                    className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 ${
+                      expandedTopics[t.name] ? 'bg-slate-50 rounded-t-sm' : ''
+                    }`}
+                    onClick={() => toggleTopic(t.name)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`font-medium ${expandedTopics[t.name] ? 'text-violet-800' : 'text-slate-800'}`}>{t.name}</div>
+                      <div className="text-sm text-slate-500">{t.items.length} item(s)</div>
                     </div>
+                    <ChevronDown className={`h-4 w-4 transform transition-transform ${expandedTopics[t.name] ? 'rotate-180' : ''}`} />
+                  </div>
 
-                    {/* Right actions */}
-                    <div className="flex flex-row items-end cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
-                      {/* Edit moved into detail view header */}
-                      {a.status === (AssignmentStatus.Draft as number) ? (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="text-xs cursor-pointer justify-end mr-1.5 flex items-end text-red-500 hover:text-red-600"
-                            disabled={deleting}
-                            onClick={() => {
-                              // open confirmation dialog with assignment info
-                              setToDelete(a);
-                              setConfirmOpen(true);
-                            }}
-                            title="Delete (Draft only)"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" /> Delete
-                          </Button>
-
-                          <ConfirmDeleteAssignmentDialog
-                            open={confirmOpen}
-                            onOpenChange={(v) => {
-                              setConfirmOpen(v);
-                              if (!v) setToDelete(null);
-                            }}
-                            assignment={toDelete}
-                            loading={deleting}
-                            onConfirm={async () => {
-                              const id = toDelete?.id;
-                              if (!id) {
-                                setConfirmOpen(false);
-                                setToDelete(null);
-                                return;
-                              }
-                              const res = await deleteAssignment(id, toDelete?.status as AssignmentStatus | undefined);
-                              if (res?.success) {
-                                fetchAssignments(query);
-                              }
-                              setConfirmOpen(false);
-                              setToDelete(null);
-                            }}
-                          />
-                        </>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs cursor-pointer"
-                          onClick={() =>
-                            router.push(`/lecturer/course/${courseId}/reports?assignmentId=${a.id}`)
-                          }
+                  <div
+                    ref={(el) => { topicRefs.current.set(t.name, el); }}
+                    className={`pl-6 pr-4 rounded-b-sm overflow-hidden transition-all duration-300 ease-out ${
+                      expandedTopics[t.name]
+                        ? "bg-slate-50 max-h-[1200px] opacity-100 py-4"
+                        : "max-h-0 bg-transparent opacity-0"
+                    }`}
+                  >
+                    <div className="transition-opacity duration-300">
+                      {t.items.map((a) => (
+                        <div
+                          key={a.id}
+                          className="bg-white border border-slate-200 rounded-lg p-4 mb-3 hover:shadow-sm transition-shadow"
                         >
-                          View Report
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs btn btn-gradient-slow cursor-pointer"
-                        onClick={() => openDetail(a.id)}
-                      >
-                        Details
-                      </Button>
+                          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            {/* Left info */}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium truncate text-slate-800">{a.title ?? "Untitled"}</div>
+                                <Badge className={statusClass[a.status]}>{a.statusDisplay}</Badge>
+                                {a.isGroupAssignment ? (
+                                  <Badge variant="outline">Group</Badge>
+                                ) : (
+                                  <Badge variant="outline">Individual</Badge>
+                                )}
+                              </div>
+                              <div className="flex flex-col mt-2 gap-2 text-xs text-slate-500">
+                                <div className="flex gap-1 mr-2 items-center">
+                                  {a.isGroupAssignment && (
+                                    <>
+                                    <span>Group:</span>
+                                      <span className="text-slate-900 truncate">
+                                        {((a as any).groupIds && (a as any).groupIds.length > 0)
+                                          ? (a as any).groupIds.map((id: string) => groupNameMap.get(id) ?? id).join(", ")
+                                          : "-"}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+
+                                <div className="flex gap-2 flex-wrap items-center mr-2">
+                                  <span>Start:</span>
+                                  <span className="text-slate-900">{a.startDate ? formatToVN(a.startDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
+                                  <span className="text-slate-400">·</span>
+
+                                  <span>Due:</span>
+                                  <span className="text-slate-900">{a.dueDate ? formatToVN(a.dueDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
+                                  <span className="text-slate-400">·</span>
+
+                                  <span>Extended Due:</span>
+                                  <span className="text-slate-900">{a.extendedDueDate ? formatToVN(a.extendedDueDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
+                                  <span className="text-slate-400">·</span>
+
+                                  {a.isOverdue ? (
+                                    <span className="text-red-600 ml-1">Overdue</span>
+                                  ) : (
+                                    <span className="text-slate-500">Days until Due: <span className="text-violet-800">{a.daysUntilDue}</span></span>
+                                  )}
+                                </div>
+
+                                <div className="text-xs text-slate-400">
+                                  Created: {a.createdAt ? formatToVN(a.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right actions */}
+                            <div className="flex flex-row items-end cursor-pointer text-violet-800 hover:text-violet-500 gap-2 shrink-0">
+                              {/* Edit moved into detail view header */}
+                              {a.status === (AssignmentStatus.Draft as number) ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="text-xs cursor-pointer justify-end mr-1.5 flex items-end text-red-500 hover:text-red-600"
+                                    disabled={deleting}
+                                    onClick={() => {
+                                      // open confirmation dialog with assignment info
+                                      setToDelete(a);
+                                      setConfirmOpen(true);
+                                    }}
+                                    title="Delete (Draft only)"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                                  </Button>
+
+                                  <ConfirmDeleteAssignmentDialog
+                                    open={confirmOpen}
+                                    onOpenChange={(v) => {
+                                      setConfirmOpen(v);
+                                      if (!v) setToDelete(null);
+                                    }}
+                                    assignment={toDelete}
+                                    loading={deleting}
+                                    onConfirm={async () => {
+                                      const id = toDelete?.id;
+                                      if (!id) {
+                                        setConfirmOpen(false);
+                                        setToDelete(null);
+                                        return;
+                                      }
+                                      const res = await deleteAssignment(id, toDelete?.status as AssignmentStatus | undefined);
+                                      if (res?.success) {
+                                        fetchAssignments(query);
+                                      }
+                                      setConfirmOpen(false);
+                                      setToDelete(null);
+                                    }}
+                                  />
+                                </>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-xs cursor-pointer"
+                                  onClick={() =>
+                                    router.push(`/lecturer/course/${courseId}/reports?assignmentId=${a.id}`)
+                                  }
+                                >
+                                  View Report
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs btn btn-gradient-slow cursor-pointer"
+                                onClick={() => openDetail(a.id)}
+                              >
+                                Details
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

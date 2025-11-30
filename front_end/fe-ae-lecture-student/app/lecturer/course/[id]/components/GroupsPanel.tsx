@@ -13,7 +13,7 @@ import {
 import { useDeleteGroup } from "@/hooks/group/useDeleteGroup";
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
 import { GroupDetail } from "@/types/group/group.response";
-import { ChevronDown, ChevronUp, Lock, PencilLine, Trash2, Unlock } from "lucide-react";
+import { ChevronDown, Lock, PencilLine, Trash2, Unlock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -72,7 +72,7 @@ export default function GroupsPanel({
         if (res?.success) {
             toast.success("Group deleted successfully");
             fetchByCourseId(courseId, true);
-            try { onChanged?.(); } catch {}
+            try { onChanged?.(); } catch { }
         }
         // Xoá khối else (báo lỗi)
 
@@ -103,16 +103,21 @@ export default function GroupsPanel({
                     {groups.map((g) => {
                         const isOpen = !!expanded[g.id];
                         return (
-                            <div key={g.id} className="px-4 py-3 flex flex-col">
+                            <div
+                                key={g.id}
+                                className="px-4 py-3 flex flex-col hover:bg-slate-50 cursor-pointer"
+                                onClick={() => toggleExpand(g.id)}
+                            >
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-3 min-w-0">
                                         <button
                                             type="button"
-                                            onClick={() => toggleExpand(g.id)}
-                                            aria-expanded={isOpen}
+                                            onClick={(e) => { e.stopPropagation(); toggleExpand(g.id); }}
+                                            aria-expanded={isOpen ? "true" : "false"}
+                                            aria-label={isOpen ? "Collapse group" : "Expand group"}
                                             className="p-1 rounded-md hover:bg-slate-100"
                                         >
-                                            {isOpen ? <ChevronUp className="size-4 text-slate-500" /> : <ChevronDown className="size-4 text-slate-500" />}
+                                            <ChevronDown className={`h-4 w-4 transform transition-transform duration-300 ${isOpen ? 'rotate-180 text-slate-500' : 'text-slate-500'}`} />
                                         </button>
                                         <div className="min-w-0">
                                             <div className="text-sm font-semibold text-violet-600 truncate">{g.name}</div>
@@ -126,42 +131,40 @@ export default function GroupsPanel({
                                             {g.memberCount}/{g.maxMembers}
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Button size="sm" variant="ghost" onClick={() => handleEdit(g.id)} className="text-slate-700">
+                                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEdit(g.id); }} className="text-slate-700">
                                                 <PencilLine className="size-4 text-blue-500" />
                                             </Button>
-                                            <Button size="sm" variant="ghost" onClick={() => handleDeleteClick(g)} className="text-red-600">
+                                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteClick(g); }} className="text-red-600">
                                                 <Trash2 className="size-4" />
                                             </Button>
-                                            <Button size="sm" className="ml-2 text-violet-800 hover:text-violet-500 bg-violet-50" onClick={() => handleOpenDetails(g.id)}>
+                                            <Button size="sm" className="ml-2 text-violet-800 hover:text-violet-500 bg-violet-50" onClick={(e) => { e.stopPropagation(); handleOpenDetails(g.id); }}>
                                                 Details
                                             </Button>
                                         </div>
                                     </div>
                                 </div>
 
-                                {isOpen && (
-                                    <div className="mt-3 text-sm text-slate-700 grid grid-cols-1 md:grid-cols-3 gap-2">
-                                        <div>
-                                            <div className="text-xs pb-2 text-slate-500">Leader</div>
-                                            <div className="font-medium">{g.leaderName || "—"}</div>
+                                <div className={`mt-0 ml-8.5 text-sm text-slate-700 grid grid-cols-1 md:grid-cols-5 gap-2 overflow-hidden transition-all duration-300 ease-out ${isOpen ? 'max-h-[600px] opacity-100 py-4' : 'max-h-0 opacity-0'}`}>
+                                    <div className="md:col-span-1">
+                                        <div className="text-xs pb-2 text-slate-500">Status</div>
+                                        <div className="font-medium flex items-center gap-2">
+                                            {g.isLocked ? (
+                                                <><Lock className="text-red-500 w-4 h-4" /> <span className="text-red-500">Locked</span></>
+                                            ) : (
+                                                <><Unlock className="text-emerald-500 w-4 h-4" /> <span className="text-emerald-500">Unlocked</span></>
+                                            )}
                                         </div>
-                                        <div>
-                                            <div className="text-xs pb-2 text-slate-500">Assignment</div>
-                                            <div className="font-medium">{g.assignmentTitle || "—"}</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-xs pb-2 text-slate-500">Status</div>
-                                            <div className="font-medium flex items-center gap-2">
-                                                {g.isLocked ? (
-                                                    <><Lock className="text-red-500 w-4 h-4" /> <span className="text-red-500">Locked</span></>
-                                                ) : (
-                                                    <><Unlock className="text-emerald-500 w-4 h-4" /> <span className="text-emerald-500">Unlocked</span></>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="col-span-1 md:col-span-3 text-right text-xs text-slate-400 mt-2">Created: {new Date(g.createdAt).toLocaleString()}</div>
                                     </div>
-                                )}
+                                    <div className="md:col-span-3">
+                                        <div className="text-xs pb-2 text-slate-500">Assignment</div>
+                                        <div className="font-medium">{g.assignmentTitle || "—"}</div>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                        <div className="text-xs pb-2 text-slate-500">Leader</div>
+                                        <div className="font-medium">{g.leaderName || "—"}</div>
+                                    </div>
+                                    <div className="col-span-1 md:col-span-5 text-right text-xs text-slate-400 mt-2">Created: {new Date(g.createdAt).toLocaleString()}</div>
+                                </div>
                             </div>
                         );
                     })}
@@ -211,7 +214,7 @@ export default function GroupsPanel({
                 onUpdated={() => {
                     toast.success("Group updated successfully");
                     fetchByCourseId(courseId, true);
-                    try { onChanged?.(); } catch {}
+                    try { onChanged?.(); } catch { }
                 }}
             />
         </div>

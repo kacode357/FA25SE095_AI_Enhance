@@ -204,24 +204,26 @@ export default function CreateGroupSheet({
             {/* field-level errors are shown as toasts */}
           </div>
 
-          <div className="flex items-center justify-start py-2 gap-3">
-            <button
-              title="button"
-              type="button"
-              onClick={() => !submitting && setIsLocked(!isLocked)}
-              disabled={submitting}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${isLocked ? "bg-red-500" : "bg-emerald-400"
-                } ${submitting ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
-            >
-              <span
-                className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform duration-200 ${isLocked ? "translate-x-5" : "translate-x-0"
-                  }`}
-              />
-            </button>
-            <Label htmlFor="isLocked" className="text-sm font-medium text-slate-700">
-              Lock group (prevent changes)
-            </Label>
-          </div>
+          {mode === "edit" && (
+            <div className="flex items-center justify-start py-2 gap-3">
+              <button
+                title="button"
+                type="button"
+                onClick={() => !submitting && setIsLocked(!isLocked)}
+                disabled={submitting}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${isLocked ? "bg-red-500" : "bg-emerald-400"
+                  } ${submitting ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform duration-200 ${isLocked ? "translate-x-5" : "translate-x-0"
+                    }`}
+                />
+              </button>
+              <Label htmlFor="isLocked" className="text-sm font-medium text-slate-700">
+                Lock group (prevent changes)
+              </Label>
+            </div>
+          )}
 
         </div>
 

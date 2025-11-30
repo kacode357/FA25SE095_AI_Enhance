@@ -195,7 +195,7 @@ export default function Header() {
               href="/lecturer/manage-courses"
               className={`text-sm font-medium ${pathname?.startsWith("/lecturer/manage-courses") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
             >
-              Manager Course
+              Course Services
             </Link>
 
             <Link

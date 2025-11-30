@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateProfile } from "@/hooks/user/useUpdateProfile";
 import { useUploadAvatar } from "@/hooks/user/useUploadAvatar";
 import type { UpdateProfilePayload } from "@/types/user/user.payload";
-import { CircleFadingArrowUp, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { CircleFadingArrowUp, Loader2, Mail, ScanEye, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, DetailRow, Field, formatDateTime, initials, safeStr, StatLine } from "../components/format-profile";
 
@@ -185,7 +185,6 @@ export default function LecturerMyProfilePage() {
                             <div className="flex flex-wrap items-center gap-2">
                                 <Badge label={user.role || "Lecturer"} tone="brand" />
                                 <Badge label={user.status || "Unknown"} tone={user.status === "Active" ? "success" : "neutral"} />
-                                <Badge label={user.subscriptionTier || "Free"} tone="neutral" />
                             </div>
                         </div>
 
@@ -210,148 +209,123 @@ export default function LecturerMyProfilePage() {
                                 }
                             />
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        {/* Crawl quota moved under StatLine */}
-                        <div className="mt-10">
-                            <h4 className="sr-only">Crawl quota</h4>
-                            <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
-                                <span>
-                                    Crawl Quota used: {user.crawlQuotaUsed ?? 0} / {user.crawlQuotaLimit ?? 0}
-                                </span>
-                                {user.quotaResetDate && (
-                                    <span>Reset: {formatDateTime(user.quotaResetDate, true)}</span>
-                                )}
-                            </div>
-                            <svg
-                                className="w-full h-2 rounded-full border border-[var(--border)] overflow-hidden"
-                                viewBox="0 0 100 8"
-                                preserveAspectRatio="none"
-                                aria-label="Crawl quota usage"
-                            >
-                                <defs>
-                                    <linearGradient id="quotaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stopColor="var(--brand)" />
-                                        <stop offset="100%" stopColor="var(--brand-700)" />
-                                    </linearGradient>
-                                </defs>
-                                <rect x="0" y="0" width="100" height="8" fill="#f1f5f9" />
-                                <rect x="0" y="0" width={`${quotaPct}`} height="8" fill="url(#quotaGrad)" />
-                            </svg>
+            {/* Two-column layout: left = Profile (read-only), right = Edit profile (form) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="card p-6">
+                    <h3 className="text-sm font-semibold flex items-center gap-1 text-nav mb-4">Profile Preview <ScanEye className="size-4" /></h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-9" role="group" aria-label="Profile details">
+                        <div className="md:col-span-2">
+
+                            <DetailRow label="First name" value={safeStr(form.firstName) || <span className="text-slate-400 italic">Not set</span>} />
+                        </div>
+                        <div className="md:col-span-2">
+
+                            <DetailRow label="Last name" value={safeStr(form.lastName) || <span className="text-slate-400 italic">Not set</span>} />
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <DetailRow label="Department" value={safeStr(form.department) || <span className="text-slate-400 italic">Not set</span>} />
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <DetailRow label="Institution" value={safeStr(form.institutionName) || <span className="text-slate-400 italic">Not set</span>} />
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <DetailRow label="Institution address" value={safeStr(form.institutionAddress) || <span className="text-slate-400 italic">Not set</span>} />
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Middle: Subscription + Profile in 2 columns */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {/* Subscription */}
                 <div className="card p-6">
-                    <h3 className="text-sm font-semibold text-nav mb-4">Subscription</h3>
-                    <div className="grid grid-cols-1 gap-3" role="group" aria-label="Subscription details">
-                        <DetailRow label="Plan" value={<Badge compact label={user.subscriptionTier || "Free"} tone="neutral" />} />
-                        <DetailRow label="Start" value={formatDateTime(user.subscriptionStartDate, true)} />
-                        <DetailRow label="End" value={formatDateTime(user.subscriptionEndDate, true)} />
-                    </div>
+                    <h3 className="text-sm font-semibold text-nav mb-4">Edit profile</h3>
+                    <form onSubmit={onSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Field label="First Name">
+                                <input
+                                    className="input"
+                                    placeholder="First name"
+                                    value={form.firstName}
+                                    onChange={onChange("firstName")}
+                                />
+                            </Field>
+
+                            <Field label="Last Name">
+                                <input
+                                    className="input"
+                                    placeholder="Last name"
+                                    value={form.lastName}
+                                    onChange={onChange("lastName")}
+                                />
+                            </Field>
+
+                            <Field label="Department" span={2}>
+                                <input
+                                    className="input"
+                                    placeholder="Department"
+                                    value={form.department}
+                                    onChange={onChange("department")}
+                                />
+                            </Field>
+
+                            <Field label="Institution Name" span={2}>
+                                <input
+                                    className="input"
+                                    placeholder="University / Organization"
+                                    value={form.institutionName}
+                                    onChange={onChange("institutionName")}
+                                />
+                            </Field>
+
+                            <Field label="Institution Address" span={2}>
+                                <input
+                                    className="input"
+                                    placeholder="Address"
+                                    value={form.institutionAddress}
+                                    onChange={onChange("institutionAddress")}
+                                />
+                            </Field>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-3 pt-2">
+                            <button
+                                type="submit"
+                                className={`btn btn-gradient-slow ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    "Save Changes"
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                className={`btn bg-white border border-brand text-nav hover:text-nav-active ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+                                disabled={loading}
+                                onClick={() => {
+                                    setForm({
+                                        firstName: safeStr(user.firstName),
+                                        lastName: safeStr(user.lastName),
+                                        department: safeStr(user.department),
+                                        institutionName: safeStr(user.institutionName),
+                                        institutionAddress: safeStr(user.institutionAddress),
+                                    });
+                                }}
+                            >
+                                Reset
+                            </button>
+                        </div>
+                    </form>
                 </div>
-
-                {/* Profile details */}
-                <div className="card p-6">
-                    <h3 className="text-sm font-semibold text-nav mb-4">Profile</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3" role="group" aria-label="Profile details">
-                        <DetailRow label="First name" value={safeStr(form.firstName) || <span className="text-slate-400 italic">Not set</span>} />
-                        <DetailRow label="Last name" value={safeStr(form.lastName) || <span className="text-slate-400 italic">Not set</span>} />
-                        <DetailRow label="Department" value={safeStr(form.department) || <span className="text-slate-400 italic">Not set</span>} />
-                        <DetailRow label="Institution" value={safeStr(form.institutionName) || <span className="text-slate-400 italic">Not set</span>} />
-                        <DetailRow label="Institution address" value={safeStr(form.institutionAddress) || <span className="text-slate-400 italic">Not set</span>} />
-                    </div>
-                </div>
-            </div>
-
-            {/* Bottom: Edit profile full width */}
-            <div className="card p-6">
-                <h3 className="text-sm font-semibold text-nav mb-4">Edit profile</h3>
-                <form onSubmit={onSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Field label="First Name">
-                            <input
-                                className="input"
-                                placeholder="First name"
-                                value={form.firstName}
-                                onChange={onChange("firstName")}
-                            />
-                        </Field>
-
-                        <Field label="Last Name">
-                            <input
-                                className="input"
-                                placeholder="Last name"
-                                value={form.lastName}
-                                onChange={onChange("lastName")}
-                            />
-                        </Field>
-
-                        <Field label="Department" span={2}>
-                            <input
-                                className="input"
-                                placeholder="Department"
-                                value={form.department}
-                                onChange={onChange("department")}
-                            />
-                        </Field>
-
-                        <Field label="Institution Name" span={2}>
-                            <input
-                                className="input"
-                                placeholder="University / Organization"
-                                value={form.institutionName}
-                                onChange={onChange("institutionName")}
-                            />
-                        </Field>
-
-                        <Field label="Institution Address" span={2}>
-                            <input
-                                className="input"
-                                placeholder="Address"
-                                value={form.institutionAddress}
-                                onChange={onChange("institutionAddress")}
-                            />
-                        </Field>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-2">
-                        <button
-                            type="submit"
-                            className={`btn btn-gradient-slow ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                "Save Changes"
-                            )}
-                        </button>
-
-                        <button
-                            type="button"
-                            className={`btn bg-white border border-brand text-nav hover:text-nav-active ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
-                            disabled={loading}
-                            onClick={() => {
-                                setForm({
-                                    firstName: safeStr(user.firstName),
-                                    lastName: safeStr(user.lastName),
-                                    department: safeStr(user.department),
-                                    institutionName: safeStr(user.institutionName),
-                                    institutionAddress: safeStr(user.institutionAddress),
-                                });
-                            }}
-                        >
-                            Reset
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     );

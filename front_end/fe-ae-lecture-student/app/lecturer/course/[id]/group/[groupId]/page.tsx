@@ -90,17 +90,17 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
       {props?.onDone && (
         <div className="flex items-center justify-between">
           <h2 className="text-base text-slate-900">Group Details</h2>
-          <Button variant="ghost" className="text-violet-800 hover:text-violet-500" onClick={props.onDone}>
-            <ArrowLeft className="size-4 " /> Back
+          <Button variant="ghost" className="text-violet-700 bg-violet-50 text-sm hover:text-violet-500" onClick={props.onDone}>
+            <ArrowLeft className="size-4 " /> Back to Groups
           </Button>
         </div>
       )}
 
       {/* Content Layout */}
-      <div className="grid grid-cols-1 mb-10 -mt-4 rounded-md gap-3 lg:grid-cols-[45%_55%] mr-3">
+      <div className="grid grid-cols-1 mb-10 rounded-md gap-3 lg:grid-cols-[45%_55%] mr-3">
         {/* ==== Left Column ==== */}
         <section className="bg-white max-h-[calc(100vh-280px)] overflow-auto p-3 rounded-sm">
-          <h3 className="text-sm font-semibold text-violet-800 flex items-center gap-2 mb-5">
+          <h3 className="text-sm font-semibold text-violet-700 flex items-center gap-2 mb-5">
             <Info className="size-4" /> Group Overview
           </h3>
           <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-xs text-slate-700">
@@ -123,7 +123,7 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
             />
           </div>
 
-          <h3 className="text-sm font-semibold text-violet-800 flex items-center gap-2 mt-8 mb-5">
+          <h3 className="text-sm font-semibold text-violet-700 flex items-center gap-2 mt-8 mb-5">
             <User className="size-4" /> Leader & Assignment
           </h3>
           <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-xs text-slate-700">
@@ -131,7 +131,7 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
             <InfoItem label="Assignment Title" value={group.assignmentTitle || "—"} />
           </div>
 
-          <h3 className="text-xs font-semibold text-violet-800 flex items-center gap-2 mt-10 mb-5">
+          <h3 className="text-xs font-semibold text-violet-700 flex items-center gap-2 mt-10 mb-5">
             <CalendarClock className="size-4" /> Metadata
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-2 gap-x-6 gap-y-5 text-xs text-slate-700">
@@ -142,7 +142,7 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
         {/* ==== Right Column (Members) ==== */}
         <section className="rounded-lg p-4 shadow-sm bg-white max-h-[calc(100vh-280px)] overflow-auto">
           <div className="flex items-center mb-3 justify-between">
-            <h3 className="text-sm font-semibold text-violet-800 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-violet-700 flex items-center gap-2">
               <User className="size-4" /> Members
             </h3>
             <button
@@ -277,7 +277,7 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
             </div>
           </div>
           <DialogFooter className="flex gap-3 mt-4">
-            <Button className="cursor-pointer text-violet-800 hover:text-violet-500" variant="ghost" onClick={() => setLeaderModalOpen(false)} disabled={assigning}>
+            <Button className="cursor-pointer text-violet-700 hover:text-violet-500" variant="ghost" onClick={() => setLeaderModalOpen(false)} disabled={assigning}>
               Cancel
             </Button>
             <Button className="cursor-pointer btn btn-gradient-slow" onClick={handleConfirmLeader} disabled={assigning || !selectedLeader}>
