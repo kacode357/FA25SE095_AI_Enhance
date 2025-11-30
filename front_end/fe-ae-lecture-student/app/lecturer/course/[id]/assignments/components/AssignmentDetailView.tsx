@@ -1,12 +1,9 @@
 // app/lecturer/course/[id]/assignments/components/AssignmentDetailView.tsx
 "use client";
 
-import { ArrowLeft, CalendarCheck2, ChevronDown, Info, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
@@ -16,404 +13,137 @@ import { useCloseAssignment } from "@/hooks/assignment/useCloseAssignment";
 import { useExtendDueDate } from "@/hooks/assignment/useExtendDueDate";
 import { useScheduleAssignment } from "@/hooks/assignment/useScheduleAssignment";
 import { AssignmentService } from "@/services/assignment.services";
-import { AssignmentStatus, GroupItem } from "@/types/assignments/assignment.response";
-import AssignmentActionsBar from "./AssignmentActionsBar";
+import { GroupItem } from "@/types/assignments/assignment.response";
+
+import AssignmentDetailHeader from "./AssignmentDetailHeader";
+import AssignmentGroups from "./AssignmentGroups";
+import AssignmentHeaderActions from "./AssignmentHeaderActions";
+import AssignmentOverview from "./AssignmentOverview";
 import ConfirmScheduleAssignmentDialog from "./ConfirmScheduleAssignmentDialog";
-import GroupAssignControls from "./GroupAssignControls";
 
 type Props = {
-  id: string;
-  onBack: () => void;
-  onEdit?: (id: string) => void;
-};
-
-const statusClass: Record<AssignmentStatus, string> = {
-  [AssignmentStatus.Draft]: "badge-assignment badge-assignment--draft",
-  [AssignmentStatus.Scheduled]: "badge-assignment badge-assignment--scheduled",
-  [AssignmentStatus.Active]: "badge-assignment badge-assignment--active",
-  [AssignmentStatus.Extended]: "badge-assignment badge-assignment--extended",
-  [AssignmentStatus.Overdue]: "badge-assignment badge-assignment--overdue",
-  [AssignmentStatus.Closed]: "badge-assignment badge-assignment--closed",
-  [AssignmentStatus.Graded]: "badge-assignment badge-assignment--graded",
-};
-
-const fmt = (s?: string | null) => (s ? new Date(s).toLocaleString() : "—");
-
-const daysUntilDue = (iso?: string | null) => {
-  if (!iso) return "—";
-  try {
-    const ms = new Date(iso).getTime() - Date.now();
-    const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
-    if (days > 1) return `${days} days`;
-    if (days === 1) return `1 day`;
-    if (days === 0) return `0`;
-    return `Overdue by ${Math.abs(days)} day${Math.abs(days) > 1 ? "s" : ""}`;
-  } catch (e) {
-    return "—";
-  }
+    id: string;
+    onBack: () => void;
+    onEdit?: (id: string) => void;
 };
 
 export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
-  const { data, loading, fetchAssignment } = useAssignmentById();
-  const { extendDueDate, loading: loadingExtend } = useExtendDueDate();
-  const { closeAssignment, loading: loadingClose } = useCloseAssignment();
-  const { scheduleAssignment, loading: loadingSchedule } = useScheduleAssignment();
+    const { data, loading, fetchAssignment } = useAssignmentById();
+    const { extendDueDate, loading: loadingExtend } = useExtendDueDate();
+    const { closeAssignment, loading: loadingClose } = useCloseAssignment();
+    const { scheduleAssignment, loading: loadingSchedule } = useScheduleAssignment();
 
-  const [openOverview, setOpenOverview] = useState(false);
-  const [openScheduleConfirm, setOpenScheduleConfirm] = useState(false);
-  const [overviewEnter, setOverviewEnter] = useState(false);
-  const [overviewMounted, setOverviewMounted] = useState(false);
+    const [openOverview, setOpenOverview] = useState(false);
+    const [openScheduleConfirm, setOpenScheduleConfirm] = useState(false);
+    const [overviewEnter, setOverviewEnter] = useState(false);
+    const [overviewMounted, setOverviewMounted] = useState(false);
 
-  const [assignedGroupsState, setAssignedGroupsState] = useState<GroupItem[]>([]);
+    const [assignedGroupsState, setAssignedGroupsState] = useState<GroupItem[]>([]);
 
-  useEffect(() => {
-    // fetch assignment details and assigned groups together
-    async function load() {
-      if (!id) return;
-      await fetchAssignment(id);
-      try {
-        const res = await AssignmentService.getGroups(id);
-        setAssignedGroupsState(res.groups || []);
-      } catch {
-        // ignore
-      }
-    }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    useEffect(() => {
+        // fetch assignment details and assigned groups together
+        async function load() {
+            if (!id) return;
+            await fetchAssignment(id);
+            try {
+                const res = await AssignmentService.getGroups(id);
+                setAssignedGroupsState(res.groups || []);
+            } catch {
+                // ignore
+            }
+        }
+        load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
-  const a = data?.assignment;
+    const a = data?.assignment;
 
-  const refetchDetail = async () => {
-    if (!id) return;
-    await fetchAssignment(id);
-    try {
-      const res = await AssignmentService.getGroups(id);
-      setAssignedGroupsState(res.groups || []);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleExtend = async (iso: string) => {
-    await extendDueDate(id, { extendedDueDate: iso });
-    refetchDetail();
-  };
-
-  const handleClose = async () => {
-    await closeAssignment(id);
-    refetchDetail();
-  };
-
-  const handleSchedule = async () => {
-    await scheduleAssignment(id, { schedule: true });
-    setOpenScheduleConfirm(false);
-    refetchDetail();
-  };
-
-  // animation
-  useEffect(() => {
-    let t: number | undefined;
-    if (openOverview) {
-      setOverviewMounted(true);
-      setOverviewEnter(false);
-      requestAnimationFrame(() => setOverviewEnter(true));
-    } else {
-      setOverviewEnter(false);
-      t = window.setTimeout(() => setOverviewMounted(false), 500);
-    }
-    return () => {
-      if (t) window.clearTimeout(t);
+    const refetchDetail = async () => {
+        if (!id) return;
+        await fetchAssignment(id);
+        try {
+            const res = await AssignmentService.getGroups(id);
+            setAssignedGroupsState(res.groups || []);
+        } catch {
+            // ignore
+        }
     };
-  }, [openOverview]);
 
-  return (
-    <Card className="border border-slate-200 py-0 px-2 -gap-2 mr-3.5 shadow-none">
-      {/* ===== Header ===== */}
-      <CardHeader className="flex items-start justify-between mb-5 -mx-3 gap-3">
-        <div className="min-w-0">
-          <CardTitle className="flex mt-3 items-center gap-2 text-lg md:text-xl">
-            {a ? (
-              <>
-                <span className="truncate text-[#000D83]">{a.title}</span>
-                <Badge className={`${statusClass[a.status]} shadow-md`}>{a.statusDisplay}</Badge>
-                {a.isGroupAssignment && <Badge variant="secondary">Group</Badge>}
-              </>
-            ) : (
-              "Assignment Detail"
-            )}
-          </CardTitle>
+    const handleExtend = async (iso: string) => {
+        await extendDueDate(id, { extendedDueDate: iso });
+        refetchDetail();
+    };
 
-          {a && (
-            <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
-              {a.topicName && (
-                <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
-                  Topic: {a.topicName}
-                </span>
-              )}
-              <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
-                Max: {a.maxPoints ?? 0} pts
-              </span>
-              <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
-                Weight: {a.weight ?? 0} %
-              </span>
-              <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
-                Start: {fmt(a.startDate)}
-              </span>
-              <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
-                Due: {fmt(a.dueDate)}
-              </span>
-              {a.extendedDueDate && (
-                <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
-                  Extended: {fmt(a.extendedDueDate)}
-                </span>
-              )}
-              <span className="rounded-full border border-slate-300 bg-white px-2 py-1">
-                Days until due: {daysUntilDue(a.extendedDueDate ?? a.dueDate)}
-              </span>
-            </div>
-          )}
-        </div>
+    const handleClose = async () => {
+        await closeAssignment(id);
+        refetchDetail();
+    };
 
-        <div className="flex mt-3 items-center gap-2 shrink-0">
-          {a && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-[11px] h-8 px-2 mr-2"
-              onClick={() => setOpenOverview((s) => !s)}
-            >
-              <span className="flex text-sm items-center gap-1 text-[#000D83]">
-                <Info className="size-4" />
-                <ChevronDown className="size-4" />
-                Overview
-              </span>
-            </Button>
-          )}
-          {a && a.status === AssignmentStatus.Draft && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs flex btn btn-gradient-slow mr-3 items-center gap-1"
-              onClick={() => setOpenScheduleConfirm(true)}
-              disabled={loadingSchedule}
-              title="Schedule this assignment"
-            >
-              <CalendarCheck2 className="h-3.5 w-3.5" /> Schedule
-            </Button>
-          )}
+    const handleSchedule = async () => {
+        await scheduleAssignment(id, { schedule: true });
+        setOpenScheduleConfirm(false);
+        refetchDetail();
+    };
 
-          {a && a.status !== AssignmentStatus.Overdue && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs flex btn btn-gradient-slow items-center gap-1"
-              onClick={() => onEdit && onEdit(a.id)}
-              disabled={a.status === AssignmentStatus.Closed}
-            >
-              <Pencil className="h-3.5 w-3.5" /> Edit
-            </Button>
-          )}
+    // animation
+    useEffect(() => {
+        let t: number | undefined;
+        if (openOverview) {
+            setOverviewMounted(true);
+            setOverviewEnter(false);
+            requestAnimationFrame(() => setOverviewEnter(true));
+        } else {
+            setOverviewEnter(false);
+            t = window.setTimeout(() => setOverviewMounted(false), 500);
+        }
+        return () => {
+            if (t) window.clearTimeout(t);
+        };
+    }, [openOverview]);
 
-          <Button className="text-[#000D83]" variant="outline" onClick={onBack}>
-            <ArrowLeft className="size-4" />
-            Back
-          </Button>
-        </div>
-      </CardHeader>
-
-      <Separator />
-
-      {/* ===== Content ===== */}
-      <CardContent className="px-3 pl-3 -mr-3 min-h-0">
-        {loading && <div className="text-sm text-slate-500">Loading assignment...</div>}
-        {!loading && !a && <div className="text-sm text-slate-500">Not found or failed to load.</div>}
-
-        {!loading && a && (
-          <>
-            {/* schedule dialog */}
-            <ConfirmScheduleAssignmentDialog
-              open={openScheduleConfirm}
-              onOpenChange={setOpenScheduleConfirm}
-              submitting={loadingSchedule}
-              info={{
-                title: a.title,
-                start: a.startDate,
-                due: a.dueDate,
-                statusDisplay: a.statusDisplay,
-              }}
-              onConfirm={handleSchedule}
-            />
-
-            <div className="flex flex-col gap-6 lg:h-[calc(100vh-220px)] min-h-0 overflow-auto mr-4">
-              {/* ===================== OVERVIEW ON TOP (RIGHT COLUMN FIRST) ===================== */}
-              {overviewMounted && (
-                <div className="lg:col-span-4 order-0">
-                  <div className="rounded-md border mt-1 border-slate-200 bg-white overflow-hidden transition-all duration-300">
-                    <div className="py-3 border-b border-slate-300 flex items-center justify-between">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-[11px] h-8 px-2"
-                        onClick={() => setOpenOverview((s) => !s)}
-                      >
-                        <span className="flex items-center gap-1 text-[#000D83]">
-                          <Info className="size-4" />
-                          <ChevronDown className="size-4" />
-                          Overview
-                        </span>
-                      </Button>
-                    </div>
-
-                    <div
-                      className={`px-4 py-3 text-sm grid grid-cols-1 gap-5 transition-all duration-500 ease-out transform ${overviewEnter ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"
-                        }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="text-slate-500">Course</span>
-                        <span className="font-medium text-right">{a.courseName}</span>
-                      </div>
-
-                      {a.topicName && (
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="text-slate-500">Topic</span>
-                          <span className="font-medium text-right">{a.topicName}</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Type</span>
-                        <span className="font-medium">{a.isGroupAssignment ? "Group" : "Individual"}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Max Points</span>
-                        <span className="font-medium">{a.maxPoints ?? 0} pts</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Weight</span>
-                        <span className="font-medium">{a.weight ?? 0} %</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Format</span>
-                        <span className="font-medium">{a.format?.trim() || "—"}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Start</span>
-                        <span className="font-medium">{fmt(a.startDate)}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Due</span>
-                        <span className="font-medium">{fmt(a.dueDate)}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Extended Due</span>
-                        <span className="font-medium">{fmt(a.extendedDueDate)}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Created</span>
-                        <span className="font-medium">{fmt(a.createdAt)}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Updated</span>
-                        <span className="font-medium">{fmt(a.updatedAt)}</span>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="mt-2">
-                        <AssignmentActionsBar
-                          assignmentId={a.id}
-                          status={a.status}
-                          currentDue={a.dueDate}
-                          currentExtendedDue={a.extendedDueDate}
-                          onExtend={handleExtend}
-                          onClose={handleClose}
-                          defaultOpen
-                          loadingExtend={loadingExtend}
-                          loadingClose={loadingClose}
-                        />
-                      </div>
-                    </div>
-                  </div>
+    return (
+        <Card className="border border-slate-200 py-0 px-2 -gap-2 shadow-none">
+            {/* ===== Header ===== */}
+            <CardHeader className="flex items-start justify-between mb-5 -mx-3 gap-3">
+                <div className="min-w-0 w-full lg:max-w-[calc(100%-300px)]">
+                    <AssignmentDetailHeader a={a} onBack={onBack} onEdit={onEdit} openOverview={openOverview} setOpenOverview={setOpenOverview} setOpenScheduleConfirm={setOpenScheduleConfirm} loadingSchedule={loadingSchedule} />
                 </div>
-              )}
+                <div className="flex-shrink-0">
+                    <AssignmentHeaderActions a={a} onBack={onBack} onEdit={onEdit} setOpenOverview={setOpenOverview} setOpenScheduleConfirm={setOpenScheduleConfirm} loadingSchedule={loadingSchedule} />
+                </div>
+            </CardHeader>
 
-              {/* ===================== DESCRIPTION BELOW AFTER OVERVIEW ===================== */}
-              <div
-                className={`${overviewMounted ? "lg:col-span-8" : "lg:col-span-12"
-                  } order-1 min-h-0 grid grid-rows-[auto,auto,auto] gap-6 relative`}
-              >
-                {/* Description */}
-                <section className="min-h-0 h-full flex flex-col bg-slate-50 md:h-128">
-                  <div className="mb-2 text-sm text-slate-500">Description</div>
-                  <ScrollArea className="rounded-md bg-slate-50 flex-1 min-h-0 w-full overflow-y-auto ">
-                    <div className="bg-slate-50">
-                      <LiteRichTextEditor
-                        value={a.description ?? ""}
-                        onChange={() => { }}
-                        readOnly
-                        className="rounded-md"
-                        debounceMs={200}
-                        placeholder="No description..."
-                      />
-                    </div>
-                  </ScrollArea>
-                </section>
+            <Separator />
 
-                {/* Groups */}
-                <section className="pb-10">
-                  <div className="mb-2 -mt-5 text-sm text-slate-500">
-                    Assigned Groups ({assignedGroupsState.length ?? a?.assignedGroupsCount ?? 0})
-                  </div>
-                  {assignedGroupsState && assignedGroupsState.length > 0 ? (
-                    <ScrollArea className="max-h-72">
-                      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                        {assignedGroupsState.map((g) => (
-                          <div
-                            key={g.id}
-                            className="px-3 py-2 text-sm border border-violet-400 rounded-md bg-slate-50"
-                          >
-                            <div className="font-medium">{g.name}</div>
-                            <div className="text-xs text-slate-500">
-                              Members: {g.memberCount}/{g.maxMembers}
-                              {g.leaderName ? ` • Leader: ${g.leaderName}` : ""}
+            {/* ===== Content ===== */}
+            <CardContent className="px-3 min-h-0 bg-slate-50 rounded-sm">
+                {loading && <div className="text-sm text-slate-500">Loading assignment...</div>}
+                {!loading && !a && <div className="text-sm text-slate-500">Not found or failed to load.</div>}
+
+                {!loading && a && (
+                    <>
+                        <ConfirmScheduleAssignmentDialog open={openScheduleConfirm} onOpenChange={setOpenScheduleConfirm} submitting={loadingSchedule} info={{ title: a.title, start: a.startDate, due: a.dueDate, statusDisplay: a.statusDisplay }} onConfirm={handleSchedule} />
+
+                        <div className="flex flex-col gap-6 lg:h-[calc(100vh-220px)] min-h-0 overflow-auto mr-4">
+                            <AssignmentOverview a={a} overviewEnter={overviewEnter} overviewMounted={overviewMounted} setOpenOverview={setOpenOverview} onExtend={handleExtend} onClose={handleClose} loadingExtend={loadingExtend} loadingClose={loadingClose} />
+
+                            <div className={`${overviewMounted ? "lg:col-span-8" : "lg:col-span-12"} order-1 min-h-0 grid grid-rows-[auto,auto,auto] gap-6 relative`}>
+                                {/* Description */}
+                                <section className="min-h-0 h-full rounded-lg flex flex-col bg-slate-50 md:h-128">
+                                    <div className="mb-2 mt-3 text-sm text-slate-500">Description</div>
+                                    <ScrollArea className="rounded-lg bg-slate-50 flex-1 min-h-0 w-full overflow-y-auto ">
+                                        <div className="bg-slate-50">
+                                            <LiteRichTextEditor value={a.description ?? ""} onChange={() => { }} readOnly className="rounded-md" debounceMs={200} placeholder="No description..." />
+                                        </div>
+                                    </ScrollArea>
+                                </section>
+
+                                <AssignmentGroups a={a} assignedGroupsState={assignedGroupsState} refetchDetail={refetchDetail} />
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  ) : (
-                    <div className="text-sm text-slate-500">No groups assigned.</div>
-                  )}
-                </section>
-
-                {/* Manage groups */}
-                {a.isGroupAssignment && (
-                  <section>
-                    <GroupAssignControls
-                      courseId={a.courseId}
-                      assignment={{
-                        id: a.id,
-                        assignedGroupsCount: a.assignedGroupsCount,
-                        assignedGroups: a.assignedGroups,
-                      }}
-                      status={a.status}
-                      onChanged={refetchDetail}
-                    />
-                  </section>
+                        </div>
+                    </>
                 )}
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
+            </CardContent>
+        </Card>
+    );
 }

@@ -2,6 +2,7 @@
 "use client";
 
 import { CircleAlert } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,6 +45,7 @@ type Props = {
 
 export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Props) {
   const { createAssignment, loading: creating } = useCreateAssignment();
+  const router = useRouter();
   const { scheduleAssignment, loading: scheduling } = useScheduleAssignment();
   const { assignGroups, loading: assigning } = useAssignGroups();
   const { data: topics, loading: loadingTopics, fetchDropdown } = useGetTopicsDropdown();
@@ -253,7 +255,8 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             try {
               await assignGroups({ assignmentId: res.assignmentId, groupIds: form.groupIds }, true);
               toast.success("The assignment has been created and assigned to the group successfully.");
-              onCreated?.();
+              // after successful create+assign, navigate to upload attachments page
+              router.push(`/lecturer/course/${courseId}/assignments/${res.assignmentId}/upload`);
               return;
             } catch {
               // If assign fails, surface an error and keep the UI so user can retry manually
@@ -261,15 +264,13 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               return;
             }
           }
-
-          // No groups selected yet: show created toast and keep UI for manual group assignment
-          toast.success("Assignment created successfully.");
+          // No groups selected yet: navigate to upload attachments page so instructor can upload files
+          router.push(`/lecturer/course/${courseId}/assignments/${res.assignmentId}/upload`);
           return;
         }
 
-        // Non-group assignment: show success and return to assignments
-        toast.success("Assignment created successfully.");
-        onCreated?.();
+        // Non-group assignment: navigate to upload attachments page
+        router.push(`/lecturer/course/${courseId}/assignments/${res.assignmentId}/upload`);
         return;
       }
     } catch (err) {

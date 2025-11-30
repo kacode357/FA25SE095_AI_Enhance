@@ -1,32 +1,33 @@
 // services/assignment.services.ts
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
-  AssignGroupsPayload,
-  CreateAssignmentPayload,
-  ExtendDueDatePayload,
-  GetAssignmentsQuery,
-  MyAssignmentsQuery,
-  ScheduleAssignmentRequest,
-  UnassignGroupsPayload,
-  UpdateAssignmentPayload,
+    AssignGroupsPayload,
+    CreateAssignmentPayload,
+    ExtendDueDatePayload,
+    GetAssignmentsQuery,
+    MyAssignmentsQuery,
+    ScheduleAssignmentRequest,
+    UnassignGroupsPayload,
+    UpdateAssignmentPayload,
 } from "@/types/assignments/assignment.payload";
+import type { UploadAssignmentAttachmentsResponse } from "@/types/assignments/assignment.response";
 import {
-  AssignGroupsResponse,
-  CloseAssignmentResponse,
-  CreateAssignmentResponse,
-  DeleteAssignmentResponse,
-  ExtendDueDateResponse,
-  GetAssignmentByIdResponse,
-  GetAssignmentGroupsResponse,
-  GetAssignmentsResponse,
-  GetCourseAssignmentStatsResponse,
-  GetGroupAssignmentLookupResponse,
-  GetMyAssignmentsResponse,
-  GetUnassignedGroupsResponse,
-  ScheduleAssignmentResponse,
-  UnassignGroupsResponse,
-  UpdateAssignmentResponse,
-  GetStudentCourseGradesResponse,
+    AssignGroupsResponse,
+    CloseAssignmentResponse,
+    CreateAssignmentResponse,
+    DeleteAssignmentResponse,
+    ExtendDueDateResponse,
+    GetAssignmentByIdResponse,
+    GetAssignmentGroupsResponse,
+    GetAssignmentsResponse,
+    GetCourseAssignmentStatsResponse,
+    GetGroupAssignmentLookupResponse,
+    GetMyAssignmentsResponse,
+    GetStudentCourseGradesResponse,
+    GetUnassignedGroupsResponse,
+    ScheduleAssignmentResponse,
+    UnassignGroupsResponse,
+    UpdateAssignmentResponse,
 } from "@/types/assignments/assignment.response";
 
 export const AssignmentService = {
@@ -134,6 +135,22 @@ export const AssignmentService = {
     payload: ScheduleAssignmentRequest
   ): Promise<ScheduleAssignmentResponse> => {
     const res = await courseAxiosInstance.post<ScheduleAssignmentResponse>(`/Assignments/${id}/schedule`, payload);
+    return res.data;
+  },
+
+  /** POST /api/Assignments/{id}/attachments */
+  uploadAttachments: async (
+    id: string,
+    files: File[] | FileList
+  ): Promise<UploadAssignmentAttachmentsResponse> => {
+    const form = new FormData();
+    for (const f of Array.from(files)) {
+      form.append("files", f as File);
+    }
+
+    const res = await courseAxiosInstance.post<UploadAssignmentAttachmentsResponse>(`/Assignments/${id}/attachments`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return res.data;
   },
 };

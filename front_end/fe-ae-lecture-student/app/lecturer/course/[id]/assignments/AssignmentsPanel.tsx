@@ -284,7 +284,7 @@ export default function AssignmentsPanel({
         </div>
 
         {/* Assignment items list */}
-        <Card className="border-none rounded-sm shadow-md py-0">
+        <Card className="border-none rounded-sm shadow-md gap-3 py-0">
           <CardHeader className="sticky top-16 z-30 bg-white shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3 px-4">
             <div className="text-sm text-slate-600">
               {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
@@ -306,7 +306,7 @@ export default function AssignmentsPanel({
           <CardContent className="p-0">
             <Separator />
 
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-50">
               {assignments.length === 0 && !loading && (
                 <div className="px-4 py-10 text-sm text-center text-slate-500">
                   No assignments found with current filters.
@@ -314,10 +314,12 @@ export default function AssignmentsPanel({
               )}
 
               {topics.map((t) => (
-                <div key={t.name} className={`px-0 ${expandedTopics[t.name] ? 'mb-4' : ''}`}>
+                <div key={t.name} className={`px-0 ${expandedTopics[t.name] ? 'mb-4' : 'mb-1'}`}>
                   <div
                     className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 ${
-                      expandedTopics[t.name] ? 'bg-slate-50 rounded-t-sm' : ''
+                      expandedTopics[t.name]
+                        ? 'bg-slate-50 rounded-t-sm'
+                        : 'bg-white border border-slate-50 rounded-sm shadow-sm'
                     }`}
                     onClick={() => toggleTopic(t.name)}
                   >

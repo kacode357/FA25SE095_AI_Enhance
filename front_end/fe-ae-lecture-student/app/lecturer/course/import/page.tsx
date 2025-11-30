@@ -124,7 +124,7 @@ export default function ImportEnrollmentsPage() {
                                     onCheckedChange={(checked) => setCreateAccounts(!!checked)}
                                     className="border-slate-400 text-white data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                                 />
-                                <label htmlFor="createAccounts" className="text-sm text-slate-700 cursor-pointer select-none">
+                                <label htmlFor="createAccounts" className="text-sm text-green-700 cursor-pointer select-none">
                                     Auto-create accounts for unknown emails
                                 </label>
                             </div>

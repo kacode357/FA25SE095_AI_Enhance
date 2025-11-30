@@ -1,7 +1,7 @@
 // types/assignments/assignment.response.ts
 
-import type { AssignmentStatus } from "./assignment.payload";
 import type { GroupItem } from "@/types/groups/group.response";
+import type { AssignmentStatus } from "./assignment.payload";
 
 export interface Assignment {
   id: string;

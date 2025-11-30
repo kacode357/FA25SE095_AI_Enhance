@@ -2,8 +2,8 @@
 import { courseAxiosInstance } from "@/config/axios.config";
 import type { GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
 import type {
-  GetAssignmentsResponse,
   GetAssignmentByIdResponse,
+  GetAssignmentsResponse,
 } from "@/types/assignments/assignment.response";
 
 export const AssignmentService = {

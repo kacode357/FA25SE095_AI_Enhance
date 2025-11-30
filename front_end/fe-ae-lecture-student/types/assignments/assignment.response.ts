@@ -61,6 +61,23 @@ export interface AssignmentItem {
   assignedGroups?: GroupItem[];
 }
 
+export interface AssignmentAttachment {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  contentType: string;
+  uploadedAt: string; // ISO
+  uploadedBy: string; // uuid
+}
+
+export interface UploadAssignmentAttachmentsResponse {
+  success: boolean;
+  message: string;
+  uploadedFiles: AssignmentAttachment[];
+  uploadedCount: number;
+}
+
 export interface GetAssignmentByIdResponse {
   success: boolean;
   message: string;

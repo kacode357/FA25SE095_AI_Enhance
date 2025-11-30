@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useLecturerAnnouncements } from "@/hooks/announcements/useLecturerAnnouncements";
 import type { AnnouncementItem } from "@/types/announcements/announcement.response";
 import { dayLabel, parseServerDate, timeHHmm } from "@/utils/chat/time";
+import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
 
 function formatAudience(audience: AnnouncementItem["audience"]) {
     switch (audience) {
@@ -148,7 +149,10 @@ export default function LecturerAnnouncementsPage() {
                                                     <div className="mt-2 text-xs text-[color:var(--text-muted)]">
                                                         <span className="inline-flex rounded-full bg-slate-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-brand">{formatAudience(it.audience)}</span>
                                                         {it.content ? (
-                                                            <span className="ml-3 line-clamp-2">{it.content}</span>
+                                                            <div
+                                                                className="ml-3 line-clamp-2"
+                                                                dangerouslySetInnerHTML={{ __html: normalizeAndSanitizeHtml(it.content) }}
+                                                            />
                                                         ) : (
                                                             <span className="ml-3 opacity-80">No content</span>
                                                         )}

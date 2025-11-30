@@ -112,7 +112,7 @@ export default function ImportStudentsDialog({
               />
               <label
                 htmlFor="createAccount"
-                className="text-sm text-slate-700 cursor-pointer select-none"
+                className="text-sm text-green-700 cursor-pointer select-none"
               >
                 Auto-create accounts for unknown emails
               </label>

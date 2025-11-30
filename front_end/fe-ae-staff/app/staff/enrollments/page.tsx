@@ -163,7 +163,7 @@ export default function ImportEnrollmentsPage() {
             </div>
 
             {/* Options */}
-            <label className="flex items-center gap-2 text-sm select-none" style={{ color: "var(--foreground)" }}>
+            <label className="flex items-center text-green-700 gap-2 text-sm select-none" style={{ color: "var(--foreground)" }}>
               <input
                 type="checkbox"
                 checked={createAccountIfNotFound}

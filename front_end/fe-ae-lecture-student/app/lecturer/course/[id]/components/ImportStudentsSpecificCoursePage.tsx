@@ -75,8 +75,8 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
             <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base text-slate-900">Import Students in this Course</h2>
                 {onDone && (
-                    <Button variant="ghost" className="text-violet-800 hover:text-violet-500" onClick={onDone}>
-                        <ArrowLeft className="size-4 " /> Back
+                    <Button variant="ghost" className="text-violet-700 bg-violet-50 text-sm hover:text-violet-500" onClick={onDone}>
+                        <ArrowLeft className="size-4 " /> Back to Students
                     </Button>
                 )}
             </div>
@@ -140,7 +140,7 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
                                 onCheckedChange={(checked) => setCreateAccounts(!!checked)}
                                 className="border-slate-400 text-white data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                             />
-                            <label htmlFor="createAccounts" className="text-sm text-slate-700 cursor-pointer select-none">
+                            <label htmlFor="createAccounts" className="text-sm text-green-700 cursor-pointer select-none">
                                 Auto-create accounts for unknown emails
                             </label>
                         </div>
