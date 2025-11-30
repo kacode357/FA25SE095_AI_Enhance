@@ -8,9 +8,6 @@ type ResolveSupportRequestDialogProps = {
   onNotResolved: () => void;
 };
 
-const cx = (...a: Array<string | false | undefined>) =>
-  a.filter(Boolean).join(" ");
-
 export default function ResolveSupportRequestDialog({
   open,
   peerName,
@@ -22,7 +19,7 @@ export default function ResolveSupportRequestDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-      <div className="card max-w-md w-full px-6 py-5 text-center">
+      <div className="card w-full max-w-md px-6 py-5 text-center">
         <h2 className="mb-2 text-lg font-semibold text-nav">
           Has your need been resolved?
         </h2>
@@ -33,15 +30,14 @@ export default function ResolveSupportRequestDialog({
           won&apos;t be able to send more messages.
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
             onClick={onConfirmResolved}
             disabled={resolving}
-            className={cx(
-              "btn btn-green-slow min-w-[140px] text-sm",
-              resolving && "opacity-60 cursor-not-allowed",
-            )}
+            className={`btn btn-green-slow min-w-[140px] text-sm ${
+              resolving ? "cursor-not-allowed opacity-60" : ""
+            }`}
           >
             {resolving ? "Confirming..." : "Yes, it’s resolved"}
           </button>

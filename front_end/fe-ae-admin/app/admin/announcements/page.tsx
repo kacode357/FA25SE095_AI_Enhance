@@ -3,14 +3,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Megaphone, Plus, Loader2, ChevronRight } from "lucide-react";
+import { Plus, Loader2, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 
 import { Button } from "@/components/ui/button";
 import { useAdminAnnouncements } from "@/hooks/announcements/useAdminAnnouncements";
-import {
-  AnnouncementAudience,
-} from "@/types/announcements/announcement.response";
+import { AnnouncementAudience } from "@/types/announcements/announcement.response";
 import PaginationBar from "@/components/common/PaginationBar";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 import AnnouncementFilterBar, {
@@ -29,15 +27,16 @@ function getAudienceLabel(audience: AnnouncementAudience) {
   }
 }
 
+// badge dùng màu theo brand / accent
 function getAudienceBadgeClass(audience: AnnouncementAudience) {
   switch (audience) {
     case AnnouncementAudience.Students:
-      return "bg-blue-50 text-blue-700 border-blue-100";
+      return "bg-[color-mix(in_oklab,var(--brand)_6%,#eff6ff)] text-[var(--brand)] border-[color-mix(in_oklab,var(--brand)_16%,#dbeafe)]";
     case AnnouncementAudience.Lecturers:
-      return "bg-emerald-50 text-emerald-700 border-emerald-100";
+      return "bg-[color-mix(in_oklab,var(--accent)_8%,#ecfdf3)] text-[var(--accent-700)] border-[color-mix(in_oklab,var(--accent)_24%,#bbf7d0)]";
     case AnnouncementAudience.All:
     default:
-      return "bg-purple-50 text-purple-700 border-purple-100";
+      return "bg-[color-mix(in_oklab,var(--brand)_10%,#f5f3ff)] text-[var(--brand-700)] border-[color-mix(in_oklab,var(--brand)_26%,#ddd6fe)]";
   }
 }
 
@@ -48,14 +47,12 @@ export default function AdminAnnouncementsPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
-  // Filter: search title + audience
-  // audience = "any" => không truyền Audience => lấy 3 status
   const [filters, setFilters] = useState<AnnouncementFilterValue>({
     searchTerm: "",
     audience: "any",
   });
 
-  // gọi API khi page / filters đổi
+  // fetch data
   useEffect(() => {
     const audienceParam =
       filters.audience === "any" ? undefined : filters.audience;
@@ -83,69 +80,50 @@ export default function AdminAnnouncementsPage() {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-md">
-            <Megaphone className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">
-              Announcements
-            </h1>
-            <p className="text-xs text-slate-500">{totalLabel}</p>
-          </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col">
+          <h1 className="text-lg font-semibold text-nav">Announcements</h1>
+          <p className="text-xs text-[color:var(--text-muted)]">
+            {totalLabel}
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link href="/admin/announcements/create">
-            <Button className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md hover:opacity-90">
+            <Button className="btn btn-green-slow flex items-center gap-2 rounded-xl px-4 py-2 text-sm shadow-md">
               <Plus className="h-4 w-4" />
-              <span className="text-sm">Create Announcement</span>
+              <span>Create Announcement</span>
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Filter + search chung (title + audience) */}
+      {/* Filters */}
       <AnnouncementFilterBar value={filters} onChange={handleFilterChange} />
 
       {/* List */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-2xl border border-[var(--border)] bg-white shadow-sm">
         {loading && !items.length ? (
-          <div className="flex h-40 items-center justify-center gap-2 text-sm text-slate-500">
+          <div className="flex h-40 items-center justify-center gap-2 text-sm text-[color:var(--text-muted)]">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading announcements...
           </div>
         ) : null}
 
         {!loading && !items.length ? (
-          <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-              <Megaphone className="h-5 w-5 text-slate-400" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-slate-900">
-                No announcements found
-              </p>
-              <p className="text-xs text-slate-500">
-                Try adjusting your filters or create a new announcement.
-              </p>
-            </div>
-            <Link href="/admin/announcements/create">
-              <Button
-                variant="outline"
-                className="mt-1 rounded-xl border-dashed border-slate-300 text-xs"
-              >
-                <Plus className="mr-1 h-3 w-3" />
-                New Announcement
-              </Button>
-            </Link>
+          <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+            <p className="text-sm font-medium text-[color:var(--foreground)]">
+              No announcements found
+            </p>
+            <p className="text-xs text-[color:var(--text-muted)]">
+              Try adjusting your filters or create a new announcement.
+            </p>
           </div>
         ) : null}
 
         {items.length > 0 && (
           <>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-[color-mix(in_oklab,var(--brand)_6%,#e5e7eb)]">
               {items.map((item) => {
                 const audienceLabel = getAudienceLabel(item.audience);
                 const creatorName = item.createdByName || "System";
@@ -153,14 +131,14 @@ export default function AdminAnnouncementsPage() {
                 return (
                   <div
                     key={item.id}
-                    className="flex flex-col gap-3 px-4 py-4 hover:bg-slate-50/70 sm:px-5"
+                    className="flex flex-col gap-3 px-4 py-4 hover:bg-[color-mix(in_oklab,var(--brand)_4%,#f8fafc)] sm:px-5"
                   >
-                    {/* dòng chính */}
+                    {/* main row */}
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      {/* Trái: title + audience + created by */}
+                      {/* left: title + audience + created by */}
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-slate-900">
+                          <p className="text-sm font-semibold text-nav">
                             {item.title || "(No title)"}
                           </p>
                           <span
@@ -172,28 +150,28 @@ export default function AdminAnnouncementsPage() {
                             {audienceLabel}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-[color:var(--text-muted)]">
                           Created by{" "}
-                          <span className="font-medium text-slate-700">
+                          <span className="font-medium text-nav">
                             {creatorName}
                           </span>
                         </p>
                       </div>
 
-                      {/* Phải: Published at ... (1 dòng) */}
-                      <div className="text-right text-xs text-slate-500">
+                      {/* right: published at */}
+                      <div className="text-right text-xs text-[color:var(--text-muted)]">
                         <span>Published at </span>
-                        <span className="font-medium text-slate-700">
+                        <span className="font-medium text-nav">
                           {formatDateTimeVN(item.publishedAt)}
                         </span>
                       </div>
                     </div>
 
-                    {/* Action: icon next */}
+                    {/* action: view detail chevron */}
                     <div className="flex items-center justify-end">
                       <Link
                         href={`/admin/announcements/${item.id}`}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color-mix(in_oklab,var(--brand)_20%,#e9d5ff)] text-[var(--brand-700)] hover:bg-[color-mix(in_oklab,var(--brand)_10%,#f3e8ff)] hover:border-[color-mix(in_oklab,var(--brand)_40%,#c4b5fd)] transition-colors"
                         aria-label="View announcement detail"
                       >
                         <ChevronRight className="h-4 w-4" />
@@ -204,7 +182,7 @@ export default function AdminAnnouncementsPage() {
               })}
             </div>
 
-            {/* Pagination dùng component chung */}
+            {/* Pagination */}
             <PaginationBar
               page={pagination.page}
               totalPages={pagination.totalPages || 1}

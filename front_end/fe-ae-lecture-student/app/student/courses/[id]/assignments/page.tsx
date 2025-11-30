@@ -174,14 +174,7 @@ export default function CourseAssignmentsPage() {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => router.push(`/student/courses/${courseId}`)}
-          className="inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand/5 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to Course
-        </button>
+       
       </div>
 
       {/* Collapse all / Expand all */}

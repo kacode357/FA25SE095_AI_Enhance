@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from "react";
+import clsx from "clsx";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -36,10 +36,16 @@ export default function AdminAnnouncementsPage() {
     new Date().toISOString()
   );
 
+  const resetForm = () => {
+    setTitle("");
+    setContent("");
+    setAudience(AnnouncementAudience.All);
+    setPublishedAt(new Date().toISOString());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Không toast lỗi, chỉ chặn submit nếu thiếu
     if (!title.trim() || isHtmlEmpty(content)) {
       return;
     }
@@ -53,66 +59,47 @@ export default function AdminAnnouncementsPage() {
       publishedAt: isoPublishedAt,
     });
 
-    // ✅ chỉ reset form, thông báo thành công đã nằm trong hook
-    setTitle("");
-    setContent("");
-    setAudience(AnnouncementAudience.All);
-    setPublishedAt(new Date().toISOString());
-  };
-
-  const handleReset = () => {
-    setTitle("");
-    setContent("");
-    setAudience(AnnouncementAudience.All);
-    setPublishedAt(new Date().toISOString());
+    resetForm();
   };
 
   return (
-    <div className="flex w-full flex-col gap-6 px-6 py-8">
-      <header>
-        <h1 className="text-2xl font-semibold">Create announcements</h1>
- 
+    // ❌ bỏ px-6 + max-w-3xl -> full width theo layout
+    <div className="flex w-full flex-col gap-6 py-8">
+      <header className="mb-2 px-6">
+        <h1 className="text-xl font-semibold text-nav">Create announcement</h1>
+        <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+          Send an announcement to students, lecturers or all users.
+        </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-xl">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 rounded-xl px-6 w-full"
+      >
         {/* Title */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">
+          <label className="text-sm font-medium text-nav">
             Title <span className="text-red-500">*</span>
           </label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Announcement title"
-          />
-        </div>
-
-        {/* Content (TinyMCE) */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">
-            Content <span className="text-red-500">*</span>
-          </label>
-          <LiteRichTextEditor
-            value={content}
-            onChange={setContent}
-            placeholder="Write your announcement content..."
-            className="rounded-lg overflow-hidden border border-slate-200 bg-white"
+            className="border-[var(--border)] rounded-xl"
           />
         </div>
 
         {/* Audience + Publish at */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">
-              Audience
-            </label>
+            <label className="text-sm font-medium text-nav">Audience</label>
             <Select
               value={audience.toString()}
               onValueChange={(value) =>
                 setAudience(Number(value) as AnnouncementAudience)
               }
             >
-              <SelectTrigger className="w-full border-slate-200">
+              <SelectTrigger className="w-full h-11 rounded-xl border-[var(--border)] bg-white text-sm">
                 <SelectValue placeholder="Select audience" />
               </SelectTrigger>
               <SelectContent>
@@ -130,9 +117,7 @@ export default function AdminAnnouncementsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">
-              Publish at
-            </label>
+            <label className="text-sm font-medium text-nav">Publish at</label>
             <DateTimePicker
               value={publishedAt}
               onChange={(val) => setPublishedAt(val)}
@@ -140,29 +125,46 @@ export default function AdminAnnouncementsPage() {
               className="w-full"
               minDate={new Date()}
               timeIntervals={5}
-              size="md"
+              size="lg"
             />
           </div>
         </div>
 
+        {/* Content */}
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-nav">
+            Content <span className="text-red-500">*</span>
+          </label>
+          <LiteRichTextEditor
+            value={content}
+            onChange={setContent}
+            placeholder="Write your announcement content..."
+            className="rounded-lg overflow-hidden border border-[var(--border)] bg-white"
+          />
+        </div>
+
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
-          <Button
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
             type="button"
-            variant="outline"
             disabled={loading}
-            onClick={handleReset}
+            onClick={resetForm}
+            className={clsx(
+              "btn px-5 py-2 text-sm rounded-xl border border-[var(--border)] bg-white text-[color:var(--text-muted)]",
+              "hover:bg-[color-mix(in_oklab,var(--brand)_4%,#f9fafb)]",
+              loading && "opacity-60 cursor-not-allowed"
+            )}
           >
             Reset
-          </Button>
+          </button>
 
-          {/* Nút tạo dùng style trong globals.css */}
           <button
             type="submit"
             disabled={loading}
-            className={`btn btn-gradient px-5 py-2 text-sm ${
-              loading ? "opacity-60 cursor-not-allowed" : ""
-            }`}
+            className={clsx(
+              "btn btn-green-slow px-5 py-2 text-sm rounded-xl",
+              loading && "opacity-60 cursor-not-allowed"
+            )}
           >
             {loading ? "Creating..." : "Create announcement"}
           </button>

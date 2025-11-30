@@ -7,6 +7,7 @@ import type {
   ConfirmSubscriptionPaymentPayload,
   PayOSWebhookPayload,
   PayOSReturnQuery,
+  SubscriptionHistoryQuery,
 } from "@/types/payments/payments.payload";
 
 import type {
@@ -14,6 +15,7 @@ import type {
   ConfirmSubscriptionPaymentResponse,
   PayOSWebhookResponse,
   PayOSReturnResponse,
+  SubscriptionHistoryResponse,
 } from "@/types/payments/payments.response";
 
 export const PaymentsService = {
@@ -62,6 +64,15 @@ export const PaymentsService = {
         "/Payments/payos/return",
         { params }
       );
+    return res.data;
+  },
+  getSubscriptionHistory: async (
+    params: SubscriptionHistoryQuery
+  ): Promise<SubscriptionHistoryResponse> => {
+    const res = await userAxiosInstance.get<SubscriptionHistoryResponse>(
+      "/Payments/subscription/history",
+      { params }
+    );
     return res.data;
   },
 };

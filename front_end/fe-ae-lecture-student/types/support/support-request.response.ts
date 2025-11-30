@@ -52,6 +52,7 @@ export interface PaginatedSupportRequests {
 }
 
 export interface CreateSupportRequestResponse {
+  id :string;
   success: boolean;
   message: string;
   supportRequestId: string;

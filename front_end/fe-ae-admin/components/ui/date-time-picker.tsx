@@ -225,7 +225,7 @@ type DateTimePickerProps = {
   minDate?: Date;
   minTime?: Date;
   timeIntervals?: number; // phút
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg"; // để điều chỉnh height của button
 };
 
 export function DateTimePicker({
@@ -236,7 +236,7 @@ export function DateTimePicker({
   minDate,
   minTime,
   timeIntervals = 5,
-  size = "md",
+  size = "md" ,
 }: DateTimePickerProps) {
   const [openDate, setOpenDate] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(

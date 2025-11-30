@@ -1,8 +1,9 @@
+// app/student/courses/[id]/support/components/SupportRequestCreate.tsx
 "use client";
 
 import type React from "react";
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Loader2, X, Paperclip } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,15 +20,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { SupportRequestCategory } from "@/config/classroom-service/support-request-category.enum";
 import { SupportRequestPriority } from "@/config/classroom-service/support-request-priority.enum";
 import { useCreateSupportRequest } from "@/hooks/support-requests/useCreateSupportRequest";
+import { useUploadSupportRequestImages } from "@/hooks/support-requests/useUploadSupportRequestImages";
 
 type Props = {
   courseId: string;
-  /** Callback để reload list sau khi tạo */
   onCreated?: () => Promise<void> | void;
 };
 
+type CreateResponse = {
+  success: boolean;
+  message: string;
+  supportRequestId: string;
+};
+
+const MAX_IMAGES_PER_REQUEST = 5;
+const MAX_IMAGE_SIZE_MB = 5;
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+
 export function SupportRequestCreate({ courseId, onCreated }: Props) {
   const { createSupportRequest, loading: creating } = useCreateSupportRequest();
+  const { uploadSupportRequestImages, loading: uploading } =
+    useUploadSupportRequestImages();
 
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
@@ -38,29 +51,82 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
     SupportRequestCategory.Technical
   );
 
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) {
+      setSelectedFiles([]);
+      setFileError("");
+      return;
+    }
+
+    const files = Array.from(e.target.files);
+
+    if (files.length > MAX_IMAGES_PER_REQUEST) {
+      setSelectedFiles([]);
+      setFileError(`You can upload up to ${MAX_IMAGES_PER_REQUEST} images.`);
+      e.target.value = "";
+      return;
+    }
+
+    const tooBig = files.filter((f) => f.size > MAX_IMAGE_SIZE_BYTES);
+    if (tooBig.length > 0) {
+      setSelectedFiles([]);
+      setFileError(`Each image must be at most ${MAX_IMAGE_SIZE_MB}MB.`);
+      e.target.value = "";
+      return;
+    }
+
+    setFileError("");
+    setSelectedFiles(files);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setFileError("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseId) return;
 
-    await createSupportRequest({
+    if (fileError) return;
+
+    const res = (await createSupportRequest({
       courseId,
       priority,
       category,
       subject: subject.trim(),
       description: description.trim(),
-    });
+    })) as unknown as CreateResponse;
 
-    // Reset basic fields
-    setSubject("");
-    setDescription("");
-    setPriority(SupportRequestPriority.Medium);
-    setCategory(SupportRequestCategory.Technical);
+    if (res && res.success && res.supportRequestId) {
+      const newRequestId = res.supportRequestId;
 
-    // Gọi callback để reload list
-    if (onCreated) {
-      await onCreated();
+      if (selectedFiles.length > 0) {
+        await uploadSupportRequestImages(newRequestId, selectedFiles);
+      }
+
+      setSubject("");
+      setDescription("");
+      setPriority(SupportRequestPriority.Medium);
+      setCategory(SupportRequestCategory.Technical);
+      setSelectedFiles([]);
+      setFileError("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      if (onCreated) {
+        await onCreated();
+      }
+    } else {
+      // TODO: show toast error nếu cần
     }
   };
+
+  const isLoading = creating || uploading;
 
   return (
     <Card className="card rounded-2xl">
@@ -81,7 +147,10 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                   setPriority(Number(v) as SupportRequestPriority)
                 }
               >
-                <SelectTrigger className="h-9 text-sm">
+                <SelectTrigger
+                  // Cập nhật style nhẹ nhàng hơn
+                  className="h-9 text-sm border border-slate-200 focus:ring-1 focus:ring-slate-300 focus:ring-offset-0 focus:outline-none"
+                >
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -111,11 +180,16 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                   setCategory(Number(v) as SupportRequestCategory)
                 }
               >
-                <SelectTrigger className="h-9 text-sm">
+                <SelectTrigger
+                   // Cập nhật style nhẹ nhàng hơn
+                  className="h-9 text-sm border border-slate-200 focus:ring-1 focus:ring-slate-300 focus:ring-offset-0 focus:outline-none"
+                >
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={String(SupportRequestCategory.Technical)}>
+                  <SelectItem
+                    value={String(SupportRequestCategory.Technical)}
+                  >
                     Technical
                   </SelectItem>
                   <SelectItem value={String(SupportRequestCategory.Academic)}>
@@ -142,8 +216,9 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="E.g. Cannot access assignment, grade issue..."
-              className="h-9 text-sm"
+              placeholder="E.g. Cannot access assignment..."
+              // Cập nhật style nhẹ nhàng hơn
+              className="h-9 text-sm border border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
               required
             />
           </div>
@@ -156,30 +231,101 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your issue in more detail..."
-              className="min-h-[120px] text-sm"
+              placeholder="Describe your issue..."
+              // --- FIX CHÍNH Ở ĐÂY ---
+              // focus-visible:ring-1 (mỏng)
+              // focus-visible:ring-slate-300 (màu xám nhạt thay vì đen)
+              className="min-h-[120px] text-sm border border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
               required
             />
-            <p className="mt-1 text-[11px] text-slate-500">
-              You can upload screenshots or images{" "}
-              <span className="font-semibold">after</span> the request is
-              created, in the{" "}
-              <span className="font-medium">“My Support Requests”</span> list on
-              the right.
-            </p>
+          </div>
+
+          {/* Attachments */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                <Paperclip className="h-3 w-3" />
+                Attachments{" "}
+                <span className="text-slate-400 font-normal">
+                  (Max {MAX_IMAGES_PER_REQUEST} images, max{" "}
+                  {MAX_IMAGE_SIZE_MB}MB each)
+                </span>
+              </label>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              id="support-attachments"
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={isLoading}
+            />
+
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium shadow-sm
+                           bg-slate-900 text-white hover:bg-slate-800
+                           disabled:opacity-60 disabled:cursor-not-allowed
+                           focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-900"
+              >
+                <Paperclip className="h-3.5 w-3.5" />
+                <span>Select files</span>
+              </button>
+              <p className="text-[11px] text-slate-500 truncate">
+                {selectedFiles.length > 0
+                  ? `${selectedFiles.length} file(s) selected`
+                  : "No files selected"}
+              </p>
+            </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-200 text-[11px] text-slate-700"
+                  >
+                    <span className="truncate max-w-[120px]">
+                      {file.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="text-slate-400 hover:text-red-500 ml-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {fileError && (
+              <p className="text-[11px] text-red-500 mt-1">{fileError}</p>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-2">
             <p className="text-[11px] text-slate-500">
-              Staff will respond through the linked support conversation.
+              Response sent via support chat.
             </p>
             <Button
               type="submit"
               className="btn btn-gradient px-4 py-2 h-9 text-sm"
-              disabled={creating}
+              disabled={isLoading}
             >
-              {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit Request
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {uploading
+                ? "Uploading Images..."
+                : creating
+                  ? "Creating Request..."
+                  : "Submit Request"}
             </Button>
           </div>
         </form>
