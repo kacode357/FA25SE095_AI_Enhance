@@ -7,12 +7,11 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { useUpdateAssignment } from "@/hooks/assignment/useUpdateAssignment";
 import type { UpdateAssignmentPayload } from "@/types/assignments/assignment.payload";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
-import { CircleAlert, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { useEffect, useState } from "react";
 
 function normalizeHtmlForSave(input?: string | null): string {
@@ -218,31 +217,6 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
                             value={form.format}
                             className="text-xs"
                             onChange={(e) => setForm((p) => ({ ...p, format: e.target.value }))}
-                        />
-                    </div>
-                    <div>
-                        <Label className="text-sm flex items-center gap-1 mb-1">
-                            Grading Criteria
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <button
-                                        type="button"
-                                        aria-label="Grading criteria help"
-                                        className="inline-flex h-5 w-5 items-center justify-center rounded-full cursor-pointer bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition"
-                                    >
-                                        <CircleAlert className="size-3.5" />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs bg-white text-slate-500">
-                                    The assessment criteria used to determine the score.
-                                </TooltipContent>
-                            </Tooltip>
-                        </Label>
-                        <Input
-                            placeholder="Rubric note (optional)"
-                            value={form.gradingCriteria}
-                            className="text-xs"
-                            onChange={(e) => setForm((p) => ({ ...p, gradingCriteria: e.target.value }))}
                         />
                     </div>
                 </div>

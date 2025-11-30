@@ -5,7 +5,6 @@ import { TermService } from "@/services/terms.services";
 import { CreateTermPayload } from "@/types/terms/terms.payload";
 import { CreateTermResponse } from "@/types/terms/terms.response";
 import { useState } from "react";
-import { toast } from "sonner";
 
 export function useCreateTerm() {
   const [loading, setLoading] = useState(false);
@@ -16,7 +15,7 @@ export function useCreateTerm() {
     setLoading(true);
     try {
       const res = await TermService.create(payload);
-      toast.success(res.message || "Term created successfully.");
+      // Let backend/interceptor show toasts (success/error). Do not show duplicate toasts here.
       return res;
     } catch {
       // lỗi đã có interceptor xử lý

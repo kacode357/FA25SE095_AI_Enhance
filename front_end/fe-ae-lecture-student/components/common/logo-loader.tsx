@@ -13,7 +13,7 @@ export function LogoLoader({ size = 24, className = "", label, spin = true }: Pr
     <div className={`inline-flex items-center gap-2 ${className}`} role="status" aria-live="polite">
       {/* Using <img> keeps it light for tiny inline spinners */}
       <img
-        src="/ai-enhance-logo.svg"
+        src="/short-logo-aids.png"
         alt=""
         aria-hidden="true"
         width={size}

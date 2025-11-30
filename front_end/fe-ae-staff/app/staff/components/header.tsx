@@ -11,10 +11,10 @@ import type { NotificationItem } from "@/types/notifications/notifications.respo
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 import Cookies from "js-cookie";
 import {
-  Bell,
-  ChevronDown,
-  CircleArrowOutUpRight,
-  Menu,
+    Bell,
+    ChevronDown,
+    CircleArrowOutUpRight,
+    Menu,
 } from "lucide-react"; // Bỏ 'Search'
 import Image from "next/image";
 import Link from "next/link";
@@ -182,7 +182,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
           >
             <div className="relative">
               <Image
-                src="/ai-enhance-logo.svg"
+                src="/short-logo-aids.png"
                 alt="AI Enhance"
                 width={32}
                 height={32}

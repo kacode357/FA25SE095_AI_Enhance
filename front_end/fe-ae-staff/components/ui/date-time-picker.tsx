@@ -201,6 +201,7 @@ export function Calendar24() {
                             mode="single"
                             selected={date}
                             captionLayout="dropdown"
+                            toYear={new Date().getFullYear() + 10}
                             onSelect={(d) => {
                                 setDate(d);
                                 setOpenDate(false);
@@ -331,6 +332,7 @@ export function DateTimePicker({
                             mode="single"
                             selected={date}
                             captionLayout="dropdown"
+                            toYear={new Date().getFullYear() + 10}
                             onSelect={handleSelectDate}
                             className="rounded-md border border-slate-100 text-sm"
                             disabled={(d) => {

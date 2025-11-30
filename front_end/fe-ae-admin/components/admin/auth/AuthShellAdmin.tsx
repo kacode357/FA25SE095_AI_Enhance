@@ -30,7 +30,7 @@ export function AuthShellAdmin({
           aria-label={BRAND.productNameEn}
         >
           <Image
-            src="/ai-enhance-logo.svg"
+            src="/short-logo-aids.png"
             alt={BRAND.productNameEn}
             width={30}
             height={30}

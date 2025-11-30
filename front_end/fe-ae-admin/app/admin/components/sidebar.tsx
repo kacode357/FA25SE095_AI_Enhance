@@ -137,6 +137,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
                       {/* ✅ nút mở/đóng level 2 (nếu có con) */}
                       {hasChildren && (
                         <button
+                          title="Button"
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();

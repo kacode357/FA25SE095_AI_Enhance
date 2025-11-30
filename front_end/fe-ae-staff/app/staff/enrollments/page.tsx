@@ -97,15 +97,15 @@ export default function ImportEnrollmentsPage() {
             <Button
               onClick={() => downloadTemplate()}
               disabled={loadingTemplate}
-              className="rounded-xl inline-flex btn btn-gradient-slow items-center gap-2"
+              className="rounded-xl inline-flex bg-green-500 items-center gap-2"
             >
               {loadingTemplate ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
               {loadingTemplate ? "Preparing..." : "Download Template (.xlsx)"}
             </Button>
 
             <div
-              className="flex items-start gap-2 rounded-xl border p-3 text-xs"
-              style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}
+              className="flex items-start gap-2 rounded-xl border border-slate-300 p-3 text-xs"
+              style={{ color: "var(--color-muted)" }}
             >
               <Info className="size-4 shrink-0 mt-0.5" />
               <div>

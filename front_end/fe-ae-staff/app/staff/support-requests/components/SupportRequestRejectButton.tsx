@@ -1,30 +1,30 @@
 // app/staff/support-requests/components/SupportRequestRejectButton.tsx
 "use client";
 
-import { useState } from "react";
 import { Loader2, XCircle } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useRejectSupportRequest } from "@/hooks/support-requests/useRejectSupportRequest";
 import { SupportRequestRejectionReason } from "@/config/classroom-service/support-request-rejection-reason.enum";
+import { useRejectSupportRequest } from "@/hooks/support-requests/useRejectSupportRequest";
 
 type Props = {
   requestId: string;
@@ -80,7 +80,7 @@ export default function SupportRequestRejectButton({
       <Button
         size="sm"
         variant="outline"
-        className="px-3 py-1 text-xs border-red-200 text-red-700 hover:bg-red-50"
+        className="px-3 py-1 text-xs border-red-200 cursor-pointer text-red-700 hover:bg-red-50"
         disabled={disabled || loading}
         type="button"
         onClick={() => setOpen(true)}

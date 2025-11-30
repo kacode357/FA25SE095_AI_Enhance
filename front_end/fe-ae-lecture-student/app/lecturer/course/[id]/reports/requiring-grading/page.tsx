@@ -11,7 +11,9 @@ import { useMyCourses } from "@/hooks/course/useMyCourses";
 import { useGetReportsRequiringGrading } from "@/hooks/reports/useGetReportsRequiringGrading";
 import type { CourseItem } from "@/types/courses/course.response";
 import type { RequiringGradingReportItem } from "@/types/reports/reports.response";
-import { ChevronDown, ChevronUp, ClipboardPenLine, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, ClipboardPenLine, Loader2, PencilOff, X } from "lucide-react";
+import RejectForm from "../[reportId]/components/RejectForm";
+import RevisionForm from "../[reportId]/components/RevisionForm";
 import StatusBadge from "../utils/status";
 import GradeForm from "./components/GradeForm";
 
@@ -79,6 +81,8 @@ export default function ReportsRequiringGradingPage() {
     const [error, setError] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editingReportId, setEditingReportId] = useState<string | null>(null);
+    const [revisionReportId, setRevisionReportId] = useState<string | null>(null);
+    const [rejectReportId, setRejectReportId] = useState<string | null>(null);
 
     // Scroll grade form into view when opened (handles nested scrollable containers)
     useEffect(() => {
@@ -324,19 +328,40 @@ export default function ReportsRequiringGradingPage() {
                                                     <div className="text-xs">Updated: <span className="text-slate-500">{r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "—"}</span></div>
                                                 </div>
 
-                                                <div className="absolute right-4 bottom-2">
+                                                <div className="absolute right-4 bottom-2 flex items-center gap-2">
+                                                    {/* Request Revision button (left of Change Grade) */}
+                                                    {revisionReportId !== r.id && (
+                                                        <Button
+                                                            size="sm"
+                                                            className="cursor-pointer text-blue-500 shadow-lg"
+                                                            onClick={(e: any) => { e.stopPropagation(); setRevisionReportId(r.id); setEditingReportId(null); setRejectReportId(null); setExpandedId(r.id); }}
+                                                        >
+                                                            <PencilOff className="w-4 h-4 mr-1" />
+                                                            Request Revision
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Reject Report button */}
+                                                    {rejectReportId !== r.id && (
+                                                        <Button
+                                                            size="sm"
+                                                            className="cursor-pointer text-red-500 shadow-lg"
+                                                            onClick={(e: any) => { e.stopPropagation(); setRejectReportId(r.id); setRevisionReportId(null); setEditingReportId(null); setExpandedId(r.id); }}
+                                                        >
+                                                            <X className="w-4 h-4 mr-1" />
+                                                            Reject Report
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Change Grade button */}
                                                     {editingReportId !== r.id && (
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
                                                             className="text-sm btn btn-gradient-slow text-slate-600 hover:text-slate-700"
-                                                            onClick={(e: any) => {
-                                                                e.stopPropagation();
-                                                                setExpandedId(r.id);
-                                                                setEditingReportId(r.id);
-                                                            }}
+                                                            onClick={(e: any) => { e.stopPropagation(); setExpandedId(r.id); setEditingReportId(r.id); setRevisionReportId(null); setRejectReportId(null); }}
                                                         >
-                                                            <ClipboardPenLine className="w-4 h-4 mr-2" />
+                                                            <ClipboardPenLine className="w-4 h-4" />
                                                             Change Grade
                                                         </Button>
                                                     )}
@@ -354,6 +379,34 @@ export default function ReportsRequiringGradingPage() {
                                                         setError(null);
                                                     }}
                                                     onCancel={() => setEditingReportId(null)}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {revisionReportId === r.id && (
+                                            <div id={`revision-form-${r.id}`} className="mt-4">
+                                                <RevisionForm
+                                                    reportId={r.id}
+                                                    onSuccess={(patch: any) => {
+                                                        setItems((prev) => prev.map((it) => (it.id === r.id ? { ...it, ...(patch || {}) } : it)));
+                                                        setRevisionReportId(null);
+                                                        setError(null);
+                                                    }}
+                                                    onCancel={() => setRevisionReportId(null)}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {rejectReportId === r.id && (
+                                            <div id={`reject-form-${r.id}`} className="mt-4">
+                                                <RejectForm
+                                                    reportId={r.id}
+                                                    onSuccess={(patch: any) => {
+                                                        setItems((prev) => prev.map((it) => (it.id === r.id ? { ...it, ...(patch || {}) } : it)));
+                                                        setRejectReportId(null);
+                                                        setError(null);
+                                                    }}
+                                                    onCancel={() => setRejectReportId(null)}
                                                 />
                                             </div>
                                         )}

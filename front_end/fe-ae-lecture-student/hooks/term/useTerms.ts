@@ -1,9 +1,9 @@
 // hooks/term/useTerms.ts
 "use client";
 
-import { useCallback, useState } from "react";
 import { TermService } from "@/services/term.services";
-import { TermResponse } from "@/types/term/term.response";
+import { TermResponse } from '@/types/term/term.response';
+import { useCallback, useState } from "react";
 
 export function useTerms() {
   const [data, setData] = useState<TermResponse[]>([]);

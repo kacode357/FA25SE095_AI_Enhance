@@ -10,7 +10,7 @@ export default function NotFound() {
             {/* Logo */}
             <div className="flex items-center justify-center relative w-64 h-64">
                 <Image
-                    src="/ai-enhance-logo.svg"
+                    src="/short-logo-aids.png"
                     alt="AI Enhance"
                     fill
                     className="opacity-90 object-contain"

@@ -1,10 +1,9 @@
 // hooks/term/useDeleteTerm.ts
 "use client";
 
-import { useState } from "react";
 import { TermService } from "@/services/terms.services";
 import { DeleteTermResponse } from "@/types/terms/terms.response";
-import { toast } from "sonner";
+import { useState } from "react";
 
 export function useDeleteTerm() {
   const [loading, setLoading] = useState(false);
@@ -13,10 +12,10 @@ export function useDeleteTerm() {
     setLoading(true);
     try {
       const res = await TermService.delete(id);
-      toast.success(res.message || "Xoá term thành công");
+      // Let backend/interceptor handle success/error toasts.
       return res;
     } catch (err: any) {
-      toast.error(err?.message || "Failed to delete term");
+      // Errors are handled by global interceptor; return null for caller to handle.
       return null;
     } finally {
       setLoading(false);

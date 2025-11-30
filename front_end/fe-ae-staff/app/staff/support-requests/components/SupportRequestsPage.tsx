@@ -99,10 +99,10 @@ export default function SupportRequestsPage({
             className="flex flex-col h-full min-h-0"
           >
             <TabsList className="mb-4 w-fit">
-              <TabsTrigger value="pending" className="px-4 py-1.5 text-sm">
+              <TabsTrigger value="pending" className="px-4 py-1.5 cursor-pointer text-sm">
                 Pending requests
               </TabsTrigger>
-              <TabsTrigger value="assigned" className="px-4 py-1.5 text-sm">
+              <TabsTrigger value="assigned" className="px-4 py-1.5 cursor-pointer text-sm">
                 My assigned
               </TabsTrigger>
             </TabsList>

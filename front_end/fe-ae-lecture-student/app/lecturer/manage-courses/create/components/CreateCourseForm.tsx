@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { AccessCodeType, accessCodeTypeToString } from "@/config/access-code-type";
 import type { CourseCodeOption } from "@/types/course-codes/course-codes.response";
 import type { TermResponse } from "@/types/term/term.response";
+import { formatToVN } from "@/utils/datetime/time";
 import React, { useMemo, useState } from "react";
 
 type FormState = {
@@ -24,6 +25,8 @@ type FormState = {
     accessCodeType: AccessCodeType;
     customAccessCode?: string;
     accessCodeExpiresAt?: string;
+    termStartDate?: string;
+    termEndDate?: string;
 };
 
 type Props = {
@@ -38,6 +41,15 @@ type Props = {
 export default function CreateCourseForm({ codes, terms, loadingOptions, form, setForm, disableMainForm }: Props) {
     const [showAccessTooltip, setShowAccessTooltip] = useState(false);
     const [showCourseTooltip, setShowCourseTooltip] = useState(false);
+
+    function formatDate(dateStr?: string) {
+        if (!dateStr) return "";
+        const d = new Date(dateStr);
+        if (Number.isNaN(d.getTime())) return "";
+        const year = d.getUTCFullYear();
+        if (year === 1) return ""; // sentinel value
+        return d.toLocaleDateString("en-GB");
+    }
 
     const codeTypeLabel = useMemo(() => {
         try {
@@ -78,12 +90,25 @@ export default function CreateCourseForm({ codes, terms, loadingOptions, form, s
                     </div>
 
                     <div>
-                        <Label className="text-sm mb-2">Term <span className="text-red-500 text-xs">(* required)</span></Label>
+                        <Label className="text-sm mb-2">Term<span className="text-red-500 text-xs">(* required)</span></Label>
                         <Select
                             value={form.termId ?? ""}
-                            options={terms.map((t) => ({ value: t.id, label: t.name }))}
+                            options={terms.map((t) => {
+                                const start = formatDate(t.startDate);
+                                const end = formatDate(t.endDate);
+                                const datePart = start || end ? ` — ${start}${start && end ? ' → ' : ''}${end}` : '';
+                                return { value: t.id, label: `${t.name}${datePart}` };
+                            })}
                             placeholder={loadingOptions ? "Loading..." : "Select term"}
-                            onChange={(v) => setForm((f) => ({ ...f, termId: v }))}
+                            onChange={(v) => {
+                                const selected = terms.find((t) => t.id === v);
+                                setForm((f) => ({
+                                    ...f,
+                                    termId: v,
+                                    termStartDate: selected?.startDate,
+                                    termEndDate: selected?.endDate,
+                                }));
+                            }}
                             className="w-full bg-white border-slate-200"
                             disabled={disableMainForm}
                         />
@@ -173,10 +198,10 @@ export default function CreateCourseForm({ codes, terms, loadingOptions, form, s
 
                             <div className="min-w-0 text-center justify-center items-center align-middle self-center">
                                 <div className="text-sm">
-                                    {form.customAccessCode ? (
-                                        <div className="mt-5 gap-2 flex font-medium items-center text-slate-700 truncate"><p className="text-slate-500 text-xs">Current:</p>{form.customAccessCode} : {form.accessCodeExpiresAt ? new Date(form.accessCodeExpiresAt).toLocaleString() : '—'}</div>
+                                        {form.customAccessCode ? (
+                                            <div className="mt-5 gap-2 flex font-medium items-center text-slate-700 truncate"><p className="text-slate-500 text-xs">Current:</p>{form.customAccessCode} : {form.accessCodeExpiresAt ? formatToVN(form.accessCodeExpiresAt, { year: 'numeric', month: '2-digit', day: '2-digit', hour: undefined, minute: undefined, second: undefined }) : '—'}</div>
                                     ) : (
-                                        <div className="text-xs text-slate-400">No custom code set</div>
+                                        <div className="text-xs mt-5 text-slate-400">No custom code set</div>
                                     )}
                                 </div>
                             </div>

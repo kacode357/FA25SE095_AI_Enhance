@@ -1,12 +1,12 @@
 // config\branding.ts
 // Centralized branding & project identity
 export const BRAND = {
-  shortName: "IDCLMS", // acronym option if needed
+  shortName: "AIDS-LMS", // acronym option if needed
   productNameEn: "Intelligent Data Collection & Learning Management System",
   productNameVi: "Hệ Thống Thu Thập Dữ Liệu & Quản Lý Học Tập Thông Minh",
   productNameFull: "Intelligent Data Collection and Learning Management System for Digital Marketing Students",
 
-  footerCopyrightHolder: "IDCLMS",
+  footerCopyrightHolder: "AIDS-LMS",
   year: 2025,
   taglineEn: "Real-time data ingestion · AI-driven reporting · Adaptive learning",
   taglineVi: "Thu thập dữ liệu thời gian thực · Báo cáo thông minh · Học tập thích ứng",

@@ -2,28 +2,29 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { useCourseCodes } from "@/hooks/course-code/useCourseCodes";
 import { useDeleteCourseCode } from "@/hooks/course-code/useDeleteCourseCode";
 
-import CreateDialog from "./components/CreateDialog";
+// Create dialog moved to a dedicated page at /staff/course-codes/create
 import DeleteConfirm from "./components/DeleteConfirm";
 import EditDialog from "./components/EditDialog";
 import FilterRow from "./components/FilterRow";
 
 import PaginationBar from "@/components/common/PaginationBar";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { CourseCode } from "@/types/course-codes/course-codes.response";
 
 export default function CourseCodesPage() {
   const { listData, totalCount, currentPage, pageSize, loading, fetchCourseCodes } = useCourseCodes();
   const { deleteCourseCode, loading: deleting } = useDeleteCourseCode();
 
-  const [openCreate, setOpenCreate] = useState(false);
+  // create dialog removed; navigate to a dedicated create page instead
   const [openEditId, setOpenEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -93,22 +94,12 @@ export default function CourseCodesPage() {
           <p className="text-slate-600 text-sm relative pl-3 before:content-['•'] before:absolute before:left-0">
             Create, manage, and track your course codes.
           </p>
-          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-            <DialogTrigger asChild>
-              <Button className="h-9 bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white flex items-center gap-1">
-                <Plus className="size-4" />
-                Create Course Code
-              </Button>
-            </DialogTrigger>
-            <CreateDialog
-              title="Create New Course Code"
-              onSubmit={async () => {
-                await fetchAll(1);
-                setOpenCreate(false);
-              }}
-              onCancel={() => setOpenCreate(false)}
-            />
-          </Dialog>
+          <Link href="/staff/course-codes/create">
+            <Button className="h-9 bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white flex items-center gap-1">
+              <Plus className="size-4" />
+              Create Course Code
+            </Button>
+          </Link>
         </div>
       </header>
 

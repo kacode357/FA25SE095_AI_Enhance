@@ -122,10 +122,10 @@ export default function SupportRequestList({
                   <TableHead className="w-[22%]">Subject</TableHead>
                   <TableHead className="w-[18%]">Course</TableHead>
                   <TableHead className="w-[18%]">Requester</TableHead>
-                  <TableHead className="w-[16%]">
+                  <TableHead className="w-[16%] text-center">
                     Category &amp; Priority
                   </TableHead>
-                  <TableHead className="w-[16%]">
+                  <TableHead className="w-[16%]  text-center">
                     Status &amp; Timeline
                   </TableHead>
                   <TableHead className="w-[10%]" />
@@ -160,9 +160,6 @@ export default function SupportRequestList({
                           <p className="text-sm font-medium text-gray-900 line-clamp-1">
                             {item.courseName}
                           </p>
-                          <p className="text-[11px] text-gray-500">
-                            Course ID: {item.courseId}
-                          </p>
                         </div>
                       </TableCell>
 
@@ -184,8 +181,8 @@ export default function SupportRequestList({
                       </TableCell>
 
                       {/* Category + Priority */}
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
+                      <TableCell className="text-center">
+                        <div className="flex flex-col text-center items-center justify-center gap-1">
                           <SupportRequestCategoryBadge
                             category={item.category}
                           />
@@ -197,7 +194,7 @@ export default function SupportRequestList({
 
                       {/* Status + Time */}
                       <TableCell>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col items-center gap-1">
                           <SupportRequestStatusBadge status={item.status} />
                           <p className="text-[11px] text-gray-500">
                             Requested: {dt(item.requestedAt)}
@@ -219,7 +216,7 @@ export default function SupportRequestList({
                       <TableCell className="text-right">
                         <div className="flex flex-col items-end gap-1">
                           {type === "pending" && (
-                            <div className="flex gap-1">
+                            <div className="flex gap-2 px-2">
                               {onAccept && (
                                 <Button
                                   size="sm"
@@ -300,8 +297,9 @@ export default function SupportRequestList({
           {(pagination.pageNumber - 1) * pagination.pageSize + items.length} of{" "}
           {pagination.totalCount}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer">
           <Button
+            className="cursor-pointer"
             type="button"
             variant="outline"
             size="sm"
@@ -311,6 +309,7 @@ export default function SupportRequestList({
             Previous
           </Button>
           <Button
+            className="cursor-pointer"
             type="button"
             variant="outline"
             size="sm"

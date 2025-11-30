@@ -15,7 +15,7 @@ export default function ProfileLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* items-stretch để 2 cột bằng chiều cao nhau */}
-      <div className="flex flex-col md:flex-row gap-6 items-stretch">
+      <div className="flex flex-col md:flex-row border border-slate-300 gap-6 items-stretch">
         <Sidebar />
         <main className="flex-1">{children}</main>
       </div>

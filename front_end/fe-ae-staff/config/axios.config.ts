@@ -1,12 +1,12 @@
 // config/axios.config.ts
-import axios, { AxiosError, AxiosInstance } from "axios";
-import Cookies from "js-cookie";
-import { toast } from "sonner";
-import { clearEncodedUser } from "@/utils/secure-user";
 import {
   updateAccessToken,
   updateRefreshToken,
 } from "@/utils/auth/access-token";
+import { clearEncodedUser } from "@/utils/secure-user";
+import axios, { AxiosError, AxiosInstance } from "axios";
+import Cookies from "js-cookie";
+import { toast } from "sonner";
 
 /** ===== ENVs ===== */
 const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;
@@ -51,13 +51,30 @@ function readRoleFromToken(token?: string): string | undefined {
 function pickErrorMessage(data: any, fallback: string): string {
   if (!data) return fallback;
   if (typeof data === "string") return data;
-  return (
-    data.message ||
-    data.error ||
-    data.title ||
-    (Array.isArray(data.details) && data.details[0]) ||
-    fallback
-  );
+
+  // Prefer explicit message/title fields
+  const title = data.message || data.error || data.title;
+
+  // If backend provided a structured `errors` object (validation errors),
+  // flatten and join them so the toast shows detailed messages.
+  if (data.errors && typeof data.errors === "object") {
+    const parts: string[] = [];
+    for (const key of Object.keys(data.errors)) {
+      const val = data.errors[key];
+      if (Array.isArray(val)) {
+        parts.push(...val.filter(Boolean).map((v: any) => String(v)));
+      } else if (val) {
+        parts.push(String(val));
+      }
+    }
+    if (parts.length) {
+      return title ? `${title}: ${parts.join(" ")}` : parts.join(" ");
+    }
+  }
+
+  if (Array.isArray(data.details) && data.details.length) return data.details[0];
+
+  return title || fallback;
 }
 
 /** Clear token + user + redirect login */

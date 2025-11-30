@@ -2,7 +2,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, CircleArrowOutUpRight } from "lucide-react";
+import { ChevronDown, CircleArrowOutUpRight, LogOut, ShieldUser } from "lucide-react";
 import Link from "next/link";
 import {
   MouseEvent as ReactMouseEvent,
@@ -114,7 +114,7 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
       <button
         type="button"
         onClick={handleToggle}
-        className="student-header-button flex items-center gap-2 px-3 py-1.5 text-sm"
+        className="student-header-button cursor-pointer flex items-center gap-2 px-3 py-1.5 text-sm"
       >
         {/* Avatar với fallback text từ util */}
         <Avatar className="h-8 w-8">
@@ -192,15 +192,15 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
                 className="block rounded-md px-2 py-1.5 text-xs font-medium text-nav hover:bg-slate-50"
                 onClick={() => onOpenChange(false)}
               >
-                Profile
+                <span className="flex gap-2"><ShieldUser className="size-4" />Profile</span>
               </Link>
 
               <button
                 type="button"
                 onClick={handleLogoutClick}
-                className="mt-1 flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                className="mt-1 flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
               >
-                <span>Log out</span>
+                <span className="flex gap-2"><LogOut className="size-4" />Log out</span>
               </button>
             </div>
           </motion.div>

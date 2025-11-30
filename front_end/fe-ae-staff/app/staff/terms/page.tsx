@@ -6,6 +6,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
 import { Pencil, Plus } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { useTerms } from "@/hooks/term/useTerms";
@@ -13,7 +14,6 @@ import { useUpdateTerm } from "@/hooks/term/useUpdateTerm";
 import { Term } from "@/types/terms/terms.response";
 
 import PaginationBar from "@/components/common/PaginationBar";
-import CreateDialog from "./components/CreateDialog";
 import EditDialog from "./components/EditDialog";
 import FilterControls from "./components/FilterControls";
 
@@ -21,7 +21,7 @@ export default function TermsPage() {
   const { listData, totalPages, totalCount, page, pageSize, loading, fetchTerms } = useTerms();
   const { updateTerm, loading: updating } = useUpdateTerm();
 
-  const [openCreate, setOpenCreate] = useState(false);
+  
   const [openEditId, setOpenEditId] = useState<string | null>(null);
   const [filterActive, setFilterActive] = useState("");
   const [filterStart, setFilterStart] = useState<string | undefined>(undefined);
@@ -85,22 +85,12 @@ export default function TermsPage() {
           <p className="text-slate-600 text-sm relative pl-3 before:content-['•'] before:absolute before:left-0">
             Manage academic terms and their active state.
           </p>
-          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-            <DialogTrigger asChild>
-              <Button className="h-9 bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white flex items-center gap-1">
-                <Plus className="size-4" />
-                Create Term
-              </Button>
-            </DialogTrigger>
-            <CreateDialog
-              title="Create New Term"
-              onSubmit={async () => {
-                await fetchAll();
-                setOpenCreate(false);
-              }}
-              onCancel={() => setOpenCreate(false)}
-            />
-          </Dialog>
+          <Link href="/staff/terms/create">
+            <Button className="h-9 bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white flex items-center gap-1">
+              <Plus className="size-4" />
+              Create Term
+            </Button>
+          </Link>
         </div>
       </header>
 

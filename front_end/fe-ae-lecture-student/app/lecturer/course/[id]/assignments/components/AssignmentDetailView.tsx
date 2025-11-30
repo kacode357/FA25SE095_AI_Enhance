@@ -302,11 +302,6 @@ export default function AssignmentDetailView({ id, onBack, onEdit }: Props) {
                       </div>
 
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Grading Criteria</span>
-                        <span className="font-medium">{a.gradingCriteria?.trim() || "—"}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
                         <span className="text-slate-500">Start</span>
                         <span className="font-medium">{fmt(a.startDate)}</span>
                       </div>

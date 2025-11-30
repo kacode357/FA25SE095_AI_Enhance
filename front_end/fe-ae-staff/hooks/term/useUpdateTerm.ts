@@ -1,11 +1,10 @@
 // hooks/term/useUpdateTerm.ts
 "use client";
 
-import { useState } from "react";
 import { TermService } from "@/services/terms.services";
 import { UpdateTermPayload } from "@/types/terms/terms.payload";
 import { UpdateTermResponse } from "@/types/terms/terms.response";
-import { toast } from "sonner";
+import { useState } from "react";
 
 export function useUpdateTerm() {
   const [loading, setLoading] = useState(false);
@@ -17,7 +16,6 @@ export function useUpdateTerm() {
     setLoading(true);
     try {
       const res = await TermService.update(id, payload);
-      toast.success(res.message || "Cập nhật term thành công");
       return res;
     } catch {
       return null;

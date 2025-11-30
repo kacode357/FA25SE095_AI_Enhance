@@ -2,14 +2,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import ManagerHeader from "../components/header"; // từ /staff/profile → /staff/components
 import Sidebar from "./components/Sidebar";
 
 export default function ProfileLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Top header (sticky) */}
-      <ManagerHeader onMenuClick={() => { /* TODO: toggle sidebar mobile nếu cần */ }} />
 
       {/* chừa space bằng chiều cao header: h-20 */}
       <div className=" px-4 md:px-8 lg:px-12 py-8">

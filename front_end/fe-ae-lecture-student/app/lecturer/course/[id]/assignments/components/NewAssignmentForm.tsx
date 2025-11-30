@@ -426,32 +426,6 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               onChange={(e) => setForm((p) => ({ ...p, format: e.target.value }))}
             />
           </div>
-
-          <div>
-            <Label className="text-sm flex items-center gap-1 mb-1">
-              Grading Criteria
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Grading criteria help"
-                    className="inline-flex h-5 w-5 items-center justify-center rounded-full cursor-pointer bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    <CircleAlert className="size-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs bg-white text-slate-500">
-                  The assessment criteria used to determine the score.
-                </TooltipContent>
-              </Tooltip>
-            </Label>
-            <Input
-              placeholder="Rubric note (optional)"
-              value={form.gradingCriteria}
-              className="text-xs"
-              onChange={(e) => setForm((p) => ({ ...p, gradingCriteria: e.target.value }))}
-            />
-          </div>
         </div>
 
         <Separator />
@@ -463,6 +437,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               <div className="flex gap-2 items-center">
                 <Checkbox
                   id="isGroup"
+                  className="text-violet-700"
                   checked={form.isGroupAssignment}
                   onCheckedChange={(v) =>
                     setForm((p) => ({
@@ -472,7 +447,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                     }))
                   }
                 />
-                <Label htmlFor="isGroup" className="cursor-pointer">
+                <Label htmlFor="isGroup" className="cursor-pointer text-violet-700">
                   This is a group assignment
                 </Label>
               </div>
@@ -485,7 +460,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                     onCheckedChange={(v) => setForm((p) => ({ ...p, autoSchedule: !!v }))}
                     className="border-slate-400 text-white data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                   />
-                  <Label htmlFor="autoSchedule" className="cursor-pointer">
+                  <Label htmlFor="autoSchedule" className="cursor-pointer text-green-700">
                     Automatically schedule this Assignment
                   </Label>
                 </div>
