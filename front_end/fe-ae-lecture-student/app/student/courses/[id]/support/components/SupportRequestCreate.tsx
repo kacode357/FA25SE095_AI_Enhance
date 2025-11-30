@@ -148,7 +148,8 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                 }
               >
                 <SelectTrigger
-                  className="h-9 text-sm border border-slate-200 focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-0 focus-visible:border-slate-900"
+                  // Cập nhật style nhẹ nhàng hơn
+                  className="h-9 text-sm border border-slate-200 focus:ring-1 focus:ring-slate-300 focus:ring-offset-0 focus:outline-none"
                 >
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
@@ -180,7 +181,8 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                 }
               >
                 <SelectTrigger
-                  className="h-9 text-sm border border-slate-200 focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-0 focus-visible:border-slate-900"
+                   // Cập nhật style nhẹ nhàng hơn
+                  className="h-9 text-sm border border-slate-200 focus:ring-1 focus:ring-slate-300 focus:ring-offset-0 focus:outline-none"
                 >
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -215,7 +217,8 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="E.g. Cannot access assignment..."
-              className="h-9 text-sm"
+              // Cập nhật style nhẹ nhàng hơn
+              className="h-9 text-sm border border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
               required
             />
           </div>
@@ -229,7 +232,10 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe your issue..."
-              className="min-h-[120px] text-sm border border-slate-200 focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-0 focus-visible:border-slate-900"
+              // --- FIX CHÍNH Ở ĐÂY ---
+              // focus-visible:ring-1 (mỏng)
+              // focus-visible:ring-slate-300 (màu xám nhạt thay vì đen)
+              className="min-h-[120px] text-sm border border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
               required
             />
           </div>
