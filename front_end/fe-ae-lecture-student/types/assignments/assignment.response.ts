@@ -40,7 +40,15 @@ export interface AssignmentItem {
   isGroupAssignment: boolean;
   maxPoints: number;
   weight: number;
-
+  attachments: Array<{
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileSize: number;
+    contentType : string;
+    uploadedAt: string;
+    uploadedBy: string;
+  }>;
   groupIds: string[];
   isOverdue: boolean;
   daysUntilDue: number;

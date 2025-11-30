@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ListTodo, ArrowLeft, CalendarDays } from "lucide-react";
+import { ListTodo, CalendarDays } from "lucide-react";
 
 import {
   Accordion,
@@ -16,7 +16,6 @@ import {
 
 import { useMyAssignments } from "@/hooks/assignment/useMyAssignments";
 import { AssignmentStatus } from "@/config/classroom-service/assignment-status.enum";
-import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 import { parseCourseName } from "@/utils/course/parse-course-name";
 
 /** Map enum -> CSS class (match app/styles/assignment-status.css) */
@@ -49,6 +48,7 @@ export default function CourseAssignmentsPage() {
   const { listData, loading, fetchMyAssignments } = useMyAssignments();
   const didFetchRef = useRef(false);
 
+  // 1. Fetch data
   useEffect(() => {
     if (!courseId) return;
     if (didFetchRef.current) return;
@@ -67,7 +67,7 @@ export default function CourseAssignmentsPage() {
   const assignments = listData?.assignments ?? [];
   const totalAssignments = listData?.totalCount ?? 0;
 
-  /** Course info from courseName */
+  // 2. Course info
   const courseInfo = useMemo(() => {
     if (!assignments.length) {
       return parseCourseName("");
@@ -75,7 +75,7 @@ export default function CourseAssignmentsPage() {
     return parseCourseName(assignments[0].courseName);
   }, [assignments]);
 
-  /** Group assignments by topicName (use topicKey as key) */
+  // 3. Group by Topic
   const topics = useMemo(() => {
     const map = new Map<
       string,
@@ -108,8 +108,16 @@ export default function CourseAssignmentsPage() {
     return Array.from(map.values());
   }, [assignments]);
 
-  /** Controlled open state for Collapse all / Expand all */
-  const [openTopics, setOpenTopics] = useState<string[]>([]); // start collapsed
+  // 4. State quản lý đóng/mở
+  const [openTopics, setOpenTopics] = useState<string[]>([]);
+
+  // ==> TỰ ĐỘNG EXPAND ALL KHI CÓ DATA <==
+  useEffect(() => {
+    if (topics.length > 0) {
+      // Lấy hết topicKey set vào state -> mở tất cả
+      setOpenTopics(topics.map((t) => t.topicKey));
+    }
+  }, [topics]);
 
   const handleToggleAll = () => {
     if (openTopics.length === 0) {
@@ -123,6 +131,7 @@ export default function CourseAssignmentsPage() {
 
   const buttonLabel = openTopics.length === 0 ? "Expand all" : "Collapse all";
 
+  // 5. Render States
   if (!courseId) {
     return (
       <div className="py-16 text-center text-muted">
@@ -173,8 +182,6 @@ export default function CourseAssignmentsPage() {
             </div>
           )}
         </div>
-
-       
       </div>
 
       {/* Collapse all / Expand all */}
@@ -222,7 +229,17 @@ export default function CourseAssignmentsPage() {
                 <ul className="space-y-2">
                   {topic.items.map((a) => {
                     const href = `/student/courses/${courseId}/assignments/${a.id}`;
-                    const dueLabel = formatDateTimeVN(a.dueDate);
+
+                    const dueLabel = a.dueDate
+                      ? new Date(a.dueDate).toLocaleString("en-GB", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—";
+
                     const showDaysLeft =
                       !a.isOverdue && typeof a.daysUntilDue === "number";
 

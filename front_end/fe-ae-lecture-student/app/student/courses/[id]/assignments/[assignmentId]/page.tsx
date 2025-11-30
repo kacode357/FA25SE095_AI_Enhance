@@ -18,6 +18,7 @@ import {
   Users,
   Radar,
   Send,
+  Paperclip,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -77,6 +78,18 @@ function getAssignmentStatusClass(status?: AssignmentStatus | null) {
   }
 }
 
+/** Format dung lượng file đẹp hơn */
+function formatFileSize(bytes?: number | null) {
+  if (!bytes || bytes <= 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(1)} GB`;
+}
+
 /* ============ group members ============ */
 function GroupMembersPanel({ groupId }: { groupId: string }) {
   const { members, loading, error, fetchAllMembers } = useAllMembers();
@@ -88,20 +101,30 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
     fetchAllMembers(groupId);
   }, [groupId, fetchAllMembers]);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex items-center gap-2 text-slate-500 py-2 text-sm">
-        <Loader2 className="w-4 h-4 animate-spin" /> Loading members…
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Loading members…
       </div>
     );
-  if (error)
+  }
+
+  if (error) {
     return (
-      <div className="text-sm text-red-600 py-2">Error: {error}</div>
+      <div className="text-sm text-red-600 py-2">
+        Error: {error}
+      </div>
     );
-  if (!members?.length)
+  }
+
+  if (!members?.length) {
     return (
-      <div className="text-sm text-slate-500 py-2">No members.</div>
+      <div className="text-sm text-slate-500 py-2">
+        No members.
+      </div>
     );
+  }
 
   return (
     <ul className="divide-y divide-slate-200">
@@ -122,11 +145,13 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
                 .join("")
                 .slice(0, 2) || "ST"}
             </div>
+
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-foreground truncate">
                   {m.studentName}
                 </span>
+
                 {m.isLeader && (
                   <Badge
                     variant="outline"
@@ -137,6 +162,7 @@ function GroupMembersPanel({ groupId }: { groupId: string }) {
                   </Badge>
                 )}
               </div>
+
               <div className="text-xs text-slate-500 flex items-center gap-1">
                 <Mail className="w-3 h-3" />
                 {m.studentEmail}
@@ -175,7 +201,10 @@ export default function AssignmentDetailPage() {
     : [];
 
   useEffect(() => {
-    if (!a?.isGroupAssignment) return setSelectedGroupId(null);
+    if (!a?.isGroupAssignment) {
+      setSelectedGroupId(null);
+      return;
+    }
     const firstId = groups[0]?.id ?? null;
     setSelectedGroupId(firstId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,7 +242,7 @@ export default function AssignmentDetailPage() {
   const due = a.extendedDueDate ?? a.dueDate;
   const statusClass = getAssignmentStatusClass(a.status);
 
-  // parse "PHYS301#K3I17J - Smith John"
+  // parse "CODE#CLASS - Lecturer"
   const { courseCode, classCode, lecturerName } = parseCourseName(a.courseName);
 
   type Chip = { icon: ReactNode; label: string; className?: string };
@@ -236,7 +265,11 @@ export default function AssignmentDetailPage() {
 
   const overdue = a.status === AssignmentStatus.Overdue;
   const draft = a.status === AssignmentStatus.Draft;
-  const hasDescription = !!a.description && a.description.trim().length > 0;
+  const hasDescription =
+    !!a.description && a.description.trim().length > 0;
+  const attachments = a.attachments ?? [];
+  const hasFormatOrAttachments = !!a.format || attachments.length > 0;
+  const hasGroups = groups.length > 0;
 
   return (
     <motion.div
@@ -280,10 +313,10 @@ export default function AssignmentDetailPage() {
           </div>
 
           <Button
-            onClick={() => router.push(`/student/courses/${courseId}`)}
+            onClick={() => router.back()}
             variant="outline"
             className="bg-white border border-brand text-nav hover:text-nav-active rounded-2xl px-4 h-10"
-            title="Back to Course"
+            title="Go back"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back</span>
@@ -295,9 +328,10 @@ export default function AssignmentDetailPage() {
           <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2 rounded-2xl bg-white/80 border border-[var(--border)] shadow-sm px-3 py-2">
             <Button
               onClick={() =>
-              router.push(
-                `/student/courses/${courseId}/reports?assignmentId=${aId}${selectedGroupId ? `&groupId=${selectedGroupId}` : ""}`
-              )
+                router.push(
+                  `/student/courses/${courseId}/reports?assignmentId=${aId}${selectedGroupId ? `&groupId=${selectedGroupId}` : ""
+                  }`,
+                )
               }
               className="btn-gradient-slow h-10 px-4 text-sm rounded-xl"
             >
@@ -308,7 +342,7 @@ export default function AssignmentDetailPage() {
             <Button
               onClick={() =>
                 router.push(
-                  `/student/crawler?courseId=${courseId}&assignmentId=${aId}&groupId=${selectedGroupId}`
+                  `/student/crawler?courseId=${courseId}&assignmentId=${aId}&groupId=${selectedGroupId}`,
                 )
               }
               className="btn-yellow-slow h-10 px-4 text-sm rounded-xl"
@@ -321,10 +355,10 @@ export default function AssignmentDetailPage() {
             <Button
               onClick={() =>
                 router.push(
-                  `/student/courses/${courseId}/reports/submit?assignmentId=${aId}`
+                  `/student/courses/${courseId}/reports/submit?assignmentId=${aId}`,
                 )
               }
-              className="btn-green-slow h-10 px-4 h-10 text-sm rounded-xl"
+              className="btn-green-slow h-10 px-4 text-sm rounded-xl"
             >
               <Send className="w-4 h-4" />
               <span>Submit Report</span>
@@ -343,6 +377,7 @@ export default function AssignmentDetailPage() {
           </AlertDescription>
         </Alert>
       )}
+
       {draft && (
         <Alert className="border-slate-200 bg-slate-50 text-slate-700">
           <Info className="w-4 h-4" />
@@ -353,10 +388,13 @@ export default function AssignmentDetailPage() {
         </Alert>
       )}
 
-      {/* ===== Top Grid: 7 / 3 ===== */}
+      {/* ===== Top Grid: course detail + groups ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-start">
-        {/* LEFT: info card */}
-        <div className="lg:col-span-7 lg:self-stretch">
+        {/* LEFT: info card (full width nếu không có group) */}
+        <div
+          className={`lg:self-stretch ${hasGroups ? "lg:col-span-7" : "lg:col-span-10"
+            }`}
+        >
           <Card className="card rounded-2xl h-full flex flex-col">
             <CardContent className="p-4 flex-1 flex flex-col gap-4 text-sm text-foreground/80">
               {/* Course info – BOLD line */}
@@ -365,7 +403,8 @@ export default function AssignmentDetailPage() {
                 <div className="min-w-0">
                   <div className="text-sm sm:text-base font-semibold text-nav">
                     Course code: {courseCode || "—"} · Unique code:{" "}
-                    {classCode || "—"} · Lecturer name: {lecturerName || "—"}
+                    {classCode || "—"} · Lecturer name:{" "}
+                    {lecturerName || "—"}
                   </div>
                 </div>
               </div>
@@ -386,7 +425,9 @@ export default function AssignmentDetailPage() {
                   <CheckCircle2 className="w-4 h-4 text-nav-active" />
                   <span className="font-semibold">Points:</span>
                   <span>
-                    {typeof a.maxPoints === "number" ? a.maxPoints : "—"}
+                    {typeof a.maxPoints === "number"
+                      ? a.maxPoints
+                      : "—"}
                   </span>
                 </div>
               </div>
@@ -397,35 +438,70 @@ export default function AssignmentDetailPage() {
                   <span className="font-semibold">Overdue:</span>{" "}
                   {a.isOverdue ? "Yes" : "No"}
                 </div>
+
                 {!a.isOverdue && a.daysUntilDue >= 0 && (
                   <div>
                     <span className="font-semibold">Days until due:</span>{" "}
                     {a.daysUntilDue}
                   </div>
                 )}
+
                 {typeof a.assignedGroupsCount === "number" && (
                   <div>
-                    <span className="font-semibold">Assigned groups:</span>{" "}
+                    <span className="font-semibold">
+                      Assigned groups:
+                    </span>{" "}
                     {a.assignedGroupsCount}
                   </div>
                 )}
               </div>
 
-              {(a.format || a.gradingCriteria) && (
+              {/* FORMAT + ATTACHMENTS (thay cho GRADING CRITERIA) */}
+              {hasFormatOrAttachments && (
                 <div className="border-t pt-3 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-slate-200">
                   <div>
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
                       FORMAT SUBMIT
                     </div>
-                    <div className="text-sm">{a.format || "—"}</div>
+                    <div className="text-sm">
+                      {a.format || "—"}
+                    </div>
                   </div>
+
                   <div>
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">
-                      GRADING CRITERIA
+                      ATTACHMENTS
                     </div>
-                    <div className="text-sm whitespace-pre-wrap">
-                      {a.gradingCriteria || "—"}
-                    </div>
+
+                    {attachments.length === 0 ? (
+                      <div className="text-sm text-slate-500">
+                        No attachments.
+                      </div>
+                    ) : (
+                      <ul className="space-y-1">
+                        {attachments.map((file) => (
+                          <li
+                            key={file.id}
+                            className="text-sm flex items-start gap-2"
+                          >
+                            <Paperclip className="w-4 h-4 mt-[2px] text-nav-active flex-shrink-0" />
+                            <div className="min-w-0">
+                              <a
+                                href={file.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-nav hover:text-nav-active hover:underline break-all"
+                              >
+                                {file.fileName}
+                              </a>
+                              <div className="text-xs text-slate-500">
+                                {formatFileSize(file.fileSize)}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
               )}
@@ -443,12 +519,14 @@ export default function AssignmentDetailPage() {
         </div>
 
         {/* RIGHT: groups */}
-        {groups.length > 0 && (
+        {hasGroups && (
           <div className="lg:col-span-3 lg:self-start">
-            <Card className="card rounded-2xl h-full flex flex-col lg:max-h-[300px]">
+            <Card className="card rounded-2xl h-full flex flex-col lg:max-h[300px]">
               <CardContent className="px-4 py-3 flex-1 min-h-0">
                 <div className="text-base font-semibold text-nav mb-2">
-                  {groups.length === 1 ? groups[0].name : "Groups & Members"}
+                  {groups.length === 1
+                    ? groups[0].name
+                    : "Groups & Members"}
                 </div>
 
                 {/* Nếu chỉ 1 group -> chỉ hiện members, không lặp tên group */}
@@ -465,6 +543,7 @@ export default function AssignmentDetailPage() {
                             <span className="text-sm font-medium text-nav truncate">
                               {g.name}
                             </span>
+
                             {g.isLocked && (
                               <span className="badge-assignment badge-assignment--overdue text-[11px]">
                                 Locked
@@ -489,6 +568,7 @@ export default function AssignmentDetailPage() {
         <CardHeader className="p-4 pb-2 flex flex-row items-center gap-2">
           <h2 className="text-lg font-bold text-nav">Description</h2>
         </CardHeader>
+
         <CardContent className="p-4 pt-0">
           {hasDescription ? (
             <TinyMCEEditor
@@ -500,7 +580,9 @@ export default function AssignmentDetailPage() {
               className="assignment-description-editor"
             />
           ) : (
-            <p className="text-sm text-slate-500">No description provided.</p>
+            <p className="text-sm text-slate-500">
+              No description provided.
+            </p>
           )}
         </CardContent>
       </Card>

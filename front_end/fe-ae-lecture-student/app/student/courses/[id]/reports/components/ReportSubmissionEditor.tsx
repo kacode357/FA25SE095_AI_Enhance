@@ -1,7 +1,7 @@
 // app/student/courses/[id]/reports/components/ReportSubmissionEditor.tsx
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -12,6 +12,14 @@ import { ReportStatus } from "@/config/classroom-service/report-status.enum";
 import { Button } from "@/components/ui/button";
 import { useUpdateReport } from "@/hooks/reports/useUpdateReport";
 import type { UpdateReportPayload } from "@/types/reports/reports.payload";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Props = {
   report: ReportDetail;
@@ -19,6 +27,8 @@ type Props = {
   onChange: (value: string) => void;
   getAccessToken: () => Promise<string> | string;
 };
+
+const buildSavedKey = (reportId: string) => `report:${reportId}:saved-once`;
 
 export default function ReportSubmissionEditor({
   report,
@@ -50,23 +60,105 @@ export default function ReportSubmissionEditor({
   // ====== SAVE (UPDATE REPORT) ======
   const { updateReport, loading: saving } = useUpdateReport();
 
-  const handleSave = async () => {
+  // ref giữ html mới nhất, tránh closure bị cũ
+  const htmlRef = useRef(html);
+  useEffect(() => {
+    htmlRef.current = html;
+  }, [html]);
+
+  // ref giữ nội dung đã save lần gần nhất → tránh gọi API khi không đổi
+  const lastSavedHtmlRef = useRef<string | null>(null);
+
+  // ref + localStorage: từng save ít nhất 1 lần chưa (chỉ meaningful cho individual)
+  const hasSavedRef = useRef(false);
+
+  // Dialog báo cần save trước khi submit
+  const [saveRequiredOpen, setSaveRequiredOpen] = useState(false);
+
+  useEffect(() => {
+    if (!report.id || typeof window === "undefined") return;
+    const key = buildSavedKey(report.id);
+    if (window.localStorage.getItem(key) === "1") {
+      hasSavedRef.current = true;
+    }
+  }, [report.id]);
+
+  const markSaved = () => {
+    hasSavedRef.current = true;
+    if (typeof window !== "undefined" && report.id) {
+      const key = buildSavedKey(report.id);
+      window.localStorage.setItem(key, "1");
+    }
+  };
+
+  const clearSavedFlag = () => {
+    if (typeof window !== "undefined" && report.id) {
+      const key = buildSavedKey(report.id);
+      window.localStorage.removeItem(key);
+    }
+    hasSavedRef.current = false;
+  };
+
+  const internalSave = async (opts?: { isAuto?: boolean }) => {
     if (!report.id) return;
 
+    const currentHtml = htmlRef.current ?? "";
+    // Không cần gọi API nếu nội dung không đổi
+    if (currentHtml === lastSavedHtmlRef.current) return;
+
     const payload: UpdateReportPayload = {
-      submission: html,
+      submission: currentHtml,
     };
 
     const res = await updateReport(report.id, payload);
 
     if (res?.success) {
-      // Reload lại report detail (version, updatedAt, v.v.)
+      lastSavedHtmlRef.current = currentHtml;
+      markSaved();
+      // Không toast ở đây, hook / chỗ khác lo UI
       router.refresh();
     }
   };
 
+  const handleSave = async () => {
+    // Manual save
+    await internalSave({ isAuto: false });
+  };
+
+  // ⏱ Auto save mỗi 1 phút (chỉ individual + chưa locked)
+  useEffect(() => {
+    if (isLocked || isGroupSubmission || !report.id) return;
+    if (typeof window === "undefined") return;
+
+    const intervalId = window.setInterval(() => {
+      void internalSave({ isAuto: true });
+    }, 60_000); // 1 phút
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocked, isGroupSubmission, report.id]);
+
+  const hasSavedOnce = () => {
+    if (hasSavedRef.current) return true;
+    if (typeof window === "undefined" || !report.id) return false;
+
+    const key = buildSavedKey(report.id);
+    return window.localStorage.getItem(key) === "1";
+  };
+
   const handleGoToSubmitPage = () => {
     if (!courseId || !assignmentId) return;
+
+    // ✅ Chỉ individual mới bị bắt buộc save
+    if (!isGroupSubmission && !hasSavedOnce()) {
+      setSaveRequiredOpen(true);
+      return;
+    }
+
+    // Đã được phép submit → xoá flag localStorage trước khi chuyển trang
+    clearSavedFlag();
 
     router.push(
       `/student/courses/${courseId}/reports/submit?assignmentId=${assignmentId}`
@@ -74,96 +166,129 @@ export default function ReportSubmissionEditor({
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Info banner */}
-      <div className="rounded-xl p-3 border border-slate-200 bg-slate-50 text-slate-700 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-start gap-2 max-w-xl">
-          <Info className="w-4 h-4 mt-0.5 shrink-0" />
-          <div className="text-xs">
-            {isLocked ? (
-              isResubmitted ? (
+    <>
+      <div className="flex flex-col gap-3">
+        {/* Info banner */}
+        <div className="rounded-xl p-3 border border-slate-200 bg-slate-50 text-slate-700 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div
+            className={`flex items-start gap-2 ${
+              isGroupSubmission ? "max-w-xl" : "w-full"
+            }`}
+          >
+            <Info className="w-4 h-4 mt-0.5 shrink-0" />
+            <div className="text-xs">
+              {isLocked ? (
+                isResubmitted ? (
+                  <>
+                    This report has been <b>resubmitted</b>. You can view
+                    the content but further edits are disabled.
+                  </>
+                ) : (
+                  <>
+                    This report has been <b>submitted</b>. You can view the
+                    content but further edits are disabled.
+                  </>
+                )
+              ) : isGroupSubmission ? (
                 <>
-                  This report has been <b>resubmitted</b>. You can view the
-                  content but further edits are disabled.
+                  Edit the <b>submission</b> below. Your changes will sync in
+                  real time with other collaborators.
                 </>
               ) : (
                 <>
-                  This report has been <b>submitted</b>. You can view the
-                  content but further edits are disabled.
+                  This is an <b>individual</b> submission. Your report will{" "}
+                  <b>auto-save every 1 minute</b>. You can also use the{" "}
+                  <b>Save</b> button to save immediately before submitting.
                 </>
-              )
-            ) : isGroupSubmission ? (
-              <>
-                Edit the <b>submission</b> below. Your changes will sync in real
-                time with other collaborators.
-              </>
-            ) : (
-              <>
-                This is an <b>individual</b> submission. Live collaboration is
-                disabled for this report.
-              </>
-            )}
+              )}
+            </div>
           </div>
+
+          {/* Chỉ render hub khi được phép → group + không locked */}
+          {useHubCollab && (
+            <div className="md:flex-shrink-0">
+              <ReportCollabClient
+                reportId={report.id}
+                getAccessToken={getAccessToken}
+                html={html}
+                onRemoteHtml={(newHtml) => {
+                  onChange(newHtml);
+                  tinyEditorRef.current?.pushContentFromOutside?.(newHtml);
+                }}
+                getEditorRoot={() =>
+                  tinyEditorRef.current?.getRoot?.() ?? null
+                }
+              />
+            </div>
+          )}
         </div>
 
-        {/* Chỉ render hub khi được phép → group + không locked */}
-        {useHubCollab && (
-          <div className="md:flex-shrink-0">
-            <ReportCollabClient
-              reportId={report.id}
-              getAccessToken={getAccessToken}
-              html={html}
-              onRemoteHtml={(newHtml) => {
-                onChange(newHtml);
-                tinyEditorRef.current?.pushContentFromOutside?.(newHtml);
-              }}
-              getEditorRoot={() => tinyEditorRef.current?.getRoot?.() ?? null}
-            />
+        {/* Editor phần submission */}
+        <LiteRichTextEditor
+          value={html}
+          onChange={readOnly ? () => {} : onChange}
+          readOnly={readOnly}
+          placeholder={
+            readOnly
+              ? "Report content (read only)"
+              : "Write your report here..."
+          }
+          className="w-full"
+          onInit={(api: any) => {
+            tinyEditorRef.current = api;
+            if (html) {
+              api.pushContentFromOutside?.(html);
+            }
+          }}
+        />
+
+        {/* Save + Submit – chỉ hiện khi chưa locked */}
+        {!isLocked && (
+          <div className="mt-2 flex gap-2 justify-end">
+            {/* ❗ Individual submission mới có nút Save */}
+            {!isGroupSubmission && (
+              <Button
+                variant="outline"
+                className="h-9 px-3 text-xs rounded-xl"
+                disabled={saving}
+                onClick={handleSave}
+              >
+                {saving ? "Saving…" : "Save"}
+              </Button>
+            )}
+
+            <Button
+              onClick={handleGoToSubmitPage}
+              className="btn-green-slow h-9 px-4 text-sm rounded-xl"
+              disabled={saving}
+            >
+              Submit report
+            </Button>
           </div>
         )}
       </div>
 
-      {/* Editor phần submission */}
-      <LiteRichTextEditor
-        value={html}
-        onChange={readOnly ? () => {} : onChange}
-        readOnly={readOnly}
-        placeholder={
-          readOnly ? "Report content (read only)" : "Write your report here..."
-        }
-        className="w-full"
-        onInit={(api: any) => {
-          tinyEditorRef.current = api;
-          if (html) {
-            api.pushContentFromOutside?.(html);
-          }
-        }}
-      />
-
-      {/* Save + Submit – chỉ hiện khi chưa locked */}
-      {!isLocked && (
-        <div className="mt-2 flex gap-2 justify-end">
-          {/* ❗ Chỉ group submission mới có nút Save */}
-          {!isGroupSubmission && (
+      {/* Dialog: yêu cầu user save trước khi submit */}
+      <Dialog open={saveRequiredOpen} onOpenChange={setSaveRequiredOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save required</DialogTitle>
+            <DialogDescription>
+              Please save your report at least once (or wait for auto-save){" "}
+              before submitting. This helps ensure your latest content is
+              stored safely.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
             <Button
               variant="outline"
-              className="h-9 px-3 text-xs rounded-xl"
-              disabled={saving}
-              onClick={handleSave}
+              onClick={() => setSaveRequiredOpen(false)}
             >
-              {saving ? "Saving…" : "Save"}
+              Close
             </Button>
-          )}
-
-          <Button
-            onClick={handleGoToSubmitPage}
-            className="btn-green-slow h-9 px-4 text-sm rounded-xl"
-            disabled={saving}
-          >
-            Submit report
-          </Button>
-        </div>
-      )}
-    </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
