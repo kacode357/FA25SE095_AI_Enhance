@@ -1,5 +1,9 @@
 // utils/datetime/format-datetime.ts
 
+/**
+ * Hàm cũ – GIỮ NGUYÊN – để tránh lỗi ở các component khác.
+ * Format datetime đầy đủ (có giờ).
+ */
 export function formatDateTimeVN(value?: string | null): string {
   if (!value) return "—";
 
@@ -13,7 +17,25 @@ export function formatDateTimeVN(value?: string | null): string {
       timeZone: "Asia/Ho_Chi_Minh",
     });
   } catch {
-    // fallback nếu runtime ko support timeZone (tránh crash)
     return d.toLocaleString("vi-VN");
+  }
+}
+
+/**
+ * Hàm mới – CHỈ LẤY NGÀY – KHÔNG GIỜ.
+ * Dùng cho Dashboard hoặc chỗ nào không muốn hiện giờ.
+ */
+export function formatDateOnlyVN(value?: string | null): string {
+  if (!value || value.startsWith("0001")) return "—";
+
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  try {
+    return d.toLocaleDateString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+    });
+  } catch {
+    return d.toLocaleDateString("vi-VN");
   }
 }

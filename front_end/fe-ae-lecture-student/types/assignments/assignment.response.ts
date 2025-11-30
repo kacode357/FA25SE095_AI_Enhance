@@ -40,6 +40,7 @@ export interface AssignmentItem {
   isGroupAssignment: boolean;
   maxPoints: number;
   weight: number;
+
   groupIds: string[];
   isOverdue: boolean;
   daysUntilDue: number;

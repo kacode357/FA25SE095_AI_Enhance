@@ -1,32 +1,23 @@
 // app/student/courses/[id]/assignments/page.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  AlertTriangle,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  ListTodo,
-  Users,
-} from "lucide-react";
+import { ListTodo, ArrowLeft, CalendarDays } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 import { useMyAssignments } from "@/hooks/assignment/useMyAssignments";
 import { AssignmentStatus } from "@/config/classroom-service/assignment-status.enum";
-
-/** Safe parse datetime */
-const toDate = (s?: string | null) => {
-  if (!s) return null;
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return null;
-  return d;
-};
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+import { parseCourseName } from "@/utils/course/parse-course-name";
 
 /** Map enum -> CSS class (match app/styles/assignment-status.css) */
 const getStatusClass = (s: AssignmentStatus) => {
@@ -58,8 +49,11 @@ export default function CourseAssignmentsPage() {
   const { listData, loading, fetchMyAssignments } = useMyAssignments();
   const didFetchRef = useRef(false);
 
-  const loadAll = () => {
+  useEffect(() => {
     if (!courseId) return;
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
+
     fetchMyAssignments({
       courseId,
       sortBy: "DueDate",
@@ -67,229 +61,250 @@ export default function CourseAssignmentsPage() {
       pageNumber: 1,
       pageSize: 20,
     });
-  };
-
-  useEffect(() => {
-    if (!courseId) return;
-    if (didFetchRef.current) return;
-    didFetchRef.current = true;
-    loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   const assignments = listData?.assignments ?? [];
   const totalAssignments = listData?.totalCount ?? 0;
 
+  /** Course info from courseName */
+  const courseInfo = useMemo(() => {
+    if (!assignments.length) {
+      return parseCourseName("");
+    }
+    return parseCourseName(assignments[0].courseName);
+  }, [assignments]);
+
+  /** Group assignments by topicName (use topicKey as key) */
+  const topics = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        topicKey: string;
+        topicName: string;
+        items: typeof assignments;
+      }
+    >();
+
+    for (const a of assignments) {
+      const rawTopicName = (a as any).topicName as string | undefined;
+      const topicName =
+        rawTopicName && rawTopicName.trim().length > 0
+          ? rawTopicName
+          : "Other";
+
+      const topicKey = topicName;
+
+      if (!map.has(topicKey)) {
+        map.set(topicKey, {
+          topicKey,
+          topicName,
+          items: [],
+        });
+      }
+      map.get(topicKey)!.items.push(a);
+    }
+
+    return Array.from(map.values());
+  }, [assignments]);
+
+  /** Controlled open state for Collapse all / Expand all */
+  const [openTopics, setOpenTopics] = useState<string[]>([]); // start collapsed
+
+  const handleToggleAll = () => {
+    if (openTopics.length === 0) {
+      // currently all collapsed -> expand all
+      setOpenTopics(topics.map((t) => t.topicKey));
+    } else {
+      // some open -> collapse all
+      setOpenTopics([]);
+    }
+  };
+
+  const buttonLabel = openTopics.length === 0 ? "Expand all" : "Collapse all";
+
   if (!courseId) {
     return (
       <div className="py-16 text-center text-muted">
         <p>
-          Không tìm thấy <b>courseId</b> trong URL.
+          Cannot find <b>courseId</b> in URL.
         </p>
-        <Button
-          className="mt-4 border border-brand text-brand bg-card"
+        <button
+          type="button"
+          className="mt-4 inline-flex items-center rounded-md border px-4 py-2 text-sm"
           onClick={() => router.push("/student/my-courses")}
-          variant="outline"
         >
           Back to My Courses
-        </Button>
+        </button>
       </div>
     );
   }
 
   return (
     <motion.div
-      className="flex flex-col gap-6 py-6"
+      className="flex flex-col gap-4 py-6"
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold flex items-center gap-2 text-nav">
-          <ListTodo className="w-6 h-6 text-brand" />
-          <span>Assignments</span>
-          {totalAssignments > 0 && (
-            <span className="ml-1 text-xs font-medium text-muted">
-              ({totalAssignments})
-            </span>
-          )}
-        </h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-nav">
+            <ListTodo className="w-6 h-6 text-brand" />
+            <span>Assignments</span>
+            {totalAssignments > 0 && (
+              <span className="ml-1 text-xs font-medium text-muted">
+                ({totalAssignments})
+              </span>
+            )}
+          </h1>
 
-        <Button
-          variant="outline"
+          {/* course info */}
+          {courseInfo.courseCode && (
+            <div className="text-xs text-muted flex flex-wrap gap-3">
+              <span>
+                <b>{courseInfo.courseCode}</b>
+                {courseInfo.classCode && ` · ${courseInfo.classCode}`}
+              </span>
+              {courseInfo.lecturerName && (
+                <span>Lecturer: {courseInfo.lecturerName}</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
           onClick={() => router.push(`/student/courses/${courseId}`)}
-          className="border-brand text-brand hover:bg-brand/5"
+          className="inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand/5 cursor-pointer"
         >
+          <ArrowLeft className="w-4 h-4 mr-1" />
           Back to Course
-        </Button>
+        </button>
       </div>
 
-      <Card className="card rounded-2xl">
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <CardTitle className="text-lg font-bold flex items-center gap-2 text-nav">
-            <ListTodo className="w-5 h-5 text-brand" />
-            <span>My assignments</span>
-          </CardTitle>
+      {/* Collapse all / Expand all */}
+      {!loading && assignments.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            className="text-xs font-semibold text-nav hover:text-brand cursor-pointer"
+            onClick={handleToggleAll}
+          >
+            {buttonLabel}
+          </button>
+        </div>
+      )}
 
-          <div className="flex items-center gap-2">
-            {/* All */}
-            <button
-              className="btn h-9 px-3 text-sm border border-border bg-card hover:bg-muted"
-              onClick={loadAll}
-              title="All assignments"
+      {/* Assignments by topic */}
+      {loading ? (
+        <div className="py-10 text-center text-muted text-sm">
+          Loading assignments…
+        </div>
+      ) : assignments.length === 0 ? (
+        <div className="py-10 text-center text-muted text-sm">
+          You don&apos;t have any assignments yet.
+        </div>
+      ) : (
+        <Accordion
+          type="multiple"
+          value={openTopics}
+          onValueChange={(v) => setOpenTopics(v as string[])}
+          className="space-y-4"
+        >
+          {topics.map((topic) => (
+            <AccordionItem
+              key={topic.topicKey}
+              value={topic.topicKey}
+              className="rounded-2xl bg-card shadow-sm border-none px-4"
             >
-              All
-            </button>
+              <AccordionTrigger className="py-4 text-left flex items-center justify-between gap-2 hover:no-underline cursor-pointer">
+                <span className="text-base font-semibold text-nav">
+                  {topic.topicName}
+                </span>
+              </AccordionTrigger>
 
-            {/* Upcoming */}
-            <button
-              className="btn btn-green-slow h-9 px-3 text-sm"
-              onClick={() =>
-                fetchMyAssignments({
-                  courseId,
-                  sortBy: "DueDate",
-                  sortOrder: "asc",
-                  pageNumber: 1,
-                  pageSize: 20,
-                  isUpcoming: true,
-                })
-              }
-              title="Upcoming"
-            >
-              <Clock className="w-4 h-4" />
-              <span className="text-sm">Upcoming</span>
-            </button>
+              <AccordionContent className="pb-4">
+                <ul className="space-y-2">
+                  {topic.items.map((a) => {
+                    const href = `/student/courses/${courseId}/assignments/${a.id}`;
+                    const dueLabel = formatDateTimeVN(a.dueDate);
+                    const showDaysLeft =
+                      !a.isOverdue && typeof a.daysUntilDue === "number";
 
-            {/* Overdue */}
-            <button
-              className="btn btn-yellow-slow h-9 px-3 text-sm"
-              onClick={() =>
-                fetchMyAssignments({
-                  courseId,
-                  sortBy: "DueDate",
-                  sortOrder: "asc",
-                  pageNumber: 1,
-                  pageSize: 20,
-                  isOverdue: true,
-                })
-              }
-              title="Overdue"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm">Overdue</span>
-            </button>
-          </div>
-        </CardHeader>
-
-        <CardContent className="pb-4">
-          {loading ? (
-            <div className="py-10 text-center text-muted">
-              Loading assignments…
-            </div>
-          ) : assignments.length === 0 ? (
-            <div className="py-10 text-center text-muted">
-              You don&apos;t have any assignments yet.
-            </div>
-          ) : (
-            <ul
-              className="divide-y"
-              style={{ borderColor: "var(--border)" }}
-            >
-              {assignments.map((a) => {
-                const due = toDate(a.dueDate);
-                const extended = toDate(a.extendedDueDate);
-                const finalDue = extended ?? due;
-                const dueLabel = extended ? "Extended due" : "Due";
-                const href = `/student/courses/${courseId}/assignments/${a.id}`;
-
-                const showDaysLeft =
-                  !a.isOverdue && typeof a.daysUntilDue === "number";
-
-                return (
-                  <li key={a.id} className="py-4">
-                    <div className="flex flex-col gap-2">
-                      {/* Row 1: title + status + group  |  days left / overdue */}
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <Link
-                            href={href}
-                            className="font-bold text-lg no-underline hover:underline text-nav-active"
-                          >
-                            {a.title}
-                          </Link>
-
-                          <span
-                            className={getStatusClass(a.status as AssignmentStatus)}
-                            title={a.statusDisplay}
-                          >
-                            {a.status === AssignmentStatus.Active && (
-                              <CheckCircle2 className="w-3 h-3" />
-                            )}
-                            {a.statusDisplay}
-                          </span>
-
-                          {a.isGroupAssignment && (
-                            <span className="badge-assignment badge-assignment--group">
-                              <Users className="w-3 h-3" />
-                              Group
+                    return (
+                      <li key={a.id}>
+                        <Link
+                          href={href}
+                          className="flex flex-col gap-2 no-underline rounded-xl px-2 py-2 hover:bg-muted/50 transition-colors cursor-pointer"
+                        >
+                          {/* Row 1: title (left) + status (right) */}
+                          <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <span className="font-medium text-nav">
+                              {a.title}
                             </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 text-sm">
-                          {a.isOverdue && (
-                            <span className="flex items-center gap-1 text-[#b91c1c] font-medium">
-                              <AlertTriangle className="w-4 h-4" />
-                              Overdue
+                            <span
+                              className={getStatusClass(
+                                a.status as AssignmentStatus
+                              )}
+                            >
+                              {a.statusDisplay}
                             </span>
-                          )}
-                          {showDaysLeft && a.daysUntilDue >= 0 && (
-                            <span className="font-semibold text-brand">
-                              {a.daysUntilDue} day
-                              {a.daysUntilDue === 1 ? "" : "s"} left
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                          </div>
 
-                      {/* Row 2: meta info */}
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted">
-                        {finalDue && (
-                          <span className="flex items-center gap-1">
-                            <CalendarDays className="w-4 h-4 text-brand" />
-                            {dueLabel}:{" "}
-                            <b className="ml-1 text-nav">
-                              {finalDue.toLocaleString("en-GB")}
-                            </b>
-                          </span>
-                        )}
+                          {/* Row 2: left meta (type, points, overdue, days) + right due time */}
+                          <div className="flex items-center justify-between gap-4 flex-wrap text-xs text-muted">
+                            {/* Left meta */}
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span>
+                                Type:{" "}
+                                <b className="text-nav">
+                                  {a.isGroupAssignment
+                                    ? "Group assignment"
+                                    : "Individual assignment"}
+                                </b>
+                              </span>
 
-                        {typeof a.maxPoints === "number" && (
-                          <span>
-                            Points:{" "}
-                            <b className="text-nav">{a.maxPoints}</b>
-                          </span>
-                        )}
+                              {typeof a.maxPoints === "number" && (
+                                <span>
+                                  Max points:{" "}
+                                  <b className="text-nav">{a.maxPoints}</b>
+                                </span>
+                              )}
 
-                        {typeof a.assignedGroupsCount === "number" &&
-                          a.isGroupAssignment && (
-                            <span>
-                              Groups:{" "}
-                              <b className="text-nav">
-                                {a.assignedGroupsCount}
-                              </b>
-                            </span>
-                          )}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                              {a.isOverdue && (
+                                <span className="text-[#b91c1c] font-medium">
+                                  Overdue
+                                </span>
+                              )}
+
+                              {showDaysLeft && a.daysUntilDue >= 0 && (
+                                <span className="text-brand font-medium">
+                                  {a.daysUntilDue}{" "}
+                                  {a.daysUntilDue === 1
+                                    ? "day left"
+                                    : "days left"}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Right due time */}
+                            <div className="flex items-center gap-1">
+                              <CalendarDays className="w-3 h-3" />
+                              <span>Due: {dueLabel}</span>
+                            </div>
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      )}
     </motion.div>
   );
 }

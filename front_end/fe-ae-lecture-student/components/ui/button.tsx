@@ -13,7 +13,9 @@ export type ButtonProps = HTMLMotionProps<"button"> & {
     | "outline"
     | "secondary"
     | "default"
-    | "destructive";
+    | "destructive"
+    | "link";
+
   loading?: boolean;
   size?: "xs" | "sm" | "md" | "lg" | "icon" | "default";
   children?: React.ReactNode;

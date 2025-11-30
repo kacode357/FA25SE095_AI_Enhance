@@ -11,21 +11,26 @@ import type {
 
 const BASE = "/crawler-chat";
 
+const DEFAULT_LIMIT = 100;
+const DEFAULT_OFFSET = 0;
+
 export const CrawlerChatService = {
   /**
    * GET /api/crawler-chat/assignment/{assignmentId}/messages
    * Lấy tất cả messages theo assignment
    */
-  getAssignmentMessages: async (
+  async getAssignmentMessages(
     assignmentId: string,
     params?: CrawlerChatMessagesQuery
-  ): Promise<CrawlerChatMessageItem[]> => {
+  ): Promise<CrawlerChatMessageItem[]> {
+    const { limit = DEFAULT_LIMIT, offset = DEFAULT_OFFSET } = params ?? {};
+
     const { data } = await courseAxiosInstance.get<CrawlerChatMessageItem[]>(
       `${BASE}/assignment/${assignmentId}/messages`,
       {
         params: {
-          limit: params?.limit,
-          offset: params?.offset,
+          limit,
+          offset,
         },
       }
     );
@@ -36,16 +41,18 @@ export const CrawlerChatService = {
    * GET /api/crawler-chat/conversation/{conversationId}/messages
    * Lấy tất cả messages theo conversation
    */
-  getConversationMessages: async (
+  async getConversationMessages(
     conversationId: string,
     params?: CrawlerChatMessagesQuery
-  ): Promise<CrawlerChatMessageItem[]> => {
+  ): Promise<CrawlerChatMessageItem[]> {
+    const { limit = DEFAULT_LIMIT, offset = DEFAULT_OFFSET } = params ?? {};
+
     const { data } = await courseAxiosInstance.get<CrawlerChatMessageItem[]>(
       `${BASE}/conversation/${conversationId}/messages`,
       {
         params: {
-          limit: params?.limit,
-          offset: params?.offset,
+          limit,
+          offset,
         },
       }
     );
@@ -56,18 +63,21 @@ export const CrawlerChatService = {
    * GET /api/crawler-chat/assignment/{assignmentId}/conversations
    * Lấy danh sách conversation của 1 assignment
    */
-  getAssignmentConversations: async (
+  async getAssignmentConversations(
     assignmentId: string,
     params?: CrawlerChatAssignmentConversationsQuery
-  ): Promise<CrawlerChatConversationItem[]> => {
-    const { data } = await courseAxiosInstance.get<CrawlerChatConversationItem[]>(
-      `${BASE}/assignment/${assignmentId}/conversations`,
-      {
-        params: {
-          myOnly: params?.myOnly,
-        },
-      }
-    );
+  ): Promise<CrawlerChatConversationItem[]> {
+    const { myOnly } = params ?? {};
+
+    const { data } =
+      await courseAxiosInstance.get<CrawlerChatConversationItem[]>(
+        `${BASE}/assignment/${assignmentId}/conversations`,
+        {
+          params: {
+            myOnly,
+          },
+        }
+      );
     return data;
   },
 };
