@@ -1,5 +1,5 @@
 // admin-main-nav.ts
-import { FileText, Users2, Megaphone } from "lucide-react";
+import { FileText, Users2, Megaphone, CreditCard } from "lucide-react";
 
 export const mainNav = [
   {
@@ -27,6 +27,22 @@ export const mainNav = [
       {
         href: "/admin/announcements/create",
         label: "Create Announcement",
+      },
+    ],
+  },
+  {
+    href: "/admin/subscription-payments",
+    label: "Subscription Payments",
+    icon: CreditCard,
+    description: "Manage subscription payments",
+    children: [
+      {
+        href: "/admin/subscription-payments",
+        label: "Payments List",
+      },
+      {
+        href: "/admin/subscription-payments/summary",
+        label: "Summary & Analytics",
       },
     ],
   },

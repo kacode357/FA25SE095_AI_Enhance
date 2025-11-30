@@ -1,3 +1,5 @@
+// types/support/support-request.response.ts
+
 export enum SupportRequestStatus {
   Pending = 0,
   InProgress = 1,
@@ -52,7 +54,6 @@ export interface PaginatedSupportRequests {
 }
 
 export interface CreateSupportRequestResponse {
-  id :string;
   success: boolean;
   message: string;
   supportRequestId: string;

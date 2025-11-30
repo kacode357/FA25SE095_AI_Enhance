@@ -20,17 +20,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { SupportRequestCategory } from "@/config/classroom-service/support-request-category.enum";
 import { SupportRequestPriority } from "@/config/classroom-service/support-request-priority.enum";
 import { useCreateSupportRequest } from "@/hooks/support-requests/useCreateSupportRequest";
-import { useUploadSupportRequestImages } from "@/hooks/support-requests/useUploadSupportRequestImages";
+import type { CreateSupportRequestResponse } from "@/types/support/support-request.response";
 
 type Props = {
   courseId: string;
   onCreated?: () => Promise<void> | void;
-};
-
-type CreateResponse = {
-  success: boolean;
-  message: string;
-  supportRequestId: string;
 };
 
 const MAX_IMAGES_PER_REQUEST = 5;
@@ -39,8 +33,6 @@ const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
 export function SupportRequestCreate({ courseId, onCreated }: Props) {
   const { createSupportRequest, loading: creating } = useCreateSupportRequest();
-  const { uploadSupportRequestImages, loading: uploading } =
-    useUploadSupportRequestImages();
 
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
@@ -93,23 +85,23 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
     e.preventDefault();
     if (!courseId) return;
 
-    if (fileError) return;
+    const trimmedSubject = subject.trim();
+    const trimmedDescription = description.trim();
 
-    const res = (await createSupportRequest({
+    // form invalid hoặc đang loading thì thôi khỏi call
+    if (!trimmedSubject || !trimmedDescription || fileError || creating) return;
+
+    const res: CreateSupportRequestResponse = await createSupportRequest({
       courseId,
       priority,
       category,
-      subject: subject.trim(),
-      description: description.trim(),
-    })) as unknown as CreateResponse;
+      subject: trimmedSubject,
+      description: trimmedDescription,
+      images: selectedFiles,
+    });
 
     if (res && res.success && res.supportRequestId) {
-      const newRequestId = res.supportRequestId;
-
-      if (selectedFiles.length > 0) {
-        await uploadSupportRequestImages(newRequestId, selectedFiles);
-      }
-
+      // reset form
       setSubject("");
       setDescription("");
       setPriority(SupportRequestPriority.Medium);
@@ -126,7 +118,13 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
     }
   };
 
-  const isLoading = creating || uploading;
+  const isLoading = creating;
+
+  const isSubmitDisabled =
+    isLoading ||
+    !!fileError ||
+    !subject.trim() ||
+    !description.trim();
 
   return (
     <Card className="card rounded-2xl">
@@ -147,10 +145,7 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                   setPriority(Number(v) as SupportRequestPriority)
                 }
               >
-                <SelectTrigger
-                  // Cập nhật style nhẹ nhàng hơn
-                  className="h-9 text-sm border border-slate-200 focus:ring-1 focus:ring-slate-300 focus:ring-offset-0 focus:outline-none"
-                >
+                <SelectTrigger className="h-9 text-sm border border-slate-200 focus:ring-1 focus:ring-slate-300 focus:ring-offset-0 focus:outline-none">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -180,16 +175,11 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
                   setCategory(Number(v) as SupportRequestCategory)
                 }
               >
-                <SelectTrigger
-                   // Cập nhật style nhẹ nhàng hơn
-                  className="h-9 text-sm border border-slate-200 focus:ring-1 focus:ring-slate-300 focus:ring-offset-0 focus:outline-none"
-                >
+                <SelectTrigger className="h-9 text-sm border border-slate-200 focus:ring-1 focus:ring-slate-300 focus:ring-offset-0 focus:outline-none">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem
-                    value={String(SupportRequestCategory.Technical)}
-                  >
+                  <SelectItem value={String(SupportRequestCategory.Technical)}>
                     Technical
                   </SelectItem>
                   <SelectItem value={String(SupportRequestCategory.Academic)}>
@@ -217,7 +207,6 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="E.g. Cannot access assignment..."
-              // Cập nhật style nhẹ nhàng hơn
               className="h-9 text-sm border border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
               required
             />
@@ -232,9 +221,6 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe your issue..."
-              // --- FIX CHÍNH Ở ĐÂY ---
-              // focus-visible:ring-1 (mỏng)
-              // focus-visible:ring-slate-300 (màu xám nhạt thay vì đen)
               className="min-h-[120px] text-sm border border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
               required
             />
@@ -318,14 +304,12 @@ export function SupportRequestCreate({ courseId, onCreated }: Props) {
             <Button
               type="submit"
               className="btn btn-gradient px-4 py-2 h-9 text-sm"
-              disabled={isLoading}
+              disabled={isSubmitDisabled}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {uploading
-                ? "Uploading Images..."
-                : creating
-                  ? "Creating Request..."
-                  : "Submit Request"}
+              {isLoading && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {creating ? "Creating Request..." : "Submit Request"}
             </Button>
           </div>
         </form>

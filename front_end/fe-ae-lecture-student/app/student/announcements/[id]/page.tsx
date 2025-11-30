@@ -3,13 +3,21 @@
 
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 
 import { useAnnouncementDetail } from "@/hooks/announcements/useAnnouncementDetail";
 import type { AnnouncementItem } from "@/types/announcements/announcement.response";
 
 import { parseServerDate, dayLabel, timeHHmm } from "@/utils/chat/time";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 function formatAudience(audience: AnnouncementItem["audience"]) {
   switch (audience) {
@@ -46,23 +54,37 @@ export default function AnnouncementDetailPage() {
     });
   }, [id, fetchAnnouncement]);
 
-  const handleBack = () => {
+  const handleGoList = () => {
     router.push("/student/home");
   };
 
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      {/* Back link */}
-      <button
-        type="button"
-        onClick={handleBack}
-        className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-nav hover:text-nav-active"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        <span>Back to announcements</span>
-      </button>
+  const title = announcement?.title || "Announcement detail";
 
-      <section className="card px-6 py-5">
+  return (
+    <div className="mx-auto  px-4 py-6">
+      {/* Breadcrumb thay cho back button */}
+      <div className="mb-4">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink
+                className="cursor-pointer text-sm text-nav hover:text-nav-active"
+                onClick={handleGoList}
+              >
+                Announcements
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="max-w-[220px] truncate text-sm text-[color:var(--text-muted)]">
+                {title}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
+      <section className="card px-4 py-4">
         {loading && !announcement ? (
           <div className="flex h-40 items-center justify-center text-sm text-[color:var(--text-muted)]">
             Loading announcement...
@@ -83,12 +105,12 @@ export default function AnnouncementDetailPage() {
               </span>
 
               {/* Title row + time bên phải */}
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-baseline gap-2">
-                  <span className="text-sm font-semibold text-[color:var(--text-muted)]">
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-2 min-w-0">
+                  <span className="text-2xl font-semibold text-[color:var(--text-muted)]">
                     Title:
                   </span>
-                  <h1 className="truncate text-xl font-semibold tracking-tight text-nav sm:text-2xl">
+                  <h1 className="break-words text-2xl font-semibold tracking-tight text-nav sm:text-3xl">
                     {announcement.title}
                   </h1>
                 </div>
@@ -109,13 +131,13 @@ export default function AnnouncementDetailPage() {
               )}
             </header>
 
-            {/* Content bằng TinyMCE read-only */}
+            {/* Content bằng TinyMCE read-only, padding nhẹ */}
             <div className="mt-2">
               <LiteRichTextEditor
                 value={announcement.content || ""}
                 onChange={() => {}}
                 readOnly
-                className="min-h-[320px]"
+                className="min-h-[260px]"
                 placeholder="No description."
               />
             </div>

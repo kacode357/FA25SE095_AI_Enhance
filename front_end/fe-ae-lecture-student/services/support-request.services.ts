@@ -21,13 +21,35 @@ import type {
 } from "@/types/support/support-request.response";
 
 export const SupportRequestService = {
-  createSupportRequest: async (
+   createSupportRequest: async (
     payload: CreateSupportRequestPayload
   ): Promise<CreateSupportRequestResponse> => {
+    const formData = new FormData();
+
+    formData.append("courseId", payload.courseId);
+    formData.append("priority", String(payload.priority));
+    formData.append("category", String(payload.category));
+    formData.append("subject", payload.subject);
+    formData.append("description", payload.description);
+
+    if (payload.images && payload.images.length > 0) {
+      payload.images.forEach((file) => {
+        formData.append("images", file, file.name);
+      });
+    }
+
     const res = await courseAxiosInstance.post<CreateSupportRequestResponse>(
       "/SupportRequests",
-      payload
+      formData,
+      {
+        headers: {
+          // QUAN TRỌNG: override default JSON
+          "Content-Type": "multipart/form-data",
+          Accept: "text/plain",
+        },
+      }
     );
+
     return res.data;
   },
 

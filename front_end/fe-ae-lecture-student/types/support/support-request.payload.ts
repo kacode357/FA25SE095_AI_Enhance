@@ -6,6 +6,8 @@ export interface CreateSupportRequestPayload {
   category: SupportRequestCategory;
   subject: string;
   description: string;
+  /** optional: attach files when creating */
+  images?: File[];
 }
 
 export interface GetMySupportRequestsQuery {
