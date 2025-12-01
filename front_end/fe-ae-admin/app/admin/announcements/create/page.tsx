@@ -99,7 +99,7 @@ export default function AdminAnnouncementsPage() {
                 setAudience(Number(value) as AnnouncementAudience)
               }
             >
-              <SelectTrigger className="w-full h-11 rounded-xl border-[var(--border)] bg-white text-sm">
+              <SelectTrigger className="w-full h-9  border-[var(--border)] text-sm">
                 <SelectValue placeholder="Select audience" />
               </SelectTrigger>
               <SelectContent>

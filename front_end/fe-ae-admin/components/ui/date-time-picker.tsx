@@ -189,7 +189,7 @@ type DateTimePickerProps = {
   minDate?: Date;
   minTime?: Date;
   timeIntervals?: number; // phút
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 };
 
 export function DateTimePicker({
