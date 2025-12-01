@@ -98,15 +98,15 @@ export default function EditDialog({
               checked={courseCode.isActive}
               onChange={(e) => setCourseCode({ ...courseCode, isActive: e.target.checked })}
             />
-            <Label htmlFor="isActive">Is Active</Label>
+            <Label htmlFor="isActive" className="text-blue-600">Is Active</Label>
           </div>
         </div>
       )}
       <DialogFooter>
-        <Button className="btn btn-gradient-slow" onClick={handleSave} disabled={loading || !courseCode}>
-          {loading ? "Saving..." : "Save"}
+        <Button className="btn btn-green-slow" onClick={handleSave} disabled={loading || !courseCode}>
+          {loading ? "Saving..." : "Save Changes"}
         </Button>
-        <Button variant="ghost" onClick={onCancel}>
+        <Button variant="ghost" className="cursor-pointer" onClick={onCancel}>
           Cancel
         </Button>
       </DialogFooter>

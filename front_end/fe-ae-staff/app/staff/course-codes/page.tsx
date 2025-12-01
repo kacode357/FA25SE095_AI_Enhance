@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { PencilLine, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -12,13 +12,13 @@ import { useCourseCodes } from "@/hooks/course-code/useCourseCodes";
 import { useDeleteCourseCode } from "@/hooks/course-code/useDeleteCourseCode";
 
 // Create dialog moved to a dedicated page at /staff/course-codes/create
-import DeleteConfirm from "./components/DeleteConfirm";
 import EditDialog from "./components/EditDialog";
 import FilterRow from "./components/FilterRow";
 
 import PaginationBar from "@/components/common/PaginationBar";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { CourseCode } from "@/types/course-codes/course-codes.response";
+import DeleteConfirm from "./components/DeleteConfirm";
 
 export default function CourseCodesPage() {
   const { listData, totalCount, currentPage, pageSize, loading, fetchCourseCodes } = useCourseCodes();
@@ -95,7 +95,7 @@ export default function CourseCodesPage() {
             Create, manage, and track your course codes.
           </p>
           <Link href="/staff/course-codes/create">
-            <Button className="h-9 bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white flex items-center gap-1">
+            <Button className="h-9 bg-emerald-600 btn btn-green-slow hover:bg-emerald-700 text-white flex items-center gap-1">
               <Plus className="size-4" />
               Create Course Code
             </Button>
@@ -174,9 +174,9 @@ export default function CourseCodesPage() {
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
-                              className="h-8 px-2 text-emerald-600 hover:bg-emerald-50"
+                              className="h-8 px-2 text-emerald-600 cursor-pointer hover:bg-emerald-50"
                             >
-                              <Pencil className="size-4" />
+                              <PencilLine className="size-4 text-blue-600" />
                             </Button>
                           </DialogTrigger>
                           {openEditId === c.id && (
@@ -195,7 +195,7 @@ export default function CourseCodesPage() {
                         {/* Delete */}
                         <Button
                           variant="ghost"
-                          className="h-8 px-2 text-red-600 hover:bg-red-50"
+                          className="h-8 px-2 text-red-600 cursor-pointer hover:bg-red-50"
                           onClick={() => setDeleteId(c.id)}
                         >
                           <Trash2 className="size-4" />
@@ -244,6 +244,37 @@ export default function CourseCodesPage() {
         onOpenChange={(o) => !o && setDeleteId(null)}
         loading={deleting}
         onConfirm={handleDelete}
+        title="Confirm Delete"
+        details={
+          (() => {
+            const sel = courseCodes.find((x) => x.id === deleteId);
+            if (!sel) return null;
+            return (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 w-24">Code:</span>
+                  <span className="font-medium text-slate-800">{sel.code}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 w-24">Title:</span>
+                  <span className="text-slate-800 truncate">{sel.title}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 w-24">Department:</span>
+                  <span className="text-slate-800">{sel.department}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 w-24">Created:</span>
+                  <span className="text-slate-800">{new Date(sel.createdAt).toLocaleDateString("en-GB")}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 w-24">Status:</span>
+                  <span className={sel.isActive ? "text-emerald-600 font-semibold" : "text-slate-500"}>{sel.isActive ? "Active" : "Inactive"}</span>
+                </div>
+              </div>
+            );
+          })()
+        }
       />
     </div>
   );

@@ -1,6 +1,7 @@
 // contexts/AuthContext.tsx
 "use client";
 
+import { UserService } from "@/services/user.services";
 import type { UserProfile } from "@/types/user/user.response";
 import { clearAuthTokens } from "@/utils/auth/access-token";
 import { clearEncodedUser, loadDecodedUser } from "@/utils/secure-user";
@@ -44,6 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const cached = await loadDecodedUser();
       setUser(cached);
       setLoaded(true);
+      // nếu có cached user thì cố gắng fetch profile mới từ API
+      if (cached) {
+        try {
+          await refreshProfile();
+        } catch {
+          // refreshProfile tự lo cleanup khi lỗi
+        }
+      }
     })();
   }, []);
 
@@ -86,8 +95,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [allow, loaded, user, pathname]);
 
   const refreshProfile = useCallback(async () => {
-    const cached = await loadDecodedUser();
-    setUser(cached);
+    try {
+      const resp = await UserService.getProfile();
+      if (resp && resp.data) {
+        setUser(resp.data);
+      } else {
+        setUser(null);
+      }
+    } catch (err) {
+      // token expired / unauthorized -> clear and force login
+      setUser(null);
+      clearAuthTokens();
+      clearEncodedUser();
+      throw err;
+    }
   }, []);
 
   const logout = useCallback(() => {

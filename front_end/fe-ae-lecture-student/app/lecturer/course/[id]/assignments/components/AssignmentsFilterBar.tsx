@@ -67,7 +67,7 @@ export default function AssignmentsFilterBar({ value, loading, onChange, onReset
         </div>
         <div className="flex flex-col flex-1 items-end">
           <div className="relative max-w-[360px] w-full">
-            <Search className="absolute right-3 z-20 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+            <Search className="absolute right-3 z-10 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
             <Input
               placeholder="Search assignments (title or description)..."
               value={search}

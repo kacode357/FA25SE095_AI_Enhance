@@ -19,22 +19,27 @@ export default function ForgotPasswordPage() {
     const email = String(form.get("email") ?? "").trim();
 
     const res = await forgotPassword({ email });
-    if (res?.success) {
-      setSent(true);
-    }
+
+    const isSuccess = res
+      ? ("success" in (res as any)
+        ? Boolean((res as any).success)
+        : typeof (res as any).status === "number" && (res as any).status >= 200 && (res as any).status < 300)
+      : false;
+
+    if (isSuccess) setSent(true);
   };
 
   return (
     <AuthShell
       title="Reset your password!"
       subtitle={<span>Enter your email to receive a reset link.</span>}
-      footer={<Link href="/login" className="underline">Back to sign in</Link>}
+      footer={<Link href="/login" className="underline">&larr; &nbsp;Back to sign in</Link>}
     >
       {sent ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-sm text-slate-700"
+          className="text-sm text-center bg-green-50 p-2 rounded-2xl text-green-700"
         >
           We’ve sent a reset link to your email if an account exists. Please
           check your inbox.
@@ -48,7 +53,7 @@ export default function ForgotPasswordPage() {
             placeholder="you@example.com"
             required
           />
-          <Button type="submit" className="w-full" loading={loading}>
+          <Button type="submit" className="w-full btn btn-gradient-slow" loading={loading}>
             Send reset link
           </Button>
         </form>

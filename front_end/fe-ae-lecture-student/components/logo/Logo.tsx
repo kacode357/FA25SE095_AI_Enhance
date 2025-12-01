@@ -15,8 +15,8 @@ type LogoProps = {
 export default function Logo({
   href = "/",
   imgSrc = "/aids-logo.png",
-  imgAlt = "AI Enhance",
-  title = "AI Enhance",
+  imgAlt = "AIDS-LMS",
+  title = "AIDS-LMS",
   subtitle = "Student Portal",
   className = "",
 }: LogoProps) {

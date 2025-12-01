@@ -127,7 +127,7 @@ export default function AssignmentDetailPage() {
       <div className="p-6 text-center" style={{ color: "var(--color-muted)" }}>
         Assignment not found.
         <div className="mt-4">
-          <Button onClick={() => router.push(`/staff/courses/${id}/total-assignments`)} className="rounded-xl btn btn-gradient-slow">
+          <Button onClick={() => router.push(`/staff/courses/${id}/total-assignments`)} className="rounded-xl btn btn-green-slow">
             ← Back
           </Button>
         </div>
@@ -147,21 +147,22 @@ export default function AssignmentDetailPage() {
             {assignment.courseName}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-5">
+          <Badge className={statusClass(assignment.status, assignment.isOverdue)}>
+            {assignment.statusDisplay || (assignment.isOverdue ? "Overdue" : "Status")}
+          </Badge>
+
           <Link href={`/staff/courses/${id}/total-assignments`}>
-            <Button className="rounded-xl btn btn-gradient-slow" variant="outline">
+            <Button className="rounded-xl btn btn-green-slow" variant="outline">
               <ArrowLeft className="mr-2 size-4" />
               Back
             </Button>
           </Link>
-          <Badge className={statusClass(assignment.status, assignment.isOverdue)}>
-            {assignment.statusDisplay || (assignment.isOverdue ? "Overdue" : "Status")}
-          </Badge>
         </div>
       </div>
 
       {/* Overview */}
-      <Card className="border card rounded-2xl">
+      <Card className="border card gap-0 rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Overview
@@ -178,7 +179,7 @@ export default function AssignmentDetailPage() {
       </Card>
 
       {/* Assigned groups + Members */}
-      <Card className="border card rounded-2xl">
+      <Card className="border card gap-0 rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Assigned Groups ({assignment.assignedGroups?.length ?? 0})
@@ -240,7 +241,7 @@ export default function AssignmentDetailPage() {
 
                       <div className="flex items-center gap-2">
                         <Button
-                          className="rounded-xl"
+                          className="rounded-xl btn btn-green-slow"
                           variant="outline"
                           onClick={() => toggleViewMembers(g.id)}
                           disabled={isLoadingMembers}
@@ -320,7 +321,7 @@ export default function AssignmentDetailPage() {
 
       {/* Description — bung full, HTML đã clean */}
       {descriptionHtml && (
-        <Card className="border card rounded-2xl">
+        <Card className="border card gap-0 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
               Description
@@ -350,7 +351,7 @@ function InfoRow({
   return (
     <div
       className="flex items-center justify-between gap-3 rounded-xl border p-3"
-      style={{ borderColor: "var(--color-border)" }}
+      style={{ borderColor: "#e2e8f0" }}
     >
       <div className="flex items-center gap-2" style={{ color: "var(--color-muted)" }}>
         <div

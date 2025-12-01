@@ -80,7 +80,7 @@ export default function ChatMessagesPage() {
 
   // Thay thế `usePlaceholderChatMessages` bằng hook thật của bạn
   const { data: messages, loading } = usePlaceholderChatMessages(courseId);
-  
+
   // (Optional) Lấy thông tin khóa học để hiển thị tên (nếu cần)
   // const { data: courseData } = useCourseInfo(courseId); 
 
@@ -90,7 +90,7 @@ export default function ChatMessagesPage() {
     return (
       <div className="p-6 flex items-center justify-center text-slate-500 gap-2">
         <Loader2 className="size-4 animate-spin" />
-        Đang tải tin nhắn...
+        Loading messages...
       </div>
     );
   }
@@ -105,19 +105,20 @@ export default function ChatMessagesPage() {
             Chat Messages
           </h1>
           <p className="text-sm" style={{ color: "var(--color-muted)" }}>
-            Lịch sử trao đổi trong khóa học
+            History of exchange in the course
             {/* {courseData?.courseCode} - {courseData?.courseCodeTitle} */}
           </p>
         </div>
-        <Button  className="rounded-xl">
-          <Link href={`/staff/courses/${courseId}`}>
+        <Link href={`/staff/courses/${courseId}`}>
+          <Button className="rounded-xl btn btn-green-slow flex items-center">
             <ArrowLeft className="mr-1 size-4" /> Back to Dashboard
-          </Link>
-        </Button>
+          </Button>
+        </Link>
+
       </div>
 
       {/* Chat List */}
-      <Card className="border card">
+      <Card className="border card gap-0">
         <CardHeader className="pb-4">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Message History ({messages.length})

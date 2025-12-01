@@ -1,9 +1,35 @@
 import { UserStatus } from "@/types/approve-lecturer/approve-lecturer.response";
 
+function normalizeStatus(status: UserStatus | number | string): number {
+  if (typeof status === "number") return status;
+  const str = String(status ?? "").trim();
+  // if it's numeric string, parse it
+  const parsed = Number(str);
+  if (!Number.isNaN(parsed)) return parsed;
+
+  // map common string values (case-insensitive)
+  switch (str.toLowerCase()) {
+    case "active":
+      return UserStatus.Active;
+    case "inactive":
+      return UserStatus.Inactive;
+    case "suspended":
+      return UserStatus.Suspended;
+    case "deleted":
+      return UserStatus.Deleted;
+    case "pendingapproval":
+    case "pending_approval":
+    case "pending-approval":
+      return UserStatus.PendingApproval;
+    case "pending":
+    default:
+      return UserStatus.Pending;
+  }
+}
+
 /** Return tailwind classes for status badges */
 export function getUserStatusClass(status: UserStatus | number | string) {
-  // accept numeric enum or string
-  const s = typeof status === "number" ? status : Number(status as any);
+  const s = normalizeStatus(status);
   switch (s) {
     case UserStatus.Active:
       return "bg-emerald-50 text-emerald-700";
@@ -23,7 +49,7 @@ export function getUserStatusClass(status: UserStatus | number | string) {
 
 /** Return a human label for a status */
 export function getUserStatusLabel(status: UserStatus | number | string) {
-  const s = typeof status === "number" ? status : Number(status as any);
+  const s = normalizeStatus(status);
   switch (s) {
     case UserStatus.Active:
       return "Active";
@@ -41,4 +67,8 @@ export function getUserStatusLabel(status: UserStatus | number | string) {
   }
 }
 
-export default { getUserStatusClass, getUserStatusLabel };
+export function isUserStatusActive(status: UserStatus | number | string) {
+  return normalizeStatus(status) === UserStatus.Active;
+}
+
+export default { getUserStatusClass, getUserStatusLabel, isUserStatusActive };

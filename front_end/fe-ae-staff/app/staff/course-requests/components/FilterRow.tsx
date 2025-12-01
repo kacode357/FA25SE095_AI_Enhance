@@ -115,12 +115,12 @@ export default function FilterRow({
       {/* Actions */}
       <td className="text-center py-2 px-2">
         <div className="flex justify-center items-center gap-3">
-          <Button size="sm" className="h-8 btn btn-gradient-slow px-3 text-xs" onClick={onApply}>
+          <Button size="sm" className="h-8 btn btn-green-slow px-3 text-xs" onClick={onApply}>
             Apply
           </Button>
           <Button
             size="sm"
-            className="h-8 px-3 text-xs"
+            className="h-8 px-3 cursor-pointer text-xs"
             variant="ghost"
             onClick={onClear}
           >

@@ -219,14 +219,14 @@ export default function AssignmentsPanel({
   if (mode === "create") {
     return (
       <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
-        <div className="flex items-center justify-between px-4 py-0 mr-3.5 border-b border-slate-200 bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between py-0 border-b border-slate-200 bg-white sticky top-0 z-10">
           <h2 className="text-sm text-[#000D83] font-semibold">Create Assignment</h2>
-          <Button className="text-[#000D83]" variant="outline" onClick={backToList}>
+          <Button className="text-[#000D83] -mr-3.5" variant="outline" onClick={backToList}>
             <ArrowLeft className="size-4" />
-            Back
+            Back to Assignments
           </Button>
         </div>
-        <div className="flex-1 overflow-auto py-4 mr-3.5 bg-slate-50">
+        <div className="flex-1 overflow-auto py-4 bg-slate-50">
           <div className="max-w-full mx-auto">
             <NewAssignmentForm courseId={courseId} onCreated={backToList} onCancel={backToList} />
           </div>
@@ -250,7 +250,7 @@ export default function AssignmentsPanel({
   if (mode === "edit" && editId) {
     return (
       <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
-        <div className="flex items-center justify-between px-4 py-0 mr-3.5 border-b border-slate-200 bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between py-0 border-b border-slate-200 bg-white sticky top-0 z-10">
           <h2 className="text-sm text-[#000D83] font-semibold">Edit Assignment</h2>
           <Button className="text-[#000D83]" variant="outline" onClick={backToList}>
             <ArrowLeft className="size-4" />
@@ -270,7 +270,7 @@ export default function AssignmentsPanel({
     <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
       <div className="flex-1 overflow-auto border border-slate-200 rounded-sm space-y-0 pb-0">
         {/* Top: Full-width filter bar styled like Courses FilterBar and sticky */}
-        <div className="sticky top-0 z-50">
+        <div className="sticky top-0 z-10">
           <Card className="p-0 rounded-t-sm gap-0 rounded-b-none mx-0 border-none border-b bg-slate-50 border-slate-200 shadow-sm min-h-[64px]">
             <AssignmentsFilterBar
               value={filter}

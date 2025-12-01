@@ -45,7 +45,7 @@ export default function GroupMembersPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/staff/courses/${id}/total-groups`}>
-            <Button className="rounded-xl btn btn-gradient-slow" variant="outline">
+            <Button className="rounded-xl btn btn-green-slow" variant="outline">
               <ArrowLeft className="mr-2 size-4" />
               Back
             </Button>
@@ -54,7 +54,7 @@ export default function GroupMembersPage() {
       </div>
 
       {/* Summary */}
-      <Card className="border card rounded-2xl">
+      <Card className="border card gap-0 rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Total Members
@@ -80,7 +80,7 @@ export default function GroupMembersPage() {
       </Card>
 
       {/* List members */}
-      <Card className="border card rounded-2xl">
+      <Card className="border card gap-0 rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Member List

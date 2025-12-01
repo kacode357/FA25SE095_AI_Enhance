@@ -1,11 +1,11 @@
 // app/lecturer/profile/change-password/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import Button from "@/components/ui/button";
 import { useChangePassword } from "@/hooks/auth/useChangePassword";
 import type { ChangePasswordPayload } from "@/types/auth/auth.payload";
-import Button from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
+import { useMemo, useState } from "react";
 
 type FormState = {
   currentPassword: string;
@@ -71,7 +71,13 @@ export default function LecturerChangePasswordPage() {
     };
 
     const res = await changePassword(payload);
-    if (res?.success) {
+    const isSuccess = res
+      ? ("success" in (res as any)
+          ? Boolean((res as any).success)
+          : typeof (res as any).status === "number" && (res as any).status >= 200 && (res as any).status < 300)
+      : false;
+
+    if (isSuccess) {
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     }
   };
@@ -96,11 +102,11 @@ export default function LecturerChangePasswordPage() {
               />
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
+                className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
                 onClick={() => setShow((s) => ({ ...s, current: !s.current }))}
                 aria-label={show.current ? "Hide password" : "Show password"}
               >
-                {show.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {show.current ? <Eye className="w-4 h-4" /> : < EyeOff className="w-4 h-4" />}
               </button>
             </div>
           </div>
@@ -119,11 +125,11 @@ export default function LecturerChangePasswordPage() {
               />
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
+                className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
                 onClick={() => setShow((s) => ({ ...s, next: !s.next }))}
                 aria-label={show.next ? "Hide password" : "Show password"}
               >
-                {show.next ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {show.next ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-1">{pwdHint}</p>
@@ -148,11 +154,11 @@ export default function LecturerChangePasswordPage() {
               />
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
+                className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-nav-active"
                 onClick={() => setShow((s) => ({ ...s, confirm: !s.confirm }))}
                 aria-label={show.confirm ? "Hide password" : "Show password"}
               >
-                {show.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {show.confirm ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
             </div>
             {!confirmMatch && form.confirmPassword.length > 0 && (
@@ -163,7 +169,7 @@ export default function LecturerChangePasswordPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex items-center justify-end gap-3 pt-2">
           {/* Update Password */}
           <Button
             loading={loading}
@@ -172,12 +178,12 @@ export default function LecturerChangePasswordPage() {
             disabled={isDisabled}
             type="submit"
           >
-            {loading ? "Updating..." : "Update Password"}
+            {loading ? "Changing..." : "Change Password"}
           </Button>
 
         
           <Button
-            className={`bg-white border border-brand text-nav hover:text-nav-active ${
+            className={`bg-white cursor-pointer border border-brand text-nav hover:text-nav-active ${
               loading ? "opacity-70 cursor-not-allowed" : ""
             }`}
             disabled={loading}

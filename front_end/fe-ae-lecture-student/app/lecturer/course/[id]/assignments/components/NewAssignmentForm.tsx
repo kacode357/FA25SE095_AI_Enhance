@@ -249,23 +249,9 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
           100
         );
 
-        // If this is a group assignment and the user already selected groups, auto-assign them now
+        // If this is a group assignment: do NOT auto-assign or navigate.
+        // Keep the created assignment ID so instructor can pick groups and click "Assign Group".
         if (form.isGroupAssignment) {
-          if ((form.groupIds?.length ?? 0) > 0) {
-            try {
-              await assignGroups({ assignmentId: res.assignmentId, groupIds: form.groupIds }, true);
-              toast.success("The assignment has been created and assigned to the group successfully.");
-              // after successful create+assign, navigate to upload attachments page
-              router.push(`/lecturer/course/${courseId}/assignments/${res.assignmentId}/upload`);
-              return;
-            } catch {
-              // If assign fails, surface an error and keep the UI so user can retry manually
-              toast.error("Failed to assign groups.");
-              return;
-            }
-          }
-          // No groups selected yet: navigate to upload attachments page so instructor can upload files
-          router.push(`/lecturer/course/${courseId}/assignments/${res.assignmentId}/upload`);
           return;
         }
 
@@ -355,7 +341,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                     <CircleAlert className="size-3.5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-lg text-center bg-white text-slate-500">
+                <TooltipContent side="top" className="max-w-lg text-center bg-black text-white">
                   The weight of the assignment in the total grade of the course (%).
                 </TooltipContent>
               </Tooltip>
@@ -438,7 +424,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
               <div className="flex gap-2 items-center">
                 <Checkbox
                   id="isGroup"
-                  className="text-violet-700"
+                  className="text-violet-700 cursor-pointer"
                   checked={form.isGroupAssignment}
                   onCheckedChange={(v) =>
                     setForm((p) => ({
@@ -540,20 +526,25 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                       return toast.error("No assignment available to assign groups.");
                     }
                     if ((form.groupIds?.length ?? 0) === 0) {
-                      // No groups selected: simply return to assignments without extra toasts
-                      onCreated?.();
-                      return;
+                      // Require at least one group to assign
+                      return toast.error("Please select at least one group to assign.");
                     }
                     try {
                       // suppress assignGroups hook toast so we only show the single FE toast
-                      await assignGroups(
+                      const resp = await assignGroups(
                         {
                           assignmentId: createdAssignmentId,
                           groupIds: form.groupIds,
                         },
                         true
                       );
-                      onCreated?.();
+                      if (resp?.success) {
+                        toast.success("Groups assigned successfully.");
+                        // after successful assign, navigate to upload attachments page
+                        router.push(`/lecturer/course/${courseId}/assignments/${createdAssignmentId}/upload`);
+                        return;
+                      }
+                      toast.error(resp?.message || "Failed to assign groups.");
                     } catch {
                       toast.error("Failed to assign groups.");
                     }

@@ -120,7 +120,7 @@ export default function CourseApprovalsPage() {
                       <TableCell className="text-center">
                         <Button
                           size="sm"
-                          className="h-8 btn btn-gradient-slow px-3 text-xs"
+                          className="h-8 btn btn-green-slow px-3 text-xs"
                           onClick={() => router.push(`/staff/course-approvals/${c.id}`)}
                         >
                           View Detail

@@ -1,10 +1,10 @@
 // app/student/profile/change-password/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
-import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useChangePassword } from "@/hooks/auth/useChangePassword";
 import type { ChangePasswordPayload } from "@/types/auth/auth.payload";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
 
 type FormState = {
   currentPassword: string;
@@ -31,12 +31,12 @@ export default function ChangePasswordPage() {
 
   const onChange =
     (key: keyof FormState) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value;
-      setForm((s) => ({ ...s, [key]: val }));
-      if (key === "newPassword") setErrors((e) => ({ ...e, new: undefined }));
-      if (key === "confirmPassword") setErrors((e) => ({ ...e, confirm: undefined }));
-    };
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setForm((s) => ({ ...s, [key]: val }));
+        if (key === "newPassword") setErrors((e) => ({ ...e, new: undefined }));
+        if (key === "confirmPassword") setErrors((e) => ({ ...e, confirm: undefined }));
+      };
 
   const pwdHint = useMemo(
     () => "At least 8 characters, include numbers & letters.",
@@ -76,7 +76,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="card p-6" style={{ borderColor: "var(--color-border)" }}>
+    <div className="card p-6" style={{ borderColor: "#e2e8f0" }}>
       <form onSubmit={onSubmit} className="space-y-4">
         <h2 className="text-lg font-semibold text-slate-900 mb-1">Change Password</h2>
 
@@ -99,7 +99,7 @@ export default function ChangePasswordPage() {
                 onClick={() => setShow((s) => ({ ...s, current: !s.current }))}
                 aria-label={show.current ? "Hide password" : "Show password"}
               >
-                {show.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {show.current ? <Eye className="w-4 h-4" /> : < EyeOff className="w-4 h-4" />}
               </button>
             </div>
           </div>
@@ -122,7 +122,7 @@ export default function ChangePasswordPage() {
                 onClick={() => setShow((s) => ({ ...s, next: !s.next }))}
                 aria-label={show.next ? "Hide password" : "Show password"}
               >
-                {show.next ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {show.next ? <Eye className="w-4 h-4" /> : < EyeOff className="w-4 h-4" />}
               </button>
             </div>
             <p className="text-xs text-slate-500 mt-1">{pwdHint}</p>
@@ -151,7 +151,7 @@ export default function ChangePasswordPage() {
                 onClick={() => setShow((s) => ({ ...s, confirm: !s.confirm }))}
                 aria-label={show.confirm ? "Hide password" : "Show password"}
               >
-                {show.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {show.confirm ? <Eye className="w-4 h-4" /> : < EyeOff className="w-4 h-4" />}
               </button>
             </div>
             {!confirmMatch && form.confirmPassword.length > 0 && (
@@ -162,8 +162,8 @@ export default function ChangePasswordPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pt-2">
-          <button type="submit" className="btn btn-primary" disabled={isDisabled}>
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button type="submit" className="btn btn-green-slow" disabled={isDisabled}>
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" /> Updating...
@@ -174,7 +174,7 @@ export default function ChangePasswordPage() {
           </button>
           <button
             type="button"
-            className="btn btn-ghost"
+            className="btn btn-ghost cursor-pointer hover:bg-slate-100"
             disabled={loading}
             onClick={() =>
               setForm({ currentPassword: "", newPassword: "", confirmPassword: "" })

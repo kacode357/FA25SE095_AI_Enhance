@@ -86,7 +86,7 @@ export default function TermsPage() {
             Manage academic terms and their active state.
           </p>
           <Link href="/staff/terms/create">
-            <Button className="h-9 bg-emerald-600 btn btn-gradient-slow hover:bg-emerald-700 text-white flex items-center gap-1">
+            <Button className="h-9 bg-emerald-600 btn btn-green-slow hover:bg-emerald-700 text-white flex items-center gap-1">
               <Plus className="size-4" />
               Create Term
             </Button>
@@ -97,8 +97,8 @@ export default function TermsPage() {
       {/* Table */}
       <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <CardTitle className="text-base text-slate-800">
+          <div className="flex">
+            <CardTitle className="text-lg text-slate-800">
               Term List <span className="text-slate-500">({totalCount})</span>
             </CardTitle>
             <div className="ml-auto">

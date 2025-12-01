@@ -152,7 +152,7 @@ export default function CourseRequestsPage() {
                       <TableCell className="text-center">
                         <Button
                           size="sm"
-                          className="text-xs btn btn-gradient-slow"
+                          className="text-xs btn btn-green-slow"
                           onClick={() => router.push(`/staff/course-requests/${r.id}`)}
                         >
                           View Detail

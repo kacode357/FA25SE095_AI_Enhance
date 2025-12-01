@@ -6,7 +6,6 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateTerm } from "@/hooks/term/useCreateTerm";
-import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -53,14 +52,13 @@ export default function CreateTermPage() {
                         <p className="text-sm text-gray-500">Define an academic term and set its dates</p>
                     </div>
                     <div className="flex items-center bg-violet-100 rounded-md gap-2">
-                        <Button variant="ghost" className="text-violet-700" onClick={() => router.push('/staff/terms')}><ArrowLeft className="size-4 mr-2" />Back to terms</Button>
                     </div>
                 </div>
 
                 <Card className="overflow-hidden shadow-lg border-slate-200 rounded-xl">
                     <CardContent className="p-6 bg-white">
-                        <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-                            <div className="grid grid-cols-1 gap-4">
+                        <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                            <div className="grid grid-cols-1 gap-8">
                                 <div>
                                     <Label className="mb-1">Name</Label>
                                     <Input
@@ -89,6 +87,7 @@ export default function CreateTermPage() {
                                         value={form.startDate}
                                         onChange={(v) => handleChange('startDate', v)}
                                         placeholder="Select start date"
+                                        className="w-72"
                                     />
                                 </div>
                                 <div>
@@ -97,6 +96,7 @@ export default function CreateTermPage() {
                                         value={form.endDate}
                                         onChange={(v) => handleChange('endDate', v)}
                                         placeholder="Select end date"
+                                        className="w-72"
                                     />
                                 </div>
                             </div>
@@ -110,12 +110,12 @@ export default function CreateTermPage() {
                                     checked={form.isActive}
                                     onChange={(e) => handleChange('isActive', e.target.checked)}
                                 />
-                                <Label htmlFor="isActive">Is Active</Label>
+                                <Label htmlFor="isActive" className="text-blue-600">Is Active</Label>
                             </div>
 
                             <div className="flex items-center justify-end gap-3 pt-2">
-                                <Button variant="ghost" onClick={() => router.push('/staff/terms')}>Cancel</Button>
-                                <Button className="btn btn-gradient-slow" type="submit" disabled={loading}>
+                                <Button variant="ghost" className="cursor-pointer" onClick={() => router.push('/staff/terms')}>Cancel</Button>
+                                <Button className="btn btn-green-slow" type="submit" disabled={loading}>
                                     {loading ? 'Creating...' : 'Create Term'}
                                 </Button>
                             </div>

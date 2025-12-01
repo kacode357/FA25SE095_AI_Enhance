@@ -17,13 +17,24 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
     const isPassword = type === "password";
     const [visible, setVisible] = useState(false);
     const effectiveType = isPassword && visible ? "text" : type;
-    // Ensure the input is controlled consistently to avoid React's
-    // "changing an uncontrolled input to be controlled" warning. We
-    // coerce `value`/`defaultValue` into a single string value and pass
-    // that as the `value` prop. This keeps the input controlled for the
-    // component's lifetime.
-    const { value, defaultValue, ...rest } = props as any;
-    const inputValue = value ?? defaultValue ?? "";
+    // Support both controlled and uncontrolled usage safely:
+    // - If `value` is provided and `onChange` is provided, treat input as controlled.
+    // - If `value` is provided but `onChange` is NOT provided, fall back to uncontrolled
+    //   by using `defaultValue` so React doesn't warn about a read-only field.
+    // - Otherwise, pass through `defaultValue` or leave uncontrolled.
+    const { value, defaultValue, onChange, ...rest } = props as any;
+    const inputProps: any = { ...rest };
+
+    if (value !== undefined && onChange !== undefined) {
+      // Controlled input
+      inputProps.value = value;
+      inputProps.onChange = onChange;
+    } else if (value !== undefined && onChange === undefined) {
+      // Caller supplied an initial value but no onChange -> treat as uncontrolled
+      inputProps.defaultValue = value;
+    } else if (defaultValue !== undefined) {
+      inputProps.defaultValue = defaultValue;
+    }
 
     return (
       <div className="w-full">
@@ -44,8 +55,7 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
             ref={ref}
             type={effectiveType}
             className={`input ${isPassword ? "pr-12" : ""} ${className}`}
-            {...rest}
-            value={inputValue}
+            {...inputProps}
           />
 
           {isPassword && (
@@ -54,7 +64,7 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
               aria-label={visible ? "Hide password" : "Show password"}
               title={visible ? "Hide password" : "Show password"}
               onClick={() => setVisible((v) => !v)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-purple-600 hover:text-purple-800 hover:bg-purple-50 cursor-pointer"
               tabIndex={0}
             >
               {visible ? (

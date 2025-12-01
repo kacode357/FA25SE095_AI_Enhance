@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateCourseCode } from "@/hooks/course-code/useCreateCourseCode";
-import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -49,7 +48,6 @@ export default function CreateCourseCodePage() {
                         <p className="text-sm text-gray-500">Create, manage and organize course codes</p>
                     </div>
                     <div className="flex items-center bg-violet-100 rounded-md gap-2">
-                        <Button variant="ghost" className="text-violet-700" onClick={() => router.push('/staff/course-codes')}><ArrowLeft className="size-4 mr-2" />Back to Course Codes</Button>
                     </div>
                 </div>
 
@@ -107,12 +105,12 @@ export default function CreateCourseCodePage() {
                                     checked={form.isActive}
                                     onChange={(e) => handleChange('isActive', e.target.checked)}
                                 />
-                                <Label htmlFor="isActive">Is Active</Label>
+                                <Label htmlFor="isActive" className="text-blue-600">Is Active</Label>
                             </div>
 
                             <div className="flex items-center justify-end gap-3 pt-2">
                                 <Button variant="ghost" onClick={() => router.push('/staff/course-codes')}>Cancel</Button>
-                                <Button className="btn btn-gradient-slow" type="submit" disabled={loading}>
+                                <Button className="btn btn-green-slow" type="submit" disabled={loading}>
                                     {loading ? 'Creating...' : 'Create Course Code'}
                                 </Button>
                             </div>

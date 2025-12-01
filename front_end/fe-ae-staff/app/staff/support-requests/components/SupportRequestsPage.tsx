@@ -77,7 +77,7 @@ export default function SupportRequestsPage({
           <Button
             type="button"
             variant="outline"
-            className="text-sm btn btn-gradient-slow border-gray-200"
+            className="text-sm btn btn-green-slow border-gray-200"
             onClick={handleRefreshClick}
           >
             Refresh

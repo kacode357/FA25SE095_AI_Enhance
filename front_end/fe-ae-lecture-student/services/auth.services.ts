@@ -63,8 +63,20 @@ export const AuthService = {
   },
 
   forgotPassword: async (data: ForgotPasswordPayload): Promise<ForgotPasswordResponse> => {
-    const response = await userAxiosInstance.post<ForgotPasswordResponse>("/Auth/forgot-password", data);
-    return response.data;
+    const response = await userAxiosInstance.post<any>("/Auth/forgot-password", data);
+
+    const respData = response.data;
+
+    if (respData && typeof respData === "object" && "status" in respData && "message" in respData) {
+      const statusNum = Number(respData.status ?? 0);
+      return {
+        success: statusNum >= 200 && statusNum < 300,
+        message: String(respData.message ?? ""),
+      } as ForgotPasswordResponse;
+    }
+
+    // Fallback: assume response.data already matches ForgotPasswordResponse
+      return response.data;
   },
 
   resetPassword: async (data: ResetPasswordPayload): Promise<ResetPasswordResponse> => {

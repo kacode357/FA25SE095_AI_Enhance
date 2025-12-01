@@ -318,10 +318,10 @@ export function DateTimePicker({
                     <PopoverTrigger asChild>
                         <Button
                             variant="ghost"
-                            className="h-10 w-full justify-between text-xs font-normal bg-white text-slate-700 text-left"
+                            className="h-10 w-full justify-between text-xs cursor-pointer font-normal text-slate-700 text-left"
                         >
                             {date ? date.toLocaleDateString() : "Select date"}
-                            <ChevronDownIcon className="h-4 w-4 text-slate-400 bg-white" />
+                            <ChevronDownIcon className="h-4 w-4 text-slate-400" />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent
@@ -334,7 +334,7 @@ export function DateTimePicker({
                             captionLayout="dropdown"
                             toYear={new Date().getFullYear() + 10}
                             onSelect={handleSelectDate}
-                            className="rounded-md border border-slate-100 text-sm"
+                            className="rounded-md border cursor-pointer w-full border-slate-100 text-sm"
                             disabled={(d) => {
                                 if (!minDate) return false;
                                 const md = new Date(
@@ -353,13 +353,13 @@ export function DateTimePicker({
             {/* Time - fixed width so both controls sit nicely */}
             <div className="flex-none">
                 {/* keep Input if we want user to see format placeholder */}
-                <Input type="text" readOnly value={timeStr} placeholder={placeholder} className="hidden" />
+                <Input type="text" readOnly value={timeStr} placeholder={placeholder} className="hidden cursor-pointer" />
                 <TimeSelector
                     timeStr={timeStr}
                     onChange={handleTimeSelectorChange}
                     timeIntervals={timeIntervals}
                     placeholder="Select time"
-                    buttonClassName="h-10 w-28 justify-between bg-white px-2 text-xs font-normal text-slate-700"
+                    buttonClassName="h-10 w-full justify-between cursor-pointer bg-white px-2 text-xs font-normal text-slate-700"
                     selectedDate={date}
                     minTime={minTime}
                 />

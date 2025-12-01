@@ -78,8 +78,87 @@ export default function ManagerSidebar({
         )}
 
         <ul className="space-y-2">
-          {mainNav.map(({ href, label, icon: Icon, description, children }) => {
-            const active = pathname?.startsWith(href);
+          {mainNav.map((item) => {
+            const { href, label, icon: Icon, description, children } = item as any;
+
+            const isItemActive = (it: any): boolean => {
+              if (!it) return false;
+              if (it.href && pathname?.startsWith(it.href)) return true;
+              if (it.children && it.children.length > 0) return it.children.some((c: any) => isItemActive(c));
+              return false;
+            };
+
+            const active = isItemActive(item);
+
+            const renderChildren = (items: any[], depth = 1) => {
+              if (!items || items.length === 0) return null;
+              return (
+                <ul
+                  className={clsx(
+                    "mt-2 space-y-1 border-l border-blue-100",
+                    depth === 1 ? "pl-2 ml-4 border-l border-blue-200" : "pl-2 ml-4"
+                  )}
+                >
+                  {items.map((c) => {
+                    const isThird = depth >= 2; // depth: 1 => second-level, 2 => third-level
+                    let childActive = false;
+                    if (isThird) {
+                      // exact match for third-level items (avoid sibling both active)
+                      childActive = pathname === c.href || (c.children && c.children.length > 0 && pathname?.startsWith(c.href));
+                    } else {
+                      if (c.children && c.children.length > 0) {
+                        childActive = isItemActive(c);
+                      } else {
+                        childActive = pathname === c.href;
+                      }
+                    }
+
+                    const linkBase = isThird
+                      ? "flex items-center gap-2 text-xs rounded-md px-3 py-1.5 transition-all duration-200 relative"
+                      : "flex items-center gap-3 text-sm rounded-md px-3 py-2 transition-all duration-200 relative";
+
+                    const linkActiveClass = isThird
+                      ? "bg-blue-50 text-blue-700 font-medium"
+                      : "bg-gradient-to-r from-blue-50 to-white text-blue-700 font-semibold shadow-sm border-l-4 border-blue-500";
+
+                    const linkInactiveClass = isThird
+                      ? "text-gray-600 hover:bg-gray-50 hover:text-blue-600"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-blue-600";
+
+                    return (
+                      <li key={c.href}>
+                        <Link
+                          href={c.href}
+                          className={clsx(linkBase, childActive ? linkActiveClass : linkInactiveClass)}
+                        >
+                          {/* marker: vertical bar for level 1 children, small dot for level 2 (third-level) */}
+                          {isThird ? (
+                            <span
+                              className={clsx(
+                                "w-2 h-2 rounded-full mr-2 mt-1",
+                                childActive ? "bg-blue-600" : "bg-gray-300"
+                              )}
+                            />
+                          ) : (
+                            <span
+                              className={clsx(
+                                "w-1 h-6 rounded mr-2 self-start mt-1",
+                                childActive ? "bg-blue-600" : "bg-gray-300"
+                              )}
+                            />
+                          )}
+
+                          <span className={clsx("truncate", isThird ? "pl-1" : undefined)}>{c.label}</span>
+                        </Link>
+
+                        {/* Render nested children when this child is active */}
+                        {c.children && c.children.length > 0 && childActive && renderChildren(c.children, depth + 1)}
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            };
 
             return (
               <li key={href}>
@@ -87,12 +166,12 @@ export default function ManagerSidebar({
                   href={href}
                   title={collapsed ? label : undefined}
                   className={clsx(
-                      "group flex items-center rounded-lg px-3 py-3 text-sm transition-all duration-200 relative",
-                      collapsed ? "justify-center" : "gap-3",
-                      active
-                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25"
-                          : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600"
-                    )}
+                    "group flex items-center rounded-lg px-3 py-3 text-sm transition-all duration-200 relative",
+                    collapsed ? "justify-center" : "gap-3",
+                    active
+                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25"
+                      : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600"
+                  )}
                 >
                   <Icon
                     className={clsx(
@@ -103,24 +182,24 @@ export default function ManagerSidebar({
 
                   {!collapsed && (
                     <div className="flex-1 flex flex-col min-w-0">
-                        <span
+                      <span
+                        className={clsx(
+                          "font-medium text-sm truncate",
+                          active ? "text-white" : "group-hover:text-blue-600"
+                        )}
+                      >
+                        {label}
+                      </span>
+                      {description && (
+                        <p
                           className={clsx(
-                            "font-medium text-sm truncate",
-                            active ? "text-white" : "group-hover:text-blue-600"
+                            "text-xs mt-0.5 truncate",
+                            active ? "text-white/80" : "text-gray-500 group-hover:text-blue-500"
                           )}
                         >
-                          {label}
-                        </span>
-                        {description && (
-                          <p
-                            className={clsx(
-                              "text-xs mt-0.5 truncate",
-                              active ? "text-white/80" : "text-gray-500 group-hover:text-blue-500"
-                            )}
-                          >
-                            {description}
-                          </p>
-                        )}
+                          {description}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -130,34 +209,7 @@ export default function ManagerSidebar({
                 </Link>
 
                 {/* Render submenu only when parent is active (close if parent not selected) */}
-                {!collapsed && children && children.length > 0 && active && (
-                  <ul className="mt-2 pl-2 ml-4 border-l border-blue-200 space-y-1">
-                    {children.map((c) => {
-                      const childActive = pathname === c.href;
-                      return (
-                        <li key={c.href}>
-                          <Link
-                            href={c.href}
-                            className={clsx(
-                              "flex items-center gap-3 text-sm rounded-md px-3 py-2 transition-all duration-200 relative",
-                              childActive
-                                ? "bg-gradient-to-r from-blue-50 to-white text-blue-700 font-semibold shadow-sm border-l-4 border-blue-500"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-blue-600"
-                            )}
-                          >
-                            <span
-                              className={clsx(
-                                "w-1 h-6 rounded mr-2 self-start mt-1",
-                                childActive ? "bg-blue-600" : "bg-gray-300"
-                              )}
-                            />
-                            <span className="truncate">{c.label}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                {!collapsed && children && children.length > 0 && active && renderChildren(children)}
               </li>
             );
           })}

@@ -124,7 +124,7 @@ export default function CoursesPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Button
-                        className="h-8 px-3 btn btn-gradient-slow text-xs"
+                        className="h-8 px-3 btn btn-green-slow text-xs"
                         variant="outline"
                         aria-label={`View details for ${c.name}`}
                         onClick={() => router.push(`/staff/courses/${c.id}`)}

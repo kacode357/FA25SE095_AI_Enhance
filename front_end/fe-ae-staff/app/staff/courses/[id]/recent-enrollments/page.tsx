@@ -14,7 +14,7 @@ export default function RecentEnrollmentsPage() {
     <div className="p-5 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-slate-800">Recent Enrollments</h1>
-        <Button className="btn btn-gradient-slow" onClick={() => router.push(`/staff/courses/${id}`)}>← Back</Button>
+        <Button className="btn btn-green-slow" onClick={() => router.push(`/staff/courses/${id}`)}>← Back</Button>
       </div>
 
       <Card className="border border-slate-200">

@@ -745,7 +745,7 @@ export default function SupportRequestChatWindow({
                                                 isSystem
                                                     ? "rounded-full px-4 py-2 text-sm leading-relaxed inline-block whitespace-pre-wrap text-muted-foreground bg-slate-100 shadow-sm max-w-[70%] text-center"
                                                     : `rounded-2xl px-4 py-3 text-sm leading-relaxed inline-block whitespace-pre-wrap break-words ${isMe
-                                                        ? "bg-gradient-to-br from-pink-300 to-purple-500 text-white shadow-md max-w-[70vw] mr-6"
+                                                        ? "bg-gradient-to-br from-green-300 to-green-500 text-white shadow-md max-w-[70vw] mr-6"
                                                         : "bg-white max-w-[70vw] min-w-0 break-words shadow-sm ml-6"
                                                     }`
                                             }
@@ -818,7 +818,7 @@ export default function SupportRequestChatWindow({
                     />
                     <Button
                         size="lg"
-                        className="rounded-md btn btn-gradient-slow"
+                        className="rounded-md btn btn-green-slow"
                         onClick={onSend}
                         disabled={sending || !input.trim()}
                     >

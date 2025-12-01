@@ -171,21 +171,21 @@ export default function ReportDetailsPage() {
 
           {/* Tabs giữ nguyên */}
           <div className="mt-3 px-0">
-            <div className="px-6 py-2 bg-gradient-to-r from-blue-100 to-white rounded-md">
+            <div className="px-6 py-1 bg-gradient-to-r from-blue-100 to-white rounded-md">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => { setActiveTab('details'); updateTabInUrl('details'); }}
-                  className={`px-3 cursor-pointer py-1 text-sm rounded ${activeTab === 'details' ? 'bg-violet-50 text-violet-700 rounded-md shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+                  className={`px-3 cursor-pointer py-1.5 text-sm rounded ${activeTab === 'details' ? 'bg-white text-violet-700 rounded-lg shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
                 >Details</button>
 
                 <button
                   onClick={() => { setActiveTab('history'); updateTabInUrl('history'); }}
-                  className={`px-3 cursor-pointer py-1 text-sm rounded ${activeTab === 'history' ? 'bg-violet-50 text-violet-700 rounded-md shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+                  className={`px-3 cursor-pointer py-1.5 text-sm rounded ${activeTab === 'history' ? 'bg-white text-violet-700 rounded-lg shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
                 >History Log</button>
 
                 <button
                   onClick={() => { setActiveTab('timeline'); updateTabInUrl('timeline'); }}
-                  className={`px-3 cursor-pointer py-1 text-sm rounded ${activeTab === 'timeline' ? 'bg-violet-50 text-violet-700 rounded-md shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+                  className={`px-3 cursor-pointer py-1.5 text-sm rounded ${activeTab === 'timeline' ? 'bg-white text-violet-700 rounded-lg shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
                 >Timeline</button>
               </div>
             </div>
@@ -235,44 +235,44 @@ export default function ReportDetailsPage() {
                   </div>
                 </div>
 
-                  <div ref={formRef} className="space-y-6">
-                    {showGradeForm && (
-                      <GradeForm
-                        reportId={reportId}
-                        detail={detail}
-                        onSuccess={(patch) => {
-                          setDetail((prev: any) => ({ ...prev, ...patch }));
-                          setShowGradeForm(false);
-                          setError(null);
-                        }}
-                        onCancel={() => setShowGradeForm(false)}
-                      />
-                    )}
+                <div ref={formRef} className="space-y-6">
+                  {showGradeForm && (
+                    <GradeForm
+                      reportId={reportId}
+                      detail={detail}
+                      onSuccess={(patch) => {
+                        setDetail((prev: any) => ({ ...prev, ...patch }));
+                        setShowGradeForm(false);
+                        setError(null);
+                      }}
+                      onCancel={() => setShowGradeForm(false)}
+                    />
+                  )}
 
-                    {showRevisionForm && (
-                      <RevisionForm
-                        reportId={reportId}
-                        onSuccess={(patch) => {
-                          setDetail((prev: any) => ({ ...prev, ...patch }));
-                          setShowRevisionForm(false);
-                          setError(null);
-                        }}
-                        onCancel={() => setShowRevisionForm(false)}
-                      />
-                    )}
+                  {showRevisionForm && (
+                    <RevisionForm
+                      reportId={reportId}
+                      onSuccess={(patch) => {
+                        setDetail((prev: any) => ({ ...prev, ...patch }));
+                        setShowRevisionForm(false);
+                        setError(null);
+                      }}
+                      onCancel={() => setShowRevisionForm(false)}
+                    />
+                  )}
 
-                    {showRejectForm && (
-                      <RejectForm
-                        reportId={reportId}
-                        onSuccess={(patch) => {
-                          setDetail((prev: any) => ({ ...prev, ...patch }));
-                          setShowRejectForm(false);
-                          setError(null);
-                        }}
-                        onCancel={() => setShowRejectForm(false)}
-                      />
-                    )}
-                  </div>
+                  {showRejectForm && (
+                    <RejectForm
+                      reportId={reportId}
+                      onSuccess={(patch) => {
+                        setDetail((prev: any) => ({ ...prev, ...patch }));
+                        setShowRejectForm(false);
+                        setError(null);
+                      }}
+                      onCancel={() => setShowRejectForm(false)}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           )}

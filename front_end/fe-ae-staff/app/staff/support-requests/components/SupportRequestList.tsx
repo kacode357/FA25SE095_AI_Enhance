@@ -243,7 +243,7 @@ export default function SupportRequestList({
                             <Button
                               size="sm"
                               variant="outline"
-                              className="px-3 py-1 cursor-pointer text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                              className="px-3 py-1 cursor-pointer btn btn-green-slow text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                               disabled={actionLoading || isClosed}
                               onClick={() => onResolve(item.id)}
                             >

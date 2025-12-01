@@ -90,7 +90,7 @@ export default function ChatMessagesPage() {
     return (
       <div className="p-6 flex items-center justify-center text-slate-500 gap-2">
         <Loader2 className="size-4 animate-spin" />
-        Đang tải tin nhắn...
+        Loading messages...
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function ChatMessagesPage() {
             Chat Messages
           </h1>
           <p className="text-sm" style={{ color: "var(--color-muted)" }}>
-            Lịch sử trao đổi trong khóa học
+            History of exchange in the course
             {/* {courseData?.courseCode} - {courseData?.courseCodeTitle} */}
           </p>
         </div>

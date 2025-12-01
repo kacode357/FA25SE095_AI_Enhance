@@ -52,11 +52,11 @@ export default function FilterRow({
       {/* Action buttons */}
       <TableCell className="py-2 text-center">
         <div className="flex justify-center items-center gap-2">
-          <Button className="h-8 btn btn-gradient-slow px-3 text-xs" onClick={onApply}>
+          <Button className="h-8 btn btn-green-slow px-3 text-xs" onClick={onApply}>
             Apply
           </Button>
           <Button
-            className="h-8 px-3 text-xs"
+            className="h-8 px-3 cursor-pointer text-xs"
             variant="ghost"
             onClick={onClear}
           >

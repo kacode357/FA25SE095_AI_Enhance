@@ -63,7 +63,7 @@ export default function ProcessCourseActions({
       {/* Approve */}
       <Button
         variant="primary"
-        className="px-5 btn btn-gradient-slow whitespace-nowrap rounded-xl"
+        className="px-5 btn btn-green-slow whitespace-nowrap rounded-xl"
         onClick={() => openWith("approve")}
         disabled={busy}
       >
@@ -115,7 +115,7 @@ export default function ProcessCourseActions({
             </Button> */}
             <Button
               variant={action === "reject" ? "danger" : "primary"}
-              className="h-10 px-5 btn btn-gradient-slow rounded-xl"
+              className="h-10 px-5 btn btn-green-slow rounded-xl"
               onClick={handleSubmit}
               disabled={busy}
             >

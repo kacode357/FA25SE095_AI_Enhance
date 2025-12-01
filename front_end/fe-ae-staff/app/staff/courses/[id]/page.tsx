@@ -69,7 +69,7 @@ export default function CourseDetailPage() {
     return (
       <div className="p-6 flex items-center justify-center text-slate-500 gap-2">
         <Loader2 className="size-4 animate-spin" />
-        Đang tải thống kê khóa học...
+        Loading course statistics...
       </div>
     );
   }
@@ -77,9 +77,9 @@ export default function CourseDetailPage() {
   if (!course || !stats) {
     return (
       <div className="p-6 text-center text-slate-500 space-y-4">
-        Không tìm thấy khóa học.
+        No course found.
         <div>
-          <Button className="btn btn-gradient-slow" onClick={() => router.push("/staff/courses")}>← Back</Button>
+          <Button className="btn btn-green-slow" onClick={() => router.push("/staff/courses")}>← Back</Button>
         </div>
       </div>
     );
@@ -115,7 +115,7 @@ export default function CourseDetailPage() {
             )}
           </div>
         </div>
-        <Button onClick={() => router.push("/staff/courses")} className="rounded-xl btn btn-gradient-slow">
+        <Button onClick={() => router.push("/staff/courses")} className="rounded-xl btn btn-green-slow">
           <ArrowLeft className=" size-4" /> Back
         </Button>
       </div>
@@ -161,7 +161,7 @@ export default function CourseDetailPage() {
       </div>
 
       {/* Activity */}
-      <Card className="border card">
+      <Card className="border card gap-0">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Activity
@@ -186,7 +186,7 @@ export default function CourseDetailPage() {
       </Card>
 
       {/* Enrollments by Month chart (giữ nguyên) */}
-      <Card className="border card">
+      <Card className="border card gap-0">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Enrollments by Month
@@ -234,7 +234,7 @@ function MetricTile({
       aria-label={`${label}: ${value}. View details`}
     >
       <Card
-        className="border card rounded-2xl transition-all duration-150 hover:shadow-md hover:-translate-y-0.5"
+        className="border card gap-0 rounded-2xl transition-all duration-150 hover:shadow-md hover:-translate-y-0.5"
         style={{ borderColor: "var(--color-border)" }}
       >
         <CardContent className="p-4 md:p-5 flex items-center justify-between gap-3">

@@ -91,15 +91,16 @@ export default function EditDialog({
               type="checkbox"
               id="isActive"
               checked={term.isActive}
+              className="text-white bg-green-500"
               onChange={(e) => setTerm({ ...term, isActive: e.target.checked })}
             />
-            <Label className="mb-1" htmlFor="isActive">Is Active</Label>
+            <Label className="text-blue-600" htmlFor="isActive">Is Active</Label>
           </div>
         </div>
       )}
       <DialogFooter>
-        <Button className="btn btn-gradient-slow" onClick={handleSave} disabled={loading || !term}>
-          {loading ? "Saving..." : "Save"}
+        <Button className="btn btn-green-slow" onClick={handleSave} disabled={loading || !term}>
+          {loading ? "Saving..." : "Save Changes"}
         </Button>
         {/* <Button variant="ghost" onClick={onCancel}>Cancel</Button> */}
       </DialogFooter>

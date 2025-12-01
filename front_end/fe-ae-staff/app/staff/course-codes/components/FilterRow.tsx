@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "@/components/ui/input";
 import { TableHead, TableRow } from "@/components/ui/table";
 import { Search } from "lucide-react";
@@ -31,7 +32,7 @@ export default function FilterRow({
           placeholder="Code"
           value={filterCode}
           onChange={(e) => setFilterCode(e.target.value)}
-          className="h-8 text-xs text-center"
+          className="h-8 text-xs"
         />
       </TableHead>
 
@@ -43,7 +44,7 @@ export default function FilterRow({
             placeholder="Search title"
             value={filterTitle}
             onChange={(e) => setFilterTitle(e.target.value)}
-            className="h-8 text-xs !pl-6"
+            className="h-8 text-xs"
           />
         </div>
       </TableHead>
@@ -54,7 +55,7 @@ export default function FilterRow({
           placeholder="Department"
           value={filterDept}
           onChange={(e) => setFilterDept(e.target.value)}
-          className="h-8 text-xs text-center"
+          className="h-8 text-xs"
         />
       </TableHead>
 
@@ -74,23 +75,26 @@ export default function FilterRow({
 
       {/* Created At */}
       <TableHead className="p-2 text-center">
-        <input
-          title="Date"
-          type="date"
-          value={createdAt}
-          onChange={(e) => setCreatedAt(e.target.value)}
-          className="h-8 text-xs border border-slate-300 rounded-md px-1 bg-white w-full"
-        />
+        <div className="flex items-center justify-center">
+          <div className="w-48 mx-auto">
+            <DateTimePicker
+              value={createdAt}
+              onChange={(v) => setCreatedAt(v ?? "")}
+              placeholder="Created at"
+              className=""
+            />
+          </div>
+        </div>
       </TableHead>
 
       {/* Buttons */}
       <TableHead className="p-2 text-center">
         <div className="flex items-center justify-center gap-2">
           {/* ✅ Bọc callback để không truyền event */}
-          <Button className="h-8 px-3 text-xs btn btn-gradient-slow" onClick={() => fetchAll()}>
+          <Button className="h-8 px-3 text-xs btn btn-green-slow" onClick={() => fetchAll()}>
             Apply
           </Button>
-          <Button className="h-8 px-3 btn btn-gradient-slow text-xs" onClick={clearAll}>
+          <Button className="h-8 px-3 cursor-pointer bg-slate-50 hover:bg-slate-100 !text-black text-xs" onClick={clearAll}>
             Clear
           </Button>
         </div>

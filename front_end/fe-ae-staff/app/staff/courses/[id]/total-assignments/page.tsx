@@ -73,13 +73,13 @@ export default function TotalAssignmentsPage() {
         <h1 className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>
           Assignments ({total})
         </h1>
-        <Button onClick={() => router.push(`/staff/courses/${id}`)} className="rounded-xl btn btn-gradient-slow">
+        <Button onClick={() => router.push(`/staff/courses/${id}`)} className="rounded-xl btn btn-green-slow">
           ← Back
         </Button>
       </div>
 
       {/* Summary card */}
-      <Card className="border card rounded-2xl">
+      <Card className="border card gap-0 rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Total Assignments
@@ -111,7 +111,7 @@ export default function TotalAssignmentsPage() {
       </Card>
 
       {/* List */}
-      <Card className="border card rounded-2xl">
+      <Card className="border card gap-0 rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Assignment List
@@ -128,11 +128,11 @@ export default function TotalAssignmentsPage() {
               No assignments found.
             </div>
           ) : (
-            <ul className="divide-y" style={{ borderColor: "var(--color-border)" }}>
+            <ul className="">
               {items.map((a) => (
                 <li
                   key={a.id}
-                  className="flex items-center justify-between gap-4 p-4"
+                  className="flex items-center border-t border-slate-100 justify-between gap-4 p-4"
                   style={{ color: "var(--foreground)" }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -141,7 +141,7 @@ export default function TotalAssignmentsPage() {
                       style={{
                         background: "color-mix(in oklab, var(--color-brand) 8%, transparent)",
                         borderColor:
-                          "color-mix(in oklab, var(--color-brand) 18%, var(--color-border))",
+                          "",
                       }}
                     >
                       <ClipboardList className="size-4" />
@@ -164,17 +164,17 @@ export default function TotalAssignmentsPage() {
                   </div>
 
                   {/* Actions: View detail */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-5 shrink-0">
+                    <Badge className={statusClass(a.status, a.isOverdue)}>
+                      {a.statusDisplay || (a.isOverdue ? "Overdue" : "Status")}
+                    </Badge>
+
                     <Link href={`/staff/courses/${id}/total-assignments/${a.id}`}>
-                      <Button className="rounded-xl" variant="outline">
+                      <Button className="rounded-xl btn btn-green-slow" variant="outline">
                         <Eye className="mr-2 size-4" />
                         View detail
                       </Button>
                     </Link>
-
-                    <Badge className={statusClass(a.status, a.isOverdue)}>
-                      {a.statusDisplay || (a.isOverdue ? "Overdue" : "Status")}
-                    </Badge>
                   </div>
                 </li>
               ))}

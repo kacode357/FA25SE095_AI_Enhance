@@ -62,7 +62,7 @@ export default function ProcessActions({
       {/* Approve */}
       <Button
         variant="primary"
-        className="px-5 btn btn-gradient-slow whitespace-nowrap rounded-xl"
+        className="px-5 btn btn-greenn-slow whitespace-nowrap rounded-xl"
         onClick={() => openWith("approve")}
         disabled={loading}
       >
@@ -106,7 +106,7 @@ export default function ProcessActions({
           <DialogFooter className="mt-5 flex gap-2 sm:justify-end">
             <Button
               variant="outline"
-              className="h-10 px-5 rounded-xl"
+              className="h-10 px-5 cursor-pointer rounded-xl"
               onClick={() => setOpen(false)}
               disabled={loading}
             >
@@ -115,7 +115,7 @@ export default function ProcessActions({
 
             <Button
               variant={action === "reject" ? "danger" : "primary"}
-              className="h-10 px-5 btn btn-gradient-slow rounded-xl"
+              className="h-10 px-5 btn btn-green-slow rounded-xl"
               onClick={handleSubmit}
               disabled={loading}
             >

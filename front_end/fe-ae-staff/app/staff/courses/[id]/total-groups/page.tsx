@@ -76,13 +76,13 @@ export default function TotalGroupsPage() {
         <h1 className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>
           Groups ({total})
         </h1>
-        <Button onClick={() => router.push(`/staff/courses/${id}`)} className="rounded-xl btn btn-gradient-slow">
+        <Button onClick={() => router.push(`/staff/courses/${id}`)} className="rounded-xl btn btn-green-slow">
           ← Back
         </Button>
       </div>
 
       {/* Summary */}
-      <Card className="border card rounded-2xl">
+      <Card className="border card gap-0 rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
             Total Groups
@@ -110,13 +110,13 @@ export default function TotalGroupsPage() {
       {/* Grid groups */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {loading ? (
-          <Card className="border card rounded-2xl md:col-span-2 xl:col-span-3">
+          <Card className="border card gap-0 rounded-2xl md:col-span-2 xl:col-span-3">
             <CardContent className="p-6 flex items-center gap-2" style={{ color: "var(--color-muted)" }}>
               <Loader2 className="size-4 animate-spin" /> Loading groups...
             </CardContent>
           </Card>
         ) : items.length === 0 ? (
-          <Card className="border card rounded-2xl md:col-span-2 xl:col-span-3">
+          <Card className="border card gap-0 rounded-2xl md:col-span-2 xl:col-span-3">
             <CardContent className="p-8 text-center text-sm" style={{ color: "var(--color-muted)" }}>
               No groups found.
             </CardContent>
@@ -125,7 +125,7 @@ export default function TotalGroupsPage() {
           items.map((g) => {
             const p = percent(g.memberCount, g.maxMembers);
             return (
-              <Card key={g.id} className="border card rounded-2xl">
+              <Card key={g.id} className="border card gap-0 rounded-2xl">
                 <CardContent className="p-4 flex flex-col gap-3">
                   {/* Row 1: Tên + trạng thái mở/khóa */}
                   <div className="flex items-start justify-between gap-3">
@@ -160,7 +160,7 @@ export default function TotalGroupsPage() {
                     {g.leaderName && (
                       <span
                         className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs border"
-                        style={{ color: "var(--foreground)", borderColor: "var(--color-border)" }}
+                        style={{ color: "var(--foreground)", borderColor: "#e2e8f0"  }}
                         title={`Leader: ${g.leaderName}`}
                       >
                         <Crown className="size-3.5" /> {g.leaderName}
@@ -169,7 +169,7 @@ export default function TotalGroupsPage() {
                     {g.assignmentTitle && (
                       <span
                         className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs border"
-                        style={{ color: "var(--foreground)", borderColor: "var(--color-border)" }}
+                        style={{ color: "var(--foreground)", borderColor: "#e2e8f0"  }}
                         title={`Assignment: ${g.assignmentTitle}`}
                       >
                         <FileText className="size-3.5" /> {g.assignmentTitle}
@@ -181,7 +181,7 @@ export default function TotalGroupsPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div
                       className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 text-xs border"
-                      style={{ color: "var(--foreground)", borderColor: "var(--color-border)" }}
+                      style={{ color: "var(--foreground)", borderColor: "#e2e8f0"  }}
                     >
                       <Users2 className="size-3.5" />
                       {g.maxMembers != null ? (
@@ -195,7 +195,7 @@ export default function TotalGroupsPage() {
 
                     {/* View members link */}
                     <Link href={`/staff/courses/${id}/total-groups/${g.id}`}>
-                      <Button variant="outline" className="rounded-xl btn btn-gradient-slow">
+                      <Button variant="outline" className="rounded-xl btn btn-green-slow">
                         <Eye className="mr-2 size-4" />
                         View members
                       </Button>
@@ -206,7 +206,7 @@ export default function TotalGroupsPage() {
                   {g.maxMembers != null && (
                     <div
                       className="w-full h-2 rounded-full border overflow-hidden"
-                      style={{ borderColor: "var(--color-border)", background: "rgba(100,116,139,0.15)" }}
+                      style={{ borderColor: "#e2e8f0" , background: "rgba(100,116,139,0.15)" }}
                       aria-label="Group capacity"
                     >
                       <div

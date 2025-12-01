@@ -85,10 +85,10 @@ export default function FilterRow({
       {/* 8 - Actions (Apply/Clear buttons) */}
       <TableHead className="p-2 text-center">
         <div className="flex items-center justify-center gap-2">
-          <Button className="h-8 px-3 text-xs btn btn-gradient-slow" onClick={fetchAll}>
+          <Button className="h-8 bg-green-50 hover:bg-green-100 hover:shadow-md cursor-pointer rounded-xl px-3 text-xs" onClick={fetchAll}>
             Apply
           </Button>
-          <Button className="h-8 px-3 text-xs btn btn-gradient-slow" onClick={clearAll}>
+          <Button className="h-8 px-3 text-xs cursor-pointer" onClick={clearAll}>
             Clear
           </Button>
         </div>

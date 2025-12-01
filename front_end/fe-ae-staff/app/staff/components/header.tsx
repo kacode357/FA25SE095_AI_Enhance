@@ -11,14 +11,17 @@ import type { NotificationItem } from "@/types/notifications/notifications.respo
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 import Cookies from "js-cookie";
 import {
-    Bell,
-    ChevronDown,
-    CircleArrowOutUpRight,
-    Menu,
+  Bell,
+  ChevronDown,
+  CircleArrowOutUpRight,
+  KeySquare,
+  Menu,
+  ShieldUser,
 } from "lucide-react"; // Bỏ 'Search'
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = { onMenuClick?: () => void };
 
@@ -27,6 +30,9 @@ export default function ManagerHeader({ onMenuClick }: Props) {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  const profileButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const { user } = useAuth();
   const { logout, loading } = useLogout();
@@ -76,11 +82,19 @@ export default function ManagerHeader({ onMenuClick }: Props) {
     onNotification: handleHubNotification,
   });
 
+  const pathname = usePathname();
+
+  // close dropdowns when navigation occurs
+  useEffect(() => {
+    setDropdownOpen(false);
+    setNotificationOpen(false);
+  }, [pathname]);
+
   const handleLogout = () => {
     // disconnect hub to cleanup
     try {
       disconnect();
-    } catch {}
+    } catch { }
 
     logout({
       userId: user?.id ?? "",
@@ -115,6 +129,22 @@ export default function ManagerHeader({ onMenuClick }: Props) {
       disconnect();
     };
   }, [user?.id, connect, disconnect]);
+
+  // close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!dropdownOpen) return;
+      const target = e.target as Node;
+      const clickedInsideDropdown = dropdownRef.current && dropdownRef.current.contains(target);
+      const clickedOnButton = profileButtonRef.current && profileButtonRef.current.contains(target);
+      if (!clickedInsideDropdown && !clickedOnButton) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownOpen]);
 
   const openNotifications = async () => {
     const willOpen = !notificationOpen;
@@ -178,12 +208,12 @@ export default function ManagerHeader({ onMenuClick }: Props) {
           <Link
             href="/staff/terms"
             className="inline-flex items-center gap-3 group transition-transform hover:scale-105"
-            aria-label="AI Enhance"
+            aria-label="AIDS-LMS"
           >
             <div className="relative">
               <Image
                 src="/short-logo-aids.png"
-                alt="AI Enhance"
+                alt="AIDS-LMS"
                 width={32}
                 height={32}
                 className="drop-shadow-sm"
@@ -192,11 +222,11 @@ export default function ManagerHeader({ onMenuClick }: Props) {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-gray-900 text-lg tracking-tight">
-                AI Enhance
+                AIDS-LMS
               </span>
               {/* Đã sửa: Lecturer Manager -> Staff Manager */}
               <span className="text-xs text-gray-500 font-medium">
-                Staff Manager 
+                Staff Manager
               </span>
             </div>
           </Link>
@@ -280,6 +310,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
           {/* Profile Dropdown */}
           <div className="relative cursor-pointer">
             <button
+              ref={profileButtonRef}
               className="flex cursor-pointer items-center gap-3 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 hover:shadow-md transition-all"
               onClick={() => setDropdownOpen(!dropdownOpen)}
             >
@@ -287,7 +318,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
                   {user
                     ? user.firstName[0] + user.lastName[0]
-                    : "ST"} 
+                    : "ST"}
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
               </div>
@@ -302,14 +333,13 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 </p>
               </div>
               <ChevronDown
-                className={`w-4 h-4 text-gray-500 transition-transform ${
-                  dropdownOpen ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 top-12 w-56 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
+              <div ref={dropdownRef} className="absolute right-0 top-14 w-56 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-200">
                   <p className="font-semibold cursor-text text-gray-900">
                     {user
@@ -325,13 +355,16 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                     href="/staff/profile/my-profile"
                     className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
+                    <ShieldUser className="w-4 h-4" />
                     Personal profile
                   </Link>
-                  <button className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-                    Settings
-                  </button>
+                  <Link
+                    href="/staff/profile/change-password"
+                    className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <KeySquare className="w-4 h-4" />
+                    Change Password
+                  </Link>
                   <hr className="my-1 border-gray-200" />
                   <button
                     className="flex cursor-pointer w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"

@@ -38,7 +38,7 @@ export default function CourseApprovalDetailPage() {
       <div className="p-6 text-center text-slate-500">
         Course not found.
         <div className="mt-4">
-          <Button className="btn btn-gradient-slow" onClick={() => router.push("/staff/course-approvals")}>
+          <Button className="btn btn-green-slow" onClick={() => router.push("/staff/course-approvals")}>
             ← Back
           </Button>
         </div>
@@ -57,7 +57,7 @@ export default function CourseApprovalDetailPage() {
       <div className="flex items-center justify-end">
         <Button
           variant="ghost"
-          className="text-sm btn btn-gradient-slow"
+          className="text-sm btn btn-green-slow"
           onClick={() => router.push("/staff/course-approvals")}
         >
           <ArrowLeft className="h-4 w-4" />

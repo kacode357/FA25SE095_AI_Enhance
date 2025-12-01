@@ -142,9 +142,10 @@ export default function GroupAssignControls({ courseId, assignment, onChanged, s
               <div className="text-sm text-slate-500 p-2">No unassigned groups.</div>
             ) : (
               unassigned.map((g) => (
-                <label key={g.id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
+                <label key={g.id} className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
                   <Checkbox
                     checked={!!pickUnassigned[g.id]}
+                    className="cursor-pointer text-white bg-blue-600"
                     disabled={isDraft}
                     onCheckedChange={(v) =>
                       setPickUnassigned((m) => ({ ...m, [g.id]: !!v }))

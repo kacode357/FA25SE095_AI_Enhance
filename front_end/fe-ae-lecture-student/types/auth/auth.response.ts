@@ -45,10 +45,15 @@ export interface RefreshTokenResponse {
   subscriptionTier: string;
 }
 
-export interface ForgotPasswordResponse {
-  success: boolean;
-  message: string;
-}
+// Backend for forgot-password returns an ApiResponse wrapper
+// Example: { status: 200, message: "...", data: null }
+// Keep backward compatibility with legacy { success, message } shape.
+export type ForgotPasswordResponse =
+  | ApiResponse<null>
+  | {
+      success: boolean;
+      message: string;
+    };
 
 export interface ResetPasswordResponse {
   success: boolean;
@@ -60,9 +65,12 @@ export interface LogoutResponse {
   message: string;
 }
 
-export interface ChangePasswordResponse {
-  success: boolean;
-  message: string;
-}
+// Backend may return ApiResponse wrapper for some endpoints.
+export type ChangePasswordResponse =
+  | ApiResponse<null>
+  | {
+      success: boolean;
+      message: string;
+    };
 
 export type GoogleLoginResponse = LoginResponse;

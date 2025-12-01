@@ -3,6 +3,7 @@
 import Select from "@/components/ui/select/Select";
 import { useGetReportHistory } from "@/hooks/reports/useGetReportHistory";
 import { useGetReportHistoryVersion } from "@/hooks/reports/useGetReportHistoryVersion";
+import { buildHtmlWordDiff } from '@/utils/diff/htmlWordDiff';
 import DOMPurify from 'dompurify';
 import { Loader2, X } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -259,31 +260,71 @@ export default function HistoryReportLog({ reportId }: Props) {
                   {compareResult.differences.map((d: any) => {
                     const isSubmission = String(d.field).toLowerCase() === 'submission';
                     return (
-                      <div key={d.field} className="p-3 border rounded border-slate-200 bg-white">
-                        <div className="font-mono text-sm">{d.field}</div>
-                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div key={d.field} className="p-3 border rounded border-white bg-white">
+                        <div className="flex items-start justify-between">
+                          <div className="font-mono text-blue-500 text-sm">{d.field}</div>
+                          <div className={`text-[11px] font-semibold flex items-center justify-center px-2 py-1 rounded ${d.changed ? 'text-emerald-700 bg-emerald-50' : 'text-slate-500 bg-slate-100'}`}>
+                            {d.changed ? 'Changed' : 'Unchanged'}
+                          </div>
+                        </div>
+                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                           <div>
                             <div className="text-xs text-slate-500">Old</div>
                             {isSubmission ? (
-                              <div className="mt-1 bg-red-50 p-3 overflow-auto border border-red-50 min-h-[160px] prose max-w-full">
-                                <div className="whitespace-pre-wrap text-sm text-slate-700">{DOMPurify.sanitize(typeof d.oldValue === 'string' ? d.oldValue : String(d.oldValue ?? '—'), { ALLOWED_TAGS: [] as any })}</div>
-                              </div>
+                              (() => {
+                                const oldRaw = typeof d.oldValue === 'string' ? d.oldValue : String(d.oldValue ?? '');
+                                const newRaw = typeof d.newValue === 'string' ? d.newValue : String(d.newValue ?? '');
+
+                                let renderedOld = oldRaw ? DOMPurify.sanitize(oldRaw) : '—';
+                                let renderedNew = newRaw ? DOMPurify.sanitize(newRaw) : '—';
+
+                                if (oldRaw && newRaw) {
+                                  const { oldHighlighted, newHighlighted } = buildHtmlWordDiff(oldRaw, newRaw);
+                                  renderedOld = DOMPurify.sanitize(oldHighlighted);
+                                  renderedNew = DOMPurify.sanitize(newHighlighted);
+                                }
+
+                                return (
+                                  <div className="mt-1 bg-white p-3 border border-slate-200 rounded-lg min-h-[160px] max-h-[60vh] h-full flex flex-col">
+                                    <div className="overflow-auto prose max-w-full">
+                                      <div className="whitespace-pre-wrap text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: renderedOld }} />
+                                    </div>
+                                  </div>
+                                );
+                              })()
                             ) : (
-                              <div className="mt-1 bg-red-50 text-[12px] p-2 overflow-auto max-h-36 border border-red-50 min-h-12">{renderColoredDiff(typeof d.oldValue === 'string' ? d.oldValue : JSON.stringify(d.oldValue, null, 2))}</div>
+                              <div className="mt-1 bg-white text-[12px] p-2 overflow-auto max-h-36 border border-slate-200 rounded-lg min-h-12">{renderColoredDiff(typeof d.oldValue === 'string' ? d.oldValue : JSON.stringify(d.oldValue, null, 2))}</div>
                             )}
                           </div>
                           <div>
                             <div className="text-xs text-slate-500">New</div>
                             {isSubmission ? (
-                              <div className="mt-1 bg-green-50 p-3 overflow-auto border border-green-50 min-h-[160px] prose max-w-full">
-                                <div className="whitespace-pre-wrap text-sm text-slate-700">{DOMPurify.sanitize(typeof d.newValue === 'string' ? d.newValue : String(d.newValue ?? '—'), { ALLOWED_TAGS: [] as any })}</div>
-                              </div>
+                              (() => {
+                                const oldRaw = typeof d.oldValue === 'string' ? d.oldValue : String(d.oldValue ?? '');
+                                const newRaw = typeof d.newValue === 'string' ? d.newValue : String(d.newValue ?? '');
+
+                                let renderedOld = oldRaw ? DOMPurify.sanitize(oldRaw) : '—';
+                                let renderedNew = newRaw ? DOMPurify.sanitize(newRaw) : '—';
+
+                                if (oldRaw && newRaw) {
+                                  const { oldHighlighted, newHighlighted } = buildHtmlWordDiff(oldRaw, newRaw);
+                                  renderedOld = DOMPurify.sanitize(oldHighlighted);
+                                  renderedNew = DOMPurify.sanitize(newHighlighted);
+                                }
+
+                                return (
+                                  <div className="mt-1 bg-white p-3 border border-slate-200 rounded-lg min-h-[160px] max-h-[60vh] h-full flex flex-col">
+                                    <div className="overflow-auto prose max-w-full">
+                                      <div className="whitespace-pre-wrap text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: renderedNew }} />
+                                    </div>
+                                  </div>
+                                );
+                              })()
                             ) : (
-                              <div className="mt-1 bg-green-50 text-[12px] p-2 overflow-auto max-h-36 border border-green-50 min-h-12">{renderColoredDiff(typeof d.newValue === 'string' ? d.newValue : JSON.stringify(d.newValue, null, 2))}</div>
+                              <div className="mt-1 bg-white text-[12px] p-2 overflow-auto max-h-36 border border-slate-200 rounded-lg min-h-12">{renderColoredDiff(typeof d.newValue === 'string' ? d.newValue : JSON.stringify(d.newValue, null, 2))}</div>
                             )}
                           </div>
                         </div>
-                        <div className={`mt-2 text-[11px] font-semibold ${d.changed ? 'text-emerald-700' : 'text-slate-500'}`}>{d.changed ? 'Changed' : 'Unchanged'}</div>
                       </div>
                     );
                   })}

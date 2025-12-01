@@ -40,7 +40,7 @@ export default function CourseRequestDetailPage() {
     return (
       <div className="p-6 text-center text-slate-500">
         Course request not found.
-        <div className="mt-4 btn btn-gradient-slow">
+        <div className="mt-4 btn btn-green-slow">
           <Button onClick={() => router.push("/staff/course-requests")}>
             ← Back
           </Button>
@@ -78,7 +78,7 @@ export default function CourseRequestDetailPage() {
         <Button
           variant="ghost"
           size="sm"
-          className="text-sm btn btn-gradient-slow"
+          className="text-sm btn btn-green-slow"
           onClick={() => router.push("/staff/course-requests")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
