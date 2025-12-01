@@ -53,8 +53,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import "@/styles/assignment-status.css";
 
 // utils
-import { parseCourseName } from "@/utils/course/parse-course-name";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+// Đã xóa import parseCourseName
 
 /** Map status -> class trong assignment-status.css */
 function getAssignmentStatusClass(status?: AssignmentStatus | null) {
@@ -242,8 +242,7 @@ export default function AssignmentDetailPage() {
   const due = a.extendedDueDate ?? a.dueDate;
   const statusClass = getAssignmentStatusClass(a.status);
 
-  // parse "CODE#CLASS - Lecturer"
-  const { courseCode, classCode, lecturerName } = parseCourseName(a.courseName);
+  // Đã xóa logic parseCourseName
 
   type Chip = { icon: ReactNode; label: string; className?: string };
   const chips: Chip[] = [];
@@ -313,10 +312,10 @@ export default function AssignmentDetailPage() {
           </div>
 
           <Button
-            onClick={() => router.back()}
+            onClick={() => router.push(`/student/courses/${courseId}/assignments`)} 
             variant="outline"
             className="bg-white border border-brand text-nav hover:text-nav-active rounded-2xl px-4 h-10"
-            title="Go back"
+            title="Go back to Course"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back</span>
@@ -397,14 +396,12 @@ export default function AssignmentDetailPage() {
         >
           <Card className="card rounded-2xl h-full flex flex-col">
             <CardContent className="p-4 flex-1 flex flex-col gap-4 text-sm text-foreground/80">
-              {/* Course info – BOLD line */}
+              {/* Course info – BOLD line - ĐÃ SỬA */}
               <div className="flex items-start gap-3 min-w-0">
                 <BookOpen className="w-5 h-5 text-nav-active mt-0.5 shrink-0" />
                 <div className="min-w-0">
                   <div className="text-sm sm:text-base font-semibold text-nav">
-                    Course code: {courseCode || "—"} · Unique code:{" "}
-                    {classCode || "—"} · Lecturer name:{" "}
-                    {lecturerName || "—"}
+                    Course: {a.courseName || "—"}
                   </div>
                 </div>
               </div>

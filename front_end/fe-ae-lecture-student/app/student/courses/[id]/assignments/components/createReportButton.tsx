@@ -49,7 +49,6 @@ export default function CreateReportButton({
       const reportId = (res as any)?.reportId;
 
       if (!reportId) {
-        // Không có reportId thì coi như lỗi business, hook đã show toast.
         return;
       }
 

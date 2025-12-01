@@ -16,7 +16,7 @@ import {
 
 import { useMyAssignments } from "@/hooks/assignment/useMyAssignments";
 import { AssignmentStatus } from "@/config/classroom-service/assignment-status.enum";
-import { parseCourseName } from "@/utils/course/parse-course-name";
+// Đã xóa import parseCourseName
 
 /** Map enum -> CSS class (match app/styles/assignment-status.css) */
 const getStatusClass = (s: AssignmentStatus) => {
@@ -67,13 +67,7 @@ export default function CourseAssignmentsPage() {
   const assignments = listData?.assignments ?? [];
   const totalAssignments = listData?.totalCount ?? 0;
 
-  // 2. Course info
-  const courseInfo = useMemo(() => {
-    if (!assignments.length) {
-      return parseCourseName("");
-    }
-    return parseCourseName(assignments[0].courseName);
-  }, [assignments]);
+  // 2. Logic courseInfo đã bị xóa theo yêu cầu
 
   // 3. Group by Topic
   const topics = useMemo(() => {
@@ -169,18 +163,7 @@ export default function CourseAssignmentsPage() {
             )}
           </h1>
 
-          {/* course info */}
-          {courseInfo.courseCode && (
-            <div className="text-xs text-muted flex flex-wrap gap-3">
-              <span>
-                <b>{courseInfo.courseCode}</b>
-                {courseInfo.classCode && ` · ${courseInfo.classCode}`}
-              </span>
-              {courseInfo.lecturerName && (
-                <span>Lecturer: {courseInfo.lecturerName}</span>
-              )}
-            </div>
-          )}
+          {/* Phần hiển thị chi tiết Course Info đã bị xóa */}
         </div>
       </div>
 
@@ -217,15 +200,15 @@ export default function CourseAssignmentsPage() {
             <AccordionItem
               key={topic.topicKey}
               value={topic.topicKey}
-              className="rounded-2xl bg-card shadow-sm border-none px-4"
+              className="rounded-2xl bg-card shadow-sm border border-gray-200 overflow-hidden"
             >
-              <AccordionTrigger className="py-4 text-left flex items-center justify-between gap-2 hover:no-underline cursor-pointer">
+              <AccordionTrigger className="px-4 py-4 text-left bg-white flex items-center justify-between gap-2 hover:no-underline cursor-pointer border-b border-gray-100">
                 <span className="text-base font-semibold text-nav">
                   {topic.topicName}
                 </span>
               </AccordionTrigger>
 
-              <AccordionContent className="pb-4">
+              <AccordionContent className="px-4 pb-4 pt-4">
                 <ul className="space-y-2">
                   {topic.items.map((a) => {
                     const href = `/student/courses/${courseId}/assignments/${a.id}`;

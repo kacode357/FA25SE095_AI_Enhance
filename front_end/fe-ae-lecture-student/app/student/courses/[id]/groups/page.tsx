@@ -15,9 +15,9 @@ import {
   Loader2,
   ArrowLeft,
   FileText,
-  Eye,
+  ChevronRight,
 } from "lucide-react";
-import { parseCourseName } from "@/utils/course/parse-course-name";
+// Đã xóa import parseCourseName
 
 export default function CourseGroupsPage() {
   const params = useParams();
@@ -27,12 +27,12 @@ export default function CourseGroupsPage() {
   // Groups
   const { listData, loading, fetchByCourseId } = useGroupsByCourseId();
 
-  // ✅ Students (sidebar) — TRUYỀN courseId vào hook
+  // Students (sidebar)
   const {
     loading: loadingStudents,
     students,
     totalStudents,
-    courseName,
+    courseName, // Dùng trực tiếp cái này
     fetchCourseStudents,
   } = useCourseStudents(courseId);
 
@@ -72,11 +72,7 @@ export default function CourseGroupsPage() {
 
   const isEmpty = !listData || listData.length === 0;
 
-  const parsed = parseCourseName(courseName);
-  const courseDisplay =
-    parsed.courseCode || parsed.classCode || parsed.lecturerName
-      ? `${parsed.courseCode} · ${parsed.classCode} · ${parsed.lecturerName}`
-      : "—";
+  // Đã xóa logic parseCourseName
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
@@ -89,11 +85,11 @@ export default function CourseGroupsPage() {
           </h1>
           <p className="text-xs text-[color:var(--text-muted)] mt-1">
             Course:{" "}
-            <b className="text-[color:var(--foreground)]">{courseDisplay}</b>
+            <b className="text-[color:var(--foreground)]">
+              {courseName || "—"}
+            </b>
           </p>
         </div>
-
-      
       </div>
 
       {/* Main layout 7/3 */}
@@ -117,7 +113,8 @@ export default function CourseGroupsPage() {
                 </CardTitle>
                 <p className="text-xs text-[color:var(--text-muted)]">
                   {listData.length} group
-                  {listData.length > 1 ? "s" : ""} • Click to view members
+                  {listData.length > 1 ? "s" : ""} • Select a group to view
+                  details
                 </p>
               </CardHeader>
 
@@ -125,7 +122,6 @@ export default function CourseGroupsPage() {
                 <ul className="divide-y divide-[color:var(--border)]">
                   {listData.map((g) => {
                     const locked = g.isLocked;
-
                     const memberLabel =
                       g.maxMembers == null
                         ? `${g.memberCount} ${
@@ -138,94 +134,74 @@ export default function CourseGroupsPage() {
                     return (
                       <li
                         key={g.id}
-                        className="group flex items-start gap-4 py-4 px-1 rounded-lg transition-colors hover:bg-[color:var(--brand)]/3"
+                        onClick={() =>
+                          router.push(
+                            `/student/courses/${courseId}/groups/${g.id}`
+                          )
+                        }
+                        className="group flex items-center justify-between gap-4 py-4 px-3 rounded-lg transition-colors hover:bg-[color:var(--brand)]/5 cursor-pointer"
                       >
-                        {/* Status chip (open/locked) */}
-                        <div className="mt-1 shrink-0">
-                          <span
-                            className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${
-                              locked
-                                ? "bg-red-50 text-red-700 border-red-200"
-                                : "bg-[color:var(--brand)]/10 text-brand border-[color:var(--brand)]/30"
-                            }`}
-                          >
-                            {locked ? (
-                              <>
-                                <Lock className="w-3 h-3" />
-                                Locked
-                              </>
-                            ) : (
-                              <>
-                                <Unlock className="w-3 h-3" />
-                                Open
-                              </>
-                            )}
-                          </span>
-                        </div>
-
-                        {/* Main info */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="font-semibold text-[color:var(--foreground)]">
+                        {/* LEFT: Main info */}
+                        <div className="flex-1 min-w-0">
+                          {/* Row 1: Name + Status */}
+                          <div className="flex items-center flex-wrap gap-2 mb-1">
+                            <span className="font-semibold text-base text-[color:var(--foreground)]">
                               {g.name}
-                            </p>
+                            </span>
 
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-[color:var(--text-muted)]">
-                                Created:{" "}
-                                {new Date(g.createdAt).toLocaleString("en-GB")}
-                              </span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  router.push(
-                                    `/student/courses/${courseId}/groups/${g.id}`
-                                  )
-                                }
-                                className="shrink-0 border-brand text-brand hover:bg-[color:var(--brand)]/5"
-                              >
-                                <Eye className="w-4 h-4 mr-2" />
-                                View members
-                              </Button>
-                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${
+                                locked
+                                  ? "bg-red-50 text-red-700 border-red-200"
+                                  : "bg-green-50 text-green-700 border-green-200"
+                              }`}
+                            >
+                              {locked ? (
+                                <>
+                                  <Lock className="w-3 h-3" /> Locked
+                                </>
+                              ) : (
+                                <>
+                                  <Unlock className="w-3 h-3" /> Open
+                                </>
+                              )}
+                            </span>
                           </div>
 
-                          {/* Sub info row */}
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                            <span className="flex items-center gap-1 text-[color:var(--foreground)]">
-                              <Users className="w-4 h-4 text-brand" />
-                              <b>{memberLabel}</b>
+                          {/* Row 2: Metadata (Created, Leader, Members) */}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3.5 h-3.5" />
+                              {memberLabel}
                             </span>
 
                             {g.leaderName && (
-                              <span className="flex items-center gap-2 text-[color:var(--text-muted)]">
-                                <User className="w-4 h-4 text-[color:var(--muted)]" />
-                                <span className="badge-group-role badge-group-role--leader">
-                                  Leader
+                              <span className="flex items-center gap-1">
+                                <User className="w-3.5 h-3.5" />
+                                <span>
+                                  Leader: <b>{g.leaderName}</b>
                                 </span>
-                                <b className="text-[color:var(--foreground)]">
-                                  {g.leaderName}
-                                </b>
                               </span>
                             )}
 
                             {g.assignmentTitle && (
-                              <span className="truncate text-[color:var(--text-muted)]">
-                                Assignment:{" "}
-                                <b className="font-medium text-[color:var(--foreground)]">
-                                  {g.assignmentTitle}
-                                </b>
+                              <span className="truncate max-w-[200px]">
+                                Assign: <b>{g.assignmentTitle}</b>
                               </span>
                             )}
                           </div>
 
-                          {/* Description */}
+                          {/* Row 3: Description (optional) */}
                           {g.description && (
-                            <p className="mt-2 text-sm text-[color:var(--text-muted)] line-clamp-2">
+                            <p className="mt-1.5 text-xs text-[color:var(--text-muted)] line-clamp-1">
                               {g.description}
                             </p>
                           )}
+                        </div>
+
+                        {/* Icon Next bên phải */}
+                        <div className="shrink-0 text-[color:var(--muted)] group-hover:text-brand transition-colors">
+                          <ChevronRight className="w-5 h-5" />
                         </div>
                       </li>
                     );
@@ -242,12 +218,11 @@ export default function CourseGroupsPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base text-[color:var(--foreground)]">
-                  Students in this class
+                  Students
                 </CardTitle>
               </div>
-              {/* Bỏ hiển thị PHYS301#K3I17J - Smith John, chỉ show số lượng students */}
               <p className="text-xs text-[color:var(--text-muted)]">
-                <span>{totalStudents} students</span>
+                <span>{totalStudents} students in class</span>
               </p>
             </CardHeader>
 
@@ -298,13 +273,6 @@ export default function CourseGroupsPage() {
                         <p className="text-xs text-[color:var(--text-muted)] truncate">
                           {s.email}
                         </p>
-                        <div className="flex items-center justify-between text-[11px] text-[color:var(--text-muted)]">
-                          <span>ID: {s.studentIdNumber || "—"}</span>
-                          <span>
-                            Joined:{" "}
-                            {new Date(s.joinedAt).toLocaleDateString("en-GB")}
-                          </span>
-                        </div>
                       </div>
                     </li>
                   ))}

@@ -19,6 +19,15 @@ import {
   X,
 } from "lucide-react";
 
+// Shadcn Select
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import type { MyAssignmentsQuery } from "@/types/assignments/assignment.payload";
 import {
   AssignmentStatus,
@@ -28,7 +37,7 @@ import type { GetMyCoursesQuery } from "@/types/courses/course.payload";
 import type { CourseItem } from "@/types/courses/course.response";
 
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
-import { parseCourseName } from "@/utils/course/parse-course-name";
+// Đã xóa import parseCourseName
 
 export default function MyAssignmentsPage() {
   const router = useRouter();
@@ -122,26 +131,18 @@ export default function MyAssignmentsPage() {
   };
 
   const formatCourseShort = (raw?: string | null) => {
-    const parsed = parseCourseName(raw);
-    if (!parsed.courseCode && !parsed.classCode && !parsed.lecturerName) {
-      return raw ?? "—";
-    }
-
-    const parts = [parsed.courseCode, parsed.classCode, parsed.lecturerName].filter(
-      Boolean
-    );
-    return parts.join(" · ");
+    return raw && raw.trim().length > 0 ? raw : "—";
   };
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-    <div className="flex items-center justify-between">
-  <h1 className="text-2xl font-bold text-nav flex items-center gap-2">
-    <ListChecks className="w-6 h-6 text-nav-active" />
-    All Course Assignments
-  </h1>
-</div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-nav flex items-center gap-2">
+          <ListChecks className="w-6 h-6 text-nav-active" />
+          All Course Assignments
+        </h1>
+      </div>
 
       {/* Content 9/3 */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -198,8 +199,7 @@ export default function MyAssignmentsPage() {
                             <div className="md:col-span-7 min-w-0 flex items-center gap-3">
                               <span
                                 className={
-                                  statusBadgeClass(a.status) +
-                                  " shrink-0"
+                                  statusBadgeClass(a.status) + " shrink-0"
                                 }
                                 title={a.statusDisplay}
                               >
@@ -251,11 +251,14 @@ export default function MyAssignmentsPage() {
                               </span>
 
                               {a.isOverdue && (
-                                <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-accent border border-[color-mix(in_oklab,var(--accent)_40%,var(--border))]"
-                                  style={{
-                                    background:
-                                      "color-mix(in oklab, var(--accent) 16%, var(--white))",
-                                  } as any}
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-accent border border-[color-mix(in_oklab,var(--accent)_40%,var(--border))]"
+                                  style={
+                                    {
+                                      background:
+                                        "color-mix(in oklab, var(--accent) 16%, var(--white))",
+                                    } as any
+                                  }
                                 >
                                   <AlertTriangle className="w-4 h-4" />
                                   Overdue
@@ -291,9 +294,7 @@ export default function MyAssignmentsPage() {
                         pageNumber <= 1 ? "opacity-60 cursor-not-allowed" : ""
                       }`}
                       disabled={pageNumber <= 1}
-                      onClick={() =>
-                        setPageNumber((p) => Math.max(1, p - 1))
-                      }
+                      onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
                     >
                       Prev
                     </button>
@@ -347,27 +348,25 @@ export default function MyAssignmentsPage() {
                 </p>
               </div>
 
-              {/* Course select (results filtered by Course name) */}
+              {/* Course select - Updated to use Shadcn Select */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-nav">Course</label>
-                <div className="relative">
-                  <select
-                    title="Select"
-                    className="input pr-8 appearance-none"
-                    value={courseId}
-                    onChange={(e) => setCourseId(e.target.value)}
-                  >
-                    <option value="">— All courses —</option>
+                <Select
+                  value={courseId === "" ? "all" : courseId}
+                  onValueChange={(val) => setCourseId(val === "all" ? "" : val)}
+                >
+                  <SelectTrigger className="w-full bg-white border-[var(--border)]">
+                    <SelectValue placeholder="— All courses —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">— All courses —</SelectItem>
                     {myCourses?.map((c: CourseItem) => (
-                      <option key={c.id} value={c.id}>
+                      <SelectItem key={c.id} value={c.id}>
                         {formatCourseShort(c.name)}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--text-muted)]">
-                    ▾
-                  </div>
-                </div>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Actions */}
