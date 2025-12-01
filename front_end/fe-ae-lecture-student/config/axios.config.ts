@@ -4,8 +4,8 @@ import Cookies from "js-cookie";
 import { toast } from "sonner";
 
 import {
-  updateAccessToken,
-  updateRefreshToken,
+    updateAccessToken,
+    updateRefreshToken,
 } from "@/utils/auth/access-token";
 import { clearEncodedUser } from "@/utils/secure-user";
 
@@ -247,6 +247,19 @@ const createAxiosInstance = (
           response.statusText || `HTTP ${status}`
         );
         toast.error(`${msg}`);
+      }
+
+      // Hiển thị toast thành công do BE gửi (nếu có), trừ khi caller yêu cầu suppressToast
+      try {
+        const method = (reqConfig.method || "").toString().toLowerCase();
+        const successMessage = data?.message || data?.msg || null;
+
+        // Chỉ hiển thị toast thành công cho các request không phải GET
+        if (!reqConfig.suppressToast && successMessage && method !== "get") {
+          toast.success(`${successMessage}`);
+        }
+      } catch {
+        // ignore any shape parsing errors
       }
 
       return response;

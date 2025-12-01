@@ -1,11 +1,11 @@
 // app/(auth)/register/page.tsx
 "use client";
 
-import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
@@ -45,14 +45,15 @@ export default function RegisterPage() {
       // BE tự suy ra role hoặc không cần; ép any để không phụ thuộc type có 'role'
       const res: RegisterResponse = await AuthService.register(payload as any);
 
-      toast.success(res.message);
+      // Let axios interceptor show BE-provided toast on error. On success,
+      // reset the form and navigate if no further confirmation/approval required.
       form.reset();
 
       if (!res.requiresEmailConfirmation && !res.requiresApproval) {
         router.push("/login");
       }
-    } catch {
-      toast.error("Sign up failed. Please try again.");
+    } catch (err) {
+      // Stay on the register page; axios interceptor already displayed the server message.
     } finally {
       setLoading(false);
     }

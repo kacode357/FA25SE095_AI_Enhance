@@ -24,7 +24,7 @@ export default function RegisterShell({ title, subtitle, children, footer }: Pro
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#ffd1e6] via-[#cda2ff] to-[#8b5cf6] flex items-center justify-center p-8">
             {/* Increase max width so registration form can be laid out more horizontally */}
-            <div className="w-full max-w-7xl rounded-2xl shadow-2xl bg-white overflow-hidden flex flex-col md:flex-row">
+            <div className="w-full max-w-7xl rounded-2xl shadow-2xl bg-white overflow-hidden flex flex-col md:flex-row transform scale-90 origin-top-center">
                 {/* Left decorative area (same as AuthShell) */}
                 <div className="hidden md:block md:w-2/5 lg:w-2/5 relative bg-gradient-to-br from-[#ffffff] to-[#fff6fb]">
                     <div className="absolute inset-0">
@@ -57,15 +57,17 @@ export default function RegisterShell({ title, subtitle, children, footer }: Pro
 
                 {/* Right form area: make it wider than default AuthShell so content can use horizontal space */}
                 <div className="w-full md:w-1/2 lg:w-3/5 p-8 md:px-12 md:py-8">
-                    <div className="flex justify-end mb-4">
-                        <div>
-                            <Logo />
-                        </div>
-                    </div>
-
                     <div className="max-w-2xl mx-auto">
-                        <h2 className="text-2xl font-semibold text-slate-900 mb-2">{title}</h2>
-                        {subtitle && <div className="text-sm text-slate-600 mb-6">{subtitle}</div>}
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+                            <div className="flex-1">
+                                <h2 className="text-2xl font-semibold text-slate-900 mb-1">{title}</h2>
+                                {subtitle && <div className="text-sm text-slate-600">{subtitle}</div>}
+                            </div>
+
+                            <div className="flex-none ml-4">
+                                <Logo />
+                            </div>
+                        </div>
 
                         <div className="bg-white rounded-xl p-6 shadow-md">{children}</div>
 

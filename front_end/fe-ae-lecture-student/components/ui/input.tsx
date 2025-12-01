@@ -17,6 +17,13 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
     const isPassword = type === "password";
     const [visible, setVisible] = useState(false);
     const effectiveType = isPassword && visible ? "text" : type;
+    // Ensure the input is controlled consistently to avoid React's
+    // "changing an uncontrolled input to be controlled" warning. We
+    // coerce `value`/`defaultValue` into a single string value and pass
+    // that as the `value` prop. This keeps the input controlled for the
+    // component's lifetime.
+    const { value, defaultValue, ...rest } = props as any;
+    const inputValue = value ?? defaultValue ?? "";
 
     return (
       <div className="w-full">
@@ -37,7 +44,8 @@ export const Input = React.forwardRef<HTMLInputElement, BaseProps>(
             ref={ref}
             type={effectiveType}
             className={`input ${isPassword ? "pr-12" : ""} ${className}`}
-            {...props}
+            {...rest}
+            value={inputValue}
           />
 
           {isPassword && (

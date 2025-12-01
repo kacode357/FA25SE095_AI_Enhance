@@ -1,9 +1,9 @@
 "use client";
 
 import LogoLoader from "@/components/common/logo-loader";
+import { cn } from "@/lib/utils";
 import { motion, type HTMLMotionProps } from "framer-motion";
 import React from "react";
-import { cn } from "@/lib/utils";
 
 export type ButtonProps = HTMLMotionProps<"button"> & {
   variant?:
@@ -50,6 +50,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ? "btn-primary"
         : "btn-ghost"; // tuỳ bạn map thêm outline/secondary/... nếu muốn
 
+    const isDisabled = loading || props.disabled;
+
     return (
       <motion.button
         ref={ref}
@@ -59,13 +61,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           "btn",
           variantClass,
           sizeClass,
-          loading && "opacity-90",
+          isDisabled ? "opacity-50 pointer-events-none cursor-not-allowed" : loading ? "opacity-90" : "",
           className
         )}
         {...props}
-        disabled={loading || props.disabled}
+        disabled={isDisabled}
         aria-busy={loading}
-        aria-disabled={loading || props.disabled ? true : undefined}
+        aria-disabled={isDisabled ? true : undefined}
       >
         {loading ? (
           <span className="inline-flex items-center justify-center gap-2">

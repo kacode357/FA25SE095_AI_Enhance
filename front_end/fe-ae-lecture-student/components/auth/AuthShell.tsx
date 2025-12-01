@@ -3,9 +3,8 @@
 
 import LogoLoader from "@/components/common/logo-loader";
 import { AnimatePresence, motion } from "framer-motion";
-import { usePathname } from "next/navigation";
 import React from "react";
-import Logo from "../logo/Logo";
+// Use the static logo file from `public/logo-aids-lms.svg` instead of the Logo component
 import { useAuthLoading } from "./AuthLoadingProvider";
 
 type Props = {
@@ -62,7 +61,14 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
         <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center bg-white relative">
           
           <div className="absolute top-6 right-6">
-              <Logo />
+            <div className="h-12 w-12 overflow-hidden rounded-md bg-white/0">
+              <img
+                src="/logo-aids-lms.svg"
+                alt="AIDS-LMS"
+                className="h-full w-full object-contain block"
+                loading="eager"
+              />
+            </div>
           </div>
 
           {/* ✅ CHANGE 2: Căn chỉnh container nội dung */}

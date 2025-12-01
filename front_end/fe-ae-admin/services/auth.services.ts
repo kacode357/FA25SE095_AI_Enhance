@@ -1,27 +1,27 @@
 // services/auth.services.ts
 import { userAxiosInstance } from "@/config/axios.config";
 import {
+  ChangePasswordRequest,
   ConfirmEmailPayload,
   ForgotPasswordPayload,
+  GoogleLoginPayload,
   LoginPayload,
   LogoutPayload,
   RefreshTokenPayload,
   RegisterPayload,
   ResetPasswordPayload,
-  ChangePasswordRequest,
-  GoogleLoginPayload,
 } from "@/types/auth/auth.payload";
 import type {
-  ApiResponse,           // <-- dùng khung response chuẩn
+  ApiResponse,
+  ChangePasswordResponse, // <-- dùng khung response chuẩn
   ConfirmEmailResponse,
   ForgotPasswordResponse,
+  GoogleLoginResponse,
   LoginResponse,
   LogoutResponse,
   RefreshTokenResponse,
   RegisterResponse,
   ResetPasswordResponse,
-  ChangePasswordResponse,
-  GoogleLoginResponse,
 } from "@/types/auth/auth.response";
 
 /**

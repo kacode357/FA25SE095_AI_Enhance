@@ -1,27 +1,27 @@
 // services/auth.services.ts
 import { userAxiosInstance } from "@/config/axios.config";
 import {
+  ChangePasswordRequest,
   ConfirmEmailPayload,
   ForgotPasswordPayload,
+  GoogleLoginPayload,
   LoginPayload,
   LogoutPayload,
   RefreshTokenPayload,
   RegisterPayload,
   ResetPasswordPayload,
-  ChangePasswordRequest,
-  GoogleLoginPayload,
 } from "@/types/auth/auth.payload";
 import type {
-  ApiResponse,           // <-- dùng khung response chuẩn
+  ApiResponse,
+  ChangePasswordResponse, // <-- dùng khung response chuẩn
   ConfirmEmailResponse,
   ForgotPasswordResponse,
+  GoogleLoginResponse,
   LoginResponse,
   LogoutResponse,
   RefreshTokenResponse,
   RegisterResponse,
   ResetPasswordResponse,
-  ChangePasswordResponse,
-  GoogleLoginResponse,
 } from "@/types/auth/auth.response";
 
 /**
@@ -42,6 +42,13 @@ export const AuthService = {
 
   register: async (data: RegisterPayload): Promise<RegisterResponse> => {
     const response = await userAxiosInstance.post<RegisterResponse>("/Auth/register", data);
+
+    // If backend returned a non-success status, throw the whole response so callers
+    // stay on the page and the response interceptor can show the BE-provided toast.
+    if (response.status >= 400) {
+      throw response;
+    }
+
     return response.data;
   },
 
