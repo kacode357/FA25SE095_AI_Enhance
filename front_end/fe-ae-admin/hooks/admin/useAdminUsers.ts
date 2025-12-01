@@ -1,82 +1,68 @@
 // hooks/admin/useAdminUsers.ts
 "use client";
 
-import { AdminService } from "@/services/admin.services";
-import type { GetUsersParams } from "@/types/admin/admin.payload";
-import type {
-  AdminGetUsersResponse,
-  AdminUserDetailResponse,
-  ReactivateUserResponse,
-} from "@/types/admin/admin.response";
 import { useCallback, useState } from "react";
 
+import { AdminUserService } from "@/services/admin-user.services";
+import type { AdminUsersQuery } from "@/types/admin/admin-user.payload";
+import type {
+  AdminUserItem,
+  GetAdminUsersResponse,
+} from "@/types/admin/admin-user.response";
+
+type AdminUsersPaginationState = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+};
+
+const defaultPagination: AdminUsersPaginationState = {
+  page: 1,
+  pageSize: 20,
+  totalItems: 0,
+  totalPages: 0,
+  hasPreviousPage: false,
+  hasNextPage: false,
+};
+
 export function useAdminUsers() {
-  const [loadingList, setLoadingList] = useState(false);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [loadingReactivate, setLoadingReactivate] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<AdminUserItem[]>([]);
+  const [pagination, setPagination] =
+    useState<AdminUsersPaginationState>(defaultPagination);
 
-  const [listData, setListData] = useState<AdminGetUsersResponse | null>(null);
-  const [detailData, setDetailData] = useState<AdminUserDetailResponse | null>(null);
-
-  /** Fetch list users (bubble error lên trên, không catch ở đây) */
-  const fetchUsers = useCallback(
-    async (params?: GetUsersParams): Promise<AdminGetUsersResponse> => {
-      setLoadingList(true);
+  const fetchAdminUsers = useCallback(
+    async (params?: AdminUsersQuery): Promise<GetAdminUsersResponse> => {
+      setLoading(true);
       try {
-        const res = await AdminService.getUsers(params);
-        // Backend sometimes wraps payload in a `data` field: { data: { users, ... } }
-        const payload = (res as any)?.data ?? res;
-        setListData(payload);
-        return payload;
-      } finally {
-        setLoadingList(false);
-      }
-    },
-    []
-  );
+        const res = await AdminUserService.getAdminUsers(params);
+        const page = res.data;
 
-  /** Fetch user detail */
-  const fetchUserDetail = useCallback(
-    async (userId: string): Promise<AdminUserDetailResponse> => {
-      setLoadingDetail(true);
-      try {
-        const res = await AdminService.getUserById(userId);
-        const payload = (res as any)?.data ?? res;
-        setDetailData(payload);
-        return payload;
-      } finally {
-        setLoadingDetail(false);
-      }
-    },
-    []
-  );
-
-  /** Reactivate user → xong thì reload list theo trang hiện tại */
-  const reactivateUser = useCallback(
-    async (userId: string): Promise<ReactivateUserResponse> => {
-      setLoadingReactivate(true);
-      try {
-        const res = await AdminService.reactivateUser(userId);
-        await fetchUsers({
-          page: listData?.page ?? 1,
-          pageSize: listData?.pageSize ?? 10,
+        setItems(page.users || []);
+        setPagination({
+          page: page.page,
+          pageSize: page.pageSize,
+          totalItems: page.totalCount,
+          totalPages: page.totalPages,
+          hasPreviousPage: page.page > 1,
+          hasNextPage: page.page < page.totalPages,
         });
+
         return res;
       } finally {
-        setLoadingReactivate(false);
+        setLoading(false);
       }
     },
-    [fetchUsers, listData?.page, listData?.pageSize]
+    []
   );
 
   return {
-    loadingList,
-    loadingDetail,
-    loadingReactivate,
-    listData,
-    detailData,
-    fetchUsers,
-    fetchUserDetail,
-    reactivateUser,
+    loading,
+    items,
+    pagination,
+    fetchAdminUsers,
   };
 }

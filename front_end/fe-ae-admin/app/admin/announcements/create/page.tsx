@@ -131,7 +131,7 @@ export default function AdminAnnouncementsPage() {
         </div>
 
         {/* Content */}
-        <div className="space-y-1.5">
+      <div className="space-y-1.5">
           <label className="text-sm font-medium text-nav">
             Content <span className="text-red-500">*</span>
           </label>
@@ -139,7 +139,7 @@ export default function AdminAnnouncementsPage() {
             value={content}
             onChange={setContent}
             placeholder="Write your announcement content..."
-            className="rounded-lg overflow-hidden border border-[var(--border)] bg-white"
+            className="rounded-lg overflow-hidden bg-white" 
           />
         </div>
 

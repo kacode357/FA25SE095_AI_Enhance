@@ -1,5 +1,3 @@
-// types/announcements/announcement.response.ts
-
 export enum AnnouncementAudience {
   All = 0,
   Students = 1,
@@ -12,7 +10,6 @@ export interface AnnouncementItem {
   content?: string;
   audience: AnnouncementAudience;
   publishedAt: string;
-
   createdBy?: string;
   createdByName?: string;
   creatorProfilePictureUrl?: string | null;
@@ -26,36 +23,21 @@ export interface PaginatedAnnouncements {
   items: AnnouncementItem[];
 }
 
-export interface CreateAnnouncementResponse {
-  status: number; // 201
-  message: string; // "Announcement created successfully"
-  data: {
-    id: string;
-    title: string;
-    audience: AnnouncementAudience;
-    publishedAt: string;
-  };
+interface ResponseEnvelope<T> {
+  status: number;
+  message: string;
+  data: T;
 }
 
-export interface GetAnnouncementsResponse {
-  status: number;  // 200
-  message: string; // "Announcements retrieved"
-  data: PaginatedAnnouncements;
-}
+type AnnouncementMutationData = Pick<
+  AnnouncementItem,
+  "id" | "title" | "audience" | "publishedAt"
+>;
 
-export interface GetAnnouncementByIdResponse {
-  status: number;  // 200
-  message: string; // "Announcement fetched successfully"
-  data: AnnouncementItem;
-}
-
-export interface UpdateAnnouncementResponse {
-  status: number;  // 200
-  message: string; // "Announcement updated successfully"
-  data: {
-    id: string;
-    title: string;
-    audience: AnnouncementAudience;
-    publishedAt: string;
-  };
-}
+export type CreateAnnouncementResponse =
+  ResponseEnvelope<AnnouncementMutationData>;
+export type UpdateAnnouncementResponse =
+  ResponseEnvelope<AnnouncementMutationData>;
+export type GetAnnouncementsResponse =
+  ResponseEnvelope<PaginatedAnnouncements>;
+export type GetAnnouncementByIdResponse = ResponseEnvelope<AnnouncementItem>;

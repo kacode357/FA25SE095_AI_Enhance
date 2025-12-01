@@ -1,23 +1,50 @@
 // hooks/admin/usePendingApprovalUsers.ts
 "use client";
 
-import { AdminService } from "@/services/admin.services";
-import type { PendingApprovalParams } from "@/types/admin/admin.payload";
-import type { PendingApprovalResponse } from "@/types/admin/admin.response";
 import { useCallback, useState } from "react";
+
+import { AdminUserService } from "@/services/admin-user.services";
+import type {
+  AdminUserItem,
+  GetPendingApprovalUsersResponse,
+} from "@/types/admin/admin-user.response";
+
+type PendingPaginationState = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+};
+
+const defaultPagination: PendingPaginationState = {
+  page: 1,
+  pageSize: 100,
+  totalItems: 0,
+  totalPages: 0,
+};
 
 export function usePendingApprovalUsers() {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<PendingApprovalResponse | null>(null);
+  const [items, setItems] = useState<AdminUserItem[]>([]);
+  const [pagination, setPagination] =
+    useState<PendingPaginationState>(defaultPagination);
 
-  const fetchPendingUsers = useCallback(
-    async (params?: PendingApprovalParams): Promise<PendingApprovalResponse> => {
+  const fetchPendingApprovalUsers = useCallback(
+    async (): Promise<GetPendingApprovalUsersResponse> => {
       setLoading(true);
       try {
-        const res = await AdminService.getPendingApprovalUsers(params);
-        const payload = (res as any)?.data ?? res;
-        setData(payload);
-        return payload;
+        const res = await AdminUserService.getPendingApprovalUsers();
+        const page = res.data;
+
+        setItems(page.users || []);
+        setPagination({
+          page: page.page,
+          pageSize: page.pageSize,
+          totalItems: page.totalCount,
+          totalPages: page.totalPages,
+        });
+
+        return res;
       } finally {
         setLoading(false);
       }
@@ -25,5 +52,10 @@ export function usePendingApprovalUsers() {
     []
   );
 
-  return { data, loading, fetchPendingUsers };
+  return {
+    loading,
+    items,
+    pagination,
+    fetchPendingApprovalUsers,
+  };
 }

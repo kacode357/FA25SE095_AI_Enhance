@@ -9,7 +9,7 @@ import clsx from "clsx";
 import { Button } from "@/components/ui/button";
 import { useAdminAnnouncements } from "@/hooks/announcements/useAdminAnnouncements";
 import { AnnouncementAudience } from "@/types/announcements/announcement.response";
-import PaginationBar from "@/components/common/PaginationBar";
+import PaginationBar from "@/components/common/pagination-all";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 import AnnouncementFilterBar, {
   AnnouncementFilterValue,

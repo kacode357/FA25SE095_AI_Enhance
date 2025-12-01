@@ -1,5 +1,3 @@
-// types/payments/subscription-payment.response.ts
-
 import type { SubscriptionTier } from "@/types/subscription/subscription.response";
 
 export enum SubscriptionPaymentStatus {
@@ -14,10 +12,7 @@ export enum SubscriptionPaymentStatus {
 export interface SubscriptionPaymentItem {
   paymentId: string;
   orderCode: string;
-
-  // match BE SubscriptionTier
   tier: SubscriptionTier;
-
   status: SubscriptionPaymentStatus;
   amount: number;
   currency: string;
@@ -41,20 +36,18 @@ export interface PaginatedSubscriptionPayments {
   items: SubscriptionPaymentItem[];
 }
 
-export interface GetAdminSubscriptionPaymentsResponse {
-  status: number;  // 200
-  message: string; // "Subscription payments retrieved"
-  data: PaginatedSubscriptionPayments;
-}
+type ResponseEnvelope<T> = {
+  status: number;
+  message: string;
+  data: T;
+};
 
-export interface SubscriptionPaymentsStatusBreakdown {
-  Pending: number;
-  Processing: number;
-  Paid: number;
-  Failed: number;
-  Cancelled: number;
-  Expired: number;
-}
+type StatusBreakdownKey = keyof typeof SubscriptionPaymentStatus;
+
+export type SubscriptionPaymentsStatusBreakdown = Record<
+  StatusBreakdownKey,
+  number
+>;
 
 export interface SubscriptionPaymentsSummary {
   totalPayments: number;
@@ -62,8 +55,7 @@ export interface SubscriptionPaymentsSummary {
   statusBreakdown: SubscriptionPaymentsStatusBreakdown;
 }
 
-export interface GetAdminSubscriptionPaymentsSummaryResponse {
-  status: number;  // 200
-  message: string; // "Subscription payment summary"
-  data: SubscriptionPaymentsSummary;
-}
+export type GetAdminSubscriptionPaymentsResponse =
+  ResponseEnvelope<PaginatedSubscriptionPayments>;
+export type GetAdminSubscriptionPaymentsSummaryResponse =
+  ResponseEnvelope<SubscriptionPaymentsSummary>;

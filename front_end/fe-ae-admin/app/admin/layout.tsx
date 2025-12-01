@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
-import ManagerSidebar from "./components/sidebar";
+import ManagerSidebar from "./components/layout/sidebar";
 
 export default function ManagerLayout({
   children,
@@ -12,7 +12,7 @@ export default function ManagerLayout({
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-white">
+    <div className="min-h-screen flex bg-white overflow-x-hidden">
       {/* Sidebar: desktop fixed */}
       <aside
         className={`fixed left-0 top-0 bottom-0 z-40 hidden sm:block border-r border-gray-200 bg-white transition-all duration-300 ${

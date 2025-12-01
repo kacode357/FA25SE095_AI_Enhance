@@ -1,403 +1,265 @@
-// app/admin/subscription-payments/summary/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { 
+  BarChart3, 
+  CheckCircle2, 
+  Clock, 
+  CreditCard, 
+  DollarSign, 
+  XCircle, 
+  AlertCircle,
+  Users,
+  ArrowUpRight
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+// Components
+import SummaryFilters, { SummaryFiltersState } from "./components/SummaryFilters";
 
+// Hooks & Types
 import { useAdminSubscriptionPaymentsSummary } from "@/hooks/payments/useAdminSubscriptionPaymentsSummary";
-import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/subscription-payment.payload";
-import { SubscriptionPaymentStatus } from "@/types/payments/subscription-payment.response";
-import { SubscriptionTier } from "@/types/subscription/subscription.response";
+import { useAdminUsers } from "@/hooks/admin/useAdminUsers";
+import { AdminUserRoleFilter } from "@/types/admin/admin-user.payload";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
-function formatTier(tier?: SubscriptionTier) {
-  switch (tier) {
-    case SubscriptionTier.Free:
-      return "Free";
-    case SubscriptionTier.Basic:
-      return "Basic";
-    case SubscriptionTier.Premium:
-      return "Premium";
-    case SubscriptionTier.Enterprise:
-      return "Enterprise";
-    default:
-      return "All";
-  }
-}
+export default function SubscriptionSummaryPage() {
+  // --- HOOKS ---
+  const { 
+    loading: summaryLoading, 
+    summary, 
+    fetchAdminSubscriptionPaymentsSummary 
+  } = useAdminSubscriptionPaymentsSummary();
 
-function formatStatus(status?: SubscriptionPaymentStatus) {
-  switch (status) {
-    case SubscriptionPaymentStatus.Pending:
-      return "Pending";
-    case SubscriptionPaymentStatus.Processing:
-      return "Processing";
-    case SubscriptionPaymentStatus.Paid:
-      return "Paid";
-    case SubscriptionPaymentStatus.Failed:
-      return "Failed";
-    case SubscriptionPaymentStatus.Cancelled:
-      return "Cancelled";
-    case SubscriptionPaymentStatus.Expired:
-      return "Expired";
-    default:
-      return "All";
-  }
-}
+  const { 
+    loading: usersLoading, 
+    items: recentStudents, 
+    fetchAdminUsers 
+  } = useAdminUsers();
 
-export default function AdminSubscriptionPaymentsSummaryPage() {
-  const { loading, summary, fetchAdminSubscriptionPaymentsSummary } =
-    useAdminSubscriptionPaymentsSummary();
+  const [filters, setFilters] = useState<SummaryFiltersState>({});
 
-  // filter state (UI)
-  const [userId, setUserId] = useState("");
-  const [tier, setTier] = useState<SubscriptionTier | undefined>(undefined);
-  const [status, setStatus] = useState<SubscriptionPaymentStatus | undefined>(
-    undefined
-  );
-  const [from, setFrom] = useState<string | undefined>(undefined);
-  const [to, setTo] = useState<string | undefined>(undefined);
-
-  // filters thật sự đang gửi lên API
-  const [activeFilters, setActiveFilters] =
-    useState<Omit<AdminSubscriptionPaymentsQuery, "page" | "pageSize">>({});
-
-  const loadSummary = () => {
-    const query: AdminSubscriptionPaymentsQuery = {
-      ...activeFilters,
-    };
-    fetchAdminSubscriptionPaymentsSummary(query);
-  };
-
+  // --- EFFECT: FETCH DATA ---
   useEffect(() => {
-    loadSummary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilters]);
+    // 1. Gọi API Summary (có filter user)
+    fetchAdminSubscriptionPaymentsSummary({
+      userId: filters.searchTerm, // Map searchTerm vào userId
+      from: filters.from,
+      to: filters.to
+    });
 
-  const handleApplyFilters = () => {
-    const next: Omit<AdminSubscriptionPaymentsQuery, "page" | "pageSize"> = {};
+    // 2. Gọi API Recent Students (Luôn lấy 5 em mới nhất)
+    fetchAdminUsers({
+      page: 1,
+      pageSize: 5,
+      role: AdminUserRoleFilter.Student,
+      sortBy: "CreatedAt",
+      sortOrder: "Desc"
+    });
+  }, [fetchAdminSubscriptionPaymentsSummary, fetchAdminUsers, filters]);
 
-    if (userId.trim()) next.userId = userId.trim();
-    if (typeof tier === "number") next.tier = tier;
-    if (typeof status === "number") next.status = status;
-    if (from) next.from = from;
-    if (to) next.to = to;
-
-    setActiveFilters(next);
+  // Helper format VND
+  const formatMoney = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
-
-  const handleResetFilters = () => {
-    setUserId("");
-    setTier(undefined);
-    setStatus(undefined);
-    setFrom(undefined);
-    setTo(undefined);
-    setActiveFilters({});
-  };
-
-  const totalPayments = summary?.totalPayments ?? 0;
-  const totalRevenue = summary?.totalRevenue ?? 0;
-  const breakdown = summary?.statusBreakdown;
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-              <BarChart3 className="h-5 w-5" />
+    <motion.div
+      className="space-y-6 pb-10"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* --- HEADER --- */}
+      <div className="px-5 pt-5">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Analytics & Summary</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Real-time financial overview and student registration activities.
+        </p>
+      </div>
+
+      <div className="px-5 space-y-6">
+        
+        {/* --- 1. FILTERS --- */}
+        <SummaryFilters 
+          loading={summaryLoading} 
+          filters={filters} 
+          onChange={setFilters} 
+        />
+
+        {/* --- 2. KEY METRICS (Overview Cards) --- */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          {/* Revenue Card */}
+          <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between z-10 relative">
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">Total Revenue</p>
+                {summaryLoading ? (
+                  <Skeleton className="h-9 w-40" />
+                ) : (
+                  <h3 className="text-3xl font-bold text-slate-900 tracking-tight">
+                    {formatMoney(summary?.totalRevenue || 0)}
+                  </h3>
+                )}
+              </div>
+              <div className="h-12 w-12 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-emerald-600" />
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold text-slate-900">
-                Subscription Payments Summary
-              </h1>
-              <p className="text-xs text-slate-500">
-                High-level overview of total payments, revenue, and status breakdown.
-              </p>
+            {/* Decoration BG */}
+            <div className="absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-emerald-50/50 z-0" />
+          </div>
+
+          {/* Transactions Card */}
+          <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between z-10 relative">
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">Total Transactions</p>
+                {summaryLoading ? (
+                  <Skeleton className="h-9 w-24" />
+                ) : (
+                  <h3 className="text-3xl font-bold text-slate-900 tracking-tight">
+                    {summary?.totalPayments || 0}
+                  </h3>
+                )}
+              </div>
+              <div className="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
+                <BarChart3 className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+             {/* Decoration BG */}
+             <div className="absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-blue-50/50 z-0" />
+          </div>
+        </div>
+
+        {/* --- 3. MAIN CONTENT GRID (2/3 + 1/3) --- */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          
+          {/* LEFT: PAYMENT STATUS BREAKDOWN (Chiếm 2 cột) */}
+          <div className="lg:col-span-2 flex flex-col rounded-xl border border-[var(--border)] bg-white shadow-sm">
+            <div className="p-6 border-b border-[var(--border)]">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-brand" />
+                Payment Status Breakdown
+              </h3>
+            </div>
+            
+            <div className="p-6">
+              {summaryLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                   {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-lg" />)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <StatusCard label="Paid" count={summary?.statusBreakdown?.Paid || 0} icon={CheckCircle2} color="emerald" />
+                  <StatusCard label="Pending" count={summary?.statusBreakdown?.Pending || 0} icon={Clock} color="amber" />
+                  <StatusCard label="Processing" count={summary?.statusBreakdown?.Processing || 0} icon={Clock} color="blue" />
+                  <StatusCard label="Failed" count={summary?.statusBreakdown?.Failed || 0} icon={AlertCircle} color="red" />
+                  <StatusCard label="Cancelled" count={summary?.statusBreakdown?.Cancelled || 0} icon={XCircle} color="slate" />
+                  <StatusCard label="Expired" count={summary?.statusBreakdown?.Expired || 0} icon={XCircle} color="gray" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: RECENT STUDENTS (Chiếm 1 cột) */}
+          <div className="flex flex-col rounded-xl border border-[var(--border)] bg-white shadow-sm h-full">
+            <div className="p-6 border-b border-[var(--border)] flex justify-between items-center">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Users className="h-5 w-5 text-brand" />
+                Newest Students
+              </h3>
+              <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-normal">Last 5</Badge>
+            </div>
+
+            <div className="flex-1 p-0">
+              {usersLoading ? (
+                 <div className="p-6 space-y-5">
+                   {[...Array(5)].map((_, i) => (
+                     <div key={i} className="flex items-center gap-3">
+                       <Skeleton className="h-9 w-9 rounded-full" />
+                       <div className="space-y-1.5 flex-1">
+                         <Skeleton className="h-3 w-3/4" />
+                         <Skeleton className="h-2 w-1/2" />
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+              ) : recentStudents.length === 0 ? (
+                <div className="p-10 text-center text-slate-500">
+                  <p>No new students found.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-[var(--border)]">
+                  {recentStudents.map((user) => (
+                    <div key={user.id} className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
+                      <Avatar className="h-9 w-9 border border-slate-200">
+                        <AvatarImage src={user.profilePictureUrl || ""} />
+                        <AvatarFallback className="bg-brand/10 text-brand text-xs font-medium">
+                          {(user.email[0] || "U").toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 truncate">
+                          {(user.firstName || user.lastName) 
+                            ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() 
+                            : "Unnamed Student"}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate font-mono">
+                          {user.email}
+                        </p>
+                      </div>
+                      
+                      <div className="text-right shrink-0">
+                        <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-full border border-slate-100">
+                           {formatDateTimeVN(user.createdAt).split(' ')[0]}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 bg-slate-50/50 border-t border-[var(--border)] rounded-b-xl text-center">
+               <a href="/admin/students" className="text-xs font-medium text-brand hover:underline inline-flex items-center gap-1">
+                 View All Students <ArrowUpRight className="h-3 w-3" />
+               </a>
             </div>
           </div>
         </div>
+
       </div>
+    </motion.div>
+  );
+}
 
-      {/* Filters */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-slate-600">User ID</p>
-              <Input
-                placeholder="Filter by User ID"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-              />
-            </div>
+// --- Sub Component: Status Card (Làm đẹp hơn) ---
+function StatusCard({ label, count, icon: Icon, color }: { label: string, count: number, icon: any, color: string }) {
+  const styles: Record<string, string> = {
+    emerald: "bg-emerald-50/50 text-emerald-700 border-emerald-100 hover:border-emerald-200",
+    amber: "bg-amber-50/50 text-amber-700 border-amber-100 hover:border-amber-200",
+    blue: "bg-blue-50/50 text-blue-700 border-blue-100 hover:border-blue-200",
+    red: "bg-red-50/50 text-red-700 border-red-100 hover:border-red-200",
+    slate: "bg-slate-50/50 text-slate-700 border-slate-200 hover:border-slate-300",
+    gray: "bg-gray-50/50 text-gray-600 border-gray-200 hover:border-gray-300",
+  };
 
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-slate-600">
-                Subscription Tier
-              </p>
-              <Select
-                value={
-                  typeof tier === "number" ? String(tier) : undefined
-                }
-                onValueChange={(val) =>
-                  setTier(
-                    val === "all"
-                      ? undefined
-                      : (Number(val) as SubscriptionTier)
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All tiers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All tiers</SelectItem>
-                  <SelectItem value={String(SubscriptionTier.Free)}>
-                    Free
-                  </SelectItem>
-                  <SelectItem value={String(SubscriptionTier.Basic)}>
-                    Basic
-                  </SelectItem>
-                  <SelectItem value={String(SubscriptionTier.Premium)}>
-                    Premium
-                  </SelectItem>
-                  <SelectItem
-                    value={String(SubscriptionTier.Enterprise)}
-                  >
-                    Enterprise
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+  const css = styles[color] || styles.slate;
 
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-slate-600">
-                Payment Status
-              </p>
-              <Select
-                value={
-                  typeof status === "number"
-                    ? String(status)
-                    : undefined
-                }
-                onValueChange={(val) =>
-                  setStatus(
-                    val === "all"
-                      ? undefined
-                      : (Number(val) as SubscriptionPaymentStatus)
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem
-                    value={String(SubscriptionPaymentStatus.Pending)}
-                  >
-                    Pending
-                  </SelectItem>
-                  <SelectItem
-                    value={String(SubscriptionPaymentStatus.Processing)}
-                  >
-                    Processing
-                  </SelectItem>
-                  <SelectItem
-                    value={String(SubscriptionPaymentStatus.Paid)}
-                  >
-                    Paid
-                  </SelectItem>
-                  <SelectItem
-                    value={String(SubscriptionPaymentStatus.Failed)}
-                  >
-                    Failed
-                  </SelectItem>
-                  <SelectItem
-                    value={String(SubscriptionPaymentStatus.Cancelled)}
-                  >
-                    Cancelled
-                  </SelectItem>
-                  <SelectItem
-                    value={String(SubscriptionPaymentStatus.Expired)}
-                  >
-                    Expired
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-slate-600">
-                From (Created at)
-              </p>
-              <DateTimePicker value={from} onChange={setFrom} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-slate-600">
-                To (Created at)
-              </p>
-              <DateTimePicker value={to} onChange={setTo} />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap justify-end gap-2 pt-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetFilters}
-              disabled={loading}
-            >
-              Reset
-            </Button>
-            <Button size="sm" onClick={handleApplyFilters} disabled={loading}>
-              {loading && (
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-              )}
-              Apply filters
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-emerald-100 bg-emerald-50/40">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-emerald-700">
-              Total Payments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-emerald-900">
-              {loading ? (
-                <span className="inline-flex items-center gap-2 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                </span>
-              ) : (
-                totalPayments
-              )}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-indigo-100 bg-indigo-50/40">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-indigo-700">
-              Total Revenue
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-indigo-900">
-              {loading ? (
-                <span className="inline-flex items-center gap-2 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                </span>
-              ) : (
-                `${totalRevenue.toLocaleString()} VND`
-              )}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-100 bg-slate-50/60">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-700">
-              Current Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1.5 text-[11px] text-slate-600">
-            <p>
-              <span className="font-semibold">User:</span>{" "}
-              {activeFilters.userId || "All"}
-            </p>
-            <p>
-              <span className="font-semibold">Tier:</span>{" "}
-              {formatTier(activeFilters.tier)}
-            </p>
-            <p>
-              <span className="font-semibold">Status:</span>{" "}
-              {formatStatus(
-                activeFilters.status as SubscriptionPaymentStatus | undefined
-              )}
-            </p>
-            <p>
-              <span className="font-semibold">From:</span>{" "}
-              {activeFilters.from || "-"}
-            </p>
-            <p>
-              <span className="font-semibold">To:</span>{" "}
-              {activeFilters.to || "-"}
-            </p>
-          </CardContent>
-        </Card>
+  return (
+    <div className={`flex flex-col items-center justify-center p-5 rounded-xl border transition-all duration-200 ${css}`}>
+      <div className="mb-2 p-2 bg-white rounded-full shadow-sm">
+        <Icon className="h-5 w-5" />
       </div>
-
-      {/* Status breakdown */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">
-            Status Breakdown
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading && !breakdown && (
-            <div className="flex h-24 items-center justify-center text-xs text-slate-500">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Loading summary...
-            </div>
-          )}
-
-          {!loading && !breakdown && (
-            <div className="flex h-24 items-center justify-center text-xs text-slate-500">
-              No data available.
-            </div>
-          )}
-
-          {breakdown && (
-            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
-              {Object.entries(breakdown).map(([key, value]) => (
-                <div
-                  key={key}
-                  className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2"
-                >
-                  <p className="text-[11px] font-medium text-slate-500">
-                    {key}
-                  </p>
-                  <p className="text-lg font-semibold text-slate-900">
-                    {value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <span className="text-2xl font-bold tracking-tight">{count}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wider opacity-70 mt-1">{label}</span>
     </div>
   );
 }

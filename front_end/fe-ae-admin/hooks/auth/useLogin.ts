@@ -50,7 +50,7 @@ export function useLogin() {
       // Đúng role admin -> lưu user + redirect
       await saveEncodedUser(profile, rememberMe);
 
-      let target = "/admin/users";
+      let target = "/admin";
 
       if (typeof window !== "undefined") {
         window.location.href = target;

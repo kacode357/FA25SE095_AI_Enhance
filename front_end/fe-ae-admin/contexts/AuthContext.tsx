@@ -31,7 +31,7 @@ const AuthContext = createContext<AuthContextType>({
 // helper: home theo role (giờ là Admin)
 function homeByRole(role?: string) {
   const ADMIN = UserServiceRole[ROLE_ADMIN];
-  if (role === ADMIN) return "/admin/users";
+  if (role === ADMIN) return "/admin";
   return "/";
 }
 
