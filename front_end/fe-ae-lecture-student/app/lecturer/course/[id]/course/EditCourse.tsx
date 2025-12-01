@@ -124,7 +124,7 @@ export default function EditCourse() {
             <nav aria-label="Breadcrumb" className="text-[12px] select-none my-2">
                 <div className="flex items-center justify-between mt-2">
                     <ol className="flex items-center gap-1 text-slate-500">
-                        <li className="flex items-center gap-1">
+                        <li className="flex items-center gap-1 mr-3">
                             <Book className="size-4" />
                             <button
                                 onClick={() => window.location.href = '/lecturer/course'}
@@ -133,7 +133,7 @@ export default function EditCourse() {
                                 My Courses
                             </button>
                         </li>
-                        <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
+                        <ChevronRight className="size-3 mr-3 text-slate-400 hidden sm:inline" />
                         <li className="text-slate-900 font-medium truncate max-w-[200px]">
                             {course.courseCode} — {course.courseCodeTitle}
                         </li>

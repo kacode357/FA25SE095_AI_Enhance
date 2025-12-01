@@ -6,10 +6,12 @@ import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import { useCreateTopic } from "@/hooks/topic/useCreateTopic";
 import { useGetTopicById } from "@/hooks/topic/useGetTopicById";
 import { useGetTopics } from "@/hooks/topic/useGetTopics";
 import { useUpdateTopic } from "@/hooks/topic/useUpdateTopic";
+import { PenLine } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -98,7 +100,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
             {/* CREATE + LIST */}
             <Sheet open={open} onOpenChange={onOpenChange}>
                 <SheetContent className="bg-white w-full border border-slate-200 sm:max-w-xl md:max-w-xl h-screen flex flex-col">
-                    <SheetHeader className="flex-shrink-0">
+                    <SheetHeader className="flex-shrink-0 cursor-text">
                         <SheetTitle>New Topic</SheetTitle>
                     </SheetHeader>
 
@@ -107,18 +109,18 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                         {hookError && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{hookError}</div>}
 
                         <div>
-                            <Label className="text-sm mb-1">Topic Name *</Label>
-                            <Input className="text-sm placeholder:text-sm" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter topic name" />
+                            <Label className="text-sm cursor-text mb-1">Topic Name *</Label>
+                            <Input className="text-sm cursor-text placeholder:text-sm" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter topic name" />
                         </div>
 
                         <div>
-                            <Label className="text-sm mb-1">Description *</Label>
-                            <Input className="text-sm placeholder:text-sm" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
+                            <Label className="text-sm cursor-text mb-1">Description *</Label>
+                            <Textarea className="text-sm cursor-text border-slate-200 placeholder:text-sm" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
                         </div>
 
                         <div className="flex items-center gap-2 mt-3">
-                            <Checkbox checked={isActive} onCheckedChange={(v) => setIsActive(!!v)} />
-                            <Label className="cursor-pointer">Active</Label>
+                            <Checkbox checked={isActive} className="cursor-pointer text-white bg-green-600" onCheckedChange={(v) => setIsActive(!!v)} />
+                            <Label className="cursor-pointer text-green-600">Active</Label>
                         </div>
                     </div>
 
@@ -126,7 +128,10 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                     <div className="px-4 pt-4 border-t border-slate-200 flex-1 flex flex-col overflow-hidden">
                         <div className="flex justify-between text-sm font-medium mb-2 flex-shrink-0 bg-white z-10">
                             <div>Existing Topics</div>
-                            <div>Active</div>
+                            <div className="flex items-center gap-5">
+                                <div>Active</div>
+                                <div>Edit</div>
+                            </div>
                         </div>
 
                         <div className="flex-1 overflow-auto">
@@ -138,15 +143,27 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                                 topicsData?.topics.map((t) => (
                                     <div
                                         key={t.id}
-                                        className="p-2 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50"
+                                        className="pl-2 py-2 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50"
                                         onClick={() => handleTopicClick(t.id)}
                                     >
                                         <div>
-                                            <div className="text-sm font-medium">{t.name}</div>
+                                            <div className="text-sm text-violet-500 font-medium">{t.name}</div>
                                             <div className="text-xs text-slate-500">{t.description}</div>
                                         </div>
-                                        <div>
-                                            <Checkbox checked={t.isActive} disabled />
+                                        <div className="flex items-center gap-7.5">
+                                            <Checkbox className="text-white bg-green-600" checked={t.isActive} disabled />
+                                            <button
+                                                className="p-1 rounded cursor-pointer hover:bg-blue-100"
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedTopicId(t.id);
+                                                    setOpenDialog(true);
+                                                    await fetchTopicById(t.id);
+                                                }}
+                                                aria-label={`Edit ${t.name}`}
+                                            >
+                                                <PenLine className="w-3.5 h-3.5 text-blue-500" />
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -168,7 +185,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
                 <DialogContent className="border border-slate-200">
                     <DialogHeader>
-                        <DialogTitle>Topic Details</DialogTitle>
+                        <DialogTitle>Edit Topic Details</DialogTitle>
                         <DialogClose />
                     </DialogHeader>
 
@@ -189,22 +206,24 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                             </div>
                             <div>
                                 <Label className="text-sm">Description</Label>
-                                <Input
+                                <Textarea
                                     value={editableTopic.description}
                                     onChange={(e) =>
                                         setEditableTopic((prev) => prev ? { ...prev, description: e.target.value } : prev)
                                     }
                                     placeholder="Description"
+                                    className="border-slate-200"
                                 />
                             </div>
                             <div className="flex items-center gap-2">
                                 <Checkbox
                                     checked={editableTopic.isActive}
+                                    className="text-white bg-green-600"
                                     onCheckedChange={(v) =>
                                         setEditableTopic((prev) => prev ? { ...prev, isActive: !!v } : prev)
                                     }
                                 />
-                                <Label className="cursor-pointer">Active</Label>
+                                <Label className="cursor-pointer text-green-500">Active</Label>
                             </div>
 
                             {/* Info */}
@@ -252,7 +271,7 @@ export default function NewTopicSheet({ open, onOpenChange, onCreated }: NewTopi
                                     }}
                                     disabled={updating}
                                 >
-                                    {updating ? "Updating..." : "Cập nhật"}
+                                    {updating ? "Updating..." : "Save Changes"}
                                 </Button>
                             </div>
 

@@ -185,7 +185,7 @@ export default function LecturerCoursesPage() {
         {/* Status Filter */}
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium text-slate-700">Status:</span>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 bg-slate-100 p-0.5 rounded-full">
             {LecturerCourseStatusFilterOptions.map((option) => {
               const isActive = statusFilter === option.value;
               return (
@@ -198,7 +198,7 @@ export default function LecturerCoursesPage() {
                   }}
                   className={`rounded-full cursor-pointer px-4 py-2 text-xs font-medium transition-all ${
                     isActive
-                      ? "bg-violet-50 text-violet-700 shadow-md"
+                      ? "bg-white text-violet-700 shadow-md"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
@@ -277,7 +277,7 @@ export default function LecturerCoursesPage() {
                       onClick={() => handleEdit(course.id)}
                       className="h-9 px-4 rounded-lg btn btn-gradient-slow text-sm font-medium text-white"
                     >
-                      Details
+                      <List className=" h-4 w-4" />Manager Course
                     </button>
                   </div>
                 </div>
