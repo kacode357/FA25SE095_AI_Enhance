@@ -17,7 +17,6 @@ export default function Logo({
   imgSrc = "/aids-logo.png",
   imgAlt = "AI Enhance",
   title = "AI Enhance",
-  subtitle = "Student Portal",
   className = "",
 }: LogoProps) {
   return (

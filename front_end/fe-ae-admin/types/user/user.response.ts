@@ -16,6 +16,7 @@ export interface UserProfile {
   role: string;
   status: UserStatus;
   subscriptionTier: string;
+  fullName: string;
   isEmailConfirmed: boolean;
   emailConfirmedAt: string;
   lastLoginAt: string;

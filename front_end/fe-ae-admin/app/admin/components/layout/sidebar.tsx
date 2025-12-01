@@ -12,6 +12,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import Logo from "@/components/logo/Logo";
+import UserMenu from "./UserMenu"; // Import UserMenu
 
 import { mainNav } from "./admin-main-nav";
 
@@ -23,26 +25,19 @@ type SidebarProps = {
 export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps) {
   const pathname = usePathname();
 
-  // Helper check xem URL có khớp logic cơ bản không
   const checkMatch = (href: string) => {
     if (!pathname) return false;
-    if (pathname === href) return true; // Giống y hệt
-    if (href === '/admin') return false; // Dashboard không bắt nạt trang con
-    return pathname.startsWith(`${href}/`); // Check trang detail
+    if (pathname === href) return true;
+    if (href === '/admin') return false;
+    return pathname.startsWith(`${href}/`);
   };
 
-  // State quản lý đóng mở
   const [openSections, setOpenSections] = useState<string[]>([]);
 
-  // Effect: Tự động tính toán section cần mở khi load trang
   useEffect(() => {
     if (!pathname) return;
-    
-    // Tìm section cha nào đang chứa trang hiện tại
     const activeParent = mainNav.find((item) => {
-      // Check cha match
       if (checkMatch(item.href)) return true;
-      // Check con match
       if (item.children) {
          return item.children.some(c => checkMatch(c.href));
       }
@@ -71,27 +66,28 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
       )}
     >
       {/* Header */}
-      <div className="h-20 border-b border-[var(--border)] flex items-center px-4">
-        <div className="flex items-center gap-3">
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-nav">Admin Panel</span>
-              <span className="text-xs text-[var(--text-muted)]">Dashboard Management</span>
-            </div>
-          )}
-        </div>
+      <div className="h-20 border-b border-[var(--border)] flex items-center px-4 justify-between shrink-0">
+        {!collapsed && (
+           <div className="flex-1 flex justify-start overflow-hidden">
+             <Logo href="/admin" className="ml-0" />
+           </div>
+        )}
+
         <Button
           onClick={() => setCollapsed(!collapsed)}
           size="icon"
           variant="ghost"
-          className="ml-auto rounded-full shadow-md bg-gradient-to-br from-[var(--accent)] to-[var(--brand)] text-white hover:opacity-90 h-10 w-10"
+          className={clsx(
+             "rounded-full shadow-md bg-gradient-to-br from-[var(--accent)] to-[var(--brand)] text-white hover:opacity-90 h-10 w-10 shrink-0",
+             collapsed ? "mx-auto" : "ml-auto"
+          )}
         >
           <ChevronRight className={clsx("transition-transform w-6 h-6", collapsed ? "rotate-0" : "rotate-180")} />
         </Button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-3">
+      <nav className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {!collapsed && (
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1">Main</p>
         )}
@@ -100,27 +96,17 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
           const hasChildren = !!children?.length;
           const isOpen = hasChildren && openSections.includes(href);
 
-          // 🟢 LOGIC MỚI: TÌM ACTIVE CHILD CHUẨN XÁC
-          // Mục đích: Chỉ cho phép 1 child active duy nhất dựa trên độ dài URL match
           let activeChildHref = "";
           if (hasChildren && pathname) {
-            // Lọc ra những child khớp với URL hiện tại
             const matchingChildren = children!.filter(child => checkMatch(child.href));
-            
-            // Sắp xếp giảm dần theo độ dài href. 
-            // -> "/admin/lecturers/pending-approval" (dài) sẽ đứng trước "/admin/lecturers" (ngắn)
             matchingChildren.sort((a, b) => b.href.length - a.href.length);
-
-            // Lấy thằng đầu tiên (thằng dài nhất/cụ thể nhất)
             if (matchingChildren.length > 0) {
               activeChildHref = matchingChildren[0].href;
             }
           }
 
-          // Parent active nếu chính nó active hoặc có con active
           const isSectionActive = checkMatch(href) || !!activeChildHref;
 
-          // Style chung
           const baseCardClasses = clsx(
             "relative flex items-center w-full transition-all duration-200 cursor-pointer",
             collapsed ? "justify-center h-12 rounded-2xl" : "h-16 rounded-2xl px-4 shadow-sm"
@@ -128,7 +114,6 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
           const cardActive = "bg-gradient-to-r from-[var(--brand)] to-[var(--brand-700)] text-white shadow-[0_16px_32px_rgba(127,113,244,0.45)]";
           const cardInactive = "bg-white text-nav hover:bg-[color-mix(in_oklab,var(--brand)_6%,#f8fafc)]";
 
-          // --- RENDER ITEM KHÔNG CÓ CHILDREN ---
           if (!hasChildren) {
             return (
               <Link
@@ -149,7 +134,6 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
             );
           }
 
-          // --- RENDER ITEM CÓ CHILDREN (COLLAPSIBLE) ---
           return (
             <Collapsible key={href} open={isOpen} onOpenChange={() => toggleSection(href)} className="space-y-1">
               <CollapsibleTrigger asChild>
@@ -175,9 +159,7 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
               {!collapsed && children && (
                 <CollapsibleContent className="mt-2 space-y-1 ml-4 border-l border-[color-mix(in_oklab,var(--brand)_18%,#e5e7eb)] pl-3">
                   {children.map((child) => {
-                    // 🟢 SO SÁNH: Child này có phải là activeChildHref đã tính ở trên không?
                     const isChildActive = child.href === activeChildHref;
-
                     return (
                       <Link
                         key={child.href}
@@ -200,6 +182,14 @@ export default function ManagerSidebar({ collapsed, setCollapsed }: SidebarProps
           );
         })}
       </nav>
+
+      {/* --- FOOTER (USER MENU) --- */}
+      {/* Container này có border-t để ngăn cách với menu.
+          Padding được tính toán để nhìn cân đối.
+      */}
+      <div className="p-4 border-t border-[var(--border)] shrink-0 bg-white">
+        <UserMenu showUserInfo={!collapsed} />
+      </div>
     </div>
   );
 }
