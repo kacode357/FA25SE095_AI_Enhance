@@ -33,10 +33,10 @@ import type {
 export const AuthService = {
   /** POST /Auth/login — trả về ApiResponse<LoginResponse> */
   login: async (data: LoginPayload): Promise<ApiResponse<LoginResponse>> => {
-    const response = await userAxiosInstance.post<ApiResponse<LoginResponse>>(
-      "/Auth/login",
-      data
-    );
+    const response = await userAxiosInstance.post<ApiResponse<LoginResponse>>("/Auth/login", data, {
+      // Caller: login flow should not trigger global toasts from interceptors
+      suppressToast: true,
+    });
     return response.data; // { status, message, data }
   },
 
@@ -79,7 +79,9 @@ export const AuthService = {
   },
 
   logout: async (data: LogoutPayload): Promise<LogoutResponse> => {
-    const response = await userAxiosInstance.post<LogoutResponse>("/Auth/logout", data);
+    const response = await userAxiosInstance.post<LogoutResponse>("/Auth/logout", data, {
+      suppressToast: true,
+    });
     return response.data;
   },
   googleLogin: async (
@@ -87,7 +89,8 @@ export const AuthService = {
   ): Promise<ApiResponse<GoogleLoginResponse>> => {
     const response = await userAxiosInstance.post<ApiResponse<GoogleLoginResponse>>(
       "/Auth/google-login",
-      data
+      data,
+      { suppressToast: true }
     );
     return response.data;
   },

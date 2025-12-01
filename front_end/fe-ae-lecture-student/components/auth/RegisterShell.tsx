@@ -60,8 +60,14 @@ export default function RegisterShell({ title, subtitle, children, footer }: Pro
                     <div className="max-w-2xl mx-auto">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
                             <div className="flex-1">
-                                <h2 className="text-2xl font-semibold text-slate-900 mb-1">{title}</h2>
-                                {subtitle && <div className="text-sm text-slate-600">{subtitle}</div>}
+                                {title ? (
+                                    <>
+                                        <h2 className="text-2xl font-semibold text-slate-900 mb-1">{title}</h2>
+                                        {subtitle && <div className="text-sm text-slate-600">{subtitle}</div>}
+                                    </>
+                                ) : (
+                                    subtitle && <div className="text-sm text-slate-600">{subtitle}</div>
+                                )}
                             </div>
 
                             <div className="flex-none ml-4">

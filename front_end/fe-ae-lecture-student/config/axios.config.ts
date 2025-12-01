@@ -4,8 +4,8 @@ import Cookies from "js-cookie";
 import { toast } from "sonner";
 
 import {
-    updateAccessToken,
-    updateRefreshToken,
+  updateAccessToken,
+  updateRefreshToken,
 } from "@/utils/auth/access-token";
 import { clearEncodedUser } from "@/utils/secure-user";
 
@@ -154,7 +154,11 @@ const createAxiosInstance = (
             data,
             response.statusText || "Unauthorized"
           );
-          toast.error(`${msg}`);
+          // If the original request asked to suppress toasts, respect it (used by login/logout flows)
+          const origSuppress = (originalRequest && (originalRequest as any).suppressToast) || false;
+          if (!origSuppress) {
+            toast.error(`${msg}`);
+          }
           return response;
         }
 

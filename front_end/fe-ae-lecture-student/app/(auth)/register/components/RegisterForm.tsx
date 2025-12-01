@@ -91,6 +91,20 @@ export default function RegisterForm() {
 
             if (!res) return false;
 
+            try {
+                const displayUser: any = { ...payload };
+                delete displayUser.password;
+                // include any backend message so the success page can show it
+                // backend may return message at top-level or under data/msg — be permissive
+                const beMessage = (res as any)?.message ?? (res as any)?.msg ?? (res as any)?.data?.message ?? "";
+                if (beMessage) displayUser.message = beMessage;
+                // store avatar preview if present (client-only preview)
+                if (avatarPreview) displayUser.avatarPreview = avatarPreview;
+                localStorage.setItem("registerSuccessUser", JSON.stringify(displayUser));
+            } catch (e) {
+                // ignore storage errors
+            }
+
             // Clear controlled inputs and avatar on definite success
             setPasswordValue("");
             setConfirmValue("");
@@ -106,8 +120,9 @@ export default function RegisterForm() {
             setAvatarFile(null);
             setAvatarPreview(null);
 
-            // Navigate to login after successful registration
-            router.push("/login");
+            // Navigate to the registration success view on the same route
+            // We use a query param so no extra folder/page is required.
+            router.push("/register?success=1");
             return true;
         } catch (err) {
             return false;
