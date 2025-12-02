@@ -14,6 +14,13 @@ import { getSavedAccessToken } from "@/utils/auth/access-token";
 import { MessageCircle, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+function isSameDay(a?: string | null, b?: string | null) {
+  if (!a || !b) return false;
+  const da = new Date(a);
+  const db = new Date(b);
+  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
+}
+
 type Props = {
   conversation?: ConversationItemResponse | null;
 };
@@ -237,32 +244,28 @@ export default function MessageThread({ conversation }: Props) {
                     </Button>
                   </div>
                 )}
-                {messages.map((m) => {
+                {messages.map((m, idx) => {
                   const mine = m.senderId === user?.id;
+                  const prev = idx > 0 ? messages[idx - 1] : null;
+                  const showDateSep = !prev || !isSameDay(prev.sentAt, m.sentAt);
+
                   return (
-                    <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
-                      <div className={cn(
-                        "max-w-[70%] rounded px-3 py-2",
-                        mine ? "bg-primary text-primary-foreground" : "bg-muted"
-                      )}>
-                        <div className="text-xs opacity-80 mb-1">
-                          {mine ? "Bạn" : m.senderName} • {formatVNDateTime(m.sentAt)}
+                    <div key={m.id}>
+                      {showDateSep && (
+                        <div className="w-full flex items-center my-3">
+                          <div className="flex-1 h-px bg-slate-200" />
+                          <div className="mx-3 text-[12px] text-slate-500 px-3 py-1 rounded-full border border-slate-100 bg-white">{formatVNDateTime(m.sentAt).split(',')[0] === new Date().toLocaleDateString() ? 'Today' : new Date(m.sentAt).toLocaleDateString()}</div>
+                          <div className="flex-1 h-px bg-slate-200" />
                         </div>
-                        <div className="whitespace-pre-wrap break-words">{m.message}</div>
-                        {!mine && m.isDeleted && (
-                          <div className="text-[10px] italic opacity-60 mt-1">Deleted messages</div>
-                        )}
-                        {mine && (
-                          <div className="mt-2 flex justify-end">
-                            <Button
-                              variant="secondary"
-                              size="xs"
-                              onClick={() => handleDelete(m.id)}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        )}
+                      )}
+
+                      <div className={cn("flex mb-2 items-end", mine ? "justify-end" : "justify-start")}> 
+                        <div className={cn(
+                          mine ? "rounded-full bg-violet-500 text-white px-4 py-2 shadow" : "rounded-full bg-white border border-slate-200 text-slate-800 px-3 py-1",
+                          "inline-block max-w-[60%] break-words"
+                        )}>
+                          <div className="text-[12px] leading-tight">{m.message}</div>
+                        </div>
                       </div>
                     </div>
                   );
@@ -275,9 +278,9 @@ export default function MessageThread({ conversation }: Props) {
 
       {/* composer area (visual only: sending not supported here) */}
       <Separator />
-      <div className="sticky bottom-0 bg-[var(--card)] border-t border-[var(--border)] px-4 py-3 z-10">
-        <div className="flex items-center gap-2">
-          <textarea
+      <div className="sticky bottom-0 bg-[var(--card)] border-t border-[var(--border)] rounded-b-2xl px-4 py-3 z-10">
+        <div className="flex items-center gap-3">
+          <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -286,18 +289,17 @@ export default function MessageThread({ conversation }: Props) {
                 void onSend();
               }
             }}
-            className="input flex-1 resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-0"
-            rows={2}
-            placeholder="Type a message..."
+            className="flex-1 rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none"
+            placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
             disabled={sending}
           />
           <button
+            aria-label="Send message"
             disabled={sending || !input.trim()}
             onClick={() => void onSend()}
-            className="btn btn-gradient-slow h-9 px-4 text-xs font-semibold disabled:opacity-60"
+            className="h-9 px-4 text-xs font-semibold rounded-lg bg-gradient-to-r from-violet-400 to-violet-300 text-white disabled:opacity-60"
           >
-            Send
-            <Send className="size-4 ml-2" />
+            <Send className="w-4 h-4" />
           </button>
         </div>
       </div>
