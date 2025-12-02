@@ -1,7 +1,6 @@
-// app/student/courses/[id]/chat/components/ChatWindow.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
 import { useChatHub } from "@/hooks/hubchat/useChatHub";
 import { useGetConversations } from "@/hooks/chat/useGetConversations";
@@ -14,9 +13,7 @@ import type {
 
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 
-// ⭐ time utils dùng chung
 import {
   parseServerDate,
   timeHHmm,
@@ -24,7 +21,6 @@ import {
   ChatTimelineItem,
 } from "@/utils/chat/time";
 
-// ⭐ hook xoá message dùng lại được
 import { useChatDeleteMessage } from "@/hooks/chat/useChatDeleteMessage";
 
 /* ===== Utils ===== */
@@ -39,11 +35,15 @@ const initial = (name?: string) =>
   name?.trim()?.[0]?.toUpperCase() ?? "?";
 
 /* ===== Props ===== */
+type UnreadItem = { userId: string; unreadCount: number };
+
 type Props = {
   courseId: string;
   currentUserId: string | null;
   selectedUser: ChatUser | null;
   getAccessToken: () => string;
+  onUnreadCountChanged?: (payload: UnreadItem) => void;
+  onUnreadCountsBatch?: (payload: UnreadItem[]) => void;
 };
 
 export default function ChatWindow({
@@ -51,6 +51,8 @@ export default function ChatWindow({
   currentUserId,
   selectedUser,
   getAccessToken,
+  onUnreadCountChanged,
+  onUnreadCountsBatch,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -58,26 +60,118 @@ export default function ChatWindow({
   const [typingMap, setTypingMap] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // scroll
   const listRef = useRef<HTMLDivElement | null>(null);
+
   const scrollBottom = () =>
     requestAnimationFrame(() => {
-      if (listRef.current)
+      if (listRef.current) {
         listRef.current.scrollTop = listRef.current.scrollHeight;
+      }
     });
 
-  // hooks load data
   const { getConversations, loading: loadingConvs } = useGetConversations();
   const { getConversationMessages, loading: loadingMsgs } =
     useGetConversationMessages();
   const loadingHistory = loadingConvs || loadingMsgs;
 
-  // optimistic map
   const pendingRef = useRef<
     Map<string, { createdAt: number; message: string; receiverId: string }>
   >(new Map());
 
-  // Hub
+  // ⭐ ref lưu currentUser & selectedUser để dùng trong callback stable
+  const currentUserIdRef = useRef<string | null>(currentUserId);
+  const selectedUserRef = useRef<ChatUser | null>(selectedUser);
+
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
+
+  useEffect(() => {
+    selectedUserRef.current = selectedUser;
+  }, [selectedUser]);
+
+  // ⭐ handler nhận batch message từ Hub — chỉ add message thuộc cặp (me, selectedUser)
+  const handleMessagesBatch = useCallback((batch: ChatMessage[]) => {
+    if (!batch?.length) return;
+
+    const me = currentUserIdRef.current;
+    const peer = selectedUserRef.current;
+    if (!me || !peer) return;
+
+    const relevant = batch.filter(
+      (m) =>
+        (m.senderId === me && m.receiverId === peer.id) ||
+        (m.receiverId === me && m.senderId === peer.id),
+    );
+    if (!relevant.length) return;
+
+    setMessages((prev) => {
+      const byId = new Map(prev.map((m) => [m.id, m]));
+
+      for (const it of relevant) {
+        // replace optimistic temp message nếu trùng
+        if (it.senderId === me) {
+          for (const [tempId, p] of pendingRef.current) {
+            const within7s = Date.now() - p.createdAt <= 7000;
+            if (
+              within7s &&
+              p.receiverId === it.receiverId &&
+              p.message === it.message &&
+              byId.has(tempId)
+            ) {
+              byId.delete(tempId);
+              pendingRef.current.delete(tempId);
+              break;
+            }
+          }
+          if (!byId.has(it.id)) byId.set(it.id, it);
+        } else {
+          byId.set(it.id, it);
+        }
+      }
+
+      const next = Array.from(byId.values()).sort(
+        (a, b) =>
+          parseServerDate(a.sentAt).getTime() -
+          parseServerDate(b.sentAt).getTime(),
+      );
+      return next.length > 500 ? next.slice(-500) : next;
+    });
+
+    scrollBottom();
+  }, []);
+
+  const handleTyping = useCallback(
+    ({ userId, isTyping }: { userId: string; isTyping: boolean }) => {
+      setTypingMap((prev) =>
+        prev[userId] === isTyping ? prev : { ...prev, [userId]: isTyping },
+      );
+    },
+    [],
+  );
+
+  const handleUnreadChanged = useCallback(
+    (p: UnreadItem) => {
+      onUnreadCountChanged?.(p);
+    },
+    [onUnreadCountChanged],
+  );
+
+  const handleUnreadBatch = useCallback(
+    (items: UnreadItem[]) => {
+      onUnreadCountsBatch?.(items);
+    },
+    [onUnreadCountsBatch],
+  );
+
+  const handleMessageDeleted = useCallback((id: string) => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
+      ),
+    );
+  }, []);
+
   const {
     connect,
     disconnect,
@@ -85,102 +179,71 @@ export default function ChatWindow({
     startTyping,
     stopTyping,
     deleteMessageHub,
+    markMessagesAsRead,
   } = useChatHub({
     getAccessToken,
-    onReceiveMessagesBatch: (batch) => {
-      if (!batch?.length) return;
-      setMessages((prev) => {
-        const byId = new Map(prev.map((m) => [m.id, m]));
-        for (const it of batch) {
-          if (currentUserId && it.senderId === currentUserId) {
-            // replace temp by server echo
-            for (const [tempId, p] of pendingRef.current) {
-              const within7s = Date.now() - p.createdAt <= 7000;
-              if (
-                within7s &&
-                p.receiverId === it.receiverId &&
-                p.message === it.message &&
-                byId.has(tempId)
-              ) {
-                byId.delete(tempId);
-                byId.set(it.id, it);
-                pendingRef.current.delete(tempId);
-                break;
-              }
-            }
-            if (!byId.has(it.id)) byId.set(it.id, it);
-          } else {
-            byId.set(it.id, it);
-          }
-        }
-        const next = Array.from(byId.values()).sort(
-          (a, b) =>
-            parseServerDate(a.sentAt).getTime() -
-            parseServerDate(b.sentAt).getTime(),
-        );
-        return next.length > 500 ? next.slice(-500) : next;
-      });
-      scrollBottom();
-    },
-    onTyping: ({ userId, isTyping }) =>
-      setTypingMap((prev) =>
-        prev[userId] === isTyping ? prev : { ...prev, [userId]: isTyping },
-      ),
-    onMessageDeleted: (id) =>
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === id ? { ...m, isDeleted: true, message: "[deleted]" } : m,
-        ),
-      ),
+    onReceiveMessagesBatch: handleMessagesBatch,
+    onTyping: handleTyping,
+    onUnreadCountChanged: handleUnreadChanged,
+    onUnreadCountsBatch: handleUnreadBatch,
+    onMessageDeleted: handleMessageDeleted,
     debounceMs: 500,
   });
 
-  // ⭐ hook xoá message chung (confirm dialog + call BE + hub)
   const { requestDelete, ConfirmDialog, deleting } = useChatDeleteMessage({
     currentUserId,
     setMessages,
     deleteMessageHub: (id) => deleteMessageHub(id),
   });
 
-  /* ===== Load history (normalize conversations & messages) ===== */
-  const loadHistory = useRef(async (peerId: string) => {
-    if (!courseId) return;
+  // ===== Load history + mark read =====
+  const loadHistory = useRef(
+    async (peerId: string) => {
+      if (!courseId) return;
 
-    // 1) Conversations
-    const rawConvs: any = await getConversations({ courseId });
-    const conversations = Array.isArray(rawConvs)
-      ? rawConvs
-      : rawConvs?.conversations ?? [];
+      const rawConvs: any = await getConversations({ courseId });
+      const conversations = Array.isArray(rawConvs)
+        ? rawConvs
+        : rawConvs?.conversations ?? [];
 
-    const conv =
-      conversations.find(
-        (c: any) => c.otherUserId === peerId && c.courseId === courseId,
-      ) ??
-      conversations.find((c: any) => c.otherUserId === peerId) ??
-      null;
+      const conv =
+        conversations.find(
+          (c: any) => c.otherUserId === peerId && c.courseId === courseId,
+        ) ??
+        conversations.find((c: any) => c.otherUserId === peerId) ??
+        null;
 
-    if (!conv) {
-      setMessages([]);
-      return;
-    }
+      if (!conv) {
+        setMessages([]);
+        return;
+      }
 
-    // 2) Messages
-    const rawMsgs: any = await getConversationMessages(conv.id, {
-      pageNumber: 1,
-      pageSize: 50,
-    });
-    const msgs: ChatMessage[] = Array.isArray(rawMsgs)
-      ? rawMsgs
-      : rawMsgs?.messages ?? [];
+      const convId: string = conv.id;
 
-    const sorted = msgs.sort(
-      (a, b) =>
-        parseServerDate(a.sentAt).getTime() -
-        parseServerDate(b.sentAt).getTime(),
-    );
-    setMessages(sorted);
-    scrollBottom();
-  }).current;
+      const rawMsgs: any = await getConversationMessages(convId, {
+        pageNumber: 1,
+        pageSize: 50,
+      });
+      const msgs: ChatMessage[] = Array.isArray(rawMsgs)
+        ? rawMsgs
+        : rawMsgs?.messages ?? [];
+
+      const sorted = msgs.sort(
+        (a, b) =>
+          parseServerDate(a.sentAt).getTime() -
+          parseServerDate(b.sentAt).getTime(),
+      );
+      setMessages(sorted);
+      scrollBottom();
+
+      // mở khung chat -> mark read
+      try {
+        await markMessagesAsRead(convId);
+      } catch {
+        // ignore
+      }
+    },
+  ).current;
 
   // connect & switch peer
   useEffect(() => {
@@ -194,9 +257,11 @@ export default function ChatWindow({
       }
       try {
         await connect();
-        if (!cancelled) await loadHistory(selectedUser.id);
+        if (!cancelled) {
+          await loadHistory(selectedUser.id);
+        }
       } catch {
-        /* ignore */
+        // ignore
       }
     })();
     return () => {
@@ -237,6 +302,7 @@ export default function ChatWindow({
       message,
       sentAt: new Date().toISOString(),
       isDeleted: false,
+      readAt: null,
     };
     pendingRef.current.set(tempId, {
       createdAt: Date.now(),
@@ -272,8 +338,9 @@ export default function ChatWindow({
       const inMenu = !!t.closest(`[data-menu-id="${openMenuId}"]`);
       if (!inTrig && !inMenu) setOpenMenuId(null);
     };
-    const onKey = (e: KeyboardEvent) =>
-      e.key === "Escape" && setOpenMenuId(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenMenuId(null);
+    };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -282,7 +349,6 @@ export default function ChatWindow({
     };
   }, [openMenuId]);
 
-  // ===== build timeline: Today / Yesterday / ... + showTime =====
   const rendered = useMemo<ChatTimelineItem<ChatMessage>[]>(
     () => buildChatTimeline(messages, currentUserId),
     [messages, currentUserId],
@@ -336,23 +402,22 @@ export default function ChatWindow({
               ref={listRef}
               className="relative flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-stable"
             >
-              {/* Loading skeleton */}
               {loadingHistory && (
-                <div className="space-y-3">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={cx(
-                        "flex",
-                        i % 2 === 0 ? "justify-start" : "justify-end",
-                      )}
-                    >
-                      <div className="max-w-[75%] rounded-2xl px-3 py-2">
-                        <Skeleton className="h-4 w-32 mb-1 rounded-full" />
-                        <Skeleton className="h-4 w-40 rounded-full" />
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex h-full w-full items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-8 w-8 animate-spin text-[var(--brand)] opacity-80"
+                  >
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
                 </div>
               )}
 
@@ -395,7 +460,6 @@ export default function ChatWindow({
                             : undefined
                         }
                       >
-                        {/* ⋮ menu */}
                         {it.isMine && !it.m.isDeleted && (
                           <div className="absolute left-[-30px] top-1/2 -translate-y-1/2">
                             <button
@@ -453,14 +517,12 @@ export default function ChatWindow({
                 )}
             </div>
 
-            {/* typing dưới input */}
             {typingText && (
               <div className="px-4 pt-1 text-[11px] text-[var(--text-muted)]">
                 {typingText}
               </div>
             )}
 
-            {/* composer */}
             <div className="border-t border-[var(--border)] px-4 py-3">
               <div className="flex items-end gap-2">
                 <textarea
@@ -494,7 +556,6 @@ export default function ChatWindow({
         )}
       </Card>
 
-      {/* 🔥 Dialog xoá tách ra hook/component riêng */}
       {ConfirmDialog}
     </section>
   );

@@ -1,7 +1,7 @@
 // app/student/courses/[id]/my-groups/page.tsx
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMyGroups } from "@/hooks/group/useMyGroups";
 import {
@@ -14,7 +14,6 @@ import {
   BookOpen,
   FileText,
 } from "lucide-react";
-import Button from "@/components/ui/button";
 
 export default function MyGroupsByCoursePage() {
   const params = useParams();
@@ -30,27 +29,7 @@ export default function MyGroupsByCoursePage() {
   const empty = !loading && (!groups || groups.length === 0);
   const group = !empty ? groups[0] : null;
 
-  const parsedCourse = useMemo(() => {
-    if (!group?.courseName) {
-      return {
-        raw: "",
-        courseCode: "",
-        uniqueCode: "",
-        lecturerName: "",
-      };
-    }
-
-    const raw = group.courseName; // ex: "CS101#PYA8S3 - Smith John"
-    const [left, lecturerName] = raw.split(" - ");
-    const [courseCode, uniqueCode] = (left || "").split("#");
-
-    return {
-      raw,
-      courseCode: courseCode || "",
-      uniqueCode: uniqueCode || "",
-      lecturerName: lecturerName || "",
-    };
-  }, [group]);
+  // ĐÃ BỎ: Logic parsedCourse
 
   if (!courseId) {
     return (
@@ -77,36 +56,8 @@ export default function MyGroupsByCoursePage() {
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold text-nav flex items-center gap-2">
             <ListChecks className="w-6 h-6 text-nav-active" />
-            My Groupsss
+            My Groups
           </h1>
-
-          {/* Course info từ courseName */}
-          {parsedCourse.courseCode ? (
-            <p className="text-sm text-nav">
-              <span className="font-semibold text-brand">
-                {parsedCourse.courseCode}
-              </span>
-              {parsedCourse.uniqueCode && (
-                <>
-                  {" · "}
-                  <span>{parsedCourse.uniqueCode}</span>
-                </>
-              )}
-              {parsedCourse.lecturerName && (
-                <>
-                  {" · "}
-                  <span>{parsedCourse.lecturerName}</span>
-                </>
-              )}
-            </p>
-          ) : (
-            <p className="text-sm text-nav">
-              Course:{" "}
-              <b className="text-brand">
-                {group?.courseName || "—"}
-              </b>
-            </p>
-          )}
         </div>
       </div>
 

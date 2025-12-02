@@ -1,4 +1,3 @@
-// hooks/hubchat/useChatHub.ts
 "use client";
 
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
@@ -6,14 +5,16 @@ import type { ChatMessageItemResponse as ChatMessageDto } from "@/types/chat/cha
 import * as signalR from "@microsoft/signalr";
 import { useCallback, useMemo, useRef, useState } from "react";
 
+type UnreadPayload = { userId: string; unreadCount: number };
+
 type Options = {
   baseUrl?: string;
   getAccessToken: () => Promise<string> | string;
   onReceiveMessage?: (msg: ChatMessageDto) => void;
   onReceiveMessagesBatch?: (msgs: ChatMessageDto[]) => void;
   onTyping?: (payload: { userId: string; isTyping: boolean }) => void;
-  onUnreadCountChanged?: (payload: { userId: string; unreadCount: number }) => void;
-  onUnreadCountsBatch?: (payload: { userId: string; unreadCount: number }[]) => void;
+  onUnreadCountChanged?: (payload: UnreadPayload) => void;
+  onUnreadCountsBatch?: (payload: UnreadPayload[]) => void;
   onError?: (message: string) => void;
   onMessageDeleted?: (messageId: string) => void;
   debounceMs?: number;
@@ -88,6 +89,8 @@ export function useChatHub({
         .build();
 
       // ===== Hub events =====
+
+      // message realtime (1 & 1 batch)
       conn.on("ReceiveMessage", (msg: ChatMessageDto) => {
         onReceiveMessage?.(msg);
         if (onReceiveMessagesBatch) {
@@ -104,26 +107,39 @@ export function useChatHub({
         }
       });
 
+      // typing
       conn.on("UserTyping", (p: { userId: string; isTyping: boolean }) => {
         if (!p?.userId) return;
         onTyping?.({ userId: p.userId, isTyping: !!p.isTyping });
       });
 
-      // Server can push unread count updates per user when messages are read/received
-      // payload: { userId: string, unreadCount: number }
-      conn.on("UnreadCountChanged", (p: { userId: string; unreadCount: number }) => {
-        if (!p?.userId) return;
-        onUnreadCountChanged?.({ userId: p.userId, unreadCount: Number(p.unreadCount || 0) });
-      });
+      // unread cho 1 user (server gửi khi có msg mới / mark read)
+      conn.on(
+        "UnreadCountChanged",
+        (p: { userId: string; unreadCount: number }) => {
+          if (!p?.userId) return;
+          onUnreadCountChanged?.({
+            userId: String(p.userId),
+            unreadCount: Number(p.unreadCount || 0),
+          });
+        },
+      );
 
-      // Server may push a batch of unread counts
-      conn.on("UnreadCounts", (items: Array<{ userId: string; unreadCount: number }>) => {
-        if (!Array.isArray(items) || !items.length) return;
-        onUnreadCountsBatch?.(items.map((it) => ({ userId: it.userId, unreadCount: Number(it.unreadCount || 0) })));
-      });
+      // batch unread (nếu server dùng)
+      conn.on(
+        "UnreadCounts",
+        (items: Array<{ userId: string; unreadCount: number }>) => {
+          if (!Array.isArray(items) || !items.length) return;
+          onUnreadCountsBatch?.(
+            items.map((it) => ({
+              userId: String(it.userId),
+              unreadCount: Number(it.unreadCount || 0),
+            })),
+          );
+        },
+      );
 
-      // Nếu BE broadcast xóa:
-      // await Clients.All.SendAsync("MessageDeleted", new { messageId });
+      // delete message
       conn.on("MessageDeleted", (payload: { messageId: string }) => {
         if (!payload?.messageId) return;
         onMessageDeleted?.(payload.messageId);
@@ -202,43 +218,50 @@ export function useChatHub({
       if (!dto.receiverId) throw new Error("Missing receiverId");
       if (!dto.courseId) throw new Error("Missing courseId");
 
-      // Chuẩn hóa payload gửi lên Hub
       const payload = {
         message: dto.message.trim(),
         receiverId: dto.receiverId,
         courseId: dto.courseId,
-        // nếu FE chưa có, gửi null để BE bind Guid? / Guid? cho ổn
         conversationId: dto.conversationId || null,
         supportRequestId: dto.supportRequestId || null,
       };
 
       await conn.invoke("SendMessage", payload);
     },
-    []
+    [],
   );
 
   const startTyping = useCallback(async (receiverId: string) => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;
-    // console.log("[ChatHub] startTyping ->", receiverId);
     await conn.invoke("StartTyping", receiverId);
   }, []);
 
   const stopTyping = useCallback(async (receiverId: string) => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;
-    // console.log("[ChatHub] stopTyping ->", receiverId);
     await conn.invoke("StopTyping", receiverId);
   }, []);
 
-  // Gọi tới method "DeleteMessage" nếu BE có implement
   const deleteMessageHub = useCallback(async (messageId: string) => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;
     try {
       await conn.invoke("DeleteMessage", { messageId });
     } catch {
-      // BE có thể chưa triển khai, bỏ qua
+      // ignore
+    }
+  }, []);
+
+  // ⭐ Mark messages as read cho 1 conversation
+  const markMessagesAsRead = useCallback(async (conversationId: string) => {
+    const conn = connectionRef.current;
+    if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;
+
+    try {
+      await conn.invoke("MarkMessagesAsRead", conversationId);
+    } catch {
+      // ignore
     }
   }, []);
 
@@ -252,5 +275,6 @@ export function useChatHub({
     startTyping,
     stopTyping,
     deleteMessageHub,
+    markMessagesAsRead,
   };
 }

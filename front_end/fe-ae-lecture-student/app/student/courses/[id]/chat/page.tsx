@@ -1,4 +1,3 @@
-// app/student/courses/[id]/chat/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -29,6 +28,8 @@ function extractUserId(u: unknown): string | null {
   return typeof v === "string" && v.length > 0 ? v : null;
 }
 
+type UnreadItem = { userId: string; unreadCount: number };
+
 export default function ChatPage() {
   const params = useParams();
   const courseId = useMemo(() => {
@@ -39,10 +40,13 @@ export default function ChatPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
 
+  // Map userId -> unreadCount (nguồn: API + Hub)
+  const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const user = await loadDecodedUser(); // đọc cookie/session "a:u"
+      const user = await loadDecodedUser();
       if (cancelled) return;
       setCurrentUserId(extractUserId(user));
     })();
@@ -51,12 +55,57 @@ export default function ChatPage() {
     };
   }, []);
 
+  // Seed unread từ API list (StudentsList gọi)
+  const handleInitialUnreadLoaded = (items: UnreadItem[]) => {
+    setUnreadMap((prev) => {
+      const next = { ...prev };
+      for (const it of items) {
+        if (typeof next[it.userId] === "undefined") {
+          next[it.userId] = it.unreadCount;
+        }
+      }
+      return next;
+    });
+  };
+
+  // Hub bắn từng user đổi unread
+  const handleUnreadCountChanged = (p: UnreadItem) => {
+    setUnreadMap((prev) => ({
+      ...prev,
+      [p.userId]: p.unreadCount,
+    }));
+  };
+
+  // Hub bắn 1 batch unread (UnreadCounts)
+  const handleUnreadCountsBatch = (items: UnreadItem[]) => {
+    setUnreadMap((prev) => {
+      const next = { ...prev };
+      for (const it of items) {
+        next[it.userId] = it.unreadCount;
+      }
+      return next;
+    });
+  };
+
+  // Click vào 1 user bên trái
+  const handleSelectUser = (user: ChatUser) => {
+    setSelectedUser(user);
+
+    // Optimistic clear unread (nhìn UI mượt)
+    setUnreadMap((prev) => ({
+      ...prev,
+      [user.id]: 0,
+    }));
+  };
+
   return (
     <div className="py-6 grid grid-cols-12 gap-6">
       <StudentsList
         courseId={courseId}
         selectedUserId={selectedUser?.id}
-        onSelect={setSelectedUser}
+        onSelect={handleSelectUser}
+        unreadMap={unreadMap}
+        onInitialUnreadLoaded={handleInitialUnreadLoaded}
       />
 
       <ChatWindow
@@ -64,6 +113,8 @@ export default function ChatPage() {
         currentUserId={currentUserId}
         selectedUser={selectedUser}
         getAccessToken={getAccessToken}
+        onUnreadCountChanged={handleUnreadCountChanged}
+        onUnreadCountsBatch={handleUnreadCountsBatch}
       />
     </div>
   );
