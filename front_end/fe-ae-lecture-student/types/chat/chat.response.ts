@@ -19,6 +19,7 @@ export interface ChatMessageItemResponse {
   message: string;
   sentAt: string;
   isDeleted: boolean;
+  isRead: boolean;
   readAt: string | null;
 }
 
