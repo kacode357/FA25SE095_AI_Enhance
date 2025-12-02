@@ -80,15 +80,19 @@ export default function ConversationList({ selectedId, onSelect, courseIdFilter 
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="font-medium line-clamp-1">{c.otherUserName}</div>
+                      <div className="flex flex-col">
+                        <div className="font-medium line-clamp-1">{c.otherUserName}</div>
+                        {typeof c.unreadCount === "number" && c.unreadCount > 0 ? (
+                          <div className="text-xs text-slate-800 mt-1">{c.unreadCount} tin nhắn mới</div>
+                        ) : (
+                          <div className="text-xs text-slate-500 line-clamp-1 mt-1">{c.lastMessagePreview ?? "No messages yet."}</div>
+                        )}
+                      </div>
                       {c.courseName ? (
                         <div className="text-xs text-muted-foreground ml-2 line-clamp-1">
                           {c.courseName}
                         </div>
                       ) : null}
-                    </div>
-                    <div className="text-xs text-slate-500 text-muted-foreground line-clamp-1">
-                      {c.lastMessagePreview ?? "No messages yet."}
                     </div>
                   </button>
                 </li>

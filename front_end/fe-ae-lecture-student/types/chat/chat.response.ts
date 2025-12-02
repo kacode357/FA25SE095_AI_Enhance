@@ -7,6 +7,7 @@ export interface ConversationItemResponse {
   otherUserRole: string;
   lastMessagePreview: string | null;
   lastMessageAt: string | null;
+  unreadCount: number;
 }
 
 export interface ChatMessageItemResponse {
@@ -18,6 +19,7 @@ export interface ChatMessageItemResponse {
   message: string;
   sentAt: string;
   isDeleted: boolean;
+  readAt: string | null;
 }
 
 export interface GetMessagesApiResponse {
@@ -39,6 +41,7 @@ export interface CourseChatUserItemResponse {
   studentId: string | null;
   profilePictureUrl: string | null;
   createdAt: string;
+  unreadCount: number;
 }
 
 export interface CourseUsersApiResponse {

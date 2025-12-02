@@ -125,11 +125,14 @@ export default function CreateSupportRequestForm({ courseId: initialCourseId, on
         try {
             const res = await createSupportRequest(payload);
             const msg = res?.message ?? "Create support request.";
-            if (res?.success) {
+                if (res?.success) {
                 toast.success(msg);
                 if (onSuccess) onSuccess();
                 try {
-                    router.push(`/lecturer/manage-courses/support-requests`);
+                    // navigate to upload images page for created support request
+                    const id = res.supportRequestId;
+                    if (id) router.push(`/lecturer/manage-courses/support-requests/upload-images?requestId=${id}`);
+                    else router.push(`/lecturer/manage-courses/support-requests`);
                 } catch (e) {
                     // ignore navigation errors
                 }

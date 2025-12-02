@@ -1,10 +1,10 @@
 // hooks/hubchat/useChatHub.ts
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
-import * as signalR from "@microsoft/signalr";
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
 import type { ChatMessageItemResponse as ChatMessageDto } from "@/types/chat/chat.response";
+import * as signalR from "@microsoft/signalr";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 type Options = {
   baseUrl?: string;
@@ -12,6 +12,8 @@ type Options = {
   onReceiveMessage?: (msg: ChatMessageDto) => void;
   onReceiveMessagesBatch?: (msgs: ChatMessageDto[]) => void;
   onTyping?: (payload: { userId: string; isTyping: boolean }) => void;
+  onUnreadCountChanged?: (payload: { userId: string; unreadCount: number }) => void;
+  onUnreadCountsBatch?: (payload: { userId: string; unreadCount: number }[]) => void;
   onError?: (message: string) => void;
   onMessageDeleted?: (messageId: string) => void;
   debounceMs?: number;
@@ -23,6 +25,8 @@ export function useChatHub({
   onReceiveMessage,
   onReceiveMessagesBatch,
   onTyping,
+  onUnreadCountChanged,
+  onUnreadCountsBatch,
   onError,
   onMessageDeleted,
   debounceMs = 500,
@@ -105,6 +109,19 @@ export function useChatHub({
         onTyping?.({ userId: p.userId, isTyping: !!p.isTyping });
       });
 
+      // Server can push unread count updates per user when messages are read/received
+      // payload: { userId: string, unreadCount: number }
+      conn.on("UnreadCountChanged", (p: { userId: string; unreadCount: number }) => {
+        if (!p?.userId) return;
+        onUnreadCountChanged?.({ userId: p.userId, unreadCount: Number(p.unreadCount || 0) });
+      });
+
+      // Server may push a batch of unread counts
+      conn.on("UnreadCounts", (items: Array<{ userId: string; unreadCount: number }>) => {
+        if (!Array.isArray(items) || !items.length) return;
+        onUnreadCountsBatch?.(items.map((it) => ({ userId: it.userId, unreadCount: Number(it.unreadCount || 0) })));
+      });
+
       // Nếu BE broadcast xóa:
       // await Clients.All.SendAsync("MessageDeleted", new { messageId });
       conn.on("MessageDeleted", (payload: { messageId: string }) => {
@@ -131,6 +148,8 @@ export function useChatHub({
     onReceiveMessagesBatch,
     scheduleFlushMessages,
     onTyping,
+    onUnreadCountChanged,
+    onUnreadCountsBatch,
     onError,
     onMessageDeleted,
   ]);

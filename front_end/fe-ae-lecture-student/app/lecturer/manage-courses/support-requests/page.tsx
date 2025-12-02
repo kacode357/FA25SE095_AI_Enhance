@@ -104,6 +104,19 @@ export default function SupportRequestsList({ courseId }: Props) {
     return items.filter((item) => item.courseId === selectedCourseId);
   }, [items, selectedCourseId]);
 
+  const parseImages = (images?: string | null) => {
+    if (!images) return [] as string[];
+    // Try JSON parse first (API may return JSON array as string)
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean) as string[];
+    } catch (_) {
+      // ignore
+    }
+    // Fallback: comma-separated list
+    return images.split(",").map((s) => s.trim()).filter(Boolean);
+  };
+
   // ===== Helper reload lại list ALL (sau accept / cancel / resolve) =====
   const reloadAllRequests = async () => {
     await fetchMySupportRequests({
@@ -315,6 +328,29 @@ export default function SupportRequestsList({ courseId }: Props) {
                       {item.conversationId ?? "-"}
                     </div>
                   </div>
+                  {/* images thumbnails, if any */}
+                  {item.images && (
+                    <div className="mt-4">
+                      <p className="text-sm text-slate-600 mb-2">Images</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                        {parseImages(item.images).map((u, i) => (
+                          <a
+                            key={i}
+                            href={u}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center justify-center border rounded-md overflow-hidden p-0.5 bg-white"
+                          >
+                            <img
+                              src={u}
+                              alt={`attachment-${i}`}
+                              className="object-cover rounded w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right side: buttons + timestamps */}

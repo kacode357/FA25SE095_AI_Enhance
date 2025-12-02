@@ -28,9 +28,13 @@ export default function CourseUsersList({ courseId, onSelectUser }: Props) {
       }
       const res = await getUsersInCourse(courseId);
       if (mounted) {
-        // Ensure we always store an array in state to avoid runtime errors
-        if (Array.isArray(res)) setUsers(res);
-        else setUsers([]);
+        if (Array.isArray(res)) {
+          setUsers(res);
+        } else if (res && Array.isArray((res as any).users)) {
+          setUsers((res as any).users);
+        } else {
+          setUsers([]);
+        }
       }
     })();
     return () => {
