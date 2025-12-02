@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import Button from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,14 +19,17 @@ import {
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useUnenrollStudent } from "@/hooks/enrollments/useUnenrollStudent";
 import { format } from "date-fns";
-import { Eye, MessageSquare, MoreHorizontalIcon, TriangleAlert, UserMinus } from "lucide-react";
+import { Eye, MessageSquare, MessageSquareDot, MoreHorizontalIcon, TriangleAlert, UserMinus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function StudentList({
     courseId,
+    courseName,
     refreshSignal,
 }: {
     courseId: string;
+    courseName?: string;
     refreshSignal: number;
 }) {
     const { students: courseStudents, loading, fetchCourseStudents } = useCourseStudents(courseId);
@@ -53,10 +57,23 @@ export default function StudentList({
 
     const students = courseStudents || [];
     const [unenrollTarget, setUnenrollTarget] = useState<string | null>(null);
+    const router = useRouter();
 
     return (
-        <div className="-mt-10">
-            <div className="text-sm flex justify-end mb-2 mt-6 mr-1 text-slate-500">{students.length} student(s)</div>
+        <div className="-mt-9">
+            <div className="flex justify-between">
+                <Button
+                    className="btn btn-gradient-slow text-xs w-24 h-10 text-white"
+                    onClick={() => {
+                        if (!courseId) return;
+                        const qs = courseName ? `?courseName=${encodeURIComponent(courseName)}` : "";
+                        router.push(`/lecturer/course/${courseId}/messages${qs}`);
+                    }}
+                >
+                    <MessageSquareDot className="size-3.5" />CHAT
+                </Button>
+                <div className="text-sm flex justify-end mb-2 mt-6 mr-1 text-slate-500">{students.length} student(s)</div>
+            </div>
             {loading ? (
                 <div className="text-center text-slate-500 py-6">Loading...</div>
             ) : students.length === 0 ? (
@@ -86,7 +103,7 @@ export default function StudentList({
                                         {i + 1}
                                     </TableCell>
                                     <TableCell className="py-4 px-3 align-top">
-                                            <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-3">
                                             <div className="flex-shrink-0">
                                                 {s.profilePictureUrl ? (
                                                     <img

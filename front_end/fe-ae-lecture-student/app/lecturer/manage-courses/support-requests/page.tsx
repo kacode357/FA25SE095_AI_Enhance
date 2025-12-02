@@ -323,10 +323,6 @@ export default function SupportRequestsList({ courseId }: Props) {
                       <span className="text-slate-600">Assigned:</span>{" "}
                       {item.assignedStaffName ?? "-"}
                     </div>
-                    <div>
-                      <span className="text-slate-600">Conversation:</span>{" "}
-                      {item.conversationId ?? "-"}
-                    </div>
                   </div>
                   {/* images thumbnails, if any */}
                   {item.images && (
@@ -429,7 +425,7 @@ export default function SupportRequestsList({ courseId }: Props) {
                       )
                     }
                     disabled={actionLoading !== null}
-                    className="shadow-lg text-green-600"
+                    className="shadow-lg text-green-600 btn btn-green-slow"
                   >
                     <Check className="h-4 w-4" /> Resolve
                   </Button>

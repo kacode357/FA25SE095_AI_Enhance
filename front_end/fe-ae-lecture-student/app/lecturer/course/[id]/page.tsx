@@ -181,7 +181,6 @@ export default function CourseDetailPage() {
               <CardHeader className="flex items-center px-4 pt-4 justify-between">
                 <CardTitle className="text-base flex flex-col text-[#000D83] font-semibold">
                   Student List
-                  <p className="text-xs mt-1 text-slate-500 italic font-normal">Manage Current Students in this Course.</p>
                 </CardTitle>
                 {isActive && (
                   <Button
@@ -193,7 +192,11 @@ export default function CourseDetailPage() {
                 )}
               </CardHeader>
               <CardContent className="p-4">
-                <StudentList courseId={id} refreshSignal={studentsRefresh} />
+                <StudentList
+                  courseId={id}
+                  courseName={course ? `${course.courseCode} — ${course.courseCodeTitle}` : undefined}
+                  refreshSignal={studentsRefresh}
+                />
               </CardContent>
             </Card>
           )}

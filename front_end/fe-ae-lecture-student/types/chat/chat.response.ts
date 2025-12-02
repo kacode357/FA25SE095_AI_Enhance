@@ -19,7 +19,8 @@ export interface ChatMessageItemResponse {
   message: string;
   sentAt: string;
   isDeleted: boolean;
-  readAt?: string | null; 
+  isRead?: boolean;
+  readAt?: string | null;
 }
 
 export interface GetMessagesApiResponse {

@@ -483,19 +483,19 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                             className="cursor-pointer"
                           />
                           <div className="flex-1">
-                            <div className="text-sm cursor-text font-medium">{g.name}</div>
-                            <div className="text-xs text-slate-500 cursor-text">
+                            <div className="text-sm cursor-pointer font-medium">{g.name}</div>
+                            <div className="text-xs text-slate-500 cursor-pointer">
                               Members: {g.memberCount}
                               {g.leaderName ? ` • Leader: ${g.leaderName}` : ""}
                             </div>
                             {isAssigned && (
-                              <div className="text-xs cursor-text text-amber-700 mt-1">
+                              <div className="text-xs cursor-pointer text-amber-700 mt-1">
                                 {loadingLookup ? (
                                   "Checking assignment..."
                                 ) : assignedInfo ? (
                                   <>
                                     Assignment:{" "}
-                                    <span className="cursor-text font-medium">
+                                    <span className="cursor-pointer font-medium">
                                       {assignedInfo.title ??
                                         assignedInfo.name ??
                                         "Unnamed"}
