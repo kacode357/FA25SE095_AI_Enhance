@@ -4,7 +4,10 @@
 import { motion } from "framer-motion";
 import { Bell } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { getNotificationHref } from "./notification-routes-students";
 
 export type NotificationItem = {
   id: string;
@@ -12,6 +15,7 @@ export type NotificationItem = {
   content: string;
   isRead: boolean;
   createdAt: string;
+  metadataJson?: string;
 };
 
 type Props = {
@@ -24,6 +28,9 @@ type Props = {
   connecting?: boolean;
   lastError?: string;
 };
+
+const NOTI_SOUND_KEY = "student:noti:soundEnabled";
+const NOTI_SOUND_EVENT = "student:noti:sound-changed";
 
 function formatTime(value?: string) {
   if (!value) return "";
@@ -42,6 +49,77 @@ export default function NotificationsMenu({
   lastError,
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+
+  // 🔊 Âm thanh thông báo
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const prevCountRef = useRef<number | null>(null);
+
+  // setting bật/tắt tiếng
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Load setting từ localStorage + listen custom event
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const raw = window.localStorage.getItem(NOTI_SOUND_KEY);
+    if (raw === "off") {
+      setSoundEnabled(false);
+    } else {
+      setSoundEnabled(true);
+    }
+
+    const handleSettingChanged = (e: Event) => {
+      const ce = e as CustomEvent<{ enabled: boolean }>;
+      if (typeof ce.detail?.enabled === "boolean") {
+        setSoundEnabled(ce.detail.enabled);
+      }
+    };
+
+    window.addEventListener(NOTI_SOUND_EVENT, handleSettingChanged);
+    return () => {
+      window.removeEventListener(NOTI_SOUND_EVENT, handleSettingChanged);
+    };
+  }, []);
+
+  // Khởi tạo audio 1 lần
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    audioRef.current = new Audio("/sounds/notification.mp3");
+    audioRef.current.load();
+  }, []);
+
+  // Mỗi lần số lượng notifications tăng -> phát âm thanh
+  useEffect(() => {
+    const currentCount = notifications.length;
+
+    // Bỏ qua lần mount đầu tiên
+    if (prevCountRef.current === null) {
+      prevCountRef.current = currentCount;
+      return;
+    }
+
+    // Nếu user tắt tiếng -> không play
+    if (!soundEnabled) {
+      prevCountRef.current = currentCount;
+      return;
+    }
+
+    if (currentCount > prevCountRef.current) {
+      // có noti mới
+      if (audioRef.current) {
+        audioRef.current
+          .play()
+          .catch(() => {
+            // có thể bị chặn autoplay nếu user chưa tương tác, bỏ qua lỗi
+          });
+      }
+    }
+
+    prevCountRef.current = currentCount;
+  }, [notifications.length, notifications, soundEnabled]);
+
   const toggle = () => onOpenChange(!open);
 
   useEffect(() => {
@@ -78,6 +156,18 @@ export default function NotificationsMenu({
     statusText = "Error";
     statusClass = "student-noti-status student-noti-status--error";
   }
+
+  const handleNotificationClick = (item: NotificationItem) => {
+    onOpenChange(false);
+
+    const href = getNotificationHref(item.metadataJson);
+
+    if (href) {
+      router.push(href);
+    } else {
+      router.push("/student/notifications");
+    }
+  };
 
   return (
     <div ref={rootRef} className="relative">
@@ -139,7 +229,7 @@ export default function NotificationsMenu({
                   title="Notification"
                   type="button"
                   className="w-full text-left px-4 py-3 transition-colors"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => handleNotificationClick(item)}
                   role="menuitem"
                 >
                   <div className="rounded-md hover:bg-[var(--focus-ring)] p-2 -m-2">

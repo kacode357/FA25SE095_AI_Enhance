@@ -384,9 +384,9 @@ export default function SupportChatPage() {
       ? `${peerName} is typing…`
       : "";
 
-  // điều kiện show nút / dialog
+  // [CHANGE 1]: Thêm điều kiện && !!peerId để ẩn nút khi không có peerId (lỗi Cannot open chat)
   const canResolve =
-    !!supportRequestId && !chatLocked && !isReadOnly;
+    !!supportRequestId && !chatLocked && !isReadOnly && !!peerId;
 
   const handleConfirmResolved = async () => {
     if (!supportRequestId) {
@@ -428,7 +428,8 @@ export default function SupportChatPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => router.back()}
+            // [CHANGE 2]: Sửa logic navigate về trang danh sách support thay vì back()
+            onClick={() => router.push(`/student/courses/${courseId}/support`)}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white text-slate-700"
           >
             <ArrowLeft className="h-4 w-4" />

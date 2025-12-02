@@ -1,7 +1,13 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, CircleArrowOutUpRight, LogOut, ShieldUser } from "lucide-react";
+import {
+  ChevronDown,
+  CircleArrowOutUpRight,
+  LogOut,
+  ShieldUser,
+  ReceiptText, // ✅ mới thêm
+} from "lucide-react";
 import Link from "next/link";
 import {
   MouseEvent as ReactMouseEvent,
@@ -187,22 +193,28 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
                 href={
                   isLecturer
                     ? "/lecturer/profile/my-profile"
-                    : "/student/profile/my-profile"
+                    : "/student/settings/my-profile" // ✅ đổi path student sang settings
                 }
                 className="block rounded-md px-2 py-1.5 text-xs font-medium text-nav hover:bg-slate-50"
                 onClick={() => onOpenChange(false)}
               >
-                <span className="flex gap-2"><ShieldUser className="size-4" />Profile</span>
+                <span className="flex gap-2">
+                  <ShieldUser className="size-4" />
+                  Settings {/* ✅ đổi text */}
+                </span>
               </Link>
 
-              {/* --- MỚI THÊM: Payment History (Chỉ hiện cho Student) --- */}
+              {/* Payment History (Chỉ hiện cho Student) */}
               {!isLecturer && (
                 <Link
                   href="/student/payment-history"
                   className="block rounded-md px-2 py-1.5 text-xs font-medium text-nav hover:bg-slate-50"
                   onClick={() => onOpenChange(false)}
                 >
-                  Payment History
+                  <span className="flex gap-2">
+                    <ReceiptText className="size-4" />
+                    Payment History
+                  </span>
                 </Link>
               )}
 
@@ -211,7 +223,10 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
                 onClick={handleLogoutClick}
                 className="mt-1 flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
               >
-                <span className="flex gap-2"><LogOut className="size-4" />Log out</span>
+                <span className="flex gap-2">
+                  <LogOut className="size-4" />
+                  Log out
+                </span>
               </button>
             </div>
           </motion.div>

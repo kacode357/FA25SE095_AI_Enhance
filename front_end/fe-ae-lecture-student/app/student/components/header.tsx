@@ -39,6 +39,7 @@ export default function Header() {
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
   const { getNotifications } = useGetNotifications();
+
   const { markAllNotificationsAsRead } = useMarkAllNotificationsAsRead();
 
   const getTokenForHub = useCallback(() => {
@@ -73,6 +74,7 @@ export default function Header() {
     (async () => {
       try {
         const list = await getNotifications({ take: 50 });
+        console.log("Fetched notification history:", list);
         if (!list || !Array.isArray(list)) return;
 
         const normalized: NotificationItem[] = list.map((n: any) => ({
@@ -81,6 +83,7 @@ export default function Header() {
           content: n.content,
           isRead: n.isRead,
           createdAt: n.createdAt,
+          metadataJson: n.metadataJson,
         }));
 
         setNotifications(normalized);
