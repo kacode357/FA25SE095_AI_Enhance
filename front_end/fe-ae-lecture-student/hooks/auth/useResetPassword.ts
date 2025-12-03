@@ -16,13 +16,7 @@ export function useResetPassword() {
     setLoading(true);
     try {
       const res = await AuthService.resetPassword(payload);
-
-      if (res.success) {
-        toast.success(res.message || "Password has been reset successfully!");
-      } else {
-        toast.error(res.message || "Unable to reset password.");
-      }
-
+      toast.success(res.message || "Password has been reset successfully!");
       return res;
     } catch {
       // interceptor đã lo toast lỗi chung
