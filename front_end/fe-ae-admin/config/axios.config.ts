@@ -14,7 +14,9 @@ const USER_BASE_URL = process.env.NEXT_PUBLIC_USER_BASE_URL_API!;
 const COURSE_BASE_URL = process.env.NEXT_PUBLIC_COURSE_BASE_URL_API!;
 const CRAWL_BASE_URL = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_API!;
 const NOTIFICATION_BASE_URL = process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL_API!;
-
+const TRAINING_BASE_URL =
+  process.env.NEXT_PUBLIC_TRAINING_SERVICE_URL ||
+  "https://train.fishmakeweb.id.vn";
 /** ===== Token keys ===== */
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
@@ -252,5 +254,8 @@ export const courseAxiosInstance = createAxiosInstance(COURSE_BASE_URL);
 export const notificationAxiosInstance =
   createAxiosInstance(NOTIFICATION_BASE_URL);
 export const crawlAxiosInstance = createAxiosInstance(CRAWL_BASE_URL, {
+  timeout: 600_000,
+});
+export const trainingAxiosInstance = createAxiosInstance(TRAINING_BASE_URL, {
   timeout: 600_000,
 });
