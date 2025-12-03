@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
+import PaginationBar from "@/components/common/pagination-all";
 import SupportRequestCategoryBadge from "./SupportRequestCategoryBadge";
 import SupportRequestPriorityBadge from "./SupportRequestPriorityBadge";
 import SupportRequestRejectButton from "./SupportRequestRejectButton";
@@ -287,38 +288,20 @@ export default function SupportRequestList({
       </div>
 
       {/* Pagination */}
-      <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-        <span>
-          Showing{" "}
-          {items.length === 0
-            ? 0
-            : (pagination.pageNumber - 1) * pagination.pageSize + 1}{" "}
-          -{" "}
-          {(pagination.pageNumber - 1) * pagination.pageSize + items.length} of{" "}
-          {pagination.totalCount}
-        </span>
-        <div className="flex items-center gap-2 cursor-pointer">
-          <Button
-            className="cursor-pointer"
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!pagination.hasPreviousPage || loading}
-            onClick={onPreviousPage}
-          >
-            Previous
-          </Button>
-          <Button
-            className="cursor-pointer"
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!pagination.hasNextPage || loading}
-            onClick={onNextPage}
-          >
-            Next
-          </Button>
-        </div>
+      <div className="mt-3">
+        <PaginationBar
+          page={pagination.pageNumber}
+          totalPages={pagination.totalPages}
+          totalCount={pagination.totalCount}
+          loading={loading}
+          onPageChange={(p) => {
+            if (p < pagination.pageNumber) {
+              onPreviousPage && onPreviousPage();
+            } else if (p > pagination.pageNumber) {
+              onNextPage && onNextPage();
+            }
+          }}
+        />
       </div>
     </div>
   );

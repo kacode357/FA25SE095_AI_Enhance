@@ -1,6 +1,6 @@
 "use client";
 
-import PaginationBar from "@/components/common/PaginationBar";
+import PaginationBar from "@/components/common/pagination-all";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -80,7 +80,6 @@ export default function CourseRequestsPage() {
                   <TableHead className="font-semibold">Course Code</TableHead>
                   <TableHead className="font-semibold">Title</TableHead>
                   <TableHead className="text-center font-semibold">Term</TableHead>
-                  <TableHead className="text-center font-semibold">Year</TableHead>
                   <TableHead className="text-center font-semibold">Status</TableHead>
                   <TableHead className="text-center font-semibold">Created At</TableHead>
                   <TableHead className="text-center font-semibold">Action</TableHead>
@@ -129,7 +128,6 @@ export default function CourseRequestsPage() {
                       <TableCell>{r.courseCode}</TableCell>
                       <TableCell>{r.courseCodeTitle}</TableCell>
                       <TableCell className="text-center">{r.term}</TableCell>
-                      <TableCell className="text-center">{r.year}</TableCell>
                       <TableCell className="text-center">
                         <span
                           className={

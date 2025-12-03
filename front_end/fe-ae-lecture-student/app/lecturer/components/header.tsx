@@ -205,12 +205,12 @@ export default function Header() {
               Dashboard
             </Link>
 
-            <Link
+            {/* <Link
               href="/lecturer/messages"
               className={`text-sm font-medium ${pathname?.startsWith("/lecturer/messages") ? "!text-brand !text-[16px]" : "!text-[#000D83] hover:!text-gray-900"}`}
             >
               Chat
-            </Link>
+            </Link> */}
           </nav>
         </div>
 

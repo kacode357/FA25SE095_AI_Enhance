@@ -1,5 +1,6 @@
 "use client";
 
+import PaginationBar from "@/components/common/pagination-all";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -137,13 +138,15 @@ export default function ApproveLecturerPage() {
                 </Table>
                 </div>
 
-                {/* Pagination (kept inside centered container) */}
-                <div className="mt-4 flex items-center justify-between">
-                    <div className="text-sm text-gray-500">Page {data?.page ?? page} / {totalPages}</div>
-                    <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
-                        <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</Button>
-                    </div>
+                {/* Pagination */}
+                <div className="mt-4">
+                    <PaginationBar
+                        page={page}
+                        totalPages={totalPages}
+                        totalCount={total}
+                        loading={loading}
+                        onPageChange={(p) => setPage(p)}
+                    />
                 </div>
             </div>
         </div>

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
-import { Pencil, Plus } from "lucide-react";
+import { PencilLine, Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -13,7 +13,7 @@ import { useTerms } from "@/hooks/term/useTerms";
 import { useUpdateTerm } from "@/hooks/term/useUpdateTerm";
 import { Term } from "@/types/terms/terms.response";
 
-import PaginationBar from "@/components/common/PaginationBar";
+import PaginationBar from "@/components/common/pagination-all";
 import EditDialog from "./components/EditDialog";
 import FilterControls from "./components/FilterControls";
 
@@ -146,29 +146,29 @@ export default function TermsPage() {
                     transition={{ duration: 0.2 }}
                     className="border-b border-slate-100 hover:bg-emerald-50/50"
                   >
-                    <TableCell className="text-left pl-5">{t.name}</TableCell>
-                    <TableCell className="text-left">{t.description}</TableCell>
-                    <TableCell className="text-center">{formatDateTime(t.startDate)}</TableCell>
-                    <TableCell className="text-center">{formatDateTime(t.endDate)}</TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-left text-sm pl-5">{t.name}</TableCell>
+                    <TableCell className="text-sm text-left">{t.description}</TableCell>
+                    <TableCell className="text-sm text-center">{formatDateTime(t.startDate)}</TableCell>
+                    <TableCell className="text-sm text-center">{formatDateTime(t.endDate)}</TableCell>
+                    <TableCell className="text-sm text-center">
                       {t.isActive ? (
-                        <span className="text-emerald-600 font-semibold">Active</span>
+                        <span className="text-sm text-emerald-600 font-semibold">Active</span>
                       ) : (
-                        <span className="text-slate-500">Inactive</span>
+                        <span className="text-sm text-slate-500">Inactive</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center whitespace-nowrap">{formatDateTime(t.createdAt)}</TableCell>
-                    <TableCell className="text-center whitespace-nowrap">{formatDateTime(t.updatedAt)}</TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-sm text-center whitespace-nowrap">{formatDateTime(t.createdAt)}</TableCell>
+                    <TableCell className="text-sm text-center whitespace-nowrap">{formatDateTime(t.updatedAt)}</TableCell>
+                    <TableCell className="text-sm text-center">
                       <div className="flex items-center justify-center gap-2">
                         {/* Edit */}
                         <Dialog open={openEditId === t.id} onOpenChange={(o) => setOpenEditId(o ? t.id : null)}>
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
-                              className="h-8 -mx-2 cursor-pointer text-emerald-600 bg-violet-50 rounded-lg hover:bg-emerald-50"
+                              className="h-8 -mx-2 cursor-pointer text-sm text-emerald-600 bg-violet-50 rounded-lg hover:bg-green-100 hover:shadow-md"
                             >
-                              <Pencil className="size-4" />
+                              <PencilLine className="size-3 text-green-600" />
                             </Button>
                           </DialogTrigger>
                           {openEditId === t.id && (

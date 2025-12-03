@@ -15,7 +15,7 @@ import { useDeleteCourseCode } from "@/hooks/course-code/useDeleteCourseCode";
 import EditDialog from "./components/EditDialog";
 import FilterRow from "./components/FilterRow";
 
-import PaginationBar from "@/components/common/PaginationBar";
+import PaginationBar from "@/components/common/pagination-all";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { CourseCode } from "@/types/course-codes/course-codes.response";
 import DeleteConfirm from "./components/DeleteConfirm";
@@ -174,7 +174,7 @@ export default function CourseCodesPage() {
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
-                              className="h-8 px-2 text-emerald-600 cursor-pointer hover:bg-emerald-50"
+                              className="h-8 px-2 text-emerald-600 cursor-pointer hover:bg-emerald-50 hover:shadow-md"
                             >
                               <PencilLine className="size-4 text-blue-600" />
                             </Button>
@@ -195,7 +195,7 @@ export default function CourseCodesPage() {
                         {/* Delete */}
                         <Button
                           variant="ghost"
-                          className="h-8 px-2 text-red-600 cursor-pointer hover:bg-red-50"
+                          className="h-8 px-2 text-red-600 cursor-pointer hover:bg-red-50 hover:shadow-md"
                           onClick={() => setDeleteId(c.id)}
                         >
                           <Trash2 className="size-4" />

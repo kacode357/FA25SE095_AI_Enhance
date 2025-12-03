@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { mainNav } from "./mainNav";
 
 type SidebarProps = {
@@ -20,6 +21,26 @@ export default function ManagerSidebar({
   setCollapsed,
 }: SidebarProps) {
   const pathname = usePathname();
+
+  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const map: Record<string, boolean> = {};
+    const collect = (items: any[]) => {
+      if (!items) return;
+      items.forEach((it: any) => {
+        if (it.children && it.children.length > 0) map[it.href] = true;
+        if (it.children) collect(it.children);
+      });
+    };
+
+    collect(mainNav as any[]);
+    setExpandedMap(map);
+  }, []);
+
+  const toggleExpand = (href: string) => {
+    setExpandedMap((prev) => ({ ...prev, [href]: !prev[href] }));
+  };
 
   const toggleCollapsed = () => setCollapsed(!collapsed);
 
@@ -61,7 +82,7 @@ export default function ManagerSidebar({
           >
             <ChevronRight
               className={clsx(
-                "text-white transition-transform w-5 h-5",
+                "text-white transition-transform duration-500 w-5 h-5",
                 collapsed ? "rotate-0" : "rotate-180"
               )}
             />
@@ -80,6 +101,9 @@ export default function ManagerSidebar({
         <ul className="space-y-2">
           {mainNav.map((item) => {
             const { href, label, icon: Icon, description, children } = item as any;
+
+            const hasChildren = children && children.length > 0;
+            const isExpanded = expandedMap[href];
 
             const isItemActive = (it: any): boolean => {
               if (!it) return false;
@@ -101,6 +125,8 @@ export default function ManagerSidebar({
                 >
                   {items.map((c) => {
                     const isThird = depth >= 2; // depth: 1 => second-level, 2 => third-level
+                    const childHasChildren = c.children && c.children.length > 0;
+                    const childExpanded = expandedMap[c.href];
                     let childActive = false;
                     if (isThird) {
                       // exact match for third-level items (avoid sibling both active)
@@ -149,10 +175,33 @@ export default function ManagerSidebar({
                           )}
 
                           <span className={clsx("truncate", isThird ? "pl-1" : undefined)}>{c.label}</span>
+
+                          {childHasChildren && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleExpand(c.href);
+                              }}
+                              aria-label={childExpanded ? "Collapse" : "Expand"}
+                              className="ml-2 p-1 rounded cursor-pointer"
+                            >
+                              <ChevronRight className={clsx("w-3 h-3 transition-transform duration-500", childExpanded ? "rotate-90" : "rotate-0", childActive ? "text-blue-700" : "text-gray-400")} />
+                            </button>
+                          )}
                         </Link>
 
-                        {/* Render nested children when this child is active */}
-                        {c.children && c.children.length > 0 && childActive && renderChildren(c.children, depth + 1)}
+                                {/* Render nested children with smooth transition */}
+                                {c.children && c.children.length > 0 && (
+                                  <div
+                                    className={clsx(
+                                      "overflow-hidden transition-all duration-500 ease-in-out",
+                                      (childExpanded || childActive) ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                                    )}
+                                  >
+                                    {renderChildren(c.children, depth + 1)}
+                                  </div>
+                                )}
                       </li>
                     );
                   })}
@@ -203,13 +252,37 @@ export default function ManagerSidebar({
                     </div>
                   )}
 
+                  {/* expand/collapse toggle for items with children */}
+                  {hasChildren && !collapsed && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleExpand(href);
+                      }}
+                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                      className="ml-2 p-1 rounded cursor-pointer"
+                    >
+                      <ChevronRight className={clsx("w-4 h-4 transition-transform duration-500", isExpanded ? "rotate-90" : "rotate-0", active ? "text-white" : "text-gray-400")} />
+                    </button>
+                  )}
+
                   {active && !collapsed && (
                     <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-l-full" />
                   )}
                 </Link>
 
-                {/* Render submenu only when parent is active (close if parent not selected) */}
-                {!collapsed && children && children.length > 0 && active && renderChildren(children)}
+                {/* Render submenu when parent is expanded or active, with smooth transition */}
+                {!collapsed && children && children.length > 0 && (
+                  <div
+                    className={clsx(
+                      "overflow-hidden transition-all duration-500 ease-in-out",
+                      (isExpanded || active) ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    {renderChildren(children)}
+                  </div>
+                )}
               </li>
             );
           })}

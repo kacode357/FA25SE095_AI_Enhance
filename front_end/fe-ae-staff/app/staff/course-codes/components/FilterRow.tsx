@@ -76,7 +76,7 @@ export default function FilterRow({
       {/* Created At */}
       <TableHead className="p-2 text-center">
         <div className="flex items-center justify-center">
-          <div className="w-48 mx-auto">
+          <div className="w-56 mx-auto">
             <DateTimePicker
               value={createdAt}
               onChange={(v) => setCreatedAt(v ?? "")}

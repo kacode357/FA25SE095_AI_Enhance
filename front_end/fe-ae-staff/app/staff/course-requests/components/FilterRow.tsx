@@ -29,8 +29,6 @@ export default function FilterRow({
   setStatus,
   department,
   setDepartment,
-  year,
-  setYear,
   term,
   setTerm,
   onApply,
@@ -74,17 +72,6 @@ export default function FilterRow({
           placeholder="Term"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
-          className="h-8 text-xs w-full text-center rounded-md border-slate-300"
-        />
-      </td>
-
-      {/* Year */}
-      <td className="py-2 px-2 text-center">
-        <Input
-          type="number"
-          placeholder="Year"
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
           className="h-8 text-xs w-full text-center rounded-md border-slate-300"
         />
       </td>
