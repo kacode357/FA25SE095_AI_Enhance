@@ -97,7 +97,6 @@ export default function JoinCourseWithAccessCodePage() {
     if (!res) return;
 
     if (res.success === false) {
-      toast.error(res.message || "Unable to join course.");
       return;
     }
 

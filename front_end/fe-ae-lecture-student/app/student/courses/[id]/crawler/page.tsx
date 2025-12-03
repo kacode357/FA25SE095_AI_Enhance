@@ -169,30 +169,8 @@ const CrawlerInner = () => {
     return results[0]?.promptUsed || "";
   }, [results]);
 
-  // ===== Create New Conversation Logic =====
-  const handleCreateNewConversation = useCallback(() => {
-    const newId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : makeId();
 
-    console.log("✨ Starting new conversation (Client-side):", newId);
 
-    // Reset UI immediately
-    setConversationId(newId);
-    setSelectedConversationId(null);
-    setChatMessages([]);
-    setChatInput("");
-    setActiveJobId(null);
-    setSummary(null);
-    setSummaryError(null);
-    setUrl("");
-    setPrompt("");
-    
-    // Reset overlay state just in case
-    setIsCrawling(false);
-    setCrawlProgress(0);
-  }, []);
 
   // ===== CrawlHub (Jobs) =====
   const {
@@ -584,7 +562,7 @@ const CrawlerInner = () => {
             loading={assignmentLoading}
           />
 
-          {/* === CRAWL FORM & OVERLAY === */}
+          {/* === CRAWL  FORM & OVERLAY === */}
           <CrawlerUrlPromptSection
             url={url}
             prompt={prompt}
@@ -609,7 +587,6 @@ const CrawlerInner = () => {
               loading={conversationsLoading || conversationMessagesLoading}
               selectedConversationId={selectedConversationId}
               onSelectConversation={handleSelectConversation}
-              onNewConversation={handleCreateNewConversation}
             />
 
             <div className="flex flex-col gap-4">

@@ -36,7 +36,7 @@ function SyllabusActionButton({ id, refetch, hasSyllabus }: { id?: string; refet
         if (url) {
             try {
                 await refetch(id);
-            } catch (e) {}
+            } catch (e) { }
         }
         // reset input
         if (fileRef.current) fileRef.current.value = "";
@@ -267,17 +267,17 @@ export default function CourseSidebar({
                 </div>
             </Card>
 
-            {/* Approval Details */}
             <Card className="p-5 border-slate-200 shadow-sm">
                 <h3 className="text-sm font-semibold text-[#000D83] mb-4">Approval Details</h3>
                 <div className="space-y-4 text-sm">
-                    <Info label="Approved By" value={course.approvedByName || "—"} />
-
-                    {/* ĐÃ SỬA HOÀN TOÀN DÒNG NÀY – KHÔNG CÒN LỖI BUILD */}
-                    <Info label="Approved At" value={course.approvedAt ? formatToVN(course.approvedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"} />
-
-                    <Info label="Comments" value={course.approvalComments || "—"} />
-                    <Info label="Rejection Reason" value={course.rejectionReason || "—"} />
+                    <Info
+                        label="Approved At"
+                        value={
+                            course.approvedAt
+                                ? formatToVN(course.approvedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+                                : "—"
+                        }
+                    />
                 </div>
             </Card>
 

@@ -110,7 +110,7 @@ export default function EditCourse() {
     }
 
     return (
-        <div className="h-screen flex flex-col max-w-7xl mx-auto overflow-hidden">
+        <div className="h-screen flex flex-col max-w-7xl mx-auto overflow-hidden p-5">
             <InactivateCourseDialog
                 open={inactivateOpen}
                 onOpenChange={setInactivateOpen}
@@ -124,7 +124,7 @@ export default function EditCourse() {
             <nav aria-label="Breadcrumb" className="text-[12px] select-none my-2">
                 <div className="flex items-center justify-between mt-2">
                     <ol className="flex items-center gap-1 text-slate-500">
-                        <li className="flex items-center hover:text-violet-800 cursor-pointer gap-1">
+                        <li className="flex items-center hover:text-violet-800 cursor-pointer gap-1 ">
                             <Book className="size-4" />
                             <button
                                 onClick={() => window.location.href = '/lecturer/course'}

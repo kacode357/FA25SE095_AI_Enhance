@@ -14,6 +14,7 @@ import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import ProcessCourseActions from "../components/ProcessCourseActions";
+import LiteRichTextEditor from "@/components/common/TinyMCE";
 
 export default function CourseApprovalDetailPage() {
   const { id } = useParams();
@@ -25,7 +26,6 @@ export default function CourseApprovalDetailPage() {
   }, [id]);
 
   const course = data?.course;
-  const isLoading = false;
 
   if (!course) {
     return (
@@ -61,7 +61,7 @@ export default function CourseApprovalDetailPage() {
         </Button>
       </div>
 
-      {/* Single main card with footer actions */}
+      {/* Main card */}
       <Card className="border border-slate-200 shadow-sm overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
@@ -74,7 +74,6 @@ export default function CourseApprovalDetailPage() {
               </p>
             </div>
 
-            {/* Status chip: dùng text color từ config + border-current */}
             <Badge
               className={`text-xs px-2 py-1 border bg-white ${getCourseStatusColor(
                 course.status
@@ -84,34 +83,72 @@ export default function CourseApprovalDetailPage() {
             </Badge>
           </div>
 
-          {/* Title line dưới header cho nổi bật tên course */}
           <h2 className="mt-4 text-xl font-semibold text-slate-800">
-            {course.courseCodeTitle}
+            {course.courseCodeTitle}{" "}
+            <span className="text-slate-400 font-normal text-base">
+              ({course.courseCode})
+            </span>
           </h2>
         </CardHeader>
 
         <CardContent className="space-y-8">
-          {/* Grid thông tin */}
-          <section className="grid md:grid-cols-2 gap-x-10 gap-y-4 text-sm">
-            <Field label="Course Code" value={course.courseCode} />
-            <Field label="Lecturer" value={course.lecturerName} />
+          {/* Grid thông tin chi tiết */}
+          <section className="grid md:grid-cols-3 gap-x-8 gap-y-6 text-sm">
+            <Field label="System Name" value={course.name} />
+            <Field label="Unique Code" value={course.uniqueCode} />
             <Field label="Department" value={course.department} />
-            <Field label="Created At" value={fmtDate(course.createdAt)} />
+
+            <Field label="Lecturer" value={course.lecturerName} />
             <Field label="Term" value={course.term} />
+            <Field label="Enrollment Count" value={course.enrollmentCount.toString()} />
+
+            <Field label="Term Start Date" value={fmtDate(course.termStartDate)} />
+            <Field label="Term End Date" value={fmtDate(course.termEndDate)} />
+            <Field label="Created At" value={fmtDate(course.createdAt)} />
+
+            <Field
+              label="Requires Access Code"
+              value={course.requiresAccessCode ? "Yes" : "No"}
+            />
+            {course.requiresAccessCode && (
+              <Field label="Access Code" value={course.accessCode || "Not set"} />
+            )}
           </section>
 
           <div className="h-px bg-slate-200/80" />
 
-          <section className="text-sm">
+          {/* Section: Description & Announcement */}
+          <section className="grid md:grid-cols-2 gap-8 text-sm">
+            {/* Cột trái: Description */}
             <Field
               label="Description"
               value={course.description || "-"}
               multiline
             />
+
+            {/* Cột phải: Announcement (Dùng TinyMCE ReadOnly) */}
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium mb-1">
+                Announcement
+              </div>
+              {course.announcement ? (
+                // 👇 Đã xóa 'border border-slate-200' ở đây để tránh bị 2 viền
+                <div className="mt-1 rounded-md overflow-hidden">
+                  <LiteRichTextEditor
+                    value={course.announcement}
+                    onChange={() => {}}
+                    readOnly={true}
+                    placeholder="No announcement content"
+                  />
+                </div>
+              ) : (
+                <span className="text-slate-900">-</span>
+              )}
+            </div>
           </section>
         </CardContent>
 
-        {/* Footer actions (chỉ hiện khi PendingApproval) */}
+        {/* Footer actions */}
         {isPending && course && (
           <div className="px-6 py-4 bg-slate-50/70 border-t border-slate-200">
             <div className="flex items-center justify-between">
@@ -149,10 +186,10 @@ function Field({
         {label}
       </div>
       <div
-        className={`mt-1 text-slate-900 ${
+        className={`mt-1 text-slate-900 break-words ${
           multiline ? "whitespace-pre-wrap" : ""
         }`}
-      > 
+      >
         {value}
       </div>
     </div>

@@ -1,7 +1,7 @@
 // app/.../crawler/components/CrawlerAssignmentConversationsSection.tsx
 "use client";
 
-import { ChevronDown, MessageCircle, Plus } from "lucide-react";
+import { ChevronDown, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import {
   Collapsible,
@@ -16,7 +16,6 @@ type Props = {
   loading: boolean;
   selectedConversationId?: string | null;
   onSelectConversation?: (conversationId: string) => void;
-  onNewConversation?: () => void;
 };
 
 export default function CrawlerAssignmentConversationsSection({
@@ -24,7 +23,6 @@ export default function CrawlerAssignmentConversationsSection({
   loading,
   selectedConversationId,
   onSelectConversation,
-  onNewConversation,
 }: Props) {
   const [open, setOpen] = useState<boolean>(true);
 
@@ -62,22 +60,6 @@ export default function CrawlerAssignmentConversationsSection({
         </div>
 
         <CollapsibleContent className="mt-3 space-y-3">
-          {/* NEW CONVERSATION BUTTON */}
-          <button
-            onClick={onNewConversation}
-            type="button"
-            className={`w-full flex items-center justify-center gap-2 rounded-lg border border-dashed py-2 text-xs font-medium transition-all duration-200
-              ${
-                selectedConversationId === null
-                  ? "bg-blue-50 text-blue-700 border-blue-300 ring-1 ring-blue-200"
-                  : "border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400"
-              }
-            `}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Start New Conversation
-          </button>
-
           {loading ? (
             <div className="space-y-2">
               <Skeleton className="h-5 w-full" />
