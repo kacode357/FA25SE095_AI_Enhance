@@ -175,10 +175,8 @@ export default function AddGroupMemberSheet({
                 return;
             }
 
-            // If a leader was selected and the group doesn't already have one,
-            // call assign leader (this hook will show backend message toasts).
             if (leaderId && !groupHasLeader) {
-                await assignLead({ groupId, studentId: leaderId });
+                await assignLead({ groupId, studentId: leaderId }, { silent: true });
             }
 
             onAdded?.();
@@ -206,7 +204,7 @@ export default function AddGroupMemberSheet({
                     <div>
                         <div className="flex justify-between">
                             <div>
-                                <Label className="py-2 cursor-text">Students                                 
+                                <Label className="py-2 cursor-text">Students
                                     <div className="text-sm text-slate-500 font-normal">({availableStudents.length} / {students?.length ?? 0})</div></Label>
                             </div>
                             <div className="flex gap-1 mb-2">

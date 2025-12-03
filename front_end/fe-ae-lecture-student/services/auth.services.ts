@@ -35,7 +35,7 @@ export const AuthService = {
   login: async (data: LoginPayload): Promise<ApiResponse<LoginResponse>> => {
     const response = await userAxiosInstance.post<ApiResponse<LoginResponse>>("/Auth/login", data, {
       // Caller: login flow should not trigger global toasts from interceptors
-      suppressToast: true,
+      // suppressToast: true,
     });
     return response.data; // { status, message, data }
   },
@@ -92,7 +92,7 @@ export const AuthService = {
 
   logout: async (data: LogoutPayload): Promise<LogoutResponse> => {
     const response = await userAxiosInstance.post<LogoutResponse>("/Auth/logout", data, {
-      suppressToast: true,
+      // suppressToast: true,
     });
     return response.data;
   },
@@ -102,7 +102,7 @@ export const AuthService = {
     const response = await userAxiosInstance.post<ApiResponse<GoogleLoginResponse>>(
       "/Auth/google-login",
       data,
-      { suppressToast: true }
+      // { suppressToast: true }
     );
     return response.data;
   },

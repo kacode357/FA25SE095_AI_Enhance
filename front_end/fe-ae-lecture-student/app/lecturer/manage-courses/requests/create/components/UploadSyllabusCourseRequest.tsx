@@ -26,8 +26,10 @@ export default function UploadSyllabusCourseRequest({ courseRequestId }: Props) 
         if (res?.success) {
             setUploaded(true);
             if (res.fileUrl) setUploadedUrl(res.fileUrl);
-            // After successful upload, go back to Requests page
-            router.push('/lecturer/manage-courses/requests');
+            // After successful upload, go back to Requests page and force remount via query param
+            const ts = Date.now();
+            await router.push(`/lecturer/manage-courses/requests?refresh=${ts}`);
+            router.refresh();
         }
     };
 
@@ -83,12 +85,26 @@ export default function UploadSyllabusCourseRequest({ courseRequestId }: Props) 
                     </div>
                     <div className="flex items-center gap-2">
                         <Button
-                            onClick={() => router.push('/lecturer/manage-courses/requests')}
+                            onClick={async () => {
+                                const ts = Date.now();
+                                await router.push(`/lecturer/manage-courses/requests?refresh=${ts}`);
+                                router.refresh();
+                            }}
+                            variant="ghost"
+                            className="text-sm text-violet-800 hover:text-violet-500"
+                        >
+                            Close
+                        </Button>
+                        {/* <Button
+                            onClick={async () => {
+                                await router.push('/lecturer/manage-courses/requests');
+                                router.refresh();
+                            }}
                             variant="ghost"
                             className="text-sm text-violet-800 hover:text-violet-500"
                         >
                             Cancel
-                        </Button>
+                        </Button> */}
 
                         <Button
                             onClick={handleUpload}

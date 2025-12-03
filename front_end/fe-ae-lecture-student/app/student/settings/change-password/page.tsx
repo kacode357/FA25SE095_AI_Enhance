@@ -1,11 +1,11 @@
 // app/lecturer/profile/change-password/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import Button from "@/components/ui/button";
 import { useChangePassword } from "@/hooks/auth/useChangePassword";
 import type { ChangePasswordPayload } from "@/types/auth/auth.payload";
-import Button from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
+import { useMemo, useState } from "react";
 
 type FormState = {
   currentPassword: string;
@@ -71,7 +71,14 @@ export default function LecturerChangePasswordPage() {
     };
 
     const res = await changePassword(payload);
-    if (res?.success) {
+    const isSuccess = res
+      ? ("success" in (res as any)
+          ? Boolean((res as any).success)
+          : ("status" in (res as any)
+              ? Number((res as any).status) >= 200 && Number((res as any).status) < 300
+              : false))
+      : false;
+    if (isSuccess) {
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     }
   };

@@ -10,14 +10,17 @@ export function useAssignLead() {
 
   const assignLead = useCallback(
     async (
-      payload: AssignLeadPayload
+      payload: AssignLeadPayload,
+      options?: { silent?: boolean }
     ): Promise<AssignLeaderResponse | null> => {
       setLoading(true);
       setError(null);
 
       try {
         const res = await GroupMembersService.assignLeader(payload);
-        toast.success(res.message || "Leader assigned successfully");
+        if (!options?.silent) {
+          toast.success(res.message || "Leader assigned successfully");
+        }
         return res;
       } catch (err: any) {
         setError(
@@ -25,11 +28,13 @@ export function useAssignLead() {
             err?.message ||
             "Failed to assign leader"
         );
-        toast.error(
-          err?.response?.data?.message ||
-            err?.message ||
-            "Failed to assign leader"
-        );
+        if (!options?.silent) {
+          toast.error(
+            err?.response?.data?.message ||
+              err?.message ||
+              "Failed to assign leader"
+          );
+        }
         return null;
       } finally {
         setLoading(false);

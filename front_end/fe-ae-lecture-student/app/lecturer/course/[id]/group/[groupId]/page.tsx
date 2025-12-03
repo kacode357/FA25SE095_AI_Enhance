@@ -265,7 +265,12 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
             <p className="mb-2 text-sm text-slate-600">Set a new group Leader:</p>
             <div className="flex flex-col gap-2 max-h-60 overflow-auto">
               {members.map((m: GroupMember) => (
-                <label key={m.id} className="flex items-center gap-2 cursor-pointer">
+                <label
+                  key={m.id}
+                  className={`flex items-center gap-2 cursor-pointer rounded px-2 py-1 ${
+                    selectedLeader === m.studentId ? "bg-violet-50 text-violet-800" : ""
+                  }`}
+                >
                   <input
                     type="radio"
                     name="leader"
@@ -274,7 +279,9 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
                     onChange={() => setSelectedLeader(m.studentId)}
                     className="cursor-pointer"
                   />
-                  <span>{m.studentName} {m.isLeader ? "(Current Leader)" : ""}</span>
+                  <span className={selectedLeader === m.studentId ? "font-medium" : ""}>
+                    {m.studentName} {m.isLeader ? "(Current Leader)" : ""}
+                  </span>
                 </label>
               ))}
             </div>
