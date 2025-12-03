@@ -32,15 +32,17 @@ function fileExtension(name: string) {
 function validateImageFile(file: File) {
   const ext = fileExtension(file.name);
   const mime = file.type;
+
   if (!ext || !ALLOWED_EXTS.includes(ext)) {
     return { ok: false, reason: `File type '.${ext || ""}' is not allowed.` };
   }
   if (!mime || !ALLOWED_MIMES.includes(mime)) {
-    // Some browsers may omit mime for certain files; rely on extension first
     return { ok: false, reason: `MIME '${mime || "unknown"}' is not allowed.` };
   }
-  return { ok: true };
+
+  return { ok: true, reason: "" }; // added reason to avoid undefined
 }
+
 
 export default function UploadImagesSupport() {
   const router = useRouter();
