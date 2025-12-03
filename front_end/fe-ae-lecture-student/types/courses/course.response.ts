@@ -374,3 +374,8 @@ export interface UploadSyllabusResponse {
   message: string;
   fileUrl: string;
 }
+
+export interface DeleteSyllabusResponse {
+  success: boolean;
+  message: string;
+}

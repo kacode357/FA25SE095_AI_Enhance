@@ -24,14 +24,7 @@ export default function CourseApprovalDetailPage() {
   }, [id]);
 
   const course = data?.course;
-
-  if (loading) {
-    return (
-      <div className="p-6 text-center text-slate-500">
-        Loading course details...
-      </div>
-    );
-  }
+  const isLoading = false;
 
   if (!course) {
     return (
@@ -49,7 +42,7 @@ export default function CourseApprovalDetailPage() {
   const fmtDate = (v?: string | null) =>
     v ? new Date(v).toLocaleString("en-GB") : "-";
 
-  const isPending = course.status === CourseStatus.PendingApproval;
+  const isPending = course?.status === CourseStatus.PendingApproval;
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -116,7 +109,7 @@ export default function CourseApprovalDetailPage() {
         </CardContent>
 
         {/* Footer actions (chỉ hiện khi PendingApproval) */}
-        {isPending && (
+        {isPending && course && (
           <div className="px-6 py-4 bg-slate-50/70 border-t border-slate-200">
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-600">

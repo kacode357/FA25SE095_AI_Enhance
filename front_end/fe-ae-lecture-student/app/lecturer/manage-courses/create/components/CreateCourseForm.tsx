@@ -197,9 +197,9 @@ export default function CreateCourseForm({ codes, terms, loadingOptions, form, s
                             </div>
 
                             <div className="min-w-0 text-center justify-center items-center align-middle self-center">
-                                <div className="text-sm">
+                                <div className="text-xs">
                                         {form.customAccessCode ? (
-                                            <div className="mt-5 gap-2 flex font-medium items-center text-slate-700 truncate"><p className="text-slate-500 text-xs">Current:</p>{form.customAccessCode} : {form.accessCodeExpiresAt ? formatToVN(form.accessCodeExpiresAt, { year: 'numeric', month: '2-digit', day: '2-digit', hour: undefined, minute: undefined, second: undefined }) : '—'}</div>
+                                            <div className="mt-5 gap-2 flex font-medium items-center text-slate-700 truncate"><p className="text-slate-500 text-xs">Current:</p>{form.customAccessCode} : {form.accessCodeExpiresAt ? formatToVN(form.accessCodeExpiresAt, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: undefined }) : '—'}</div>
                                     ) : (
                                         <div className="text-xs mt-5 text-slate-400">No custom code set</div>
                                     )}

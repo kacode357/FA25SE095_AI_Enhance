@@ -62,7 +62,7 @@ export default function ProcessActions({
       {/* Approve */}
       <Button
         variant="primary"
-        className="px-5 btn btn-greenn-slow whitespace-nowrap rounded-xl"
+        className="px-5 btn btn-green-slow whitespace-nowrap rounded-xl"
         onClick={() => openWith("approve")}
         disabled={loading}
       >

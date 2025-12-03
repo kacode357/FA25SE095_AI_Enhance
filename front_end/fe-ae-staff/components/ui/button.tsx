@@ -1,6 +1,4 @@
 "use client";
-
-import LogoLoader from "@/components/common/logo-loader";
 import { motion } from "framer-motion";
 import React from "react";
 
@@ -42,14 +40,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={`${classes} ${loading ? "opacity-90" : ""}`}
         {...props}
       >
-        {loading ? (
-          <span className="inline-flex items-center justify-center gap-2">
-            <LogoLoader size={18} />
-            {children}
-          </span>
-        ) : (
-          children
-        )}
+        {children}
       </motion.button>
     );
   }

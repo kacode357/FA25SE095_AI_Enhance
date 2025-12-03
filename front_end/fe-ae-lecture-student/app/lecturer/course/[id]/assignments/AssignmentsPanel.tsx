@@ -11,7 +11,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAssignments } from "@/hooks/assignment/useAssignments";
 import type { AssignmentStatusFilter, GetAssignmentsQuery } from "@/types/assignments/assignment.payload";
-import { formatToVN } from "@/utils/datetime/time";
+import { formatToVN, toVNLocalISOString } from "@/utils/datetime/time";
+
+function formatToVNShort(input?: string | null) {
+  if (!input) return "-";
+  try {
+    const iso = toVNLocalISOString(input); // YYYY-MM-DDTHH:mm:ss in VN wall time
+    const [datePart, timePart] = iso.split("T");
+    const [year, month, day] = datePart.split("-");
+    const [hour, minute] = timePart.split(":");
+    return `${hour}:${minute} ${day}/${month}/${year}`;
+  } catch (e) {
+    return input ?? "-";
+  }
+}
 
 import { useDeleteAssignment } from "@/hooks/assignment/useDeleteAssignment";
 import type { AssignmentItem } from "@/types/assignments/assignment.response";
@@ -219,9 +232,9 @@ export default function AssignmentsPanel({
   if (mode === "create") {
     return (
       <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
-        <div className="flex items-center justify-between py-0 border-b border-slate-200 bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between py-0 border-b pb-2 border-slate-200 bg-white sticky  top-0 z-10">
           <h2 className="text-sm text-[#000D83] font-semibold">Create Assignment</h2>
-          <Button className="text-[#000D83] -mr-3.5" variant="outline" onClick={backToList}>
+          <Button className="text-[#000D83] bg-slate-100 hover:bg-slate-200" variant="outline" onClick={backToList}>
             <ArrowLeft className="size-4" />
             Back to Assignments
           </Button>
@@ -372,15 +385,15 @@ export default function AssignmentsPanel({
 
                                 <div className="flex gap-2 flex-wrap items-center mr-2">
                                   <span>Start:</span>
-                                  <span className="text-slate-900">{a.startDate ? formatToVN(a.startDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
+                                  <span className="text-slate-900">{formatToVNShort(a.startDate)}</span>
                                   <span className="text-slate-400">·</span>
 
                                   <span>Due:</span>
-                                  <span className="text-slate-900">{a.dueDate ? formatToVN(a.dueDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
+                                  <span className="text-slate-900">{formatToVNShort(a.dueDate)}</span>
                                   <span className="text-slate-400">·</span>
 
                                   <span>Extended Due:</span>
-                                  <span className="text-slate-900">{a.extendedDueDate ? formatToVN(a.extendedDueDate, { dateStyle: 'medium', timeStyle: 'short' }) : "-"}</span>
+                                  <span className="text-slate-900">{formatToVNShort(a.extendedDueDate)}</span>
                                   <span className="text-slate-400">·</span>
 
                                   {a.isOverdue ? (

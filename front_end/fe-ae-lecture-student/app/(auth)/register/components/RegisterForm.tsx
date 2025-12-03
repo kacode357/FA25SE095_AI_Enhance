@@ -178,7 +178,7 @@ export default function RegisterForm() {
             {/* Stepper header */}
             <div className="mb-7">
                 <div className="flex items-center gap-3 w-full max-w-full">
-                    {["Your Account", "Profile Information", "Upload Avatar"].map((label, i) => {
+                    {["Your Account", "Profile Information"].map((label, i) => {
                         const idx = i + 1;
                         const active = idx === step;
                         const done = idx < step;
@@ -187,7 +187,7 @@ export default function RegisterForm() {
                                 <div className={`flex-1 min-w-0 text-[11px] md:text-[12px] text-center py-1 px-2 rounded-full ${active ? 'bg-violet-100 text-violet-800 font-medium' : done ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                     <div className="uppercase tracking-tight font-medium truncate">{label}</div>
                                 </div>
-                                {i < 2 && <div className={`h-1 w-6 md:w-8 rounded-full flex-none ${idx < step ? 'bg-emerald-300' : 'bg-slate-200'}`} />}
+                                {i < 1 && <div className={`h-1 w-6 md:w-8 rounded-full flex-none ${idx < step ? 'bg-emerald-300' : 'bg-slate-200'}`} />}
                             </div>
                         );
                     })}
@@ -234,41 +234,6 @@ export default function RegisterForm() {
                     <div className="flex flex-row gap-4">
                         <Input className="text-sm" name="department" label="Department" placeholder="e.g. Computer Science" value={departmentValue} onChange={(e) => setDepartmentValue(e.currentTarget.value)} />
                         <Input className="text-sm" name="position" label="Position" placeholder="e.g. Lecturer / Researcher" value={positionValue} onChange={(e) => setPositionValue(e.currentTarget.value)} />
-                    </div>
-                </div>
-            )}
-
-            {step === 3 && (
-                <div className="space-y-5 my-10.5">
-                    <div className="flex items-center gap-10">
-                        <div className="w-52 h-52 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden">
-                            {avatarPreview ? (
-                                <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="text-slate-300">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-80">
-                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M20 21v-1c0-2.21-3.58-4-8-4s-8 1.79-8 4v1" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex-1">
-                            <div className="text-sm mb-2 font-medium">Upload avatar</div>
-                            <div className="text-xs text-slate-500 mb-7">Square image recommended. JPG/PNG. Max 2MB. (UI)</div>
-
-                            <div className="flex items-center gap-2">
-                                <label className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 rounded-md text-sm cursor-pointer shadow-sm">
-                                    <input type="file" accept="image/*" className="sr-only" onChange={(ev) => { const f = ev.currentTarget.files?.[0]; if (f) handleAvatarChange(f); }} />
-                                    Choose file
-                                </label>
-
-                                <button type="button" className="inline-flex items-center px-3 py-1.5 bg-white border border-red-400 rounded-md text-sm text-red-500 cursor-pointer" onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}>
-                                    Remove
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             )}

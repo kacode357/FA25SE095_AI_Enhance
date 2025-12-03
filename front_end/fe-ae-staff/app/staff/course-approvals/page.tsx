@@ -101,7 +101,7 @@ export default function CourseApprovalsPage() {
               </TableHeader>
 
               <TableBody>
-                {!loading &&
+                {
                   pendingCourses.map((c) => (
                     <motion.tr
                       key={c.id}
@@ -129,18 +129,10 @@ export default function CourseApprovalsPage() {
                     </motion.tr>
                   ))}
 
-                {!loading && pendingCourses.length === 0 && (
+                {pendingCourses.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-10 text-center text-slate-500">
                       No pending courses.
-                    </td>
-                  </tr>
-                )}
-
-                {loading && (
-                  <tr>
-                    <td colSpan={6} className="py-10 text-center text-slate-500">
-                      Loading...
                     </td>
                   </tr>
                 )}
@@ -155,7 +147,7 @@ export default function CourseApprovalsPage() {
         page={page}
         totalPages={totalPages}
         totalCount={totalCount}
-        loading={loading}
+        loading={false}
         onPageChange={(newPage) => setPage(newPage)}
       />
     </div>

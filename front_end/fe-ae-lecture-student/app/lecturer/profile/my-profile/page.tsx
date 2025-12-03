@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateProfile } from "@/hooks/user/useUpdateProfile";
 import { useUploadAvatar } from "@/hooks/user/useUploadAvatar";
 import type { UpdateProfilePayload } from "@/types/user/user.payload";
+import { formatToVN } from "@/utils/datetime/time";
 import { CircleFadingArrowUp, Loader2, Mail, ScanEye, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, DetailRow, Field, formatDateTime, initials, safeStr, StatLine } from "../components/format-profile";
@@ -189,7 +190,7 @@ export default function LecturerMyProfilePage() {
                         </div>
 
                         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <StatLine label="Last login" value={formatDateTime(user.lastLoginAt)} />
+                            <StatLine label="Last login" value={user.lastLoginAt ? formatToVN(user.lastLoginAt, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "-"} />
                             <StatLine label="Account created" value={formatDateTime(user.createdAt, true)} />
                             <StatLine
                                 label="Email"

@@ -1,6 +1,6 @@
 "use client";
 
-import { ListPlus, Wrench } from "lucide-react";
+import { ArrowLeft, ListPlus, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -8,6 +8,7 @@ export default function ManageCoursesLayout({ children }: { children: React.Reac
     const pathname = usePathname() || "";
 
     const isRequests = pathname === "/lecturer/manage-courses" || pathname.startsWith("/lecturer/manage-courses/requests");
+    const isRequestsCreate = pathname.startsWith("/lecturer/manage-courses/requests/create");
     const isCreate = pathname.startsWith("/lecturer/manage-courses/create");
     const isSupport = pathname.startsWith("/lecturer/manage-courses/support-requests");
 
@@ -27,16 +28,25 @@ export default function ManageCoursesLayout({ children }: { children: React.Reac
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {/* Do not show action buttons on Create page */}
+                        {/* Do not show action buttons on Course Create page */}
                         {!isCreate && (
                             <>
-                                {isRequests && (
+                                {/* On requests listing, show New button; on requests create, show back to list */}
+                                {isRequests && !isRequestsCreate && (
                                     <Link
                                         href="/lecturer/manage-courses/requests/create"
                                         className="inline-flex items-center btn btn-gradient-slow gap-2 bg-violet-600 text-white text-sm font-medium px-3 py-1.5 rounded-md hover:bg-violet-700"
                                     >
                                         <ListPlus className="size-4" />
                                         New Course Request
+                                    </Link>
+                                )}
+                                {isRequestsCreate && (
+                                    <Link
+                                        href="/lecturer/manage-courses/requests"
+                                        className="inline-flex items-center gap-2 btn btn-gradient-slow bg-violet-600 text-white text-sm font-medium px-3 py-1.5 rounded-md hover:bg-violet-700"
+                                    >
+                                        <ArrowLeft className="size-4"/>Course Requests List
                                     </Link>
                                 )}
 

@@ -1,6 +1,4 @@
 "use client";
-
-import LogoLoader from "@/components/common/logo-loader";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -46,14 +44,11 @@ export default function RouteLoader() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-1000 flex items-center justify-center bg-transparent"
           aria-live="polite"
           role="status"
         >
-          <div className="flex flex-col items-center gap-3 text-white">
-            <LogoLoader size={56} />
-            <div className="text-xs text-white/80">Loading...</div>
-          </div>
+          {/* Loader intentionally removed */}
         </motion.div>
       )}
     </AnimatePresence>

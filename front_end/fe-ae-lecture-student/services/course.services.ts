@@ -181,4 +181,12 @@ inactivateCourse: async (
     return res.data;
   },
 
+  /** DELETE /api/Courses/{courseId}/syllabus (Lecturer only) */
+  deleteSyllabus: async ({ courseId }: { courseId: string }) : Promise<import("@/types/courses/course.response").DeleteSyllabusResponse> => {
+    const res = await courseAxiosInstance.delete<import("@/types/courses/course.response").DeleteSyllabusResponse>(
+      `/Courses/${courseId}/syllabus`
+    );
+    return res.data;
+  },
+
 };

@@ -7,6 +7,7 @@ import { useAssignLead } from "@/hooks/group-member/useAssignLead";
 import { useDeleteMember } from "@/hooks/group-member/useDeleteMember";
 import { useGroupById } from "@/hooks/group/useGroupById";
 import { GroupMember } from "@/types/group-members/group-member.response";
+import { formatToVN } from "@/utils/datetime/time";
 import {
   ArrowLeft,
   CalendarClock,
@@ -135,7 +136,10 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
             <CalendarClock className="size-4" /> Metadata
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-2 gap-x-6 gap-y-5 text-xs text-slate-700">
-            <InfoItem label="Created At" value={new Date(group.createdAt).toLocaleString()} />
+            <InfoItem
+              label="Created At"
+              value={group.createdAt ? formatToVN(group.createdAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "-"}
+            />
           </div>
         </section>
 
@@ -192,8 +196,7 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
                       </td>
                       <td className="px-3 py-2 text-center">
                         <div className="flex flex-col">
-                          <span className="leading-tight">{new Date(m.joinedAt).toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
-                          <span className="text-[10px] sm:text-xs text-slate-500 whitespace-nowrap">{new Date(m.joinedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                          <span className="text-[10px] sm:text-xs text-slate-500 whitespace-nowrap">{m.joinedAt ? formatToVN(m.joinedAt, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}</span>
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center flex justify-center gap-2">

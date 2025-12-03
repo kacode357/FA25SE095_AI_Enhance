@@ -109,7 +109,6 @@ export default function CreateCourseCodePage() {
                             </div>
 
                             <div className="flex items-center justify-end gap-3 pt-2">
-                                <Button variant="ghost" onClick={() => router.push('/staff/course-codes')}>Cancel</Button>
                                 <Button className="btn btn-green-slow" type="submit" disabled={loading}>
                                     {loading ? 'Creating...' : 'Create Course Code'}
                                 </Button>

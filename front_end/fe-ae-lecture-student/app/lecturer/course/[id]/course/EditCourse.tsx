@@ -124,17 +124,17 @@ export default function EditCourse() {
             <nav aria-label="Breadcrumb" className="text-[12px] select-none my-2">
                 <div className="flex items-center justify-between mt-2">
                     <ol className="flex items-center gap-1 text-slate-500">
-                        <li className="flex items-center gap-1 mr-3">
+                        <li className="flex items-center hover:text-violet-800 cursor-pointer gap-1">
                             <Book className="size-4" />
                             <button
                                 onClick={() => window.location.href = '/lecturer/course'}
-                                className="px-1 hover:text-violet-800 truncate max-w-[130px]"
+                                className="px-1 cursor-pointer hover:text-violet-800 truncate max-w-[130px]"
                             >
                                 My Courses
                             </button>
                         </li>
-                        <ChevronRight className="size-3 mr-3 text-slate-400 hidden sm:inline" />
-                        <li className="text-slate-900 font-medium truncate max-w-[200px]">
+                        <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
+                        <li className="text-slate-900 cursor-text font-medium truncate max-w-[200px]">
                             {course.courseCode} — {course.courseCodeTitle}
                         </li>
                     </ol>
@@ -159,7 +159,7 @@ export default function EditCourse() {
                             <StatusChip status={course.status} />
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-5">
                             {!editMode && course.status === CourseStatus.Active && (
                                 <>
                                     <button

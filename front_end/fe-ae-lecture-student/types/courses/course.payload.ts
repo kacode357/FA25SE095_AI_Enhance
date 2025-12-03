@@ -100,3 +100,7 @@ export interface GetCourseJoinInfoPayload {
 export interface UploadSyllabusPayload {
   file: File;
 }
+
+export interface DeleteSyllabusPayload {
+  courseId: string;
+}

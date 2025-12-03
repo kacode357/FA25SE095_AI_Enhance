@@ -25,6 +25,7 @@ import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
 import { useGetTopicsDropdown } from "@/hooks/topic/useGetTopicsDropdown";
 import { AssignmentService } from "@/services/assignment.services";
 import type { CreateAssignmentPayload } from "@/types/assignments/assignment.payload";
+import { toVNLocalISOString } from "@/utils/datetime/time";
 
 function normalizeHtmlForSave(input?: string | null): string {
   if (!input) return "";
@@ -213,8 +214,9 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
       title: form.title.trim(),
       topicId: form.topicId.trim(),
       description: descriptionClean || undefined,
-      startDate: new Date(form.startDate).toISOString(),
-      dueDate: new Date(form.dueDate).toISOString(),
+      // represent start/due in VN wall-clock ISO-like string (no TZ) so backend can interpret as VN local time
+      startDate: toVNLocalISOString(form.startDate),
+      dueDate: toVNLocalISOString(form.dueDate),
       isGroupAssignment: !!form.isGroupAssignment,
       maxPoints: form.maxPoints ? Number(form.maxPoints) : undefined,
       weight: form.weight !== undefined && form.weight !== "" ? Number(form.weight) : 0,

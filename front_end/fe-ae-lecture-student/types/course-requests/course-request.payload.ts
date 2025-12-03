@@ -4,6 +4,7 @@ export interface CourseRequestPayload {
   termId: string;
   year: number;
   requestReason?: string;
+  announcement?: string;
   studentEnrollmentFile?: File | null;
   lecturerId?: string;
 }

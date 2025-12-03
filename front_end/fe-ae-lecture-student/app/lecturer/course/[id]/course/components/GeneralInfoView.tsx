@@ -2,6 +2,7 @@
 
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { CourseItem } from "@/types/courses/course.response";
+import { formatToVN } from "@/utils/datetime/time";
 import { InfoV2 } from "../helpers/InfoHelpers";
 
 type Props = {
@@ -27,10 +28,10 @@ export default function GeneralInfoView({ course }: Props) {
                 />
                 <InfoV2
                     label="Created At"
-                    value={new Date(course.createdAt).toLocaleString("en-GB", {
-                        day: "2-digit",
-                        month: "2-digit",
+                    value={formatToVN(course.createdAt, {
                         year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit",

@@ -1,7 +1,7 @@
 "use client";
 
+import PaginationBar from "@/components/common/pagination-all";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
 import { CourseRequestStatus } from "@/types/course-requests/course-request.response";
@@ -100,7 +100,7 @@ export default function CourseRequests({ active = true }: Props) {
           />
         </Card>
       </div>
-      
+
       {/* Scrollable list */}
       <div className="flex-1 overflow-y-auto scroll-smooth scrollbar-stable">
 
@@ -122,9 +122,17 @@ export default function CourseRequests({ active = true }: Props) {
 
         {!loadingReqs && (reqs?.length ?? 0) > 0 && (
           <div className="flex flex-col max-w-7xl mx-auto p-2 gap-3">
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {reqs.map((r) => {
                 const s = statusInfo(r.status);
+                const sf: any = r.syllabusFile as any;
+                const syllabusFilename = typeof sf === "string"
+                  ? (sf.split("/").pop() || sf)
+                  : (sf?.name ?? sf?.filename ?? (typeof sf?.url === 'string' ? sf.url.split("/").pop() : ""));
+                const syllabusHref = typeof sf === "string"
+                  ? sf
+                  : (sf?.url ?? sf?.path ?? "#");
+
                 return (
                   <Card key={r.id} className="relative overflow-hidden h-full py-3 flex flex-col border-slate-200 hover:shadow-[0_8px_24px_rgba(2,6,23,0.06)] hover:border-slate-300 focus:outline-none">
                     {/* Left gradient accent */}
@@ -167,12 +175,24 @@ export default function CourseRequests({ active = true }: Props) {
                       </div>
                     )}
 
+                    {/* Syllabus file (if any) above footer */}
+                    {r.syllabusFile && (
+                      <div className="px-3.5 mt-2">
+                        <Badge className="bg-slate-100 text-slate-700 max-w-full truncate" title={syllabusFilename}>
+                          Sysllabus
+                          <a href={syllabusHref} target="_blank" rel="noopener noreferrer" className="underline">
+                            {syllabusFilename}
+                          </a>
+                        </Badge>
+                      </div>
+                    )}
+
                     {/* Footer pinned */}
                     <div className="px-3.5 pt-2 mt-auto gap-2">
                       <div className="flex flex-row items-center justify-between gap-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge className="text-xs bg-brand/10 text-brand border border-brand/20">
-                            {r.term} • {r.year}
+                            {r.term}
                           </Badge>
                         </div>
                         <div className="text-[11px] text-slate-500">Created: {new Date(r.createdAt).toLocaleDateString("en-GB")}</div>
@@ -192,29 +212,14 @@ export default function CourseRequests({ active = true }: Props) {
               })}
             </div>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-between px-1 sm:px-2 pt-1">
-              <div className="text-xs text-slate-500 cursor-text">Total: {reqTotal}</div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  className="h-8 px-2 text-xs rounded-md"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </Button>
-                <span className="text-xs text-slate-600 cursor-text">Page {page} of {totalPages}</span>
-                <Button
-                  variant="outline"
-                  className="h-8 px-2 text-xs rounded-md"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              totalCount={reqTotal}
+              loading={loadingReqs}
+              onPageChange={(p) => setPage(p)}
+            />
+
           </div>
         )}
       </div>

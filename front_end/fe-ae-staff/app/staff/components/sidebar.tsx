@@ -59,6 +59,42 @@ export default function ManagerSidebar({
 
   const toggleCollapsed = () => setCollapsed(!collapsed);
 
+  // Helper: check if item or any descendant matches current pathname (for parent highlight)
+  const isItemActive = (it: any): boolean => {
+    if (!it) return false;
+    const href: string | undefined = it.href;
+    const selfActive = !!href && (pathname === href);
+    if (selfActive) return true;
+    if (it.children && it.children.length > 0) {
+      return it.children.some((c: any) => isItemActive(c));
+    }
+    return false;
+  };
+
+  // Compute the unique active key: longest href that matches pathname
+  const computeActiveKey = (items: any[]): string | undefined => {
+    let key: string | undefined;
+    let maxLen = -1;
+    const visit = (arr: any[]) => {
+      arr.forEach((it) => {
+        if (typeof it.href === "string") {
+          const href: string = it.href;
+          if (pathname === href || (href !== "/staff" && pathname?.startsWith(href))) {
+            if (href.length > maxLen) {
+              key = href;
+              maxLen = href.length;
+            }
+          }
+        }
+        if (it.children && it.children.length) visit(it.children);
+      });
+    };
+    visit(items);
+    return key;
+  };
+
+  const activeKey = computeActiveKey(mainNav as any[]);
+
   return (
     <aside
       className={clsx(
@@ -91,7 +127,7 @@ export default function ManagerSidebar({
             onClick={toggleCollapsed}
             size="icon"
             variant="ghost"
-            className="rounded-full cursor-pointer bg-gradient-to-br from-blue-500 to-purple-500 shadow-md hover:shadow-lg hover:opacity-90 flex items-center justify-center h-10 w-10"
+            className="rounded-full cursor-pointer bg-linear-to-br from-blue-500 to-purple-500 shadow-md hover:shadow-lg hover:opacity-90 flex items-center justify-center h-10 w-10"
           >
             <ChevronRight
               className={clsx(
@@ -117,16 +153,7 @@ export default function ManagerSidebar({
             const hasChildren = children && children.length > 0;
             const isExpanded = expandedMap[href];
 
-            // Helper check active
-            const isItemActive = (it: any): boolean => {
-              if (!it) return false;
-              if (it.href && pathname === it.href) return true; // Exact match ưu tiên
-              if (it.href && pathname?.startsWith(it.href) && it.href !== "/staff") return true; // StartsWith cho path con
-              if (it.children && it.children.length > 0)
-                return it.children.some((c: any) => isItemActive(c));
-              return false;
-            };
-
+            // Active if this item or any descendant matches
             const active = isItemActive(item);
 
             // --- FUNCTION RENDER CON ĐỆ QUY ---
@@ -144,14 +171,8 @@ export default function ManagerSidebar({
                     const childHasChildren = c.children && c.children.length > 0;
                     const childExpanded = expandedMap[c.href];
                     
-                    let childActive = false;
-                    if (isThird) {
-                       // Level 3: check active chính xác hơn
-                       childActive = pathname === c.href || (c.children && pathname?.startsWith(c.href));
-                    } else {
-                       // Level 2
-                       childActive = isItemActive(c);
-                    }
+                    // Only the deepest exact/longest match should be marked active among siblings
+                    const childActive = c.href === activeKey;
 
                     const linkBase = isThird
                       ? "flex items-center gap-2 text-xs rounded-md px-3 py-1.5 transition-all duration-200 relative"
@@ -244,13 +265,13 @@ export default function ManagerSidebar({
                     "group flex items-center rounded-lg px-3 py-3 text-sm transition-all duration-200 relative",
                     collapsed ? "justify-center" : "gap-3",
                     active
-                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25"
-                      : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600"
+                      ? "bg-linear-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25"
+                      : "text-gray-700 hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600"
                   )}
                 >
                   <Icon
                     className={clsx(
-                      "transition-transform group-hover:scale-110 flex-shrink-0 w-5 h-5",
+                      "transition-transform group-hover:scale-110 shrink-0 w-5 h-5",
                       active ? "text-white" : "text-gray-500 group-hover:text-blue-600"
                     )}
                   />

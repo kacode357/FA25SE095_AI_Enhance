@@ -1,9 +1,6 @@
 // components/auth/AuthShell.tsx
 "use client";
-
-import LogoLoader from "@/components/common/logo-loader";
-import { AnimatePresence, motion } from "framer-motion";
-import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import React from "react";
 import Logo from "../logo/Logo";
 import { useAuthLoading } from "./AuthLoadingProvider";
@@ -87,23 +84,7 @@ export default function AuthShell({ title, subtitle, children, footer }: Props) 
         </div>
       </motion.div>
 
-      {/* Full-screen auth loading overlay */}
-      <AnimatePresence>
-        {loading && (
-          <motion.div
-            key="auth-loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          >
-            <div className="flex flex-col items-center gap-4 bg-white p-6 rounded-2xl shadow-lg">
-              <LogoLoader size={40} />
-              <div className="text-sm font-medium text-slate-600">Authentication...</div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Full-screen auth loading overlay removed */}
     </div>
   );
 }

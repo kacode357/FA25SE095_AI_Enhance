@@ -19,7 +19,7 @@ export interface CreateCourseRequestResponse {
   courseCodeTitle: string;
   description: string;
   term: string;
-  year: number;
+  year?: number;
   lecturerId: string;
   lecturerName: string;
   status: number;
@@ -29,6 +29,8 @@ export interface CreateCourseRequestResponse {
   processedAt: string;
   processingComments: string;
   createdCourseId: string;
+  announcement: string;
+  syllabusFile: string;
   createdAt: string;
   department: string;
 }
@@ -43,4 +45,15 @@ export interface GetMyCourseRequestsResponse {
   totalPages: number;
   hasPreviousPage: boolean;
   hasNextPage: boolean;
+}
+
+export interface UploadSyllabusResponse {
+  success: boolean;
+  message: string;
+  fileUrl?: string;
+}
+
+export interface DeleteSyllabusResponse {
+  success: boolean;
+  message: string;
 }

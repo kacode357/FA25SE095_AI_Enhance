@@ -114,7 +114,6 @@ export default function CreateTermPage() {
                             </div>
 
                             <div className="flex items-center justify-end gap-3 pt-2">
-                                <Button variant="ghost" className="cursor-pointer" onClick={() => router.push('/staff/terms')}>Cancel</Button>
                                 <Button className="btn btn-green-slow" type="submit" disabled={loading}>
                                     {loading ? 'Creating...' : 'Create Term'}
                                 </Button>
