@@ -584,7 +584,7 @@ const CrawlerInner = () => {
             loading={assignmentLoading}
           />
 
-          {/* === CRAWL  FORM & OVERLAY === */}
+          {/* === CRAWL FORM & OVERLAY === */}
           <CrawlerUrlPromptSection
             url={url}
             prompt={prompt}
