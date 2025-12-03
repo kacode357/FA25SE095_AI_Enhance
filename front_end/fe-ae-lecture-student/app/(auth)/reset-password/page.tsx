@@ -8,19 +8,25 @@ import { useResetPassword } from "@/hooks/auth/useResetPassword";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react"; // Thêm Suspense để tránh warning deopt của Next.js
 import { toast } from "sonner";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token"); // Có thể là string hoặc null
+  const rawToken = searchParams.get("token");
+
+  // --- LOGIC QUAN TRỌNG: FIX LỖI MẤT DẤU CỘNG ---
+  // Trình duyệt tự đổi '+' thành ' ' (khoảng trắng).
+  // Dòng này đổi ngược lại khoảng trắng thành '+' để token y nguyên như trên URL.
+  const token = rawToken ? rawToken.replace(/ /g, "+") : null;
+  // -----------------------------------------------
+
   const { resetPassword, loading } = useResetPassword();
   const [done, setDone] = useState(false);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // 1. Kiểm tra nếu link không có token thì chặn luôn
     if (!token) {
       toast.error("Invalid or missing reset token.");
       return;
@@ -35,10 +41,9 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    // 2. Fix lỗi TS: thêm `?? ""` (dù đã check ở trên nhưng thêm vào để TS im mồm tuyệt đối)
-    const res = await resetPassword({ 
-      token: token ?? "", 
-      newPassword 
+    const res = await resetPassword({
+      token,
+      newPassword,
     });
 
     if (res?.success) {
@@ -50,7 +55,11 @@ export default function ResetPasswordPage() {
     <AuthShell
       title="Set your new password!"
       subtitle={<span>Enter your new password below.</span>}
-      footer={<Link href="/login" className="underline">Back to sign in</Link>}
+      footer={
+        <Link href="/login" className="underline">
+          Back to sign in
+        </Link>
+      }
     >
       {done ? (
         <motion.div
@@ -86,5 +95,14 @@ export default function ResetPasswordPage() {
         </form>
       )}
     </AuthShell>
+  );
+}
+
+// Bọc trong Suspense là best practice khi dùng useSearchParams trong Next.js App Router
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
