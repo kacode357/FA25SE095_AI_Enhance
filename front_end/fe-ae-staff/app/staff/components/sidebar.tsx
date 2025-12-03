@@ -324,8 +324,6 @@ export default function ManagerSidebar({
                     <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-l-full" />
                   )}
                 </Link>
-
-                {/* Submenu Level 1 (Manager Course...) */}
                 {!collapsed && children && children.length > 0 && (
                   <div
                     className={clsx(
