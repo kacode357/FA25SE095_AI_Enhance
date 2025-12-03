@@ -8,7 +8,7 @@ import { useResetPassword } from "@/hooks/auth/useResetPassword";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react"; // Thêm Suspense để tránh warning deopt của Next.js
+import { useState, Suspense } from "react"; 
 import { toast } from "sonner";
 
 function ResetPasswordForm() {
@@ -89,7 +89,12 @@ function ResetPasswordForm() {
             placeholder="Re-enter new password"
             required
           />
-          <Button type="submit" className="w-full" loading={loading}>
+          {/* Cập nhật class btn-gradient-slow theo CSS Global */}
+          <Button 
+            type="submit" 
+            className="w-full btn-gradient-slow border-0" 
+            loading={loading}
+          >
             Reset password
           </Button>
         </form>
