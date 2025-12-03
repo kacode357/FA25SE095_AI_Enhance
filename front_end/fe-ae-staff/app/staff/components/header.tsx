@@ -17,7 +17,7 @@ import {
   KeySquare,
   Menu,
   ShieldUser,
-} from "lucide-react"; // Bỏ 'Search'
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,10 +31,24 @@ export default function ManagerHeader({ onMenuClick }: Props) {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
+  // 🔥 FIX: Dùng Ref để lưu trạng thái hiện tại, tránh re-render hàm callback
+  const notificationOpenRef = useRef(notificationOpen);
+  const userRef = useRef<any>(null);
+
   const profileButtonRef = useRef<HTMLButtonElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const { user } = useAuth();
+  
+  // 🔥 FIX: Cập nhật Ref khi state thay đổi
+  useEffect(() => {
+    notificationOpenRef.current = notificationOpen;
+  }, [notificationOpen]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
   const { logout, loading } = useLogout();
   const { getUnreadNotificationsCount } = useUnreadNotificationsCount();
   const { getNotifications } = useGetNotifications();
@@ -46,10 +60,15 @@ export default function ManagerHeader({ onMenuClick }: Props) {
     return getSavedAccessToken() || "";
   }, []);
 
+  // 🔥 FIX: Dependency array để rỗng [], dùng ref.current bên trong
   const handleHubNotification = useCallback((raw: any) => {
+    // Lấy giá trị mới nhất từ Ref
+    const isCurrentlyOpen = notificationOpenRef.current;
+    const currentUser = userRef.current;
+
     const item = {
       id: raw?.id ?? raw?.notificationId ?? `${Date.now()}-${Math.random()}`,
-      userId: raw?.userId ?? user?.id ?? "",
+      userId: raw?.userId ?? currentUser?.id ?? "",
       relatedEntityId: raw?.relatedEntityId ?? null,
       title: raw?.title ?? raw?.subject ?? raw?.content ?? "",
       content: raw?.content ?? raw?.message ?? raw?.body ?? "",
@@ -70,12 +89,11 @@ export default function ManagerHeader({ onMenuClick }: Props) {
       domainEvents: raw?.domainEvents ?? [],
     } as NotificationItem;
 
-    // if the dropdown is open, consider the incoming notification as "read"
-    const isCurrentlyOpen = notificationOpen;
+    // Logic xử lý vẫn giữ nguyên
     const toInsert = isCurrentlyOpen ? { ...item, isRead: true } : item;
     setNotifications((prev) => [toInsert, ...prev]);
     if (!isCurrentlyOpen) setUnreadCount((prev) => prev + (item.isRead ? 0 : 1));
-  }, [user?.id, notificationOpen]);
+  }, []); // <--- Quan trọng: Rỗng để function không đổi reference
 
   const { connect, disconnect, connected, connecting, lastError } = useNotificationHub({
     getAccessToken: getTokenForHub,
@@ -91,7 +109,6 @@ export default function ManagerHeader({ onMenuClick }: Props) {
   }, [pathname]);
 
   const handleLogout = () => {
-    // disconnect hub to cleanup
     try {
       disconnect();
     } catch { }
@@ -150,11 +167,9 @@ export default function ManagerHeader({ onMenuClick }: Props) {
     const willOpen = !notificationOpen;
     setNotificationOpen(willOpen);
 
-    // if opening, load notifications and mark all as read
     if (willOpen) {
       const list = await getNotifications({ take: 50 });
       if (list) {
-        // merge/normalize minimal fields we need
         const normalized = list.map((n: any) => ({
           id: n.id,
           title: n.title ?? n.content ?? "",
@@ -163,15 +178,11 @@ export default function ManagerHeader({ onMenuClick }: Props) {
           isRead: !!n.isRead || !!n.read,
         } as NotificationItem));
 
-        // mark all as read in UI immediately
         const updated = normalized.map((x) => ({ ...x, isRead: true }));
         setNotifications(updated);
         setUnreadCount(0);
 
-        // call backend to mark all as read (best-effort)
-        markAllNotificationsAsRead().catch(() => {
-          // ignore errors — next fetch will reconcile
-        });
+        markAllNotificationsAsRead().catch(() => { });
       }
     }
   };
@@ -184,19 +195,18 @@ export default function ManagerHeader({ onMenuClick }: Props) {
     }
   };
 
-  // keep unreadCount in sync with current notifications array
   useEffect(() => {
     if (!notifications || notifications.length === 0) return;
     const cnt = notifications.filter((n) => !n.isRead).length;
     setUnreadCount(cnt);
   }, [notifications]);
 
+  // ... Phần Return JSX giữ nguyên ...
   return (
     <header className="h-20 bg-white backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
       <div className="flex items-center justify-between h-full px-4 sm:px-2">
         {/* Brand Section */}
         <div className="flex items-center gap-3 sm:gap-14">
-          {/* Mobile menu button */}
           <button
             type="button"
             aria-label="Open sidebar"
@@ -224,20 +234,16 @@ export default function ManagerHeader({ onMenuClick }: Props) {
               <span className="font-bold text-gray-900 text-lg tracking-tight">
                 AIDS-LMS
               </span>
-              {/* Đã sửa: Lecturer Manager -> Staff Manager */}
               <span className="text-xs text-gray-500 font-medium">
                 Staff Manager
               </span>
             </div>
           </Link>
-
-          {/* Thanh Search đã bị loại bỏ ở đây */}
-
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-5">
-          {/* Notifications (dynamic via hooks) */}
+          {/* Notifications */}
           <div className="relative cursor-pointer">
             <button
               onClick={openNotifications}
@@ -256,10 +262,8 @@ export default function ManagerHeader({ onMenuClick }: Props) {
 
             {notificationOpen && (
               <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
-                {/* Header + hub status */}
                 <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
-                  {/* hub connection status */}
                   <span className={`text-[11px] mt-0.5 ${connecting ? "text-blue-600" : connected ? "text-emerald-600" : lastError ? "text-red-500" : "text-red-500"}`}>
                     {connecting ? "Connecting..." : connected ? "Connected" : lastError ? "Error" : "Disconnected"}
                   </span>
@@ -285,15 +289,12 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                       >
                         <div className="min-w-0">
                           <p className="text-sm text-gray-800">{n.title || "New notification"}</p>
-
                           {messageLine && (
                             <p className="text-xs text-gray-500 mt-1">{messageLine}</p>
                           )}
-
                           {courseLine && (
                             <p className="text-sm text-gray-700 mt-2 break-words">{courseLine}</p>
                           )}
-
                           {n.createdAt && (
                             <p className="text-[11px] mt-2 text-right text-gray-500">{new Date(n.createdAt).toLocaleString()}</p>
                           )}
