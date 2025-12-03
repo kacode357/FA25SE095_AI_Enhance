@@ -165,7 +165,7 @@ export default function MyGroupsByCoursePage() {
                     }
                   >
                     <Eye className="w-4 h-4" />
-                    Open group room
+                    View all members
                   </button>
                 </div>
               </section>

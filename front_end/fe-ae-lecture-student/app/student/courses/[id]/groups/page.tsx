@@ -83,12 +83,7 @@ export default function CourseGroupsPage() {
             <Users className="w-6 h-6 text-brand" />
             Groups
           </h1>
-          <p className="text-xs text-[color:var(--text-muted)] mt-1">
-            Course:{" "}
-            <b className="text-[color:var(--foreground)]">
-              {courseName || "—"}
-            </b>
-          </p>
+        
         </div>
       </div>
 

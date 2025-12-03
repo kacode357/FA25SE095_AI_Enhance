@@ -1,63 +1,62 @@
-// app/.../crawler/components/CrawlerResultsSection.tsx
+// app/student/courses/[id]/crawler/components/CrawlerResultsSection.tsx
 "use client";
 
+import {
+  ClipboardList,
+  AlertCircle,
+  Database,
+  Link as LinkIcon,
+  BrainCircuit,
+  BarChart3,
+  ListChecks,
+} from "lucide-react";
 import type { CrawlSummary } from "../crawler-types";
 import type { SmartCrawlJobResultItem } from "@/types/smart-crawler/smart-crawler.response";
+import { useMemo } from "react";
 
-/** Helper: chọn các field “đẹp” để hiện trong bảng từ extractedData */
-function getDisplayFromExtracted(extracted?: Record<string, any> | null) {
-  if (!extracted) {
-    return {
-      label: "N/A",
-      details: "",
-      categories: "",
-    };
+/** Helper: Format key từ "product_name" -> "Product Name" */
+function formatHeader(key: string) {
+  return key
+    .replace(/_/g, " ")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+}
+
+/** Helper: Format value hiển thị trong cell */
+function formatCellValue(value: any): React.ReactNode {
+  if (value === null || value === undefined) {
+    return <span className="text-slate-300 italic">-</span>;
   }
-
-  const entries = Object.entries(extracted);
-
-  let labelEntry =
-    entries.find(([k, v]) => typeof v === "string" && /name|title/i.test(k)) ||
-    entries.find(([_, v]) => typeof v === "string");
-
-  const label = labelEntry ? (labelEntry[1] as string) : "N/A";
-  const labelKey = labelEntry?.[0];
-
-  const categoryEntry =
-    entries.find(
-      ([k, v]) => Array.isArray(v) && /category|tags|genres?/i.test(k)
-    ) || entries.find(([_, v]) => Array.isArray(v));
-  const categories =
-    categoryEntry && Array.isArray(categoryEntry[1])
-      ? (categoryEntry[1] as any[])
-          .map((x) => String(x))
-          .filter(Boolean)
-          .join(", ")
-      : "";
-
-  const detailsPairs: string[] = [];
-  for (const [k, v] of entries) {
-    if (k === labelKey || k === categoryEntry?.[0]) continue;
-    if (v === null || v === undefined) continue;
-
-    if (
-      typeof v === "number" ||
-      typeof v === "string" ||
-      typeof v === "boolean"
-    ) {
-      detailsPairs.push(`${k}: ${v}`);
-    } else if (Array.isArray(v)) {
-      const text = v
-        .slice(0, 5)
-        .map((x) => String(x))
-        .join(", ");
-      detailsPairs.push(`${k}: ${text}`);
-    }
+  if (typeof value === "boolean") {
+    return value ? "True" : "False";
   }
-
-  const details = detailsPairs.join(" • ");
-
-  return { label, details, categories };
+  if (Array.isArray(value)) {
+    return (
+      <div className="flex flex-wrap gap-1">
+        {value.slice(0, 3).map((item, i) => (
+          <span key={i} className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] border border-slate-200">
+            {String(item)}
+          </span>
+        ))}
+        {value.length > 3 && <span className="text-[10px] text-slate-400">+{value.length - 3}</span>}
+      </div>
+    );
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  // Check nếu là URL ảnh (đuôi jpg, png...)
+  const strVal = String(value);
+  if (strVal.match(/\.(jpeg|jpg|gif|png|webp)$/i) && strVal.startsWith("http")) {
+    return (
+      <a href={strVal} target="_blank" rel="noreferrer" className="text-[var(--brand)] underline hover:text-blue-600">
+        [Image]
+      </a>
+    );
+  }
+  
+  return <span className="line-clamp-2" title={strVal}>{strVal}</span>;
 }
 
 type Props = {
@@ -79,184 +78,206 @@ export default function CrawlerResultsSection({
 }: Props) {
   const showEmpty = results.length === 0 && !resultsLoading;
 
+  // 1. Lấy danh sách tất cả các keys duy nhất từ extractedData của tất cả results
+  const dynamicColumns = useMemo(() => {
+    const keys = new Set<string>();
+    results.forEach((item) => {
+      if (item.extractedData) {
+        Object.keys(item.extractedData).forEach((k) => keys.add(k));
+      }
+    });
+    return Array.from(keys);
+  }, [results]);
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm">
-      <div className="mb-3 text-sm font-medium text-slate-800">
-        📋 Crawl Results
+    <div className="card p-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] border-b border-[var(--border)] pb-2">
+        <ClipboardList className="h-4 w-4 text-[var(--brand)]" />
+        Crawled Data & Analysis
       </div>
 
+      {/* Results Table / Empty State */}
       {showEmpty ? (
-        <div className="flex h-[260px] flex-col items-center justify-center text-center text-xs text-slate-400">
-          <div className="mb-2 text-2xl">🕸️</div>
-          <p>Chưa có kết quả. Hãy tạo một crawl job trước.</p>
+        <div className="flex h-[240px] flex-col items-center justify-center text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border)] rounded-xl bg-slate-50/50">
+          <div className="mb-3 h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+            <Database className="h-5 w-5 text-slate-400" />
+          </div>
+          <p>No results yet. Start a crawl job to see data here.</p>
         </div>
       ) : (
-        <div className="max-h-[320px] overflow-auto rounded-lg border border-slate-100">
-          <table className="min-w-full border-collapse text-xs">
-            <thead className="bg-slate-50 text-slate-500">
-              <tr>
-                <th className="border-b border-slate-200 px-3 py-2 text-left w-[40px]">
-                  #
-                </th>
-                <th className="border-b border-slate-200 px-3 py-2 text-left">
-                  Item
-                </th>
-                <th className="border-b border-slate-200 px-3 py-2 text-left">
-                  Key details
-                </th>
-                <th className="border-b border-slate-200 px-3 py-2 text-left">
-                  Categories
-                </th>
-                <th className="border-b border-slate-200 px-3 py-2 text-left">
-                  Source URL
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((item, idx) => {
-                const view = getDisplayFromExtracted(item.extractedData);
-                return (
+        <div className="rounded-xl border border-[var(--border)] bg-white overflow-hidden flex flex-col">
+          {/* Scroll container cho bảng nếu quá nhiều cột */}
+          <div className="overflow-auto max-h-[450px] scrollbar-thin scrollbar-thumb-slate-200">
+            <table className="min-w-full border-collapse text-xs whitespace-nowrap">
+              <thead className="bg-slate-50 text-[var(--text-muted)] sticky top-0 z-10 shadow-sm">
+                <tr>
+                  {/* Cột cố định: STT */}
+                  <th className="border-b border-[var(--border)] px-3 py-2.5 text-left w-[40px] font-medium bg-slate-50">
+                    #
+                  </th>
+                  
+                  {/* Cột cố định: Source URL */}
+                  <th className="border-b border-[var(--border)] px-3 py-2.5 text-left font-medium min-w-[150px] bg-slate-50">
+                    Source URL
+                  </th>
+
+                  {/* Cột động từ extractedData */}
+                  {dynamicColumns.map((col) => (
+                    <th
+                      key={col}
+                      className="border-b border-[var(--border)] px-3 py-2.5 text-left font-medium min-w-[120px] bg-slate-50 capitalize"
+                    >
+                      {formatHeader(col)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {results.map((item, idx) => (
                   <tr
                     key={item.id}
-                    className="odd:bg-white even:bg-slate-50/60 align-top"
+                    className="group hover:bg-slate-50 transition-colors"
                   >
-                    <td className="border-b border-slate-100 px-3 py-2 text-[11px] text-slate-500">
+                    {/* STT */}
+                    <td className="px-3 py-2.5 text-slate-400 font-mono">
                       {idx + 1}
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2">
-                      <div className="font-medium text-slate-900">
-                        {view.label}
-                      </div>
-                      {item.httpStatusCode !== 0 && (
-                        <div className="mt-1 text-[10px] text-slate-400">
-                          HTTP: {item.httpStatusCode} • {item.responseTimeMs}ms
-                        </div>
-                      )}
-                    </td>
-                    <td className="border-b border-slate-100 px-3 py-2">
-                      <div className="text-[11px] text-slate-700">
-                        {view.details || (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="border-b border-slate-100 px-3 py-2">
-                      {view.categories ? (
-                        <div className="flex flex-wrap gap-1">
-                          {view.categories
-                            .split(",")
-                            .map((c) => c.trim())
-                            .filter(Boolean)
-                            .map((c, i) => (
-                              <span
-                                key={i}
-                                className="rounded-full bg-slate-100 px-2 py-[1px] text-[10px] text-slate-700"
-                              >
-                                {c}
-                              </span>
-                            ))}
-                        </div>
-                      ) : (
-                        <span className="text-[11px] text-slate-400">—</span>
-                      )}
-                    </td>
-                    <td className="border-b border-slate-100 px-3 py-2">
+
+                    {/* Source URL */}
+                    <td className="px-3 py-2.5">
                       <a
                         href={item.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="max-w-[220px] truncate text-[11px] text-sky-600 underline-offset-2 hover:underline"
+                        className="flex items-center gap-1.5 text-[var(--brand)] hover:underline max-w-[200px]"
+                        title={item.url}
                       >
-                        {item.url}
+                        <LinkIcon className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{item.url}</span>
                       </a>
-                      <div className="mt-1 text-[10px] text-slate-400">
-                        {new Date(item.crawledAt).toLocaleString()}
-                      </div>
                     </td>
+
+                    {/* Dữ liệu động */}
+                    {dynamicColumns.map((col) => {
+                      // Lấy giá trị, xử lý trường hợp extractedData null
+                      const rawValue = item.extractedData ? item.extractedData[col] : null;
+                      return (
+                        <td key={`${item.id}-${col}`} className="px-3 py-2.5 text-slate-700 max-w-[250px] truncate">
+                          {formatCellValue(rawValue)}
+                        </td>
+                      );
+                    })}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="border-t border-[var(--border)] bg-slate-50 px-3 py-2 text-[10px] text-slate-500">
+            Showing {results.length} results • Found {dynamicColumns.length} data fields
+          </div>
         </div>
       )}
 
-      {/* Summary nhỏ phía dưới */}
-      <div className="border-t border-slate-200 pt-3 mt-3">
+      {/* AI Analysis Section (Giữ nguyên logic cũ) */}
+      <div className="pt-2 border-t border-[var(--border)]">
         {summaryError && (
-          <p className="mb-2 text-[11px] text-red-500">❌ {summaryError}</p>
+          <div className="flex items-center gap-2 rounded-lg bg-rose-50 p-2 text-xs text-rose-600 border border-rose-100">
+            <AlertCircle className="h-4 w-4" />
+            <span>{summaryError}</span>
+          </div>
         )}
-        {!summary && !summaryLoading && (
-          <p className="text-[11px] text-slate-400">
-            Summary sẽ xuất hiện ở đây sau khi Agent trả về{" "}
-            <code className="rounded bg-slate-100 px-1">
-              messageType 5 (AiSummary)
-            </code>{" "}
-            cho một crawl job (thường là khi mày hỏi có chứa từ khoá kiểu
-            &quot;summary / insights / tóm tắt ...&quot;).
-          </p>
+
+        {!summary && !summaryLoading && !summaryError && (
+          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] opacity-80 px-2">
+            <BrainCircuit className="h-4 w-4" />
+            <p>
+              Summary will appear here when Agent returns{" "}
+              <code className="bg-slate-100 px-1 rounded font-mono text-slate-600">
+                AiSummary
+              </code>
+            </p>
+          </div>
         )}
+
         {summaryLoading && (
-          <p className="text-[11px] text-slate-400">
-            🧠 Đang lấy crawl summary từ Agent...
-          </p>
+          <div className="flex items-center gap-2 text-xs text-[var(--brand)] animate-pulse px-2">
+            <BrainCircuit className="h-4 w-4" />
+            <span>Analyzing crawled data...</span>
+          </div>
         )}
+
         {summary && (
-          <div className="rounded-xl border border-sky-100 bg-sky-50/70 px-3 py-3 text-xs text-slate-800 shadow-sm">
-            <div className="mb-1 flex items-center justify-between">
-              <div className="flex items-center gap-2 font-semibold text-slate-900">
-                <span>🧠 Crawl Summary</span>
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 space-y-3 shadow-sm">
+            {/* Summary Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold text-indigo-900">
+                <BrainCircuit className="h-4 w-4 text-[var(--brand)]" />
+                <span>AI Insights</span>
                 {activeJobId && (
-                  <span className="text-[10px] font-normal text-slate-500">
-                    Job {activeJobId.slice(0, 8)}…
+                  <span className="ml-1 px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-600 text-[10px] font-normal font-mono border border-indigo-200">
+                    Job #{activeJobId.slice(0, 6)}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[10px] text-indigo-400">
                 {new Date().toLocaleTimeString()}
               </span>
             </div>
 
-            <p className="mb-2 whitespace-pre-line text-[11px] leading-relaxed text-slate-800">
-              {summary.summaryText || "No summary text available."}
+            {/* Summary Text */}
+            <p className="text-xs text-indigo-900 leading-relaxed whitespace-pre-line bg-white/60 p-2.5 rounded-lg border border-indigo-100/50">
+              {summary.summaryText || "No summary text generated."}
             </p>
 
-            <div className="mb-2 rounded-lg bg-white/80 px-3 py-2 text-[11px] text-slate-800">
-              <div className="mb-1 font-semibold text-slate-900">
-                Key Insights
-              </div>
-              {summary.insightHighlights &&
-              summary.insightHighlights.length > 0 ? (
-                <ul className="list-disc pl-4 space-y-0.5">
+            {/* Key Highlights */}
+            {summary.insightHighlights && summary.insightHighlights.length > 0 && (
+              <div className="bg-white rounded-lg p-2.5 border border-indigo-100/50 shadow-sm">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-2">
+                  <ListChecks className="h-3.5 w-3.5 text-emerald-500" />
+                  Key Takeaways
+                </div>
+                <ul className="space-y-1">
                   {summary.insightHighlights.map((h, idx) => (
-                    <li key={idx}>{h}</li>
+                    <li key={idx} className="text-xs text-slate-600 flex items-start gap-2 pl-1">
+                      <span className="text-indigo-400 mt-1.5 h-1 w-1 rounded-full bg-indigo-400 shrink-0" />
+                      <span className="leading-snug">{h}</span>
+                    </li>
                   ))}
                 </ul>
-              ) : (
-                <div className="text-[11px] text-slate-500">
-                  Agent chưa highlight insight cụ thể.
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2 text-[10px] text-slate-600">
-              <div className="flex-1 min-w-[120px]">
-                <span className="font-semibold">Coverage: </span>
-                {summary.fieldCoverage && summary.fieldCoverage.length > 0
-                  ? summary.fieldCoverage
-                      .slice(0, 3)
-                      .map((f) => `${f.fieldName}: ${f.coveragePercent}%`)
-                      .join(" • ")
-                  : "N/A"}
               </div>
-              <div className="flex-1 min-w-[120px]">
-                <span className="font-semibold">Charts: </span>
-                {summary.chartPreviews && summary.chartPreviews.length > 0
-                  ? summary.chartPreviews
-                      .slice(0, 2)
-                      .map((c) => `${c.title} (${c.chartType || "N/A"})`)
-                      .join(" • ")
-                  : "No chart previews"}
+            )}
+
+            {/* Metrics Footer */}
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="bg-white/60 p-2 rounded-lg border border-indigo-100/50">
+                <span className="block font-medium text-slate-500 mb-1">
+                  Data Coverage
+                </span>
+                <div className="text-slate-700">
+                  {summary.fieldCoverage && summary.fieldCoverage.length > 0
+                    ? summary.fieldCoverage
+                        .slice(0, 3)
+                        .map((f) => `${f.fieldName} (${f.coveragePercent}%)`)
+                        .join(", ")
+                    : "N/A"}
+                </div>
+              </div>
+              
+              <div className="bg-white/60 p-2 rounded-lg border border-indigo-100/50">
+                <span className="block font-medium text-slate-500 mb-1 flex items-center gap-1">
+                  <BarChart3 className="h-3 w-3" />
+                  Suggested Charts
+                </span>
+                <div className="text-slate-700">
+                  {summary.chartPreviews && summary.chartPreviews.length > 0
+                    ? summary.chartPreviews
+                        .slice(0, 2)
+                        .map((c) => c.title)
+                        .join(", ")
+                    : "None"}
+                </div>
               </div>
             </div>
           </div>

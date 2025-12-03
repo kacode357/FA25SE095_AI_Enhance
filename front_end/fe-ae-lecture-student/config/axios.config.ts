@@ -98,7 +98,7 @@ function forceLogoutToLogin() {
   }
 }
 
-/** ===== Factory: axios instance với interceptors ===== */
+/** ===== Factory: axios instance với interceptors ==== */
 type CreateOpts = { timeout?: number };
 
 const createAxiosInstance = (
@@ -108,7 +108,7 @@ const createAxiosInstance = (
   const instance = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json; charset=UTF-8" },
-    timeout: opts.timeout ?? 20000,
+    timeout: opts.timeout ?? 60000,
     validateStatus: () => true,
   });
 

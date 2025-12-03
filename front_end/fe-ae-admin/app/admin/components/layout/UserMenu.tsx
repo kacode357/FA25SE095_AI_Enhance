@@ -145,7 +145,7 @@ export default function UserMenu({ showUserInfo = false }: UserMenuProps) {
 type ContentProps = { 
   user: UserProfile; 
   onLogout: () => void; 
-  isLoggingOut: boolean; // ✅ Nhận state loading
+  isLoggingOut: boolean; 
   router: any;
 };
 

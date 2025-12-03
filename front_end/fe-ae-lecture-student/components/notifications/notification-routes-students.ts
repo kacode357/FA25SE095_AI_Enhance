@@ -7,7 +7,8 @@ export type NotificationEvent =
   | "GroupMemberAdded"
   | "SupportRequestAccepted"
   | "SupportRequestResolved"
-  | "AssignmentClosed";
+  | "AssignmentClosed"
+  | "StudentEnrolled"; // Tao thêm cái này từ JSON của mày
 
 export type NotificationMetadata = {
   Event?: NotificationEvent | string;
@@ -17,13 +18,10 @@ export type NotificationMetadata = {
   ConversationId?: string;
   AssignmentId?: string;
   ReportId?: string;
+  EnrollmentId?: string; // Thêm field này cho đủ bộ
   [key: string]: any;
 };
 
-/**
- * Ghi chú title theo Event cho dễ tra.
- * (Hiện tại FE không dùng trực tiếp, nhưng m đã yêu cầu note lại 1 file)
- */
 export const NOTIFICATION_EVENT_TITLES: Record<NotificationEvent, string> = {
   ReportGraded: "Report Graded ⭐",
   GroupAssignmentAssigned: "Group Assignment Assigned 📝",
@@ -32,11 +30,9 @@ export const NOTIFICATION_EVENT_TITLES: Record<NotificationEvent, string> = {
   SupportRequestAccepted: "Support Request In Progress 🔄",
   SupportRequestResolved: "Support Request Resolved ✔️",
   AssignmentClosed: "Assignment Closed 🔒",
+  StudentEnrolled: "Enrolled in Course ✅", // Thêm title tương ứng
 };
 
-/**
- * Parse chuỗi metadataJson -> object an toàn
- */
 export function parseNotificationMetadata(
   metaJson?: string
 ): NotificationMetadata | null {
@@ -49,32 +45,6 @@ export function parseNotificationMetadata(
   }
 }
 
-/**
- * Build href cho 1 notification dựa theo Event + metadataJson
- *
- * Mapping theo yêu cầu:
- *  - ReportGraded
- *      /student/courses/{CourseId}/grades
- *
- *  - GroupAssignmentAssigned
- *      /student/courses/{CourseId}/assignments
- *
- *  - AssignmentClosed
- *      /student/courses/{CourseId}/assignments
- *
- *  - GroupLeaderChanged
- *      /student/courses/{CourseId}/groups/{GroupId} (fallback: /my-groups)
- *
- *  - GroupMemberAdded
- *      /student/courses/{CourseId}/groups/{GroupId} (fallback: /my-groups)
- *
- *  - SupportRequestAccepted
- *      /student/courses/{CourseId}/support/{ConversationId}?requestId={SupportRequestId}
- *      (fallback: /student/courses/{CourseId}/support)
- *
- *  - SupportRequestResolved
- *      /student/courses/{CourseId}/support
- */
 export function getNotificationHref(metaJson?: string): string | null {
   const meta = parseNotificationMetadata(metaJson);
   if (!meta) return null;
@@ -100,17 +70,10 @@ export function getNotificationHref(metaJson?: string): string | null {
     }
 
     case "AssignmentClosed": {
-      // Có thể sau này đổi thành /assignments/{AssignmentId} nếu có trang chi tiết
       return `/student/courses/${CourseId}/assignments`;
     }
 
-    case "GroupLeaderChanged": {
-      if (GroupId) {
-        return `/student/courses/${CourseId}/groups/${GroupId}`;
-      }
-      return `/student/courses/${CourseId}/my-groups`;
-    }
-
+    case "GroupLeaderChanged":
     case "GroupMemberAdded": {
       if (GroupId) {
         return `/student/courses/${CourseId}/groups/${GroupId}`;
@@ -118,24 +81,30 @@ export function getNotificationHref(metaJson?: string): string | null {
       return `/student/courses/${CourseId}/my-groups`;
     }
 
+    // --- Case mày cần check đây ---
     case "SupportRequestAccepted": {
       if (ConversationId) {
         const query: string[] = [];
-
-        // BE hiện tại chỉ trả SupportRequestId (không có peerId/peerName)
         if (SupportRequestId) {
           query.push(`requestId=${encodeURIComponent(SupportRequestId)}`);
         }
-
         const qs = query.length ? `?${query.join("&")}` : "";
+        
+        // Kết quả sẽ ra: 
+        // /student/courses/.../support/...?requestId=...
         return `/student/courses/${CourseId}/support/${ConversationId}${qs}`;
       }
-
       return `/student/courses/${CourseId}/support`;
     }
+    // ------------------------------
 
     case "SupportRequestResolved": {
       return `/student/courses/${CourseId}/support`;
+    }
+
+    // Case mới từ JSON: StudentEnrolled -> Bay thẳng vào trang chủ khóa học
+    case "StudentEnrolled": {
+        return `/student/courses/${CourseId}`;
     }
 
     default:
