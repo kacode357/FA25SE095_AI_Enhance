@@ -13,12 +13,19 @@ import { toast } from "sonner";
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") || ""; // token lấy từ link email
+  const token = searchParams.get("token"); // Có thể là string hoặc null
   const { resetPassword, loading } = useResetPassword();
   const [done, setDone] = useState(false);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // 1. Kiểm tra nếu link không có token thì chặn luôn
+    if (!token) {
+      toast.error("Invalid or missing reset token.");
+      return;
+    }
+
     const form = new FormData(e.currentTarget);
     const newPassword = String(form.get("password") ?? "");
     const confirm = String(form.get("confirm") ?? "");
@@ -28,7 +35,12 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    const res = await resetPassword({ token, newPassword });
+    // 2. Fix lỗi TS: thêm `?? ""` (dù đã check ở trên nhưng thêm vào để TS im mồm tuyệt đối)
+    const res = await resetPassword({ 
+      token: token ?? "", 
+      newPassword 
+    });
+
     if (res?.success) {
       setDone(true);
     }

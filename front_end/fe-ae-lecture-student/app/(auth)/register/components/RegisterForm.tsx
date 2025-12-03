@@ -21,10 +21,12 @@ export default function RegisterForm() {
     const [loading, setLoading] = useState(false);
     const [role, setRole] = useState<string>("0");
     const [step, setStep] = useState<number>(1);
+
+    // Avatar states (nếu bạn dùng avatar sau này)
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-    // Controlled values
+    // Controlled values (State lưu trữ dữ liệu)
     const [passwordValue, setPasswordValue] = useState<string>("");
     const [confirmValue, setConfirmValue] = useState<string>("");
     const [emailValue, setEmailValue] = useState<string>("");
@@ -37,6 +39,7 @@ export default function RegisterForm() {
     const [positionValue, setPositionValue] = useState<string>("");
     const [studentIdValue, setStudentIdValue] = useState<string>("");
 
+    // Validation
     const confirmError = validateConfirmPassword(passwordValue, confirmValue);
     const emailError = validateEmail(emailValue);
     const phoneError = validatePhone(phoneValue);
@@ -48,7 +51,6 @@ export default function RegisterForm() {
             setAvatarPreview(null);
             return;
         }
-
         setAvatarFile(file);
         const reader = new FileReader();
         reader.onload = () => {
@@ -57,32 +59,27 @@ export default function RegisterForm() {
         reader.readAsDataURL(file);
     };
 
-    const submitRegistration = async (form: HTMLFormElement) => {
-        const formData = new FormData(form);
-        const password = String(formData.get("password") ?? "");
-        const confirm = String(formData.get("confirm") ?? "");
-        if (password !== confirm) {
+    // --- FIX: Hàm submit dùng State thay vì FormData ---
+    const submitRegistration = async () => {
+        // Double check validation
+        if (passwordValue !== confirmValue) {
             toast.error("Passwords do not match");
             return false;
         }
 
-        const get = (key: string) => {
-            const v = String(formData.get(key) ?? "").trim();
-            return v === "" ? undefined : v;
-        };
-
+        // Tạo payload từ State (dữ liệu luôn tồn tại dù input bị ẩn)
         const payload: RegisterPayload = {
-            email: emailValue || String(formData.get("email") ?? "").trim(),
-            password,
-            firstName: firstNameValue || String(formData.get("firstName") ?? "").trim(),
-            lastName: lastNameValue || String(formData.get("lastName") ?? "").trim(),
+            email: emailValue.trim(),
+            password: passwordValue, // Đã fix: lấy trực tiếp từ state
+            firstName: firstNameValue.trim(),
+            lastName: lastNameValue.trim(),
             role: Number(role),
-            phoneNumber: phoneValue || get("phoneNumber"),
-            institutionName: institutionNameValue || get("institutionName"),
-            institutionEmail: institutionEmailValue || get("institutionEmail"),
-            department: departmentValue || get("department"),
-            position: positionValue || get("position"),
-            studentId: studentIdValue || get("studentId"),
+            phoneNumber: phoneValue ? phoneValue.trim() : undefined,
+            institutionName: institutionNameValue ? institutionNameValue.trim() : undefined,
+            institutionEmail: institutionEmailValue ? institutionEmailValue.trim() : undefined,
+            department: departmentValue ? departmentValue.trim() : undefined,
+            position: positionValue ? positionValue.trim() : undefined,
+            studentId: studentIdValue ? studentIdValue.trim() : undefined,
         };
 
         setLoading(true);
@@ -92,20 +89,20 @@ export default function RegisterForm() {
             if (!res) return false;
 
             try {
+                // Lưu thông tin hiển thị cho trang Success
                 const displayUser: any = { ...payload };
                 delete displayUser.password;
-                // include any backend message so the success page can show it
-                // backend may return message at top-level or under data/msg — be permissive
+
                 const beMessage = (res as any)?.message ?? (res as any)?.msg ?? (res as any)?.data?.message ?? "";
                 if (beMessage) displayUser.message = beMessage;
-                // store avatar preview if present (client-only preview)
+
                 if (avatarPreview) displayUser.avatarPreview = avatarPreview;
                 localStorage.setItem("registerSuccessUser", JSON.stringify(displayUser));
             } catch (e) {
                 // ignore storage errors
             }
 
-            // Clear controlled inputs and avatar on definite success
+            // Reset toàn bộ form sau khi thành công
             setPasswordValue("");
             setConfirmValue("");
             setEmailValue("");
@@ -120,11 +117,10 @@ export default function RegisterForm() {
             setAvatarFile(null);
             setAvatarPreview(null);
 
-            // Navigate to the registration success view on the same route
-            // We use a query param so no extra folder/page is required.
             router.push("/register?success=1");
             return true;
         } catch (err) {
+            // Lỗi đã được xử lý trong service hoặc global handler
             return false;
         } finally {
             setLoading(false);
@@ -135,16 +131,23 @@ export default function RegisterForm() {
         e?.preventDefault();
         if (loading) return;
 
-        if (step === 1 && !passwordsMatch(passwordValue, confirmValue)) {
-            toast.error("Passwords do not match");
-            return;
+        // Validation Step 1
+        if (step === 1) {
+            if (!isValidEmail(emailValue)) {
+                toast.error("Please enter a valid email address");
+                return;
+            }
+            if (!passwordsMatch(passwordValue, confirmValue)) {
+                toast.error("Passwords do not match");
+                return;
+            }
+            if (!firstNameValue.trim() || !lastNameValue.trim()) {
+                toast.error("Please enter your full name");
+                return;
+            }
         }
 
-        if (step === 1 && !isValidEmail(emailValue)) {
-            toast.error("Please enter a valid email address");
-            return;
-        }
-
+        // Validation Step 2
         if (step === 2) {
             if (phoneValue && !isValidPhone(phoneValue)) {
                 toast.error("Phone number must be 10 digits");
@@ -156,16 +159,15 @@ export default function RegisterForm() {
             }
         }
 
+        // Chuyển bước
         if (step < 2) {
             setStep((s) => s + 1);
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
         }
 
-        const form = document.querySelector("form") as HTMLFormElement | null;
-        if (form) {
-            await submitRegistration(form);
-        }
+        // Submit nếu ở bước cuối
+        await submitRegistration();
     };
 
     const onBack = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -205,6 +207,7 @@ export default function RegisterForm() {
                 </Tabs>
             </div>
 
+            {/* Step 1 Inputs */}
             {step === 1 && (
                 <div className="space-y-5">
                     <div className="flex flex-row gap-4">
@@ -223,6 +226,7 @@ export default function RegisterForm() {
                 </div>
             )}
 
+            {/* Step 2 Inputs */}
             {step === 2 && (
                 <div className="space-y-5">
                     <Input className="text-sm" name="institutionName" label="Institution name" placeholder="University / Company" value={institutionNameValue} onChange={(e) => setInstitutionNameValue(e.currentTarget.value)} />
@@ -238,6 +242,7 @@ export default function RegisterForm() {
                 </div>
             )}
 
+            {/* Actions */}
             <div className="flex items-center justify-between mt-8">
                 <div className="hover:text-violet-800">
                     <a className="text-sm text-slate-500" href="/login">&larr; Back to Login</a>
@@ -248,7 +253,19 @@ export default function RegisterForm() {
                         <Button variant="ghost" onClick={onBack} className="hidden text-sm text-violet-800 hover:text-violet-500 md:inline-flex">Previous</Button>
                     )}
 
-                    <Button onClick={onNext} className="btn text-sm btn-gradient-slow" disabled={Boolean(loading || (step === 1 && (!passwordsMatch(passwordValue, confirmValue) || !isValidEmail(emailValue))) || (step === 2 && ((phoneValue && !isValidPhone(phoneValue)) || (institutionEmailValue && !isValidEmail(institutionEmailValue)))))}>
+                    <Button
+                        onClick={onNext}
+                        className="btn text-sm btn-gradient-slow"
+                        disabled={
+                            loading ||
+                            (step === 1 && (!passwordsMatch(passwordValue, confirmValue) || !isValidEmail(emailValue) || !firstNameValue || !lastNameValue)) ||
+                            (step === 2 && (
+                                // Thêm !! để ép kiểu chuỗi rỗng thành false (boolean)
+                                (!!phoneValue && !isValidPhone(phoneValue)) ||
+                                (!!institutionEmailValue && !isValidEmail(institutionEmailValue))
+                            ))
+                        }
+                    >
                         {loading ? (
                             <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Processing…</span>
                         ) : (
