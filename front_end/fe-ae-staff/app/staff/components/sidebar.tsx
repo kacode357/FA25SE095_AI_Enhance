@@ -2,10 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { clsx } from "clsx";
-import {
-  ChevronRight,
-  GraduationCap
-} from "lucide-react";
+import { ChevronRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -21,22 +18,40 @@ export default function ManagerSidebar({
   setCollapsed,
 }: SidebarProps) {
   const pathname = usePathname();
-
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
 
+  // --- LOGIC MỚI: Chỉ tự động mở menu cha của trang hiện tại ---
   useEffect(() => {
-    const map: Record<string, boolean> = {};
-    const collect = (items: any[]) => {
-      if (!items) return;
-      items.forEach((it: any) => {
-        if (it.children && it.children.length > 0) map[it.href] = true;
-        if (it.children) collect(it.children);
+    if (!pathname) return;
+
+    const newExpandedMap: Record<string, boolean> = {};
+
+    // Hàm đệ quy check xem thằng nào cần mở
+    const checkOpen = (items: any[]) => {
+      items.forEach((item) => {
+        if (item.children && item.children.length > 0) {
+          // Check xem đường dẫn hiện tại có nằm trong thằng con nào của nó không
+          const isChildActive = item.children.some((c: any) => 
+            pathname === c.href || pathname.startsWith(c.href) || 
+            (c.children && c.children.some((gc: any) => pathname.startsWith(gc.href)))
+          );
+          
+          if (isChildActive) {
+            newExpandedMap[item.href] = true;
+          }
+          // Tiếp tục check sâu hơn
+          checkOpen(item.children);
+        }
       });
     };
 
-    collect(mainNav as any[]);
-    setExpandedMap(map);
-  }, []);
+    checkOpen(mainNav as any[]);
+    // Chỉ set lại map nếu object có dữ liệu để tránh re-render thừa, 
+    // hoặc merge với state cũ nếu mày muốn giữ trạng thái các menu khác.
+    // Ở đây tao set mới luôn cho đúng ngữ cảnh trang.
+    setExpandedMap((prev) => ({ ...prev, ...newExpandedMap }));
+    
+  }, [pathname]); // Chạy lại khi đổi trang để tự mở menu tương ứng
 
   const toggleExpand = (href: string) => {
     setExpandedMap((prev) => ({ ...prev, [href]: !prev[href] }));
@@ -66,9 +81,7 @@ export default function ManagerSidebar({
                 <p className="text-lg font-semibold text-gray-900">
                   Staff Panel
                 </p>
-                <p className="text-xs text-gray-500">
-                  Dashboard Management
-                </p>
+                <p className="text-xs text-gray-500">Dashboard Management</p>
               </div>
             </div>
           )}
@@ -101,19 +114,22 @@ export default function ManagerSidebar({
         <ul className="space-y-2">
           {mainNav.map((item) => {
             const { href, label, icon: Icon, description, children } = item as any;
-
             const hasChildren = children && children.length > 0;
             const isExpanded = expandedMap[href];
 
+            // Helper check active
             const isItemActive = (it: any): boolean => {
               if (!it) return false;
-              if (it.href && pathname?.startsWith(it.href)) return true;
-              if (it.children && it.children.length > 0) return it.children.some((c: any) => isItemActive(c));
+              if (it.href && pathname === it.href) return true; // Exact match ưu tiên
+              if (it.href && pathname?.startsWith(it.href) && it.href !== "/staff") return true; // StartsWith cho path con
+              if (it.children && it.children.length > 0)
+                return it.children.some((c: any) => isItemActive(c));
               return false;
             };
 
             const active = isItemActive(item);
 
+            // --- FUNCTION RENDER CON ĐỆ QUY ---
             const renderChildren = (items: any[], depth = 1) => {
               if (!items || items.length === 0) return null;
               return (
@@ -124,19 +140,17 @@ export default function ManagerSidebar({
                   )}
                 >
                   {items.map((c) => {
-                    const isThird = depth >= 2; // depth: 1 => second-level, 2 => third-level
+                    const isThird = depth >= 2;
                     const childHasChildren = c.children && c.children.length > 0;
                     const childExpanded = expandedMap[c.href];
+                    
                     let childActive = false;
                     if (isThird) {
-                      // exact match for third-level items (avoid sibling both active)
-                      childActive = pathname === c.href || (c.children && c.children.length > 0 && pathname?.startsWith(c.href));
+                       // Level 3: check active chính xác hơn
+                       childActive = pathname === c.href || (c.children && pathname?.startsWith(c.href));
                     } else {
-                      if (c.children && c.children.length > 0) {
-                        childActive = isItemActive(c);
-                      } else {
-                        childActive = pathname === c.href;
-                      }
+                       // Level 2
+                       childActive = isItemActive(c);
                     }
 
                     const linkBase = isThird
@@ -147,17 +161,18 @@ export default function ManagerSidebar({
                       ? "bg-blue-50 text-blue-700 font-medium"
                       : "bg-gradient-to-r from-blue-50 to-white text-blue-700 font-semibold shadow-sm border-l-4 border-blue-500";
 
-                    const linkInactiveClass = isThird
-                      ? "text-gray-600 hover:bg-gray-50 hover:text-blue-600"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-blue-600";
+                    const linkInactiveClass = "text-gray-600 hover:bg-gray-50 hover:text-blue-600";
 
                     return (
                       <li key={c.href}>
                         <Link
                           href={c.href}
-                          className={clsx(linkBase, childActive ? linkActiveClass : linkInactiveClass)}
+                          className={clsx(
+                            linkBase,
+                            childActive ? linkActiveClass : linkInactiveClass
+                          )}
                         >
-                          {/* marker: vertical bar for level 1 children, small dot for level 2 (third-level) */}
+                          {/* Marker styling */}
                           {isThird ? (
                             <span
                               className={clsx(
@@ -174,8 +189,11 @@ export default function ManagerSidebar({
                             />
                           )}
 
-                          <span className={clsx("truncate", isThird ? "pl-1" : undefined)}>{c.label}</span>
+                          <span className={clsx("truncate", isThird ? "pl-1" : undefined)}>
+                            {c.label}
+                          </span>
 
+                          {/* Nút Toggle cho Menu Lớp 2 */}
                           {childHasChildren && (
                             <button
                               onClick={(e) => {
@@ -184,24 +202,32 @@ export default function ManagerSidebar({
                                 toggleExpand(c.href);
                               }}
                               aria-label={childExpanded ? "Collapse" : "Expand"}
-                              className="ml-2 p-1 rounded cursor-pointer"
+                              className="ml-auto p-1 rounded cursor-pointer hover:bg-blue-100" // Thêm hover cho dễ nhìn
                             >
-                              <ChevronRight className={clsx("w-3 h-3 transition-transform duration-500", childExpanded ? "rotate-90" : "rotate-0", childActive ? "text-blue-700" : "text-gray-400")} />
+                              <ChevronRight
+                                className={clsx(
+                                  "w-3 h-3 transition-transform duration-300", // Giảm time animation cho mượt
+                                  childExpanded ? "rotate-90" : "rotate-0",
+                                  childActive ? "text-blue-700" : "text-gray-400"
+                                )}
+                              />
                             </button>
                           )}
                         </Link>
 
-                                {/* Render nested children with smooth transition */}
-                                {c.children && c.children.length > 0 && (
-                                  <div
-                                    className={clsx(
-                                      "overflow-hidden transition-all duration-500 ease-in-out",
-                                      (childExpanded || childActive) ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-                                    )}
-                                  >
-                                    {renderChildren(c.children, depth + 1)}
-                                  </div>
-                                )}
+                        {/* --- KHU VỰC SỬA LỖI CHÍNH --- */}
+                        {c.children && c.children.length > 0 && (
+                          <div
+                            className={clsx(
+                              "overflow-hidden transition-all duration-500 ease-in-out",
+                              // CHỈ DÙNG childExpanded, BỎ childActive đi
+                              childExpanded ? "max-h-[1000px] opacity-100 mt-1" : "max-h-0 opacity-0"
+                            )}
+                          >
+                            {renderChildren(c.children, depth + 1)}
+                          </div>
+                        )}
+                        {/* ------------------------------ */}
                       </li>
                     );
                   })}
@@ -252,7 +278,6 @@ export default function ManagerSidebar({
                     </div>
                   )}
 
-                  {/* expand/collapse toggle for items with children */}
                   {hasChildren && !collapsed && (
                     <button
                       onClick={(e) => {
@@ -261,9 +286,15 @@ export default function ManagerSidebar({
                         toggleExpand(href);
                       }}
                       aria-label={isExpanded ? "Collapse" : "Expand"}
-                      className="ml-2 p-1 rounded cursor-pointer"
+                      className="ml-2 p-1 rounded cursor-pointer hover:bg-white/20"
                     >
-                      <ChevronRight className={clsx("w-4 h-4 transition-transform duration-500", isExpanded ? "rotate-90" : "rotate-0", active ? "text-white" : "text-gray-400")} />
+                      <ChevronRight
+                        className={clsx(
+                          "w-4 h-4 transition-transform duration-300",
+                          isExpanded ? "rotate-90" : "rotate-0",
+                          active ? "text-white" : "text-gray-400"
+                        )}
+                      />
                     </button>
                   )}
 
@@ -272,12 +303,13 @@ export default function ManagerSidebar({
                   )}
                 </Link>
 
-                {/* Render submenu when parent is expanded or active, with smooth transition */}
+                {/* Submenu Level 1 (Manager Course...) */}
                 {!collapsed && children && children.length > 0 && (
                   <div
                     className={clsx(
                       "overflow-hidden transition-all duration-500 ease-in-out",
-                      (isExpanded || active) ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                      // CŨNG SỬA Ở ĐÂY: Chỉ dùng isExpanded
+                      isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
                     )}
                   >
                     {renderChildren(children)}
