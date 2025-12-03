@@ -6,6 +6,7 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateTerm } from "@/hooks/term/useCreateTerm";
+import { toVNLocalISOString } from "@/utils/datetime/time";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -29,12 +30,30 @@ export default function CreateTermPage() {
     };
 
     const handleSubmit = async () => {
+        // Convert start/end to VN-local ISO-like string before sending so backend
+        // receives the VN wall-clock representation (YYYY-MM-DDTHH:mm:ss)
+        const safeStart = (() => {
+            try {
+                return toVNLocalISOString(form.startDate);
+            } catch {
+                return form.startDate;
+            }
+        })();
+
+        const safeEnd = (() => {
+            try {
+                return toVNLocalISOString(form.endDate);
+            } catch {
+                return form.endDate;
+            }
+        })();
+
         const payload = {
             name: form.name,
             description: form.description,
             isActive: form.isActive,
-            startDate: form.startDate,
-            endDate: form.endDate,
+            startDate: safeStart,
+            endDate: safeEnd,
         };
         const res = await createTerm(payload);
         if (res?.success) {
@@ -88,6 +107,9 @@ export default function CreateTermPage() {
                                         onChange={(v) => handleChange('startDate', v)}
                                         placeholder="Select start date"
                                         className="w-72"
+                                        // don't allow selecting past dates/times
+                                        minDate={new Date()}
+                                        minTime={new Date()}
                                     />
                                 </div>
                                 <div>
@@ -97,6 +119,10 @@ export default function CreateTermPage() {
                                         onChange={(v) => handleChange('endDate', v)}
                                         placeholder="Select end date"
                                         className="w-72"
+                                        // end must be after start: min date is start's date
+                                        minDate={new Date(form.startDate)}
+                                        // if selecting the same day as start, minTime is start time + 1 minute
+                                        minTime={new Date(new Date(form.startDate).getTime() + 60 * 1000)}
                                     />
                                 </div>
                             </div>

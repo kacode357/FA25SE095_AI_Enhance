@@ -15,6 +15,7 @@ import { usePendingApprovalUsers } from "@/hooks/approve-lecturer/usePendingAppr
 import type {
     PendingApprovalParams,
 } from "@/types/approve-lecturer/approve-lecturer.payload";
+import { formatToVN } from "@/utils/datetime/time";
 import { getUserStatusClass, getUserStatusLabel } from "@/utils/user-status-color";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -118,7 +119,7 @@ export default function ApproveLecturerPage() {
 
                                         <TableCell>
                                             <div className="text-sm text-center text-gray-800">
-                                                {new Date(u.createdAt).toLocaleString()}
+                                                {u.createdAt ? formatToVN(u.createdAt) : "—"}
                                             </div>
                                         </TableCell>
 

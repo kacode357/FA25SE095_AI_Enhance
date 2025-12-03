@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
 import { PencilLine, Plus } from "lucide-react";
 import Link from "next/link";
@@ -157,8 +158,8 @@ export default function TermsPage() {
                         <span className="text-sm text-slate-500">Inactive</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-center whitespace-nowrap">{formatDateTime(t.createdAt)}</TableCell>
-                    <TableCell className="text-sm text-center whitespace-nowrap">{formatDateTime(t.updatedAt)}</TableCell>
+                    <TableCell className="text-sm text-center whitespace-nowrap">{t.createdAt ? formatToVN(t.createdAt) : ""}</TableCell>
+                    <TableCell className="text-sm text-center whitespace-nowrap">{t.updatedAt ? formatToVN(t.updatedAt) : ""}</TableCell>
                     <TableCell className="text-sm text-center">
                       <div className="flex items-center justify-center gap-2">
                         {/* Edit */}

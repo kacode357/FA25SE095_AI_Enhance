@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { useCourses } from "@/hooks/course/useCourses";
 import { Course } from "@/types/course/course.response";
+import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -115,7 +116,7 @@ export default function CourseApprovalsPage() {
                       <TableCell className="text-center">{c.term}</TableCell>
                       {/* <TableCell className="text-center">{c.year}</TableCell> */}
                       <TableCell className="text-center text-xs whitespace-nowrap">
-                        {new Date(c.createdAt).toLocaleDateString("en-GB")}
+                        {formatToVN(c.createdAt, { year: "numeric", month: "2-digit", day: "2-digit" })}
                       </TableCell>
                       <TableCell className="text-center">
                         <Button

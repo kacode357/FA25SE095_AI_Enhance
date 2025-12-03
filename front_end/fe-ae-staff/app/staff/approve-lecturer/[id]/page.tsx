@@ -26,7 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useApproveAdminUser } from "@/hooks/approve-lecturer/useApproveLecturer";
 import { useGetUserApproveById } from "@/hooks/approve-lecturer/useGetUserApproveById";
-import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+import { formatToVN } from "@/utils/datetime/time";
 import {
   getUserStatusClass,
   getUserStatusLabel,
@@ -284,7 +284,7 @@ export default function PendingLecturerDetailPage() {
                     </span>
                     <div className="flex items-center gap-2 text-sm text-slate-700">
                       <Calendar className="h-3.5 w-3.5" />
-                      {formatDateTimeVN(user.createdAt)}
+                      {user.createdAt ? formatToVN(user.createdAt) : "—"}
                     </div>
                   </div>
 
@@ -294,7 +294,7 @@ export default function PendingLecturerDetailPage() {
                         Last Login
                       </span>
                       <div className="text-sm text-slate-700">
-                        {formatDateTimeVN(user.lastLoginAt)}
+                        {user.lastLoginAt ? formatToVN(user.lastLoginAt) : "—"}
                       </div>
                     </div>
                   )}

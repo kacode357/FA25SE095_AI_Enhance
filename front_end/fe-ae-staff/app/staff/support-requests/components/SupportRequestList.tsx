@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 import PaginationBar from "@/components/common/pagination-all";
+import { formatToVN } from "@/utils/datetime/time";
 import SupportRequestCategoryBadge from "./SupportRequestCategoryBadge";
 import SupportRequestPriorityBadge from "./SupportRequestPriorityBadge";
 import SupportRequestRejectButton from "./SupportRequestRejectButton";
@@ -53,8 +54,13 @@ type Props = {
 
 const dt = (s?: string | null) => {
   if (!s) return "";
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? s : d.toLocaleString("en-GB");
+  try {
+    return formatToVN(s, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  } catch (err) {
+    // fallback to original behaviour
+    const d = new Date(s as string);
+    return Number.isNaN(d.getTime()) ? (s as string) : d.toLocaleString("en-GB");
+  }
 };
 
 export default function SupportRequestList({

@@ -19,6 +19,7 @@ export const mainNav = [
   },
   // Manager Course group (3-level menu)
   {
+    // Use a distinct href for the parent to avoid collision with child routes
     href: "/staff/courses",
     label: "Manager Course",
     icon: Layers3,
@@ -34,7 +35,16 @@ export const mainNav = [
         ],
       },
       // Sibling items under Manager Course
-      { href: "/staff/courses", label: "Active Courses" },
+      {
+        href: "/staff/courses",
+        label: "Active Courses",
+        children: [
+          // First child: the actual courses list page
+          { href: "/staff/courses", label: "Active Courses" },
+          { href: "/staff/courses/topics", label: "Topics" },
+          { href: "/staff/courses/topics/create", label: "Create Topic" },
+        ],
+      },
       { href: "/staff/course-requests", label: "Course Requests" },
       { href: "/staff/course-approvals", label: "Course Approvals" },
     ],

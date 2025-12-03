@@ -18,6 +18,7 @@ import FilterRow from "./components/FilterRow";
 import PaginationBar from "@/components/common/pagination-all";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { CourseCode } from "@/types/course-codes/course-codes.response";
+import { formatToVN } from "@/utils/datetime/time";
 import DeleteConfirm from "./components/DeleteConfirm";
 
 export default function CourseCodesPage() {
@@ -165,7 +166,7 @@ export default function CourseCodesPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-center text-xs whitespace-nowrap">
-                      {new Date(c.createdAt).toLocaleDateString("en-GB")}
+                      {formatToVN(c.createdAt, { year: "numeric", month: "2-digit", day: "2-digit" })}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -265,7 +266,7 @@ export default function CourseCodesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-500 w-24">Created:</span>
-                  <span className="text-slate-800">{new Date(sel.createdAt).toLocaleDateString("en-GB")}</span>
+                  <span className="text-slate-800">{formatToVN(sel.createdAt, { year: "numeric", month: "2-digit", day: "2-digit" })}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-500 w-24">Status:</span>

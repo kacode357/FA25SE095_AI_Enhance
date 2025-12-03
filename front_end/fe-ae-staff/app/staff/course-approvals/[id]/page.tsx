@@ -9,6 +9,7 @@ import {
   getCourseStatusText,
 } from "@/config/course-status";
 import { useCourseById } from "@/hooks/course/useCourseById";
+import { formatToVN } from "@/utils/datetime/time";
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -39,8 +40,10 @@ export default function CourseApprovalDetailPage() {
     );
   }
 
-  const fmtDate = (v?: string | null) =>
-    v ? new Date(v).toLocaleString("en-GB") : "-";
+  const fmtDate = (v?: string | null) => {
+    if (!v) return "-";
+    return formatToVN(v, { year: "numeric", month: "2-digit", day: "2-digit" });
+  };
 
   const isPending = course?.status === CourseStatus.PendingApproval;
 

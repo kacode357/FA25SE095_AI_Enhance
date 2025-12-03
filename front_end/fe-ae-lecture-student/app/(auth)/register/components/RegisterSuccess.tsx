@@ -66,7 +66,13 @@ export default function RegisterSuccessPage() {
                     {/* Action Button */}
                     <div className="px-8 pb-8">
                         <Button
-                            onClick={() => router.push("/login")}
+                            onClick={() => {
+                                try {
+                                    localStorage.removeItem("registerSuccessUser");
+                                    sessionStorage.removeItem("registerSuccessUser");
+                                } catch {}
+                                router.push("/login");
+                            }}
                             className="w-full mt-3 h-12 text-lg font-medium btn btn-gradient-slow bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg rounded-2xl flex items-center justify-center gap-2 transition-all duration-300"
                         >
                             Login Now

@@ -9,6 +9,7 @@ import {
   CourseRequestStatusText,
 } from "@/config/course-request-status";
 import { useCourseRequestById } from "@/hooks/course-request/useCourseRequestById";
+import { formatToVN } from "@/utils/datetime/time";
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -50,8 +51,12 @@ export default function CourseRequestDetailPage() {
   }
 
   // helpers (no hooks)
-  const fmtDate = (v?: string | null) =>
-    v ? new Date(v).toLocaleString("en-GB") : "-";
+  const fmtDate = (v?: string | null, withTime = false) =>
+    v
+      ? withTime
+        ? formatToVN(v, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+        : formatToVN(v, { year: "numeric", month: "2-digit", day: "2-digit" })
+      : "-";
 
   const getStatusBg = (st?: CourseRequestStatus) => {
     switch (st) {
@@ -81,14 +86,13 @@ export default function CourseRequestDetailPage() {
           className="text-sm btn btn-green-slow"
           onClick={() => router.push("/staff/course-requests")}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-0 h-4 w-4" />
           Back
         </Button>
 
         <Badge
-          className={`text-xs px-2 py-1 ${statusBg} ${
-            CourseRequestStatusColor[request.status as CourseRequestStatus]
-          }`}
+          className={`text-xs px-2 py-1 ${statusBg} ${CourseRequestStatusColor[request.status as CourseRequestStatus]
+            }`}
         >
           {CourseRequestStatusText[request.status as CourseRequestStatus]}
         </Badge>
@@ -111,13 +115,16 @@ export default function CourseRequestDetailPage() {
             <h3 className="text-sm font-medium text-slate-600 mb-3">
               Basic Information
             </h3>
-            <div className="grid md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            <div className="grid md:grid-cols-2 gap-x-8 gap-y-5 text-sm">
               <Field label="Lecturer" value={request.lecturerName} />
               <Field label="Course Code" value={request.courseCode} />
               <Field label="Title" value={request.courseCodeTitle} />
               <Field label="Department" value={request.department} />
               <Field label="Term" value={request.term} />
-              <Field label="Year" value={String(request.year)} />
+              <Field
+                label="Created At"
+                value={fmtDate(request.createdAt)}
+              />
             </div>
           </section>
 
@@ -131,12 +138,7 @@ export default function CourseRequestDetailPage() {
                 label="Processed By"
                 value={request.processedByName || "-"}
               />
-              <Field label="Processed At" value={fmtDate(request.processedAt)} />
-              <Field
-                label="Created At"
-                value={fmtDate(request.createdAt)}
-                className="md:col-span-2"
-              />
+              <Field label="Processed At" value={fmtDate(request.processedAt, true)} />
             </div>
           </section>
 
@@ -192,9 +194,8 @@ function Field({
         {label}
       </div>
       <div
-        className={`mt-1 text-slate-900 ${
-          multiline ? "whitespace-pre-wrap" : ""
-        }`}
+        className={`mt-1 text-slate-900 ${multiline ? "whitespace-pre-wrap" : ""
+          }`}
       >
         {value}
       </div>

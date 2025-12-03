@@ -171,8 +171,9 @@ export default function ManagerSidebar({
                     const childHasChildren = c.children && c.children.length > 0;
                     const childExpanded = expandedMap[c.href];
                     
-                    // Only the deepest exact/longest match should be marked active among siblings
-                    const childActive = c.href === activeKey;
+                    // Mark a child active when it or any descendant matches the pathname
+                    // (so parent entries like "Course Codes" show active when on a child route)
+                    const childActive = isItemActive(c);
 
                     const linkBase = isThird
                       ? "flex items-center gap-2 text-xs rounded-md px-3 py-1.5 transition-all duration-200 relative"

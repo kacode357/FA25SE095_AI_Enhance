@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useUpdateTerm } from "@/hooks/term/useUpdateTerm";
 import { TermService } from "@/services/terms.services";
 import { Term } from "@/types/terms/terms.response";
+import { toVNLocalISOString } from "@/utils/datetime/time";
 import { useEffect, useState } from "react";
 
 export default function EditDialog({
@@ -39,13 +40,30 @@ export default function EditDialog({
 
   const handleSave = async () => {
     if (!term) return;
+    const safeStart = (() => {
+      try {
+        return toVNLocalISOString(term.startDate);
+      } catch {
+        return term.startDate;
+      }
+    })();
+
+    const safeEnd = (() => {
+      try {
+        return toVNLocalISOString(term.endDate);
+      } catch {
+        return term.endDate;
+      }
+    })();
+
     const payload = {
       name: term.name,
       description: term.description,
       isActive: term.isActive,
-      startDate: term.startDate,
-      endDate: term.endDate,
+      startDate: safeStart,
+      endDate: safeEnd,
     };
+
     const res = await updateTerm(termId, payload);
     if (res?.success) onSubmit();
   };
@@ -74,6 +92,9 @@ export default function EditDialog({
                 value={term.startDate}
                 onChange={(v) => setTerm({ ...term, startDate: v })}
                 placeholder="Select start date"
+                // don't allow selecting past dates/times when editing
+                minDate={new Date()}
+                minTime={new Date()}
               />
             </div>
             <div>
@@ -82,6 +103,9 @@ export default function EditDialog({
                 value={term.endDate}
                 onChange={(v) => setTerm({ ...term, endDate: v })}
                 placeholder="Select end date"
+                // end must be after the start date/time
+                minDate={term ? new Date(term.startDate) : undefined}
+                minTime={term ? new Date(new Date(term.startDate).getTime() + 60 * 1000) : undefined}
               />
             </div>
           </div>

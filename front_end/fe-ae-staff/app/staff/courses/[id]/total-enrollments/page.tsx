@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCourseStudents } from "@/hooks/enrollment/useCourseStudents";
 import { EnrollmentStatus } from "@/types/enrollments-students/enrollments.response";
+import { formatToVN } from "@/utils/datetime/time";
 import { Loader2, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -35,7 +36,7 @@ export default function TotalEnrollmentsPage() {
         }
     }, [id, page, pageSize, fetchCourseStudents]);
 
-    const fmtDate = (v?: string | null) => (v ? new Date(v).toLocaleString("en-GB") : "-");
+    const fmtDate = (v?: string | null) => (v ? formatToVN(v, { year: "numeric", month: "2-digit", day: "2-digit" }) : "-");
 
     const getInitials = (full: string) =>
         full

@@ -61,30 +61,30 @@ export default function EditDialog({
       {!courseCode ? (
         <div className="py-6 text-center text-slate-500">Loading...</div>
       ) : (
-        <div className="space-y-4 py-2">
+        <div className="space-y-6 py-2">
           <div>
-            <Label>Code</Label>
+            <Label className="mb-2">Code</Label>
             <Input
               value={courseCode.code}
               onChange={(e) => setCourseCode({ ...courseCode, code: e.target.value })}
             />
           </div>
           <div>
-            <Label>Title</Label>
+            <Label className="mb-2">Title</Label>
             <Input
               value={courseCode.title}
               onChange={(e) => setCourseCode({ ...courseCode, title: e.target.value })}
             />
           </div>
           <div>
-            <Label>Description</Label>
+            <Label className="mb-2">Description</Label>
             <Input
               value={courseCode.description}
               onChange={(e) => setCourseCode({ ...courseCode, description: e.target.value })}
             />
           </div>
           <div>
-            <Label>Department</Label>
+            <Label className="mb-2">Department</Label>
             <Input
               value={courseCode.department}
               onChange={(e) => setCourseCode({ ...courseCode, department: e.target.value })}

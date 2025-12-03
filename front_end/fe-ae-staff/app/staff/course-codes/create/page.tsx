@@ -54,9 +54,9 @@ export default function CreateCourseCodePage() {
                 <Card className="overflow-hidden shadow-lg border-slate-200 rounded-xl">
                     <CardContent className="p-6 bg-white">
                         <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-                            <div className="grid grid-cols-1 gap-4">
+                            <div className="grid grid-cols-1 gap-5">
                                 <div>
-                                    <Label className="mb-1">Code</Label>
+                                    <Label className="mb-2">Code</Label>
                                     <Input
                                         placeholder="Enter course code (e.g. CS101)"
                                         className="placeholder:text-sm text-sm rounded-md"
@@ -66,7 +66,7 @@ export default function CreateCourseCodePage() {
                                 </div>
 
                                 <div>
-                                    <Label className="mb-1">Title</Label>
+                                    <Label className="mb-2">Title</Label>
                                     <Input
                                         placeholder="Enter course title"
                                         className="placeholder:text-sm text-sm rounded-md"
@@ -76,7 +76,7 @@ export default function CreateCourseCodePage() {
                                 </div>
 
                                 <div>
-                                    <Label className="mb-1">Description</Label>
+                                    <Label className="mb-2">Description</Label>
                                     <Input
                                         placeholder="Short description"
                                         className="placeholder:text-sm text-sm rounded-md"
@@ -86,7 +86,7 @@ export default function CreateCourseCodePage() {
                                 </div>
 
                                 <div>
-                                    <Label className="mb-1">Department</Label>
+                                    <Label className="mb-2">Department</Label>
                                     <Input
                                         placeholder="Department name"
                                         className="placeholder:text-sm text-sm rounded-md"

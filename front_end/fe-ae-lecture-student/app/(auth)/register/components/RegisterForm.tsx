@@ -156,7 +156,7 @@ export default function RegisterForm() {
             }
         }
 
-        if (step < 3) {
+        if (step < 2) {
             setStep((s) => s + 1);
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
@@ -217,7 +217,7 @@ export default function RegisterForm() {
                     </div>
 
                     <div className="flex flex-row gap-4">
-                        <Input className="text-sm" type="password" name="password" label="Password" placeholder="At least 8 characters" required value={passwordValue} onChange={(e) => setPasswordValue(e.currentTarget.value)} />
+                        <Input className="text-sm" type="password" name="password" label="Password" placeholder="••••••••••" required value={passwordValue} onChange={(e) => setPasswordValue(e.currentTarget.value)} />
                         <Input className="text-sm" type="password" name="confirm" label="Confirm password" placeholder="Re-enter password" required value={confirmValue} onChange={(e) => setConfirmValue(e.currentTarget.value)} error={confirmError} />
                     </div>
                 </div>
@@ -252,7 +252,7 @@ export default function RegisterForm() {
                         {loading ? (
                             <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Processing…</span>
                         ) : (
-                            step < 3 ? "Next Step" : "Create account"
+                            step < 2 ? "Next Step" : "Create account"
                         )}
                     </Button>
                 </div>

@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useMySupportRequests } from "@/hooks/support-requests/useMySupportRequests";
 import { useUploadSupportRequestImages } from "@/hooks/support-requests/useUploadSupportRequestImages";
 import type { SupportRequestItem, UploadSupportRequestImagesResponse } from "@/types/support/support-request.response";
-import { format } from "date-fns";
+import { formatToVN } from "@/utils/datetime/time";
 import { AlertCircle, CheckCircle2, Trash2, UploadCloud } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -222,7 +222,7 @@ export default function UploadImagesSupport() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">Requested At</p>
-                  <div className="mt-1">{request?.requestedAt ? format(new Date(request.requestedAt), "PPP p") : "-"}</div>
+                  <div className="mt-1">{request?.requestedAt ? formatToVN(request.requestedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}</div>
                 </div>
                 <div className="sm:col-span-2">
                   <p className="text-sm text-slate-500">Description</p>

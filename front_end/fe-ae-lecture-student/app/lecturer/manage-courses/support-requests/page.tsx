@@ -24,10 +24,10 @@ import { Check, Loader2, MessageSquare, X } from "lucide-react";
 import CancelSupportRequestDialog from "./components/CancelSupportRequestDialog";
 import ResolveSupportRequestDialog from "./components/ResolveSupportRequestDialog";
 
+import { formatToVN } from "@/utils/datetime/time";
 import {
   categoryColor,
   categoryLabel,
-  formatDateTime,
   priorityColor,
   priorityLabel,
   statusColor,
@@ -352,19 +352,15 @@ export default function SupportRequestsList({ courseId }: Props) {
                 {/* Right side: buttons + timestamps */}
                 <div className="w-56 flex-shrink-0 flex flex-col items-end gap-3">
                   <div className="text-right text-xs text-slate-400">
-                    <div>Requested: {formatDateTime(item.requestedAt)}</div>
-                    <div>
-                      Accepted:{" "}
-                      {item.acceptedAt
-                        ? formatDateTime(item.acceptedAt)
-                        : "-"}
-                    </div>
-                    <div>
-                      Resolved:{" "}
-                      {item.resolvedAt
-                        ? formatDateTime(item.resolvedAt)
-                        : "-"}
-                    </div>
+                      <div>
+                        Requested: {item.requestedAt ? formatToVN(item.requestedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}
+                      </div>
+                      <div>
+                        Accepted: {item.acceptedAt ? formatToVN(item.acceptedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}
+                      </div>
+                      <div>
+                        Resolved: {item.resolvedAt ? formatToVN(item.resolvedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}
+                      </div>
                   </div>
 
                   <div className="flex flex-col items-end gap-2">

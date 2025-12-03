@@ -303,14 +303,14 @@ export default function AssignmentsPanel({
               {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
             </div>
             <div className="flex items-center gap-2 sm:justify-end">
-              <Button
+              {/* <Button
                 size="sm"
                 variant="outline"
                 className="text-[#000D83] shadow-md"
                 onClick={() => setTopicSheetOpen(true)}
               >
                 Manage Topics
-              </Button>
+              </Button> */}
               <Button size="sm" className="text-[#000D83] shadow-md" onClick={openCreate}>
                 New Assignment
               </Button>

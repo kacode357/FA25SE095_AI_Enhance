@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCourseStatistics } from "@/hooks/course/useCourseStatistics";
+import { formatToVN } from "@/utils/datetime/time";
 import {
   ArrowLeft,
   Bell,
@@ -56,7 +57,11 @@ export default function CourseDetailPage() {
   const stats = data?.statistics;
   const course = stats?.course;
 
-  const fmtDate = (v?: string | null) => (v ? new Date(v).toLocaleString("en-GB") : "-");
+
+  const fmtDate = (v?: string | null, includeTime = false) => {
+    if (!v) return "-";
+    return formatToVN(v, includeTime ? { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" } : { year: "numeric", month: "2-digit", day: "2-digit" });
+  };
 
   const enrollmentsByMonthData = useMemo(() => {
     if (!stats?.enrollmentsByMonth) return [];

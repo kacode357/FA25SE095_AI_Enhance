@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCourses } from "@/hooks/course/useCourses";
 import { Course } from "@/types/course/course.response";
+import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -120,7 +121,7 @@ export default function CoursesPage() {
                     <TableCell className="text-left">{c.lecturerName}</TableCell>
                     <TableCell className="text-center">{c.enrollmentCount}</TableCell>
                     <TableCell className="text-center text-xs whitespace-nowrap">
-                      {new Date(c.createdAt).toLocaleDateString("en-GB")}
+                      {formatToVN(c.createdAt, { year: "numeric", month: "2-digit", day: "2-digit" })}
                     </TableCell>
                     <TableCell className="text-center">
                       <Button
