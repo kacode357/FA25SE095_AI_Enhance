@@ -61,7 +61,7 @@ export default function FilterRow({
       {/* ➕ Action cell (Apply / Clear) */}
       <TableCell className="py-2 text-center">
         <div className="flex justify-center items-center gap-2">
-          <Button className="h-8 bg-green-50 hover:bg-green-100 hover:shadow-md cursor-pointer rounded-xl px-3 text-xs" onClick={onApply}>
+          <Button className="h-8 bg-green-50 btn btn-green-slow hover:bg-green-100 hover:shadow-md cursor-pointer rounded-xl px-3 text-xs" onClick={onApply}>
             Apply
           </Button>
           <Button className="h-8 px-3 text-xs" variant="ghost" onClick={onClear}>

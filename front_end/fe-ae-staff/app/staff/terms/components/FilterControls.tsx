@@ -73,7 +73,7 @@ export default function FilterControls({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Button className="h-8 bg-green-50 hover:bg-green-100 hover:shadow-md cursor-pointer rounded-xl px-3 text-xs" onClick={fetchAll}>
+                        <Button className="h-8 bg-green-50 hover:bg-green-100 btn btn-green-slow hover:shadow-md cursor-pointer rounded-xl px-3 text-xs" onClick={fetchAll}>
                             Apply
                         </Button>
                         <Button className="h-8 px-3 bg-slate-50 hover:bg-slate-100 text-black! text-sm cursor-pointer" onClick={clearAll}>
