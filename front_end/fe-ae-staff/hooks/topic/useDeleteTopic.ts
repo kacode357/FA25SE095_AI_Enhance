@@ -1,5 +1,6 @@
 import { TopicService } from "@/services/topic.services";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function useDeleteTopic() {
   const [loading, setLoading] = useState(false);
@@ -10,9 +11,16 @@ export function useDeleteTopic() {
     setError(null);
     try {
       const res = await TopicService.delete(topicId);
+      if (res?.success) {
+        toast.success(res.message);
+      } else {
+        toast.error(res?.message || "Failed to delete topic");
+      }
       return res;
     } catch (err: any) {
-      setError(err?.message || "Failed to delete topic");
+      const msg = err?.response?.data?.message || err?.message || "Failed to delete topic";
+      setError(msg);
+      toast.error(msg);
       return null;
     } finally {
       setLoading(false);
