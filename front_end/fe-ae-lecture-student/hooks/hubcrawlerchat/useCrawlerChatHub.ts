@@ -104,9 +104,8 @@ type Options = {
 };
 
 export function useCrawlerChatHub({
-  baseUrl =
-    process.env.NEXT_PUBLIC_CLASSROOM_BASE_URL ||
-    "https://classroom.fishmakeweb.id.vn", // chỉnh lại domain nếu cần
+  baseUrl ="https://classroom.fishmakeweb.id.vn",
+     
   getAccessToken,
   onConversationJoined,
   onConversationLeft,

@@ -312,7 +312,7 @@ export default function AssignmentDetailPage() {
           </div>
 
           <Button
-            onClick={() => router.push(`/student/courses/${courseId}/assignments`)} 
+            onClick={() => router.push(`/student/courses/${courseId}/assignments`)}
             variant="outline"
             className="bg-white border border-brand text-nav hover:text-nav-active rounded-2xl px-4 h-10"
             title="Go back to Course"
@@ -341,7 +341,8 @@ export default function AssignmentDetailPage() {
             <Button
               onClick={() =>
                 router.push(
-                  `/student/crawler?courseId=${courseId}&assignmentId=${aId}&groupId=${selectedGroupId}`,
+                  // Sửa dòng này: đưa courseId vào path, giữ lại assignmentId và groupId ở query
+                  `/student/courses/${courseId}/crawler?assignmentId=${aId}&groupId=${selectedGroupId}`
                 )
               }
               className="btn-yellow-slow h-10 px-4 text-sm rounded-xl"
