@@ -35,7 +35,7 @@ const CRAWLER_BASE_URL =
   process.env.NEXT_PUBLIC_CRAWLER_BASE_URL ||
   "https://crawl.fishmakeweb.id.vn";
 
-/** Keywords used to detect follow-up questions that should trigger a summary */
+/** Keywords used to detect follow-up questions that should trigger summary */
 const SUMMARY_KEYWORDS = [
             'summary',
             'summaries',
