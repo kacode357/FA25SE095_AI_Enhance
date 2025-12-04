@@ -35,7 +35,7 @@ const CRAWLER_BASE_URL =
   process.env.NEXT_PUBLIC_CRAWLER_BASE_URL ||
   "https://crawl.fishmakeweb.id.vn";
 
-/** Keywords used to detect follow-up questions that should trigger summary */
+/** Keywords used to detect follow-up questions that should trigger a summary */
 const SUMMARY_KEYWORDS = [
             'summary',
             'summaries',
@@ -256,57 +256,79 @@ const CrawlerInner = () => {
   });
 
   // ===== Helper: Fetch Summary =====
-  const fetchSummaryForJob = useCallback(
-    async (jobId: string, _opts?: { source?: "manual" | "keyword" }) => {
-      const normalizedJobId = jobId.trim();
-      if (!normalizedJobId) return;
+const fetchSummaryForJob = useCallback(
+  async (jobId: string, _opts?: { source?: "manual" | "keyword" }) => {
+    const normalizedJobId = jobId.trim();
+    if (!normalizedJobId) return;
 
-      const token = getAccessToken();
-      if (!token) {
-        setSummaryError("Missing access token.");
-        return;
-      }
+    const token = getAccessToken();
+    if (!token) {
+      setSummaryError("Missing access token.");
+      return;
+    }
 
-      setSummaryLoading(true);
-      setSummaryError(null);
+    setSummaryLoading(true);
+    setSummaryError(null);
 
-      try {
-        const response = await fetch(
-          `${CRAWLER_BASE_URL.replace(
-            /\/+$/g,
-            ""
-          )}/api/analytics/jobs/${normalizedJobId}/summary`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
+    try {
+      const response = await fetch(
+        `${CRAWLER_BASE_URL.replace(
+          /\/+$/g,
+          ""
+        )}/api/analytics/jobs/${normalizedJobId}/summary`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) {
+        const text = await response.text();
+        // cố parse JSON để lấy thông điệp "đẹp" hơn
+        let message = "Không thể tạo summary cho job này.";
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed?.error) {
+            message = parsed.error;
           }
-        );
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text || `Summary request failed (${response.status})`);
+        } catch {
+          // text không phải JSON, dùng luôn
+          if (text) message = text;
         }
 
-        const raw = await response.json();
-        const mapped: CrawlSummary = {
-          summaryText: raw.summaryText || raw.SummaryText || "",
-          insightHighlights:
-            raw.insightHighlights || raw.InsightHighlights || [],
-          fieldCoverage:
-            (raw.fieldCoverage || raw.FieldCoverage || []) as CrawlSummary["fieldCoverage"],
-          chartPreviews:
-            (raw.chartPreviews || raw.ChartPreviews || []) as CrawlSummary["chartPreviews"],
-        };
-
-        setSummary(mapped);
-      } catch (err: any) {
-        console.error("[CrawlerWorkspace] fetch summary error:", err);
-        setSummaryError(err?.message || "Failed to load summary");
-      } finally {
-        setSummaryLoading(false);
+        console.warn(
+          "[CrawlerWorkspace] summary API not ok:",
+          response.status,
+          text
+        );
+        setSummaryError(message);
+        return; // ❗ DỪNG Ở ĐÂY, KHÔNG throw nữa
       }
-    },
-    [getAccessToken]
-  );
+
+      const raw = await response.json();
+      const mapped: CrawlSummary = {
+        summaryText: raw.summaryText || raw.SummaryText || "",
+        insightHighlights: raw.insightHighlights || raw.InsightHighlights || [],
+        fieldCoverage:
+          (raw.fieldCoverage ||
+            raw.FieldCoverage ||
+            []) as CrawlSummary["fieldCoverage"],
+        chartPreviews:
+          (raw.chartPreviews ||
+            raw.ChartPreviews ||
+            []) as CrawlSummary["chartPreviews"],
+      };
+
+      setSummary(mapped);
+    } catch (err: any) {
+      console.error("[CrawlerWorkspace] fetch summary error:", err);
+      setSummaryError(err?.message || "Failed to load summary");
+    } finally {
+      setSummaryLoading(false);
+    }
+  },
+  [getAccessToken]
+);
+
 
   const pushUiMessageFromDto = useCallback(
     (message: ChatMessageDto) => {
