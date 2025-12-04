@@ -1,33 +1,34 @@
 // services/assignment.services.ts
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
-    AssignGroupsPayload,
-    CreateAssignmentPayload,
-    ExtendDueDatePayload,
-    GetAssignmentsQuery,
-    MyAssignmentsQuery,
-    ScheduleAssignmentRequest,
-    UnassignGroupsPayload,
-    UpdateAssignmentPayload,
+  AssignGroupsPayload,
+  CreateAssignmentPayload,
+  ExtendDueDatePayload,
+  GetAssignmentsQuery,
+  MyAssignmentsQuery,
+  ScheduleAssignmentRequest,
+  UnassignGroupsPayload,
+  UpdateAssignmentPayload,
 } from "@/types/assignments/assignment.payload";
 import type { UploadAssignmentAttachmentsResponse } from "@/types/assignments/assignment.response";
 import {
-    AssignGroupsResponse,
-    CloseAssignmentResponse,
-    CreateAssignmentResponse,
-    DeleteAssignmentResponse,
-    ExtendDueDateResponse,
-    GetAssignmentByIdResponse,
-    GetAssignmentGroupsResponse,
-    GetAssignmentsResponse,
-    GetCourseAssignmentStatsResponse,
-    GetGroupAssignmentLookupResponse,
-    GetMyAssignmentsResponse,
-    GetStudentCourseGradesResponse,
-    GetUnassignedGroupsResponse,
-    ScheduleAssignmentResponse,
-    UnassignGroupsResponse,
-    UpdateAssignmentResponse,
+  ActivateAssignmentDebugResponse,
+  AssignGroupsResponse,
+  CloseAssignmentResponse,
+  CreateAssignmentResponse,
+  DeleteAssignmentResponse,
+  ExtendDueDateResponse,
+  GetAssignmentByIdResponse,
+  GetAssignmentGroupsResponse,
+  GetAssignmentsResponse,
+  GetCourseAssignmentStatsResponse,
+  GetGroupAssignmentLookupResponse,
+  GetMyAssignmentsResponse,
+  GetStudentCourseGradesResponse,
+  GetUnassignedGroupsResponse,
+  ScheduleAssignmentResponse,
+  UnassignGroupsResponse,
+  UpdateAssignmentResponse,
 } from "@/types/assignments/assignment.response";
 
 export const AssignmentService = {
@@ -151,6 +152,16 @@ export const AssignmentService = {
     const res = await courseAxiosInstance.post<UploadAssignmentAttachmentsResponse>(`/Assignments/${id}/attachments`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return res.data;
+  },
+
+  /** POST /api/Debug/activate-assignment/{assignmentId} */
+  debugActivateAssignment: async (
+    assignmentId: string
+  ): Promise<ActivateAssignmentDebugResponse> => {
+    const res = await courseAxiosInstance.post<ActivateAssignmentDebugResponse>(
+      `/Debug/activate-assignment/${assignmentId}`
+    );
     return res.data;
   },
 };

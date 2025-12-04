@@ -310,3 +310,12 @@ export interface GetStudentCourseGradesResponse {
   message: string;
   statistics: StudentCourseGradeStatistics;
 }
+
+// DEBUG ONLY: Force activate assignment immediately
+export interface ActivateAssignmentDebugResponse {
+  success: boolean;
+  message: string;
+  assignment: AssignmentItem;
+  activatedAt: string; // ISO timestamp
+  previousStatus: AssignmentStatus;
+}

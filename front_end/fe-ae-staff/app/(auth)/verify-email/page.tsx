@@ -26,12 +26,12 @@ export default function VerifyEmailPage() {
       title="Email Verification"
       subtitle={
         result === null
-          ? "Đang xác thực email của bạn..."
+          ? "Verifying your email..."
           : result.success
-          ? "Xác thực thành công!"
-          : "Xác thực thất bại"
+          ? "Authentication successful!"
+          : "Authentication failed"
       }
-      footer={<Link href="/" className="underline">Quay lại đăng nhập</Link>}
+      footer={<Link href="/" className="underline">Back to login</Link>}
     >
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -43,7 +43,7 @@ export default function VerifyEmailPage() {
           ? "Loading..."
           : result
           ? result.message
-          : "Không tìm thấy token xác thực."}
+          : "Authentication token not found."}
       </motion.div>
     </AuthShell>
   );

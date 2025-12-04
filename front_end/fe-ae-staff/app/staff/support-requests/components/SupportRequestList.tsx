@@ -154,7 +154,10 @@ export default function SupportRequestList({
                             {item.subject}
                           </div>
                           {item.description && (
-                            <p className="text-xs text-gray-500 line-clamp-2">
+                            <p
+                              className="text-xs text-gray-500 whitespace-nowrap truncate max-w-[360px]"
+                              title={item.description}
+                            >
                               {item.description}
                             </p>
                           )}

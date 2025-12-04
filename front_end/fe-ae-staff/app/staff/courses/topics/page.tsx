@@ -80,7 +80,11 @@ export default function TopicsPage() {
                     className="border-b border-slate-100 hover:bg-slate-50"
                   >
                     <TableCell className="text-left pl-5">{t.name}</TableCell>
-                    <TableCell className="text-left">{t.description}</TableCell>
+                    <TableCell className="text-left">
+                      <span className="block max-w-[420px] truncate whitespace-nowrap align-middle" title={t.description}>
+                        {t.description}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-center">{t.isActive ? 'Yes' : 'No'}</TableCell>
                     <TableCell className="text-center text-xs whitespace-nowrap">{formatToVN(t.createdAt, { year: "numeric", month: "2-digit", day: "2-digit" })}</TableCell>
                     <TableCell className="text-center">

@@ -31,6 +31,31 @@ export default function UploadAttachmentsPage() {
     const [isDragging, setIsDragging] = useState(false);
     const inputRef = useRef<HTMLInputElement | null>(null);
 
+    const openFilePicker = async () => {
+        // Prefer modern picker when available; fallback to input.click()
+        // This helps in cases where hidden file inputs might not trigger reliably.
+        // Safari may not support showOpenFilePicker; hence the try/catch.
+        try {
+            // @ts-expect-error - showOpenFilePicker is not in TS lib yet
+            if (window.showOpenFilePicker) {
+                // @ts-expect-error - see above
+                const handles = await window.showOpenFilePicker({ multiple: true });
+                const files: File[] = [];
+                for (const handle of handles) {
+                    const file = await handle.getFile();
+                    files.push(file);
+                }
+                if (files.length) {
+                    setSelectedFiles((prev) => [...prev, ...files]);
+                    return;
+                }
+            }
+        } catch {
+            // Ignore and fallback
+        }
+        inputRef.current?.click();
+    };
+
     const onChooseFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
         const arr = fileListToArray(e.target.files);
         setSelectedFiles((prev) => [...prev, ...arr]);
@@ -57,7 +82,11 @@ export default function UploadAttachmentsPage() {
 
     const handleUpload = async () => {
         if (!assignmentId || selectedFiles.length === 0) return;
-        const res = await uploadAttachments(assignmentId, selectedFiles as unknown as FileList, false);
+        // Convert File[] to a real FileList using DataTransfer to satisfy upload service
+        const dt = new DataTransfer();
+        selectedFiles.forEach((file) => dt.items.add(file));
+        const fileList = dt.files;
+        const res = await uploadAttachments(assignmentId, fileList, false);
         if (res?.success) {
             setUploadedFiles((prev) => [...res.uploadedFiles, ...prev]);
             setSelectedFiles([]);
@@ -125,7 +154,7 @@ export default function UploadAttachmentsPage() {
                                         size="md"
                                         variant={isDragging ? "default" : "outline"}
                                         className="cursor-pointer text-blue-500 hover:text-blue-700 whitespace-nowrap"
-                                        onClick={() => inputRef.current?.click()}
+                                        onClick={openFilePicker}
                                     >
                                         <UploadCloud className="mr-1 h-5 w-5" />
                                         <span className="whitespace-nowrap">Choose Files</span>

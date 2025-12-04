@@ -8,9 +8,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover";
 
 // ================== COMMON TIME UTILS ==================
@@ -190,6 +190,7 @@ type DateTimePickerProps = {
   minTime?: Date;
   timeIntervals?: number; // phút
   size?: "sm" | "md";
+  toYear?: number; // allow selecting years up to this value
 };
 
 export function DateTimePicker({
@@ -201,6 +202,7 @@ export function DateTimePicker({
   minTime,
   timeIntervals = 5,
   size = "md",
+  toYear = 2100,
 }: DateTimePickerProps) {
   const [openDate, setOpenDate] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(
@@ -293,6 +295,7 @@ export function DateTimePicker({
               mode="single"
               selected={date}
               captionLayout="dropdown"
+              toYear={toYear}
               onSelect={handleSelectDate}
               className="rounded-md border border-slate-100 text-sm"
               disabled={(d) => {
