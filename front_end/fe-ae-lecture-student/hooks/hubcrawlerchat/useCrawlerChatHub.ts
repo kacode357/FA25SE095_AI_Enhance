@@ -16,16 +16,17 @@ export enum MessageType {
 }
 
 export type ChatMessageDto = {
-  messageId?: string; // Guid -> string
-  conversationId: string; // Guid -> string
-  userId: string; // Guid -> string
+  messageId?: string;
+  conversationId: string;
+  userId: string;
   userName: string;
   content: string;
-  groupId?: string | null; // Guid?
-  assignmentId?: string | null; // Guid?
+  groupId?: string | null;
+  assignmentId?: string | null;
   messageType?: MessageType;
-  crawlJobId?: string | null; // Guid?
-  timestamp?: string; // DateTime -> ISO string
+  crawlJobId?: string | null;
+  timestamp?: string;
+  sentAt?: string; // thêm dòng này
 };
 
 export type CrawlerResponseDto = {

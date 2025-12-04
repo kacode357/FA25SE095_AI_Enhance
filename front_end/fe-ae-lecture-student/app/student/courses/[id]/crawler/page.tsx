@@ -37,20 +37,34 @@ const CRAWLER_BASE_URL =
 
 /** Keywords used to detect follow-up questions that should trigger a summary */
 const SUMMARY_KEYWORDS = [
-  "summary",
-  "summarize",
-  "insight",
-  "insights",
-  "overview",
-  "tóm tắt",
-  "tổng quan",
-  "phân tích",
-  "gợi ý",
-  "recommendation",
-];
+            'summary',
+            'summaries',
+            'insights',
+            'overview',
+            'breakdown',
+            'highlights',
+            'khoảng giá',
+            'bao nhiêu',
+            'thống kê',
+            'biểu đồ',
+            'tổng hợp',
+            'phân tích',
+            'xu hướng',
+            'giá cả',
+            'so sánh',
+            'dữ liệu'
+        ];
 
 function makeId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function generateGuid() {
+  // giống file HTML
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 // Helper filter lỗi rác khi F5/Mạng yếu
@@ -89,12 +103,8 @@ const CrawlerInner = () => {
   }, []);
 
   // Conversation ID (Client-side Lazy ID)
-  const [conversationId, setConversationId] = useState<string>(() => {
-    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-      return crypto.randomUUID();
-    }
-    return makeId();
-  });
+ const [conversationId, setConversationId] = useState<string>(() => generateGuid());
+
 
   // ===== Assignment Data =====
   const {
@@ -108,7 +118,6 @@ const CrawlerInner = () => {
   useEffect(() => {
     if (!assignmentId) return;
     fetchAssignment(assignmentId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignmentId]);
 
   // ===== Conversations History =====
@@ -169,9 +178,6 @@ const CrawlerInner = () => {
     return results[0]?.promptUsed || "";
   }, [results]);
 
-
-
-
   // ===== CrawlHub (Jobs) =====
   const {
     connected: crawlConnected,
@@ -185,10 +191,9 @@ const CrawlerInner = () => {
   } = useCrawlHub({
     getAccessToken,
     onConnectedChange: () => {},
-    
+
     // 1. Job Started
     onJobStarted: (data) => {
-      // Chỉ update nếu job id khớp (hoặc update chung cũng được)
       const jid = data?.jobId || data?.JobId;
       if (jid && activeJobId && jid !== activeJobId) return;
 
@@ -213,8 +218,7 @@ const CrawlerInner = () => {
     onJobCompleted: async (payload: any) => {
       const jid: string =
         payload?.jobId || payload?.JobId || payload?.jobID || "";
-      
-      // Update UI Overlay to 100%
+
       setCrawlProgress(100);
       setCrawlStatusMsg("Finalizing results...");
 
@@ -227,15 +231,14 @@ const CrawlerInner = () => {
       setActiveJobId(jid);
       setSummary(null);
 
-      // Delay a bit for animation, then fetch results and close overlay
       setTimeout(async () => {
         try {
           await fetchJobResults(jid);
         } catch (err) {
           console.error("[CrawlerWorkspace] fetchJobResults error:", err);
         } finally {
-          setIsCrawling(false); // Tắt màn hình tối
-          setSubmitting(false); // Mở lại nút
+          setIsCrawling(false);
+          setSubmitting(false);
         }
       }, 800);
     },
@@ -243,7 +246,6 @@ const CrawlerInner = () => {
     onError: (msg) => {
       if (!isIgnorableSignalRError(msg)) {
         console.error("[CrawlHub] error:", msg);
-        // Nếu lỗi xảy ra khi đang crawl, phải tắt overlay để user ko bị kẹt
         if (isCrawling) {
           setIsCrawling(false);
           setSubmitting(false);
@@ -326,6 +328,7 @@ const CrawlerInner = () => {
         createdAt,
         messageType: message.messageType,
         crawlJobId: message.crawlJobId,
+        visualizationData: (message as any).visualizationData,
       };
 
       setChatMessages((prev) => [...prev, ui]);
@@ -359,8 +362,7 @@ const CrawlerInner = () => {
 
       setActiveJobId(jid);
       setSummary(null);
-      
-      // Update Status Overlay
+
       setCrawlStatusMsg("Job queued successfully...");
       setCrawlProgress(5);
 
@@ -396,10 +398,9 @@ const CrawlerInner = () => {
       disconnectChat().catch(() => {});
       disconnectCrawl().catch(() => {});
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ===== Lifecycle: Join Groups =====
+  // ===== Lifecycle: Join Groups & Subscribe Jobs =====
   useEffect(() => {
     if (!chatConnected || !assignmentId) return;
     let isSubscribed = true;
@@ -410,7 +411,6 @@ const CrawlerInner = () => {
     return () => { isSubscribed = false; };
   }, [chatConnected, assignmentId, groupId, subscribeToAssignment, joinGroupWorkspace]);
 
-  // ===== Lifecycle: Subscribe Jobs =====
   useEffect(() => {
     if (!crawlConnected || !assignmentId) return;
     let isSubscribed = true;
@@ -426,7 +426,6 @@ const CrawlerInner = () => {
     async (convId: string) => {
       if (!convId) return;
 
-      // Reset Overlay State khi switch history
       setIsCrawling(false);
       setCrawlProgress(0);
 
@@ -447,6 +446,8 @@ const CrawlerInner = () => {
             createdAt: m.timestamp ?? new Date().toISOString(),
             messageType: mt,
             crawlJobId: m.crawlJobId ?? undefined,
+            // CẬP NHẬT: Map visualizationData
+            visualizationData: m.visualizationData,
           };
         });
 
@@ -472,77 +473,118 @@ const CrawlerInner = () => {
 
   // ===== Action: Start Crawl =====
   const handleStartCrawl = async () => {
-    const trimmedUrl = url.trim();
-    const trimmedPrompt = prompt.trim();
+  const trimmedUrl = url.trim();
+  const trimmedPrompt = prompt.trim();
 
-    if (!trimmedUrl) { alert("Please enter a URL first."); return; }
-    if (!trimmedPrompt) { alert("Please describe what you want to extract."); return; }
-    try { new URL(trimmedUrl); } catch { alert("Invalid URL."); return; }
+  if (!trimmedUrl) {
+    alert("Please enter a URL first.");
+    return;
+  }
+  if (!trimmedPrompt) {
+    alert("Please describe what you want to extract.");
+    return;
+  }
+  try {
+    new URL(trimmedUrl);
+  } catch {
+    alert("Invalid URL.");
+    return;
+  }
 
-    if (!chatConnected) { alert("Chat connection is establishing... Please wait."); return; }
-    if (!userId) { alert("UserId not found. Please reload."); return; }
+  if (!chatConnected) {
+    alert("Chat connection is establishing... Please wait.");
+    return;
+  }
+  if (!userId) {
+    alert("UserId not found. Please reload.");
+    return;
+  }
 
-    // 1. Kích hoạt Overlay & Loading
-    setSubmitting(true);
-    setIsCrawling(true); // BẬT MÀN HÌNH TỐI
-    setCrawlStatusMsg("Initiating crawl request...");
-    setCrawlProgress(0);
+  setSubmitting(true);
+  setIsCrawling(true);
+  setCrawlStatusMsg("Initiating crawl request...");
+  setCrawlProgress(0);
 
-    const payload: ChatMessageDto = {
-      conversationId,
-      userId,
-      userName,
-      content: `${trimmedPrompt} | ${trimmedUrl}`,
-      groupId: groupId || undefined,
-      assignmentId: assignmentId || undefined,
-      messageType: MessageType.CrawlRequest,
-    };
+  const normalizedGroupId =
+    groupId && groupId !== "demo" ? groupId : null;
+  const normalizedAssignmentId =
+    assignmentId && assignmentId !== "demo" ? assignmentId : null;
 
-    try {
-      await sendCrawlerMessage(payload);
-      setUrl("");
-      setPrompt("");
-      // Không tắt isCrawling ở đây, đợi Hub trả về Completed
-    } catch (err: any) {
-      console.error("[CrawlerWorkspace] sendCrawlerMessage error:", err);
-      alert(err?.message || "Failed to send crawl request");
-      setIsCrawling(false);
-      setSubmitting(false);
-    }
+  // ⚠️ Payload kiểu "thô" y chang file HTML
+  const rawPayload: any = {
+    messageId: generateGuid(),
+    conversationId,                       // GUID string
+    userId,
+    userName,
+    content: `${trimmedPrompt} | ${trimmedUrl}`, // "prompt | url"
+    messageType: 1,                       // CrawlRequest
+    groupId: normalizedGroupId,           // luôn có field, có thể null
+    assignmentId: normalizedAssignmentId, // luôn có field, có thể null
+    timestamp: new Date().toISOString(),
   };
+
+  console.log("[CrawlerWorkspace] SendCrawlerMessage payload (crawl):", rawPayload);
+
+  try {
+    await sendCrawlerMessage(rawPayload as ChatMessageDto);
+    setUrl("");
+    setPrompt("");
+  } catch (err: any) {
+    console.error("[CrawlerWorkspace] sendCrawlerMessage error:", err);
+    alert(err?.message || "Failed to send crawl request");
+    setIsCrawling(false);
+    setSubmitting(false);
+  }
+};
+
 
   // ===== Action: Send Chat =====
-  const handleSendChatMessage = async () => {
-    const content = chatInput.trim();
-    if (!content) return;
-    if (!chatConnected) return;
+   const handleSendChatMessage = async () => {
+  const content = chatInput.trim();
+  if (!content) return;
+  if (!chatConnected) return;
 
-    const normalizedContent = content.toLowerCase();
-    const shouldMarkFollowUp = SUMMARY_KEYWORDS.some((keyword) => normalizedContent.includes(keyword));
-    const messageType = shouldMarkFollowUp ? MessageType.FollowUpQuestion : MessageType.UserMessage;
+  const normalizedContent = content.toLowerCase();
+  const shouldMarkFollowUp = SUMMARY_KEYWORDS.some((keyword) =>
+    normalizedContent.includes(keyword)
+  );
+  const messageType = shouldMarkFollowUp
+    ? MessageType.FollowUpQuestion
+    : MessageType.UserMessage;
 
-    setChatInput("");
-    setChatSending(true);
+  setChatInput("");
+  setChatSending(true);
 
-    const payload: ChatMessageDto = {
-      conversationId,
-      userId,
-      userName,
-      content,
-      groupId: groupId || undefined,
-      assignmentId: assignmentId || undefined,
-      messageType,
-      crawlJobId: activeJobId || undefined,
-    };
+  const normalizedGroupId =
+    groupId && groupId !== "demo" ? groupId : null;
+  const normalizedAssignmentId =
+    assignmentId && assignmentId !== "demo" ? assignmentId : null;
 
-    try {
-      await sendCrawlerMessage(payload);
-    } catch (err: any) {
-      alert(err?.message || "Failed to send message");
-    } finally {
-      setChatSending(false);
-    }
+  // ⚠️ Gửi đúng format như HTML test page
+  const rawPayload: any = {
+    messageId: generateGuid(),
+    userId,
+    userName,
+    content,
+    messageType,
+    conversationId,
+    groupId: normalizedGroupId,
+    assignmentId: normalizedAssignmentId,
+    sentAt: new Date().toISOString(),
   };
+
+  console.log("[CrawlerWorkspace] SendCrawlerMessage payload (chat):", rawPayload);
+
+  try {
+    await sendCrawlerMessage(rawPayload as ChatMessageDto);
+  } catch (err: any) {
+    console.error("[CrawlerWorkspace] sendCrawlerMessage error:", err);
+    alert(err?.message || "Failed to send message");
+  } finally {
+    setChatSending(false);
+  }
+};
+
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] bg-slate-50">
@@ -562,7 +604,6 @@ const CrawlerInner = () => {
             loading={assignmentLoading}
           />
 
-          {/* === CRAWL  FORM & OVERLAY === */}
           <CrawlerUrlPromptSection
             url={url}
             prompt={prompt}
@@ -575,7 +616,6 @@ const CrawlerInner = () => {
             assignmentId={assignmentId}
             promptUsed={promptUsed}
             activeJobId={activeJobId}
-            // Truyền Props cho Overlay
             isCrawling={isCrawling}
             progress={crawlProgress}
             statusMessage={crawlStatusMsg}

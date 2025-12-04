@@ -9,7 +9,7 @@ import { useAvailableCourses } from "@/hooks/course/useAvailableCourses";
 import { useJoinCourse } from "@/hooks/enrollments/useJoinCourse";
 import { useTermsQuery } from "@/hooks/term/useTermsQuery";
 import { useCoursesByTermYear } from "@/hooks/course/useCoursesByTermYear";
-import { useLecturers } from "@/hooks/lecturers/useLecturers"; // ✅ NEW
+import { useLecturers } from "@/hooks/lecturers/useLecturers";
 
 import SidebarFilters from "./components/SidebarFilters";
 import ResultsHeader from "./components/ResultsHeader";
@@ -19,9 +19,6 @@ import type {
   AvailableCourseItem,
   CoursesByTermYearItem,
 } from "@/types/courses/course.response";
-
-// 🔹 NEW: global tour component (ở app/student/components)
-import AllCoursesTour from "../components/AllCoursesTour";
 
 type SortBy = "CreatedAt" | "Name" | "EnrollmentCount";
 type SortDirection = "desc" | "asc";
@@ -253,7 +250,9 @@ export default function AllCoursesPage() {
       if (course.lecturerName) params.set("lecturer", course.lecturerName);
       if (course.uniqueCode) params.set("classCode", course.uniqueCode);
 
-      router.push(`/student/all-courses/${course.id}/join?${params.toString()}`);
+      router.push(
+        `/student/all-courses/${course.id}/join?${params.toString()}`
+      );
       return;
     }
 
@@ -380,9 +379,6 @@ export default function AllCoursesPage() {
           </section>
         </div>
       </div>
-
-      {/* 🔹 Tour overlay cho trang /student/all-courses */}
-      <AllCoursesTour />
     </div>
   );
 }

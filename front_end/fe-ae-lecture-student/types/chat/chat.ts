@@ -13,4 +13,7 @@ export interface ChatMessageDto {
   message: string;
   sentAt: string;
   isDeleted: boolean;
+  messageType?: string;
+  crawlJobId?: string | null;
+  visualizationData?: string | null;
 }

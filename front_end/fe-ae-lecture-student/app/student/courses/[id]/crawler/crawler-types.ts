@@ -15,4 +15,5 @@ export type UiMessage = {
   createdAt: string;
   messageType?: MessageType;
   crawlJobId?: string | null;
+  visualizationData?: string | null; 
 };
