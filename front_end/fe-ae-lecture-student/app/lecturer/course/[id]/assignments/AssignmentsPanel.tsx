@@ -495,7 +495,7 @@ export default function AssignmentsPanel({
                                       // Re-fetch to align with server state
                                       fetchAssignments(query);
                                     } else {
-                                      // no toast; optional: keep current state if failed
+                                      // 
                                     }
                                   }}
                                 >
