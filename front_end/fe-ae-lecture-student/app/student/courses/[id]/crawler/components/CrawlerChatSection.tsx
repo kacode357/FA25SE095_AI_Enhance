@@ -4,33 +4,22 @@ import React, { useMemo } from "react";
 import { Bot, Send, Info } from "lucide-react";
 import type { UiMessage } from "../crawler-types";
 
-// Chart.js imports
+// Recharts imports
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-  LineElement,
-  ArcElement,
-} from "chart.js";
-import { Chart } from "react-chartjs-2";
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-  LineElement,
-  ArcElement
-);
+  ResponsiveContainer,
+  BarChart,
+  LineChart,
+  PieChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  Legend as RechartsLegend,
+  Bar,
+  Line,
+  Pie,
+  Cell,
+} from "recharts";
 
 type Props = {
   chatMessages: UiMessage[];
@@ -41,7 +30,37 @@ type Props = {
   chatConnected: boolean;
 };
 
-// --- PHẦN QUAN TRỌNG NHẤT: XỬ LÝ DỮ LIỆU BIỂU ĐỒ ---
+// Kiểu dữ liệu adapter cho Recharts
+type RechartsAdaptedData = {
+  data: Array<Record<string, any>>;
+  seriesKeys: string[];
+};
+
+// Adapter từ chartConfig kiểu Chart.js -> data cho Recharts
+function buildRechartsData(chartConfig: any): RechartsAdaptedData | null {
+  const data = chartConfig?.data;
+  if (!data || !data.labels || !Array.isArray(data.labels)) return null;
+
+  const datasets = Array.isArray(data.datasets) ? data.datasets : [];
+  if (!datasets.length) return null;
+
+  const seriesKeys: string[] = datasets.map(
+    (ds: any, idx: number) => ds.label || `value${idx + 1}`
+  );
+
+  const rows = data.labels.map((label: string, i: number) => {
+    const row: Record<string, any> = { label };
+    datasets.forEach((ds: any, idx: number) => {
+      const key = seriesKeys[idx];
+      const value = Array.isArray(ds.data) ? ds.data[i] ?? null : null;
+      row[key] = value;
+    });
+    return row;
+  });
+
+  return { data: rows, seriesKeys };
+}
+
 const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
   const parsedData = useMemo(() => {
     if (!rawJson) return null;
@@ -52,17 +71,24 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
         typeof rawJson === "string" ? JSON.parse(rawJson) : (rawJson as any);
 
       // 2. 2 case chính:
-      //    - Case 1 (như response mày gửi):
-      //      { latestResultCrawlJobId, insightHighlights, visualizationData: { type, data, options } }
+      //    - Case 1: { latestResultCrawlJobId, insightHighlights, visualizationData: { type, data, options } }
       //    - Case 2: trực tiếp: { type, data, options }
       const chartConfig =
         outer.visualizationData ?? outer.VisualizationData ?? outer;
 
       if (!chartConfig || !chartConfig.data) return null;
 
+      const adapted = buildRechartsData(chartConfig);
+      if (!adapted) return null;
+
       return {
-        highlights: outer.insightHighlights || outer.InsightHighlights || [],
+        highlights: (outer.insightHighlights ||
+          outer.InsightHighlights ||
+          []) as string[],
+        chartType: (chartConfig.type || "bar") as string,
         chartConfig,
+        rechartsData: adapted.data,
+        seriesKeys: adapted.seriesKeys,
       };
     } catch (e) {
       console.error("Failed to parse visualizationData:", e, rawJson);
@@ -72,7 +98,76 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
 
   if (!parsedData) return null;
 
-  const { highlights, chartConfig } = parsedData;
+  const { highlights, chartType, rechartsData, seriesKeys } = parsedData;
+
+  const renderCartesianChart = () => {
+    if (chartType === "line") {
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={rechartsData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="label" />
+            <YAxis />
+            <RechartsTooltip />
+            <RechartsLegend />
+            {seriesKeys.map((key: string) => (
+              <Line
+                key={key}
+                type="monotone"
+                dataKey={key}
+                dot={false}
+                strokeWidth={2}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      );
+    }
+
+    // default: bar chart
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={rechartsData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="label" />
+          <YAxis />
+          <RechartsTooltip />
+          <RechartsLegend />
+          {seriesKeys.map((key: string) => (
+            <Bar key={key} dataKey={key} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const renderPieChart = () => {
+    // Dùng dataset đầu tiên cho Pie
+    const firstSeries = seriesKeys[0];
+    if (!firstSeries) return null;
+
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <RechartsTooltip />
+          <RechartsLegend />
+          <Pie
+            data={rechartsData}
+            dataKey={firstSeries}
+            nameKey="label"
+            cx="50%"
+            cy="50%"
+            outerRadius="80%"
+            label
+          >
+            {rechartsData.map((_: Record<string, any>, index: number) => (
+              <Cell key={`cell-${index}`} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  };
 
   return (
     <div className="mt-3 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
@@ -90,22 +185,10 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
         </div>
       )}
 
-      {/* 2. Chart Rendering */}
-      {chartConfig && (
-        <div className="mt-1 h-[250px] w-full">
-          <Chart
-            // type: "bar" | "line" | ...
-     
-            type={chartConfig.type || "bar"}
-            data={chartConfig.data}
-            options={{
-              ...(chartConfig.options || {}),
-              maintainAspectRatio: false,
-              responsive: true,
-            }}
-          />
-        </div>
-      )}
+      {/* 2. Chart Rendering (Bar / Line / Pie) */}
+      <div className="mt-1 h-[250px] w-full">
+        {chartType === "pie" ? renderPieChart() : renderCartesianChart()}
+      </div>
     </div>
   );
 };
