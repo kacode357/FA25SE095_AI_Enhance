@@ -139,8 +139,8 @@ export default function SidebarFilters({
                         onClick={() => onLecturerSuggestionClick(lec.fullName)}
                         className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-xs transition hover:bg-white/80 border border-transparent hover:border-[var(--brand)]"
                       >
-                        {/* avatar */}
-                        <div className="h-7 w-7 rounded-full overflow-hidden flex items-center justify-center bg-[var(--brand)] text-white text-[11px] font-semibold shrink-0">
+                        {/* avatar - TAO ĐÃ SỬA Ở ĐÂY */}
+                        <div className="h-7 w-7 rounded-full overflow-hidden flex items-center justify-center bg-[var(--brand)] text-white text-[11px] font-semibold shrink-0 ring-2 ring-white">
                           {lec.profilePictureUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
