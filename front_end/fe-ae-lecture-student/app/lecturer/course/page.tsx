@@ -277,7 +277,7 @@ export default function LecturerCoursesPage() {
                       onClick={() => handleEdit(course.id)}
                       className="h-9 px-4 rounded-lg btn btn-gradient-slow text-sm font-medium text-white"
                     >
-                      <List className=" h-4 w-4" />Manager Course
+                      <List className=" h-4 w-4" />Manage Course
                     </button>
                   </div>
                 </div>

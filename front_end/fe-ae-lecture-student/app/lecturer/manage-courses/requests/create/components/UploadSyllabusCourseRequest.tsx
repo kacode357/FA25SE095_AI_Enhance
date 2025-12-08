@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useUploadSyllabus } from "@/hooks/course-request/useUploadSyllabus";
 import { Book } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
     courseRequestId: string | null;
@@ -19,6 +19,70 @@ export default function UploadSyllabusCourseRequest({ courseRequestId }: Props) 
     const router = useRouter();
 
     const uploadDisabled = loading || !file || !courseRequestId;
+    const [progress, setProgress] = useState<number | null>(null);
+
+    const simIntervalRef = useRef<number | null>(null);
+    const finishIntervalRef = useRef<number | null>(null);
+    const finishTimeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (loading) {
+            setProgress(5);
+            if (finishIntervalRef.current) {
+                clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = null;
+            }
+            if (finishTimeoutRef.current) {
+                clearTimeout(finishTimeoutRef.current);
+                finishTimeoutRef.current = null;
+            }
+            if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+            simIntervalRef.current = window.setInterval(() => {
+                setProgress((prev) => {
+                    if (prev === null) return 5;
+                    const next = prev + Math.floor(Math.random() * 6) + 1;
+                    return next >= 95 ? 95 : next;
+                });
+            }, 350);
+        } else {
+            if (simIntervalRef.current) {
+                clearInterval(simIntervalRef.current);
+                simIntervalRef.current = null;
+            }
+            if (progress !== null) {
+                if (finishIntervalRef.current) clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = window.setInterval(() => {
+                    setProgress((prev) => {
+                        if (prev === null) return 100;
+                        const next = Math.min(100, prev + Math.floor(Math.random() * 8) + 3);
+                        if (next === 100) {
+                            if (finishIntervalRef.current) {
+                                clearInterval(finishIntervalRef.current);
+                                finishIntervalRef.current = null;
+                            }
+                            finishTimeoutRef.current = window.setTimeout(() => setProgress(null), 900);
+                        }
+                        return next;
+                    });
+                }, 180);
+            }
+        }
+
+        return () => {
+            if (simIntervalRef.current) {
+                clearInterval(simIntervalRef.current);
+                simIntervalRef.current = null;
+            }
+            if (finishIntervalRef.current) {
+                clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = null;
+            }
+            if (finishTimeoutRef.current) {
+                clearTimeout(finishTimeoutRef.current);
+                finishTimeoutRef.current = null;
+            }
+        };
+    }, [loading]);
 
     const handleUpload = async () => {
         if (!courseRequestId || !file) return;
@@ -60,9 +124,22 @@ export default function UploadSyllabusCourseRequest({ courseRequestId }: Props) 
                     </div>
                 </div>
 
+                {/* Progress bar (simulated) */}
+                {progress !== null && (
+                    <div className="mt-4">
+                        <div className="w-full bg-slate-100 rounded h-2 overflow-hidden">
+                            <div
+                                className={`h-2 bg-green-500 transition-all duration-300`} 
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">{progress}%</div>
+                    </div>
+                )}
+
                 <div className="flex items-center justify-between gap-3 mt-4">
                     <div className="flex items-center gap-4">
-                        <label className="inline-flex items-center px-3 py-2 border rounded-md cursor-pointer text-sm bg-white hover:bg-slate-50">
+                        <label className="inline-flex items-center px-3 py-2 border border-slate-400 rounded-md cursor-pointer text-sm bg-white hover:bg-slate-50">
                             Choose file
                             <input
                                 type="file"

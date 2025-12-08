@@ -96,8 +96,21 @@ export default function CreateCourseForm({ codes, terms, loadingOptions, form, s
                             options={terms.map((t) => {
                                 const start = formatDate(t.startDate);
                                 const end = formatDate(t.endDate);
-                                const datePart = start || end ? ` — ${start}${start && end ? ' → ' : ''}${end}` : '';
-                                return { value: t.id, label: `${t.name}${datePart}` };
+                                return {
+                                    value: t.id,
+                                    label: (
+                                        <div className="flex flex-col whitespace-normal cursor-pointer leading-tight">
+                                            <span className="text-sm text-slate-900">{t.name}</span>
+                                            {(start || end) && (
+                                                <span className="text-xs text-slate-500">
+                                                    {start}
+                                                    {start && end ? " → " : ""}
+                                                    {end}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ),
+                                };
                             })}
                             placeholder={loadingOptions ? "Loading..." : "Select term"}
                             onChange={(v) => {

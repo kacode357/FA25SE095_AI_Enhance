@@ -235,7 +235,7 @@ export default function ManagerHeader({ onMenuClick }: Props) {
                 AIDS-LMS
               </span>
               <span className="text-xs text-gray-500 font-medium">
-                Staff Manager
+                Staff Manage
               </span>
             </div>
           </Link>

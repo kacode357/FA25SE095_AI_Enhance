@@ -1,43 +1,45 @@
 // services/reports.services.ts
 import { courseAxiosInstance as api } from "@/config/axios.config";
 import type {
-  AssignmentReportsQuery,
-  CompareReportVersionsPayload,
-  CreateReportPayload,
-  GetCourseReportsQuery,
-  GetLateSubmissionsQuery,
-  GetReportHistoryQuery,
-  GetReportHistoryVersionPayload,
-  GetReportsRequiringGradingQuery,
-  GetReportTimelinePayload,
-  GradeReportPayload,
-  MyReportsQuery,
-  RejectReportPayload,
-  RequestReportRevisionPayload,
-  ResubmitReportPayload,
-  RevertReportPayload,
-  UpdateReportPayload,
-  UpdateReportStatusPayload,
+    AiCheckPayload,
+    AssignmentReportsQuery,
+    CompareReportVersionsPayload,
+    CreateReportPayload,
+    GetCourseReportsQuery,
+    GetLateSubmissionsQuery,
+    GetReportHistoryQuery,
+    GetReportHistoryVersionPayload,
+    GetReportsRequiringGradingQuery,
+    GetReportTimelinePayload,
+    GradeReportPayload,
+    MyReportsQuery,
+    RejectReportPayload,
+    RequestReportRevisionPayload,
+    ResubmitReportPayload,
+    RevertReportPayload,
+    UpdateReportPayload,
+    UpdateReportStatusPayload,
 } from "@/types/reports/reports.payload";
 import type {
-  ApiSuccess,
-  AssignmentReportsResponse,
-  CompareReportVersionsResponse,
-  CreateReportResponse,
-  GetCourseReportsResponse,
-  GetLateSubmissionsResponse,
-  GetReportHistoryResponse,
-  GetReportHistoryVersionResponse,
-  GetReportResponse,
-  GetReportsRequiringGradingResponse,
-  GetReportTimelineResponse,
-  GradeReportResponse,
-  MyReportsResponse,
-  RejectReportResponse,
-  RequestReportRevisionResponse,
-  RevertReportResponse,
-  UpdateReportStatusResponse,
-  UploadReportFileResponse,
+    AiCheckResponse,
+    ApiSuccess,
+    AssignmentReportsResponse,
+    CompareReportVersionsResponse,
+    CreateReportResponse,
+    GetCourseReportsResponse,
+    GetLateSubmissionsResponse,
+    GetReportHistoryResponse,
+    GetReportHistoryVersionResponse,
+    GetReportResponse,
+    GetReportsRequiringGradingResponse,
+    GetReportTimelineResponse,
+    GradeReportResponse,
+    MyReportsResponse,
+    RejectReportResponse,
+    RequestReportRevisionResponse,
+    RevertReportResponse,
+    UpdateReportStatusResponse,
+    UploadReportFileResponse,
 } from "@/types/reports/reports.response";
 
 export const ReportsService = {
@@ -200,6 +202,12 @@ export const ReportsService = {
     return res.data;
   },
 
+  /** POST /api/Reports/ai-check — Lecturer only: run AI content detection on a report */
+  aiCheck: async (payload: AiCheckPayload): Promise<AiCheckResponse> => {
+    const res = await api.post<AiCheckResponse>("/Reports/ai-check", payload);
+    return res.data;
+  },
+
   getTimeline: async (
     payload: GetReportTimelinePayload
   ): Promise<GetReportTimelineResponse> => {
@@ -249,6 +257,11 @@ export const ReportsService = {
     payload: RevertReportPayload
   ): Promise<RevertReportResponse> => {
     const res = await api.post<RevertReportResponse>("/Reports/revert", payload);
+    return res.data;
+  },
+  /** GET /api/Reports/{reportId}/ai-checks — Get AI check history for a report */
+  getAiChecks: async (reportId: string): Promise<import("@/types/reports/reports.response").AiCheckHistoryResponse> => {
+    const res = await api.get<import("@/types/reports/reports.response").AiCheckHistoryResponse>(`/Reports/${reportId}/ai-checks`);
     return res.data;
   },
   

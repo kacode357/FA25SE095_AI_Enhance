@@ -6,8 +6,9 @@ import { Dialog } from "@/components/ui/dialog";
 import { useDeleteSyllabus } from "@/hooks/course/useDeleteSyllabus";
 import { useUploadSyllabus } from "@/hooks/course/useUploadSyllabus";
 import { formatToVN } from "@/utils/datetime/time";
-import { ClipboardCopy, CloudDownload, CloudUpload, Eye, EyeOff, Loader2, RefreshCw, Trash2 } from "lucide-react";
-import { useRef } from "react";
+import { ClipboardCopy, CloudDownload, CloudUpload, Eye, EyeOff, Loader2, RefreshCw, RotateCcwKey, RotateCw, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import AccessCodeDialog from "../../../components/AccessCodeDialog";
 import { Info } from "../helpers/Info";
 
@@ -108,7 +109,23 @@ export default function CourseSidebar({
     openUpdate,
     setOpenUpdate,
 }: Props) {
-    const isCurrentlyEnabled = access?.requiresAccessCode ?? course.requiresAccessCode;
+    // Local state to reflect enable/disable immediately in UI
+    const [localEnabled, setLocalEnabled] = useState<boolean>(access?.requiresAccessCode ?? course.requiresAccessCode);
+    const skipNextSyncRef = useRef<boolean>(false);
+    const isCurrentlyEnabled = localEnabled;
+
+    // Keep localEnabled in sync if parent props change
+    useEffect(() => {
+        if (skipNextSyncRef.current) {
+            // we just updated locally; skip one sync cycle to prevent overwriting
+            skipNextSyncRef.current = false;
+            return;
+        }
+        const next = access?.requiresAccessCode ?? course.requiresAccessCode;
+        if (next !== localEnabled) setLocalEnabled(next);
+    }, [access?.requiresAccessCode, course.requiresAccessCode]);
+
+    const router = useRouter();
 
     // Hàm format ngày an toàn – trả về string
     const formatDate = (date: any): string => {
@@ -175,23 +192,37 @@ export default function CourseSidebar({
                     {id && (
                         <Button
                             size="sm"
+                            className="-mr-3"
                             variant={isCurrentlyEnabled ? "destructive" : "outline"}
                             onClick={async () => {
                                 const enable = !isCurrentlyEnabled;
-                                await updateAccessCode(id, {
-                                    requiresAccessCode: enable,
-                                    regenerateCode: enable,
-                                });
-                                await refetch(id);
+                                try {
+                                    const res = await updateAccessCode(id, {
+                                        requiresAccessCode: enable,
+                                        regenerateCode: enable,
+                                    });
+                                    if (res) {
+                                        skipNextSyncRef.current = true;
+                                        setLocalEnabled(enable);
+                                    }
+                                    await refetch(id);
+                                    try { router.refresh(); } catch (e) { }
+                                } catch (err) {
+                                    setLocalEnabled(access?.requiresAccessCode ?? course.requiresAccessCode);
+                                }
                             }}
                             disabled={updatingAccess}
                         >
                             {updatingAccess ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : isCurrentlyEnabled ? (
-                                "Disable"
+                                <div className="flex items-center gap-1 text-violet-500">
+                                    <RotateCw className="size-4" />Disable
+                                </div>
                             ) : (
-                                "Enable"
+                                <div className="flex items-center gap-1 text-blue-500">
+                                    <RotateCcwKey className="size-4" />Enable
+                                </div>
                             )}
                         </Button>
                     )}
@@ -204,7 +235,7 @@ export default function CourseSidebar({
                         <p className="text-red-500">Failed to load access code</p>
                     ) : access ? (
                         <>
-                            <Info label="Requires Code" value={access.requiresAccessCode ? "Yes" : "No"} />
+                            <Info label="Requires Code" value={isCurrentlyEnabled ? "Yes" : "No"} />
 
                             <div className="flex items-center justify-between">
                                 <span className="text-slate-500">Code:</span>
@@ -238,7 +269,7 @@ export default function CourseSidebar({
                                                 {copied && <span className="ml-1 text-xs text-green-600">Copied!</span>}
                                             </button>
 
-                                            {access.requiresAccessCode && (
+                                            {isCurrentlyEnabled && (
                                                 <button
                                                     title="Button"
                                                     type="button"
@@ -260,7 +291,7 @@ export default function CourseSidebar({
                         </>
                     ) : (
                         <>
-                            <Info label="Requires Code" value={course.requiresAccessCode ? "Yes" : "No"} />
+                            <Info label="Requires Code" value={isCurrentlyEnabled ? "Yes" : "No"} />
                             <Info label="Access Code" value={course.accessCode || "—"} />
                         </>
                     )}

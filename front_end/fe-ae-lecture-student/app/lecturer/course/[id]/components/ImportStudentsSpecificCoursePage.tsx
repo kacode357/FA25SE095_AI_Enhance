@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useImportStudentsSpecificCourse } from "@/hooks/enrollments/useImportStudentsSpecificCourse";
 import { useImportStudentTemplate } from "@/hooks/enrollments/useImportStudentTemplate";
 import { ArrowLeft, FileSpreadsheet, HardDriveDownload, Info, Loader2, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
     courseId: string;
@@ -23,6 +23,11 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
+    const [progress, setProgress] = useState<number | null>(null);
+
+    const simIntervalRef = useRef<number | null>(null);
+    const finishIntervalRef = useRef<number | null>(null);
+    const finishTimeoutRef = useRef<number | null>(null);
 
     const acceptMime = ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel";
 
@@ -54,6 +59,66 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
 
     const isLoading = importing || localLoading;
     const canSubmit = !!file && !isLoading;
+
+    useEffect(() => {
+        // simulate multi-step progress while importing
+        if (isLoading) {
+            setProgress(5);
+            if (finishIntervalRef.current) {
+                clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = null;
+            }
+            if (finishTimeoutRef.current) {
+                clearTimeout(finishTimeoutRef.current);
+                finishTimeoutRef.current = null;
+            }
+            if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+            simIntervalRef.current = window.setInterval(() => {
+                setProgress((prev) => {
+                    if (prev === null) return 5;
+                    const next = prev + Math.floor(Math.random() * 6) + 1;
+                    return next >= 95 ? 95 : next;
+                });
+            }, 350);
+        } else {
+            if (simIntervalRef.current) {
+                clearInterval(simIntervalRef.current);
+                simIntervalRef.current = null;
+            }
+            if (progress !== null) {
+                if (finishIntervalRef.current) clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = window.setInterval(() => {
+                    setProgress((prev) => {
+                        if (prev === null) return 100;
+                        const next = Math.min(100, prev + Math.floor(Math.random() * 8) + 3);
+                        if (next === 100) {
+                            if (finishIntervalRef.current) {
+                                clearInterval(finishIntervalRef.current);
+                                finishIntervalRef.current = null;
+                            }
+                            finishTimeoutRef.current = window.setTimeout(() => setProgress(null), 900);
+                        }
+                        return next;
+                    });
+                }, 180);
+            }
+        }
+
+        return () => {
+            if (simIntervalRef.current) {
+                clearInterval(simIntervalRef.current);
+                simIntervalRef.current = null;
+            }
+            if (finishIntervalRef.current) {
+                clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = null;
+            }
+            if (finishTimeoutRef.current) {
+                clearTimeout(finishTimeoutRef.current);
+                finishTimeoutRef.current = null;
+            }
+        };
+    }, [isLoading]);
 
     const handleSubmit = async () => {
         if (!canSubmit || !file) return;
@@ -130,6 +195,19 @@ export default function ImportStudentsSpecificCoursePage({ courseId, onDone }: P
                             </>
                         )}
                     </div>
+
+                    {/* Progress bar (shows while importing and briefly after completion) */}
+                    {progress !== null && (
+                        <div className="mt-4">
+                            <div className="w-full bg-slate-100 rounded h-2 overflow-hidden">
+                                <div
+                                    className={`h-2 bg-emerald-500 transition-all duration-300`}
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                            <div className="text-xs text-slate-500 mt-1">{progress}%</div>
+                        </div>
+                    )}
 
                     {/* Options + Action */}
                     <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

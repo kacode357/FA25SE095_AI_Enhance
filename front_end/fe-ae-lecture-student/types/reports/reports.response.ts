@@ -329,6 +329,44 @@ export interface UploadReportFileResponse extends ApiSuccess {
   version: number;
 }
 
+/** Result returned by POST /api/Reports/ai-check */
+export interface ReportAiCheckResult {
+  id?: string;
+  reportId: string;
+  aiPercentage: number; // 0-100
+  provider: string; // e.g. "ZeroGPT"
+  checkedBy?: string | null; // user id
+  checkedByName?: string | null; // display name
+  checkedAt: string; // ISO datetime
+  notes?: string | null;
+  reportStatus?: number;
+  studentName?: string | null;
+  assignmentTitle?: string | null;
+}
+
+export interface AiCheckResponse extends ApiSuccess {
+  result: ReportAiCheckResult;
+}
+
+/** GET /api/Reports/{reportId}/ai-checks */
+export interface AiCheckHistoryItem {
+  id: string;
+  reportId: string;
+  aiPercentage: number;
+  provider: string;
+  checkedBy?: string | null;
+  checkedByName?: string | null;
+  checkedAt: string; // ISO
+  notes?: string | null;
+  reportStatus?: number;
+  studentName?: string | null;
+  assignmentTitle?: string | null;
+}
+
+export interface AiCheckHistoryResponse extends ApiSuccess {
+  checks: AiCheckHistoryItem[];
+}
+
 export interface UpdateReportStatusResponse extends ApiSuccess {
   newStatus: number;
 }

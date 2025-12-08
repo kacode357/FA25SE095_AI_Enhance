@@ -105,6 +105,12 @@ export interface GetReportTimelinePayload {
   reportId: string; 
 }
 
+/** POST /api/Reports/ai-check */
+export interface AiCheckPayload {
+  reportId: string;
+  notes?: string;
+}
+
 export interface UpdateReportStatusPayload {
   targetStatus: number;
   comment?: string;

@@ -3,16 +3,21 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
+import { useAiCheckReport } from "@/hooks/reports/useAiCheckReport";
+import { useGetAiChecksReport } from "@/hooks/reports/useGetAiChecksReport";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
+import type { ReportAiCheckResult } from "@/types/reports/reports.response";
 import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
-import { ArrowLeft, ClipboardPenLine, Loader2, PencilOff, X } from "lucide-react";
+import { ArrowLeft, CheckCheck, ClipboardPenLine, Loader2, PencilOff, X } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import HistoryReportLog from "../history/HistoryReportLog";
 import TimelineReportLog from "../timeline/TimelineReportLog";
 import StatusBadge from "../utils/status";
+import AiCheckModal from "./components/AiCheckModal";
 import GradeForm from './components/GradeForm';
 import RejectForm from './components/RejectForm';
 import ReportInfoDetails from "./components/ReportInfoDetails";
@@ -37,6 +42,9 @@ export default function ReportDetailsPage() {
   const [showRevisionForm, setShowRevisionForm] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const formRef = useRef<HTMLDivElement | null>(null);
+  const aiCheckedRef = useRef<number | string | null>(null);
+  const [aiResult, setAiResult] = useState<ReportAiCheckResult | null>(null);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   const initialTab = (() => {
     const t = sp?.get('tab');
@@ -104,6 +112,70 @@ export default function ReportDetailsPage() {
     })();
   }, [reportId]);
 
+  // Auto-run AI check when there's submission text and status is Submitted/Resubmitted
+  const { aiCheckReport, loading: aiLoading } = useAiCheckReport();
+  const { getAiChecks, loading: getChecksLoading } = useGetAiChecksReport();
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+
+  const formatCheckedAt = (iso?: string | null) => {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "-";
+    const datePart = d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+    const timePart = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+    const timeFormatted = timePart.replace(":", "h");
+    return `${datePart}, ${timeFormatted}`;
+  };
+
+  useEffect(() => {
+    if (!detail) return;
+    // only check when submission exists
+    if (!detail.submission) return;
+    const status = Number(detail.status);
+    // only for Submitted (2) or Resubmitted (5)
+    if (![2, 5].includes(status)) return;
+
+    // avoid repeated checks for same report version; prefer 'version' or 'updatedAt'
+    const key = detail.version ?? detail.updatedAt ?? detail.id;
+    if (aiCheckedRef.current === key) return;
+    aiCheckedRef.current = key;
+
+    (async () => {
+      try {
+        // First, check whether this report already has AI check history.
+        const history = await getAiChecks(reportId);
+        const existing = (history as any)?.checks && (history as any).checks.length > 0 ? (history as any).checks[0] : null;
+        if (existing) {
+          // If there's an existing check, set it as the current result and do not re-run or open modal.
+          setAiResult(existing as ReportAiCheckResult);
+          return;
+        }
+
+        // No existing checks — run auto AI check and open modal
+        setAiModalOpen(true);
+        const res = await aiCheckReport({ reportId, notes: "Auto run AI check" });
+        if (res?.result) setAiResult(res.result);
+      } catch (e) {
+        // swallow — toast handled by hook
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail?.submission, detail?.status, detail?.version, reportId]);
+
+  const handleReassess = async () => {
+    if (aiLoading) return;
+    // allow re-run even if previously checked
+    aiCheckedRef.current = null;
+    setAiResult(null);
+    setAiModalOpen(true);
+    try {
+      const res = await aiCheckReport({ reportId, notes: "Manual re-assess" });
+      if (res?.result) setAiResult(res.result);
+    } catch (e) {
+      // ignore; hook handles errors
+    }
+  };
+
   const goBack = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
@@ -116,32 +188,6 @@ export default function ReportDetailsPage() {
 
   return (
     <div className="pb-4 px-3">
-      {/* Breadcrumb giữ nguyên */}
-      {/* <nav aria-label="Breadcrumb" className="text-[12px] select-none overflow-hidden mb-4">
-        <div className="flex items-center justify-between">
-          <ol className="flex items-center gap-0 mt-1.5 text-slate-500 flex-nowrap overflow-hidden">
-            <Book className="size-4" />
-            <li>
-              <button onClick={() => router.push('/lecturer/course')} className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition">My Courses</button>
-            </li>
-
-            <ChevronRight className="size-3 text-slate-400 hidden sm:inline" />
-
-            <li className="text-slate-500 max-w-[220px] truncate">
-              <button onClick={() => router.push(courseId ? `/lecturer/course/${courseId}` : '/lecturer/course')} className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition" title={course?.courseCodeTitle ?? `Course ${courseId}`}>
-                {course?.courseCode ? `${course.courseCode} — ${course.courseCodeTitle}` : `Course ${courseId}`}
-              </button>
-            </li>
-
-            <ChevronRight className="size-3 text-slate-400 mx-1 hidden sm:inline" />
-
-            <li className="font-medium cursor-text text-slate-900 max-w-[150px] truncate">
-              Report Details
-            </li>
-          </ol>
-        </div>
-      </nav> */}
-
       <Card className="shadow-md py-0 gap-0 border-slate-200 max-h-[calc(100vh-140px)] overflow-hidden">
         <CardHeader className="p-4 gap-0">
           <div className="flex items-center justify-between">
@@ -211,7 +257,7 @@ export default function ReportDetailsPage() {
 
           {/* ==================== TAB DETAILS - CHỈ SỬA PHẦN NÀY ==================== */}
           {!loading && activeTab === 'details' && detail && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-5 p-6 items-stretch">
               {/* LEFT: moved to component for clarity */}
               <ReportInfoDetails
                 detail={detail}
@@ -223,10 +269,43 @@ export default function ReportDetailsPage() {
               />
 
               {/* === PHẢI: SUBMISSION + CÁC FORM === */}
-              <div className="flex flex-col space-y-6 h-full">
+              <div
+                className="flex flex-col space-y-6 h-full"
+                onMouseEnter={() => setTooltipOpen(true)}
+                onMouseLeave={() => setTooltipOpen(false)}
+              >
                 <div className="flex-1">
-                  <div className="text-xs text-slate-500 mb-2">Submission</div>
-                  <div className="prose prose-sm text-xs max-w-none border border-slate-200 rounded-lg p-6 bg-slate-50 min-h-96 h-full overflow-auto">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-xs text-slate-500">Submission</div>
+                    <div>
+                      <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="xs"
+                            onClick={async () => {
+                              if (!reportId) return;
+                              // open modal and fetch existing AI checks for this report
+                              setAiModalOpen(true);
+                              setAiResult(null);
+                              try {
+                                const res = await getAiChecks(reportId);
+                                // try several possible shapes for the response
+                                const candidate = (res as any)?.latestCheck ?? (res as any)?.checks?.[0] ?? (res as any)?.result ?? null;
+                                setAiResult(candidate ?? null);
+                              } catch (e) {
+                                setAiResult(null);
+                              }
+                            }}
+                            className="text-emerald-700 hover:text-emerald-800"
+                          >
+                            <CheckCheck className="size-4" />AI-Asserted
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">Submissions have been evaluated by AI, review history now..</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                  <div className="prose prose-sm text-xs max-w-none border border-slate-200 rounded-lg p-6 bg-slate-50 overflow-auto" style={{maxHeight: 'calc(100vh - 200px)'}}>
                     {detail.submission ? (
                       <div dangerouslySetInnerHTML={{ __html: detail.submission }} />
                     ) : (
@@ -290,6 +369,15 @@ export default function ReportDetailsPage() {
           )}
         </CardContent>
       </Card>
+      <AiCheckModal
+        open={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        loading={aiLoading || getChecksLoading}
+        result={aiResult}
+        assignmentTitle={detail?.assignmentTitle ?? aiResult?.assignmentTitle ?? null}
+        studentName={detail ? getStudentName(detail?.submittedBy) : aiResult?.studentName ?? null}
+        onReassess={handleReassess}
+      />
     </div>
   );
 }

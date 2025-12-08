@@ -12,7 +12,7 @@ import type { AssignmentAttachment } from "@/types/assignments/assignment.respon
 import { format } from "date-fns";
 import { AlertCircle, CheckCircle2, FileText, List, Trash2, UploadCloud } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 function fileListToArray(files: FileList | null): File[] {
     if (!files) return [];
@@ -30,6 +30,12 @@ export default function UploadAttachmentsPage() {
     const [uploadedFiles, setUploadedFiles] = useState<AssignmentAttachment[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const inputRef = useRef<HTMLInputElement | null>(null);
+
+    // Progress simulation state (shows during upload and briefly after)
+    const [progress, setProgress] = useState<number | null>(null);
+    const simIntervalRef = useRef<number | null>(null);
+    const finishIntervalRef = useRef<number | null>(null);
+    const finishTimeoutRef = useRef<number | null>(null);
 
     const openFilePicker = async () => {
         // Prefer modern picker when available; fallback to input.click()
@@ -92,6 +98,66 @@ export default function UploadAttachmentsPage() {
             setSelectedFiles([]);
         }
     };
+
+    // Simulate multi-step upload progress while `loading` is true and finish to 100% after
+    useEffect(() => {
+        if (loading) {
+            setProgress(5);
+            if (finishIntervalRef.current) {
+                clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = null;
+            }
+            if (finishTimeoutRef.current) {
+                clearTimeout(finishTimeoutRef.current);
+                finishTimeoutRef.current = null;
+            }
+            if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+            simIntervalRef.current = window.setInterval(() => {
+                setProgress((prev) => {
+                    if (prev === null) return 5;
+                    const next = prev + Math.floor(Math.random() * 6) + 1;
+                    return next >= 95 ? 95 : next;
+                });
+            }, 350);
+        } else {
+            if (simIntervalRef.current) {
+                clearInterval(simIntervalRef.current);
+                simIntervalRef.current = null;
+            }
+            if (progress !== null) {
+                if (finishIntervalRef.current) clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = window.setInterval(() => {
+                    setProgress((prev) => {
+                        if (prev === null) return 100;
+                        const next = Math.min(100, prev + Math.floor(Math.random() * 8) + 3);
+                        if (next === 100) {
+                            if (finishIntervalRef.current) {
+                                clearInterval(finishIntervalRef.current);
+                                finishIntervalRef.current = null;
+                            }
+                            finishTimeoutRef.current = window.setTimeout(() => setProgress(null), 900);
+                        }
+                        return next;
+                    });
+                }, 180);
+            }
+        }
+
+        return () => {
+            if (simIntervalRef.current) {
+                clearInterval(simIntervalRef.current);
+                simIntervalRef.current = null;
+            }
+            if (finishIntervalRef.current) {
+                clearInterval(finishIntervalRef.current);
+                finishIntervalRef.current = null;
+            }
+            if (finishTimeoutRef.current) {
+                clearTimeout(finishTimeoutRef.current);
+                finishTimeoutRef.current = null;
+            }
+        };
+    }, [loading]);
 
     const formatFileSize = (bytes: number) => {
         if (bytes === 0) return "0 Bytes";
@@ -210,10 +276,13 @@ export default function UploadAttachmentsPage() {
                                     ))}
                                 </div>
 
-                                {loading && (
+                                {progress !== null && (
                                     <div className="mt-4">
-                                        <Progress value={65} className="h-3" />
-                                        <p className="text-sm text-center text-gray-600 mt-2">Uploading files...</p>
+                                        <Progress value={progress} className="h-3" />
+                                        <div className="flex items-center justify-between mt-2 text-sm text-gray-600">
+                                            <span>{loading ? "Uploading files..." : progress === 100 ? "Finalizing..." : "Uploading files..."}</span>
+                                            <span>{progress}%</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>

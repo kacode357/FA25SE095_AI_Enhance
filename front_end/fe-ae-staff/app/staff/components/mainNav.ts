@@ -21,7 +21,7 @@ export const mainNav = [
   {
     // Use a distinct href for the parent to avoid collision with child routes
     href: "/staff/courses",
-    label: "Manager Course",
+    label: "Manage Course",
     icon: Layers3,
     description: "Course management",
     children: [

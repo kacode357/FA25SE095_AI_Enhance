@@ -3,14 +3,15 @@
 import { Check, ChevronDown } from "lucide-react";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
-  useLayoutEffect,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 
-type Option<T extends string | number> = { value: T; label: string };
+type Option<T extends string | number> = { value: T; label: ReactNode };
 
 export type SelectProps<T extends string | number> = {
   value: T | "" | undefined;
@@ -134,9 +135,9 @@ export default function Select<T extends string | number>({
                     opt.value === value ? "bg-slate-50" : ""
                   }`}
                 >
-                  <span className="truncate text-sm text-gray-900">
+                  <div className="text-sm text-gray-900 leading-tight whitespace-normal break-words flex-1 pr-2">
                     {opt.label}
-                  </span>
+                  </div>
                   {opt.value === value && (
                     <Check className="w-4 h-4 text-emerald-600" />
                   )}
@@ -157,13 +158,13 @@ export default function Select<T extends string | number>({
         disabled={disabled}
         className="w-full text-left rounded-md cursor-pointer border border-slate-300 bg-white px-3 py-2 flex items-center justify-between gap-2 shadow-sm hover:shadow-md transition-shadow disabled:opacity-60"
       >
-        <span
-          className={`truncate text-sm ${
+        <div
+          className={`flex-1 mr-2 text-left text-sm leading-tight whitespace-normal break-words ${
             selected ? "text-gray-900" : "text-gray-500"
           }`}
         >
-          {selected?.label ?? placeholder ?? "Select..."}
-        </span>
+          {selected?.label ?? (placeholder ?? "Select...")}
+        </div>
         <ChevronDown className="w-4 h-4 text-gray-400" />
       </button>
 
