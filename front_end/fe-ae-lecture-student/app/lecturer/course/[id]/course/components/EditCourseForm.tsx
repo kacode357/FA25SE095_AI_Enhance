@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 
 type Props = {
+    name: string;
     selectedTermId: string;
     setSelectedTermId: (v: string) => void;
     year: string;
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export default function EditCourseForm({
+    name,
     selectedTermId,
     setSelectedTermId,
     year,
@@ -33,22 +35,40 @@ export default function EditCourseForm({
     handleSave,
     updating,
 }: Props) {
+    const formatDate = (v?: string | null) => {
+        if (!v) return "";
+        try {
+            return new Date(v).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+        } catch {
+            return String(v);
+        }
+    };
+
+    const selectedTerm = (terms ?? []).find((t: any) => t.id === selectedTermId);
     return (
-        <form className="grid grid-cols-2 gap-x-6 gap-y-10 text-sm mt-1">
+        <form className="grid grid-cols-2 gap-x-6 gap-y-10 text-sm mt-1" onSubmit={async (e) => { e.preventDefault(); await handleSave(); }}>
             <div className="flex flex-col">
                 <label className="text-slate-500 text-xs cursor-text uppercase mb-1">Name</label>
-                <Input value={""} disabled className="!bg-slate-200 cursor-text" />
+                <Input value={name ?? ""} readOnly className="!bg-white text-slate-700 cursor-not-allowed" />
             </div>
 
             <div className="flex flex-col">
                 <label className="text-slate-500 text-xs cursor-text uppercase mb-1">Term</label>
                 <Select<string>
                     value={selectedTermId ?? ""}
-                    options={(terms ?? []).map((t: any) => ({ value: t.id, label: t.name }))}
+                    options={(terms ?? []).map((t: any) => {
+                        const start = formatDate(t.startDate);
+                        const end = formatDate(t.endDate);
+                        const datePart = start && end ? ` — ${start} to ${end}` : start || end ? ` — ${start || end}` : "";
+                        return { value: t.id, label: `${t.name}${datePart}` };
+                    })}
                     placeholder="Select term"
                     onChange={(v) => setSelectedTermId(v)}
                     className="w-full"
                 />
+                {selectedTerm && (
+                    <p className="text-xs text-slate-500 mt-2">Start: {formatDate(selectedTerm.startDate)} &nbsp;•&nbsp; End: {formatDate(selectedTerm.endDate)}</p>
+                )}
             </div>
 
             <div className="flex flex-col col-span-2">
@@ -61,8 +81,8 @@ export default function EditCourseForm({
                 <Textarea rows={2} value={announcement} onChange={(e) => setAnnouncement(e.target.value)} placeholder="Enter announcement for students (optional)" className="resize-none bg-white focus:ring-2 focus:border-emerald-100 border rounded-lg border-slate-200 focus:ring-emerald-500" />
             </div>
 
-            <div className="col-span-2 mt-2 flex justify-end">
-                <Button className="mt-5 btn btn-gradient-slow cursor-pointer text-white" onClick={async (e) => { e.preventDefault(); await handleSave(); }} disabled={updating}>
+            <div className="col-span-2 mt-2 flex border-t border-slate-200 justify-end">
+                <Button type="submit" className="mt-5 btn btn-gradient-slow cursor-pointer text-white" disabled={updating}>
                     {updating ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>) : ("Save Changes")}
                 </Button>
             </div>

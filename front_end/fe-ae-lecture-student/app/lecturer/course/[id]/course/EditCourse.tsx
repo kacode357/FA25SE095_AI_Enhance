@@ -164,7 +164,7 @@ export default function EditCourse() {
                                 <>
                                     <button
                                         onClick={() => setInactivateOpen(true)}
-                                        className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100"
+                                        className="flex items-center gap-2 px-3 cursor-pointer py-1.5 rounded-md text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100"
                                     >
                                         <FolderLock className="size-4" /> Inactivate
                                     </button>
@@ -190,6 +190,7 @@ export default function EditCourse() {
                         ) : (
                             <motion.div key="edit" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                                 <EditCourseForm
+                                    name={course?.name}
                                     selectedTermId={selectedTermId}
                                     setSelectedTermId={setSelectedTermId}
                                     year={year}
@@ -202,11 +203,7 @@ export default function EditCourse() {
                                     handleSave={handleSave}
                                     updating={updating}
                                 />
-                                <div className="mt-6 border-t pt-4 flex justify-end">
-                                    <Button onClick={handleSave} disabled={updating} className="btn btn-gradient-slow">
-                                        {updating ? <>Saving...</> : "Save Changes"}
-                                    </Button>
-                                </div>
+                                
                             </motion.div>
                         )}
                     </AnimatePresence>

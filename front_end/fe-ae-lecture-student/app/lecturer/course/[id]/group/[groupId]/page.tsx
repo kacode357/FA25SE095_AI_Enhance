@@ -232,7 +232,7 @@ export default function GroupDetailPage(props?: { groupId?: string; courseId?: s
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogTitle>Confirm Remove</DialogTitle>
           </DialogHeader>
           <div className="py-2">
             Are you sure you want to remove{" "}
