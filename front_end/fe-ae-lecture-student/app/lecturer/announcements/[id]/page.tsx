@@ -9,9 +9,9 @@ import { Calendar, ChevronLeft, Clock, Globe, Target, User } from "lucide-react"
 import Link from "next/link";
 import { useEffect } from "react";
 
+import TinyMCE from "@/components/common/TinyMCE";
 import { useAnnouncementDetail } from "@/hooks/announcements/useAnnouncementDetail";
 import { dayLabel, parseServerDate, timeHHmm } from "@/utils/chat/time";
-import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
 
 export default function AnnouncementDetailPage({ params }: { params: { id: string } }) {
     const { announcement, loading, fetchAnnouncement } = useAnnouncementDetail();
@@ -162,12 +162,9 @@ export default function AnnouncementDetailPage({ params }: { params: { id: strin
                         {/* Announcement Content */}
                         <div className="px-10 py-7 lg:px-16 prose prose-lg max-w-none">
                             {announcement.content ? (
-                                <div
-                                    className="prose-headings:font-bold prose-headings:text-slate-900 prose-h1:text-3xl prose-h2:text-2xl prose-a:text-indigo-600 hover:prose-a:text-indigo-700 prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 prose-blockquote:bg-indigo-50/50 prose-blockquote:italic prose-ul:my-6 prose-li:my-2"
-                                    dangerouslySetInnerHTML={{
-                                        __html: normalizeAndSanitizeHtml(announcement.content),
-                                    }}
-                                />
+                                <div className="prose-headings:font-bold prose-headings:text-slate-900 prose-h1:text-3xl prose-h2:text-2xl prose-a:text-indigo-600 hover:prose-a:text-indigo-700 prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 prose-blockquote:bg-indigo-50/50 prose-blockquote:italic prose-ul:my-6 prose-li:my-2">
+                                    <TinyMCE value={announcement.content} onChange={() => {}} readOnly />
+                                </div>
                             ) : (
                                 <p className="italic text-gray-500">No content provided.</p>
                             )}

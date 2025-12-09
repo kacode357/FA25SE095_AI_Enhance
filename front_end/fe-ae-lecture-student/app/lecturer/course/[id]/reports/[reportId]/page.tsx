@@ -10,7 +10,6 @@ import { useAiCheckReport } from "@/hooks/reports/useAiCheckReport";
 import { useGetAiChecksReport } from "@/hooks/reports/useGetAiChecksReport";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
 import type { ReportAiCheckResult } from "@/types/reports/reports.response";
-import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
 import { ArrowLeft, CheckCheck, ClipboardPenLine, Loader2, PencilOff, X } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -259,14 +258,14 @@ export default function ReportDetailsPage() {
           {!loading && activeTab === 'details' && detail && (
             <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-5 p-6 items-stretch">
               {/* LEFT: moved to component for clarity */}
-              <ReportInfoDetails
-                detail={detail}
-                course={course}
-                enrolledStudents={enrolledStudents}
-                getStudentName={getStudentName}
-                statusBadgeElement={<StatusBadge status={detail.status} />}
-                normalizeAssignmentDescription={detail.assignmentDescription ? normalizeAndSanitizeHtml(detail.assignmentDescription) : ''}
-              />
+                <ReportInfoDetails
+                  detail={detail}
+                  course={course}
+                  enrolledStudents={enrolledStudents}
+                  getStudentName={getStudentName}
+                  statusBadgeElement={<StatusBadge status={detail.status} />}
+                  normalizeAssignmentDescription={detail.assignmentDescription ?? ''}
+                />
 
               {/* === PHẢI: SUBMISSION + CÁC FORM === */}
               <div

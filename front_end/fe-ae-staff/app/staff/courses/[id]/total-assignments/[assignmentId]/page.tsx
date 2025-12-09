@@ -1,12 +1,12 @@
 // app/(staff)/staff/courses/[id]/total-assignments/[assignmentId]/page.tsx
 "use client";
 
+import TinyMCE from "@/components/common/TinyMCE";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAssignmentDetail } from "@/hooks/assignment/useAssignmentDetail";
 import { useGroupMembersByGroup } from "@/hooks/group-members/useGroupMembersByGroup";
-import { cleanIncomingHtml } from "@/utils/html-normalize";
 import {
   ArrowLeft,
   CalendarDays,
@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function AssignmentDetailPage() {
   const { id, assignmentId } = useParams();
@@ -57,11 +57,8 @@ export default function AssignmentDetailPage() {
     return () => reset();
   }, [assignmentId, fetchAssignment, reset]);
 
-  // Mô tả: normalize HTML (đặt trước mọi return)
-  const descriptionHtml = useMemo(
-    () => cleanIncomingHtml(assignment?.description ?? ""),
-    [assignment?.description]
-  );
+  // Mô tả: render description via TinyMCE read-only
+  const description = assignment?.description ?? "";
 
   const fmtDate = (v?: string | null) => (v ? new Date(v).toLocaleString("en-GB") : "-");
 
@@ -320,7 +317,7 @@ export default function AssignmentDetailPage() {
       </Card>
 
       {/* Description — bung full, HTML đã clean */}
-      {descriptionHtml && (
+      {description && (
         <Card className="border card gap-0 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base" style={{ color: "var(--foreground)" }}>
@@ -328,10 +325,7 @@ export default function AssignmentDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div
-              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-              style={{ color: "var(--foreground)" }}
-            />
+            <TinyMCE value={description} onChange={() => {}} readOnly />
           </CardContent>
         </Card>
       )}

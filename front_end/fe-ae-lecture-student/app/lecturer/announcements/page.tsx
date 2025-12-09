@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { useLecturerAnnouncements } from "@/hooks/announcements/useLecturerAnnouncements";
 import type { AnnouncementItem } from "@/types/announcements/announcement.response";
 import { dayLabel, parseServerDate, timeHHmm } from "@/utils/chat/time";
-import { normalizeAndSanitizeHtml } from "@/utils/sanitize-html";
 
 function formatAudience(audience: AnnouncementItem["audience"]) {
     switch (audience) {
@@ -32,6 +31,11 @@ function formatTime(ts?: string) {
     const d = parseServerDate(ts);
     if (Number.isNaN(d.getTime())) return "";
     return `${dayLabel(d)} • ${timeHHmm(d)}`;
+}
+
+function stripHtml(html?: string) {
+    if (!html) return "";
+    return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export default function LecturerAnnouncementsPage() {
@@ -127,7 +131,7 @@ export default function LecturerAnnouncementsPage() {
                             <ul className="divide-y divide-[color:var(--border)]">
                                 {items.map((it) => (
                                     <li key={it.id}>
-                                        <Link href={`/lecturer/announcements/${it.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition">
+                                        <Link href={`/lecturer/announcements/${it.id}`} className="flex items-center justify-between gap-5 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition">
                                             <div className="min-w-0 flex-1 flex items-start gap-3">
                                                 {/* avatar */}
                                                 <div className="shrink-0">
@@ -139,23 +143,29 @@ export default function LecturerAnnouncementsPage() {
                                                 </div>
 
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm font-medium text-slate-900">{it.title}</p>
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="truncate text-sm font-medium text-slate-900">{it.title}</p>
 
-                                                    <p className="mt-1 text-xs text-[color:var(--text-muted)]">
-                                                        {it.createdByName && <span className="font-medium">{it.createdByName}</span>}
-                                                        {it.createdByName && it.publishedAt && " • "}
-                                                        {it.publishedAt && <span>{formatTime(it.publishedAt)}</span>}
-                                                    </p>
+                                                            <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                                                                {it.createdByName && <span className="font-medium">{it.createdByName}</span>}
+                                                                {it.createdByName && it.publishedAt && " • "}
+                                                                {it.publishedAt && <span>{formatTime(it.publishedAt)}</span>}
+                                                            </p>
+                                                        </div>
 
-                                                    <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-                                                        <span className="inline-flex rounded-full bg-slate-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-brand">{formatAudience(it.audience)}</span>
+                                                        <span className="inline-flex rounded-full bg-slate-50 px-2 py-0.5 mb-3 text-xs font-semibold uppercase tracking-wide text-brand">{formatAudience(it.audience)}</span>
+                                                    </div>
+                                                    <div className="mt-4 text-xs text-[color:var(--text-muted)]">
+                                                        {/* <span className="inline-flex rounded-full bg-slate-50 px-2 py-0.5 mb-3 text-xs font-semibold uppercase tracking-wide text-brand">{formatAudience(it.audience)}</span> */}
                                                         {it.content ? (
-                                                            <div
-                                                                className="ml-3 line-clamp-2"
-                                                                dangerouslySetInnerHTML={{ __html: normalizeAndSanitizeHtml(it.content) }}
-                                                            />
+                                                            <div className="max-w-full">
+                                                                <div className="truncate text-xs text-[color:var(--text-muted)]" title={stripHtml(it.content)}>
+                                                                    {stripHtml(it.content)}
+                                                                </div>
+                                                            </div>
                                                         ) : (
-                                                            <span className="ml-3 opacity-80">No content</span>
+                                                            <span className="opacity-80">No content</span>
                                                         )}
                                                     </div>
                                                 </div>
