@@ -2,7 +2,7 @@
 
 // POST /api/Payments/subscription
 export type CreateSubscriptionPaymentPayload = {
-  tier: number;
+  subscriptionPlanId: string; // id của plan (guid)
   returnUrl: string;
   cancelUrl: string;
 };

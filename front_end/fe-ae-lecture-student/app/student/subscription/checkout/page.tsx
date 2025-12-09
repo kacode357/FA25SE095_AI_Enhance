@@ -12,17 +12,38 @@ import { useCreateSubscriptionPayment } from "@/hooks/payments/useCreateSubscrip
 import { useConfirmSubscriptionPayment } from "@/hooks/payments/useConfirmSubscriptionPayment";
 import type { SubscriptionTier } from "@/types/subscription/subscription.response";
 
-function formatQuota(limit: number) {
+function getDurationLabel(days: number) {
+  if (!days || days === 0) return "lifetime";
+  if (days === 30) return "month";
+  if (days === 365) return "year";
+  return `${days} days`;
+}
+
+function formatQuota(limit: number, durationDays: number) {
   if (limit >= 2000) return "Unlimited crawling";
-  if (limit >= 500) return `${limit} tasks / month`;
-  return `${limit} tasks / month`;
+
+  if (!durationDays || durationDays === 0) {
+    return `${limit.toLocaleString()} tasks total`;
+  }
+
+  if (durationDays === 30) {
+    return `${limit.toLocaleString()} tasks / month`;
+  }
+
+  if (durationDays === 365) {
+    return `${limit.toLocaleString()} tasks / year`;
+  }
+
+  return `${limit.toLocaleString()} tasks / ${durationDays} days`;
 }
 
 export default function SubscriptionCheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const selectedTierName = searchParams.get("tier") || "";
+  // từ URL: ?tier=0&planId=1111-...
+  const tierParam = searchParams.get("tier") || "";
+  const planIdParam = searchParams.get("planId") || "";
 
   const { getSubscriptionTiers, loading: tiersLoading } =
     useSubscriptionTiers();
@@ -61,20 +82,23 @@ export default function SubscriptionCheckoutPage() {
 
         if (!res || res.status !== 200) {
           toast.error(
-            res?.message || "Could not confirm your subscription payment."
+            res?.message || "Could not confirm your subscription payment.",
           );
           return;
         }
 
-     
-
-        const tierName = searchParams.get("tier") || "";
+        const tierValue = searchParams.get("tier") || "";
+        const planIdValue = searchParams.get("planId") || "";
 
         // ✅ Redirect sang trang success (để hiện UI + update cookie)
+        const query = new URLSearchParams();
+        if (tierValue) query.set("tier", tierValue);
+        if (planIdValue) query.set("planId", planIdValue);
+
         router.replace(
           `/student/subscription/success${
-            tierName ? `?tier=${encodeURIComponent(tierName)}` : ""
-          }`
+            query.toString() ? `?${query.toString()}` : ""
+          }`,
         );
       } catch (err) {
         toast.error("Something went wrong when confirming your payment.");
@@ -87,8 +111,8 @@ export default function SubscriptionCheckoutPage() {
     let cancelled = false;
 
     (async () => {
-      const res = await getSubscriptionTiers();
-      if (!cancelled && res) setTiers(res);
+      const res = await getSubscriptionTiers(); // SubscriptionTier[]
+      if (!cancelled) setTiers(res);
     })();
 
     return () => {
@@ -97,15 +121,30 @@ export default function SubscriptionCheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectedTier = useMemo(
-    () => tiers.find((t) => t.tier === selectedTierName),
-    [tiers, selectedTierName]
-  );
+  // chọn tier từ URL: ưu tiên planId, fallback tier number / name
+  const selectedTier = useMemo(() => {
+    if (!tiers.length) return undefined;
 
-  const tierIndex = useMemo(
-    () => tiers.findIndex((t) => t.tier === selectedTierName),
-    [tiers, selectedTierName]
-  );
+    if (planIdParam) {
+      const byId = tiers.find((t) => t.id === planIdParam);
+      if (byId) return byId;
+    }
+
+    if (tierParam) {
+      const byTierNumber = tiers.find(
+        (t) => String(t.tier) === tierParam,
+      );
+      if (byTierNumber) return byTierNumber;
+
+      const lower = tierParam.toLowerCase();
+      const byName = tiers.find(
+        (t) => t.name.toLowerCase() === lower || String(t.tier) === lower,
+      );
+      if (byName) return byName;
+    }
+
+    return undefined;
+  }, [tiers, tierParam, planIdParam]);
 
   const handleBack = () => {
     router.push("/student/subscription");
@@ -113,24 +152,30 @@ export default function SubscriptionCheckoutPage() {
 
   const handleConfirm = async () => {
     if (!selectedTier) return;
+
+    // Free plan: không cần thanh toán
     if (selectedTier.price === 0) {
       router.push("/student/subscription");
       return;
     }
-    if (tierIndex < 0) return;
+
     if (typeof window === "undefined") return;
 
     const origin = window.location.origin;
 
-    // returnUrl về lại đúng trang checkout (giữ tier)
-    const returnUrl = `${origin}/student/subscription/checkout?tier=${encodeURIComponent(
-      selectedTierName
-    )}`;
+    // returnUrl về lại đúng trang checkout (giữ tier + planId)
+    const query = new URLSearchParams();
+    query.set("tier", String(selectedTier.tier)); // số: 0/1/2/3
+    query.set("planId", selectedTier.id);
 
+    const returnUrl = `${origin}/student/subscription/checkout?${query.toString()}`;
+    const cancelUrl = `${origin}/student/subscription`;
+
+    // 👇 Gửi đúng payload mới: subscriptionPlanId + return/cancel
     const res = await createSubscriptionPayment({
-      tier: tierIndex,
+      subscriptionPlanId: selectedTier.id,
       returnUrl,
-      cancelUrl: `${origin}/student/subscription`,
+      cancelUrl,
     });
 
     const checkoutUrl = res?.data?.checkoutUrl;
@@ -192,7 +237,7 @@ export default function SubscriptionCheckoutPage() {
               <div className="flex items-baseline justify-between gap-2">
                 <div>
                   <p className="text-xs font-semibold text-nav">
-                    {selectedTier.tier}
+                    {selectedTier.name}
                   </p>
                   <p
                     className="mt-1 text-[11px]"
@@ -214,7 +259,7 @@ export default function SubscriptionCheckoutPage() {
                         className="text-[11px]"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        / {selectedTier.duration.toLowerCase()}
+                        / {getDurationLabel(selectedTier.durationDays)}
                       </p>
                     </>
                   )}
@@ -223,7 +268,10 @@ export default function SubscriptionCheckoutPage() {
 
               <div className="mt-3 text-[11px]">
                 <span className="font-medium text-brand">
-                  {formatQuota(selectedTier.quotaLimit)}
+                  {formatQuota(
+                    selectedTier.quotaLimit,
+                    selectedTier.durationDays,
+                  )}
                 </span>
               </div>
             </div>

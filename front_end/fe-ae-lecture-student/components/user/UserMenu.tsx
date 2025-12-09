@@ -6,7 +6,7 @@ import {
   CircleArrowOutUpRight,
   LogOut,
   ShieldUser,
-  ReceiptText, // ✅ mới thêm
+  ReceiptText,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { UserProfile } from "@/types/user/user.response";
 import { loadDecodedUser } from "@/utils/secure-user";
 import { getUserShortName } from "@/utils/user/display-name";
+import { getUserSubscriptionPlanName } from "@/config/user-service/plan";
 
 type Props = {
   open: boolean;
@@ -71,7 +72,10 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
   const fullName = decodedUser?.fullName || "Student";
   const email = decodedUser?.email || "";
   const profilePictureUrl = decodedUser?.profilePictureUrl || "";
-  const subscriptionTier = decodedUser?.subscriptionTier || "Basic";
+
+  const subscriptionTierRaw = decodedUser?.subscriptionTier ?? null;
+  const subscriptionPlanName =
+    getUserSubscriptionPlanName(subscriptionTierRaw) || "Free";
 
   // Role detection
   const isLecturer = (() => {
@@ -170,7 +174,7 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
                     Current plan
                   </span>
                   <span className="text-sm font-semibold text-nav">
-                    {subscriptionTier}
+                    {subscriptionPlanName}
                   </span>
                 </div>
                 <Link
@@ -193,14 +197,14 @@ export default function UserMenu({ open, onOpenChange, onLogout }: Props) {
                 href={
                   isLecturer
                     ? "/lecturer/profile/my-profile"
-                    : "/student/settings/my-profile" // ✅ đổi path student sang settings
+                    : "/student/settings/my-profile"
                 }
                 className="block rounded-md px-2 py-1.5 text-xs font-medium text-nav hover:bg-slate-50"
                 onClick={() => onOpenChange(false)}
               >
                 <span className="flex gap-2">
                   <ShieldUser className="size-4" />
-                  Settings {/* ✅ đổi text */}
+                  Settings
                 </span>
               </Link>
 

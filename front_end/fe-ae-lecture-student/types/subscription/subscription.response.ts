@@ -1,3 +1,5 @@
+// types/subscription/subscription.response.ts
+
 export type BaseSubscriptionApiResponse<T = unknown> = {
   status: number;
   message: string;
@@ -30,20 +32,28 @@ export interface SubscriptionProfile {
   updatedAt: string;
 }
 
-export type GetSubscriptionResponse = BaseSubscriptionApiResponse<SubscriptionProfile>;
+export type GetSubscriptionResponse =
+  BaseSubscriptionApiResponse<SubscriptionProfile>;
 
 export type UpgradeSubscriptionResponse = BaseSubscriptionApiResponse<string>;
 
 export type CancelSubscriptionResponse = BaseSubscriptionApiResponse<string>;
 
+// ĐÚNG 100% JSON mày log từ BE
 export type SubscriptionTier = {
-  tier: string;
+  id: string;
+  name: string;
   description: string;
-  quotaLimit: number;
   price: number;
   currency: string;
-  duration: string;
+  durationDays: number;
+  quotaLimit: number;
   features: string[];
+  isActive: boolean;
+  tier: number;
+  createdAt: string;
+  updatedAt: string | null;
 };
 
-export type GetSubscriptionTiersResponse = SubscriptionTier[];
+export type GetSubscriptionTiersResponse =
+  BaseSubscriptionApiResponse<SubscriptionTier[]>;

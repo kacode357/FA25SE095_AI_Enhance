@@ -1,3 +1,4 @@
+// app/student/subscription/success/page.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -7,6 +8,7 @@ import { CheckCircle2, Crown, ArrowRight } from "lucide-react";
 import Cookies from "js-cookie";
 
 import { loadDecodedUser, saveEncodedUser } from "@/utils/secure-user";
+import { getUserSubscriptionPlanName } from "@/config/user-service/plan";
 
 const STORAGE_KEY = "a:u";
 
@@ -15,7 +17,9 @@ export default function SubscriptionSuccessPage() {
   const searchParams = useSearchParams();
   const updatedRef = useRef(false);
 
+  // tier từ query: có thể là "0" / "1" / "free" / "basic" ...
   const tier = searchParams.get("tier") || "";
+  const planName = getUserSubscriptionPlanName(tier);
 
   // ✅ Cập nhật subscriptionTier trong encoded user + báo cho app biết user đã update
   useEffect(() => {
@@ -23,15 +27,16 @@ export default function SubscriptionSuccessPage() {
     updatedRef.current = true;
 
     (async () => {
-      const user = await loadDecodedUser();
-      if (!user) return;
       if (!tier) return;
 
+      const user = await loadDecodedUser();
+      if (!user) return;
+
+      // Nếu cùng tier string rồi thì thôi
       if (
         user.subscriptionTier &&
         user.subscriptionTier.toLowerCase() === tier.toLowerCase()
       ) {
-        // đã đúng tier rồi thì khỏi làm gì
         return;
       }
 
@@ -39,6 +44,7 @@ export default function SubscriptionSuccessPage() {
 
       const updatedUser = {
         ...user,
+        // vẫn lưu raw tier (vd: "0", "1", "free"...)
         subscriptionTier: tier,
       };
 
@@ -59,7 +65,6 @@ export default function SubscriptionSuccessPage() {
     router.push("/student/payment-history");
   };
 
-
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-4 py-10 text-center">
       <motion.div
@@ -71,7 +76,6 @@ export default function SubscriptionSuccessPage() {
           <div className="relative">
             <CheckCircle2 className="h-16 w-16 text-green-500" />
             <Crown className="absolute -right-2 -top-2 h-6 w-6 text-yellow-400" />
-
           </div>
         </div>
 
@@ -84,11 +88,11 @@ export default function SubscriptionSuccessPage() {
           style={{ color: "var(--text-muted)" }}
         >
           Your subscription has been activated successfully.
-          {tier && (
+          {planName && (
             <>
               {" "}
               You are now on the{" "}
-              <span className="font-semibold text-brand">{tier}</span> plan.
+              <span className="font-semibold text-brand">{planName}</span> plan.
             </>
           )}
         </p>

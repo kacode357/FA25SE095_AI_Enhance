@@ -11,30 +11,54 @@ import { loadDecodedUser } from "@/utils/secure-user";
 
 function formatPeriod(tier: SubscriptionTier) {
   if (tier.price === 0) return "/Forever";
-  return `/${tier.duration}`;
+
+  const days = tier.durationDays ?? 0;
+
+  if (days === 30) return "/Month";
+  if (days === 365) return "/Year";
+  if (days === 0) return "/Lifetime";
+
+  return `/${days} days`;
 }
 
 function formatQuota(tier: SubscriptionTier) {
   const limit = tier.quotaLimit || 0;
+  const days = tier.durationDays ?? 0;
+
   if (limit >= 2000) return "Unlimited tasks";
-  if (!tier.duration || tier.duration.toLowerCase().includes("no expiry")) {
+
+  if (days === 0) {
     return `${limit.toLocaleString()} tasks total`;
   }
-  return `${limit.toLocaleString()} tasks / ${tier.duration}`;
+
+  if (days === 30) {
+    return `${limit.toLocaleString()} tasks / month`;
+  }
+
+  if (days === 365) {
+    return `${limit.toLocaleString()} tasks / year`;
+  }
+
+  return `${limit.toLocaleString()} tasks / ${days} days`;
 }
 
 export default function SubscriptionPage() {
   const router = useRouter();
   const { getSubscriptionTiers, loading } = useSubscriptionTiers();
-  const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
-  const [currentTier, setCurrentTier] = useState<string | null>(null);
 
+  const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
+  const [currentTierKey, setCurrentTierKey] = useState<string | null>(null);
+
+  // Load plans
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const res = await getSubscriptionTiers();
-      if (!cancelled && res) setTiers(res);
+      const res = await getSubscriptionTiers(); // res: SubscriptionTier[]
+      console.log("Fetched subscription tiers:", res);
+      if (!cancelled && res) {
+        setTiers(res);
+      }
     })();
 
     return () => {
@@ -43,15 +67,18 @@ export default function SubscriptionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Load current user tier
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       const user = await loadDecodedUser();
-      if (cancelled) return;
-      if (user?.subscriptionTier) {
-        setCurrentTier(user.subscriptionTier);
-      }
+      if (cancelled || !user) return;
+
+      // BE đang có: subscriptionTier: string
+      // mình giữ string này làm key
+      const key = user.subscriptionTier ?? null;
+      if (key) setCurrentTierKey(key);
     })();
 
     return () => {
@@ -61,10 +88,18 @@ export default function SubscriptionPage() {
 
   const handleChoosePlan = (tier: SubscriptionTier, isCurrent: boolean) => {
     if (isCurrent) return;
+
     const params = new URLSearchParams();
-    params.set("tier", tier.tier);
+    params.set("planId", tier.id); // dùng id để checkout
+    params.set("tier", String(tier.tier)); // gửi thêm tier number nếu cần
+
     router.push(`/student/subscription/checkout?${params.toString()}`);
   };
+
+  // Chỉ lấy plan active + sort theo tier number
+  const activeSortedTiers = tiers
+    .filter((t) => t.isActive)
+    .sort((a, b) => a.tier - b.tier);
 
   return (
     <section className="relative bg-slate-50 pt-7 pb-15">
@@ -81,7 +116,7 @@ export default function SubscriptionPage() {
           </span>
         </h2>
 
-        {loading && tiers.length === 0 && (
+        {loading && activeSortedTiers.length === 0 && (
           <div
             className="mt-10 flex items-center justify-center gap-2 text-sm"
             style={{ color: "var(--text-muted)" }}
@@ -92,7 +127,7 @@ export default function SubscriptionPage() {
         )}
 
         <div className="mt-16">
-          {!loading && tiers.length === 0 && (
+          {!loading && activeSortedTiers.length === 0 && (
             <p
               className="text-center text-sm"
               style={{ color: "var(--text-muted)" }}
@@ -101,17 +136,27 @@ export default function SubscriptionPage() {
             </p>
           )}
 
-          {tiers.length > 0 && (
+          {activeSortedTiers.length > 0 && (
             <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-              {tiers.map((tier, i) => {
-                const tierName = tier.tier ?? "";
-                const isCurrent =
-                  currentTier &&
-                  tierName.toLowerCase() === currentTier.toLowerCase();
+              {activeSortedTiers.map((tier, i) => {
+                const tierName = tier.name ?? "";
 
+                // ÉP BOOLEAN rõ ràng để TS hết kêu (không dùng && trả về string)
+                const keyLower = currentTierKey?.toLowerCase() ?? null;
+
+                const isCurrent: boolean =
+                  !!keyLower &&
+                  (
+                    tier.id.toLowerCase() === keyLower || // user.subscriptionTier = id
+                    tierName.toLowerCase() === keyLower || // user.subscriptionTier = "Free"/"Basic"/...
+                    String(tier.tier) === keyLower // user.subscriptionTier = "0"/"1"/...
+                  );
+
+                const lowerName = tierName.toLowerCase();
                 const isPopular =
-                  tierName.toLowerCase() === "standard" ||
-                  tierName.toLowerCase() === "premium";
+                  lowerName === "basic" ||
+                  lowerName === "premium" ||
+                  lowerName === "enterprise";
 
                 const cardHighlight = isCurrent
                   ? "border-[var(--accent-600)] scale-[1.03] shadow-2xl"
@@ -123,14 +168,15 @@ export default function SubscriptionPage() {
                   tier.price === 0
                     ? "Free"
                     : `${tier.price.toLocaleString()} ${tier.currency}`;
+
                 const isLongPrice = priceLabel.length > 14;
                 const priceSizeClass = isLongPrice
-                  ? "text-3xl md:text-4xl"
-                  : "text-4xl md:text-5xl";
+                  ? "text-3xl md:text-3xl"
+                  : "text-4xl md:text-4xl";
 
                 return (
                   <motion.div
-                    key={tierName}
+                    key={tier.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.06, duration: 0.25 }}
@@ -195,7 +241,7 @@ export default function SubscriptionPage() {
                       </p>
                     </div>
 
-                    {/* Features: flex-1 để đẩy nút xuống đáy, KHÔNG cuộn */}
+                    {/* Features */}
                     <ul className="space-y-4 text-left flex-1">
                       {tier.features.map((feature, idx) => {
                         const clean = feature
@@ -223,16 +269,16 @@ export default function SubscriptionPage() {
                       })}
                     </ul>
 
-                    {/* Button: luôn nằm ngang nhau ở đáy card */}
+                    {/* Button */}
                     <button
                       type="button"
-                      onClick={() => handleChoosePlan(tier, !!isCurrent)}
+                      onClick={() => handleChoosePlan(tier, isCurrent)}
                       className={`btn mt-8 w-full rounded-xl text-sm font-medium text-white shadow-md transition ${
                         isCurrent
                           ? "btn-green-slow cursor-default"
                           : "btn-gradient bg-gradient-to-r from-purple-500 to-indigo-500 hover:opacity-90"
                       }`}
-                      disabled={!!isCurrent}
+                      disabled={isCurrent}
                     >
                       {isCurrent
                         ? "Current plan"

@@ -46,7 +46,7 @@ export const SubscriptionService = {
   /** GET /api/Subscription/tiers – danh sách các gói subscription */
   getSubscriptionTiers: async (): Promise<GetSubscriptionTiersResponse> => {
     const res =
-      await userAxiosInstance.get<GetSubscriptionTiersResponse>("/Subscription/tiers");
+      await userAxiosInstance.get<GetSubscriptionTiersResponse>("/Subscription/plans");
     return res.data;
   },
 };
