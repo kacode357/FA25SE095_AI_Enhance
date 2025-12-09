@@ -5,7 +5,7 @@ import { CalendarClock, ChevronDown, ChevronRight, Loader2 } from "lucide-react"
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Separator } from "@/components/ui/separator";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 
@@ -41,15 +41,25 @@ export default function AssignmentActionsBar({
   // collapsed/expanded
   const [open, setOpen] = useState(!!defaultOpen);
 
-  // datetime-local state
+  // extended datetime in ISO string format
   const [extendedAt, setExtendedAt] = useState<string>(() => {
     const base = currentExtendedDue || currentDue || "";
     if (!base) return "";
-    const d = new Date(base);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-    return `${local.getFullYear()}-${pad(local.getMonth() + 1)}-${pad(local.getDate())}T${pad(local.getHours())}:${pad(local.getMinutes())}`;
+    try {
+      return new Date(base).toISOString();
+    } catch {
+      return "";
+    }
   });
+
+  // minimum allowed date/time for new extended due: after existing extended due or current due
+  const minBase = (() => {
+    const baseIso = currentExtendedDue || currentDue || undefined;
+    if (!baseIso) return new Date();
+    const d = new Date(baseIso);
+    if (isNaN(d.getTime())) return new Date();
+    return d;
+  })();
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -121,15 +131,16 @@ export default function AssignmentActionsBar({
           <div className="flex flex-col gap-3">
             <div className="md:col-span-2">
               <div className="text-sm text-slate-600 mb-1">New extended due</div>
-              <Input
-                type="datetime-local"
-                value={extendedAt}
-                onChange={(e) => setExtendedAt(e.target.value)}
-                disabled={isBusy}
-              />
-              <div className="mt-1 mb-2 text-[11px] text-slate-500">
-                Time is in your local timezone
+              <div className={`${isBusy ? "pointer-events-none opacity-60" : ""}`}>
+                <DateTimePicker
+                  value={extendedAt}
+                  onChange={(iso) => setExtendedAt(iso)}
+                  // prevent selecting date/time before the current due/extended due
+                  minDate={minBase}
+                  minTime={minBase}
+                />
               </div>
+              <div className="mt-1 mb-2 text-[11px] text-slate-500">Time is in your local timezone</div>
             </div>
             <div className="flex gap-2 md:justify-between">
               <Button

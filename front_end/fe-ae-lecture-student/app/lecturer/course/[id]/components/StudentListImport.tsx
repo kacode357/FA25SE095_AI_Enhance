@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useUnenrollStudent } from "@/hooks/enrollments/useUnenrollStudent";
-import { format } from "date-fns";
+import { formatToVN } from "@/utils/datetime/time";
 import { Eye, MessageSquare, MessageSquareDot, MoreHorizontalIcon, TriangleAlert, UserMinus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -42,7 +42,7 @@ export default function StudentList({
     }, [courseId, refreshSignal]);
 
     const formatDate = (dateStr: string | null) =>
-        !dateStr ? "-" : format(new Date(dateStr), "dd/MM/yyyy HH:mm");
+        !dateStr ? "-" : formatToVN(dateStr);
 
     const handleUnenroll = async (studentId: string) => {
         const res = await unenrollStudent(

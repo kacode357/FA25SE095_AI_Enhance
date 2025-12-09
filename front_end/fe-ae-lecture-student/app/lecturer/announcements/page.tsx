@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import PaginationBar from "@/components/common/pagination-all";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -169,15 +170,17 @@ export default function LecturerAnnouncementsPage() {
                     </div>
 
                     {items.length > 0 && (
-                        <div className="flex items-center justify-between rounded-b-2xl border-t border-[color:var(--border)] px-4 py-2.5 text-xs text-[color:var(--text-muted)]">
-                            <div>
-                                Page <span className="font-medium text-slate-900">{pagination.page || 1}</span> of <span className="font-medium text-slate-900">{pagination.totalPages || 1}</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button type="button" variant="outline" size="xs" className="px-3 py-1 text-xs border-[color:var(--border)] text-[color:var(--text-muted)]" onClick={() => changePage("prev")} disabled={loading || !pagination.hasPreviousPage}>Previous</Button>
-                                <Button type="button" variant="outline" size="xs" className="px-3 py-1 text-xs border-[color:var(--border)] text-[color:var(--text-muted)]" onClick={() => changePage("next")} disabled={loading || !pagination.hasNextPage}>Next</Button>
-                            </div>
-                        </div>
+                        <PaginationBar
+                            page={pagination.page || 1}
+                            totalPages={pagination.totalPages || 1}
+                            totalCount={pagination.totalItems}
+                            loading={loading}
+                            onPageChange={(p: number) => {
+                                const next = { ...currentQuery, page: p };
+                                setCurrentQuery(next);
+                                fetchLecturerAnnouncements(next);
+                            }}
+                        />
                     )}
                 </div>
             </section>
