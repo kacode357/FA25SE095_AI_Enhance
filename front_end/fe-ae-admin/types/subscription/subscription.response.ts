@@ -1,7 +1,5 @@
 // types/subscription/subscription.response.ts
 
-// Nếu mày đã có enum SubscriptionTier rồi thì giữ lại enum cũ,
-// hoặc đảm bảo enum này mapping đúng với backend.
 export enum SubscriptionTier {
   Free = 0,
   Basic = 1,
