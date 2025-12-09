@@ -138,7 +138,7 @@ export default function GroupsPanel({
                                                 <Trash2 className="size-4" />
                                             </Button>
                                             <Button size="sm" className="ml-2 text-violet-800 hover:text-violet-500 bg-violet-50" onClick={(e) => { e.stopPropagation(); handleOpenDetails(g.id); }}>
-                                                Details
+                                                Manage Group
                                             </Button>
                                         </div>
                                     </div>

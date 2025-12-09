@@ -3,6 +3,7 @@ import { CourseRequestPayload, GetMyCourseRequestsQuery } from "@/types/course-r
 import {
   CourseRequestResponse,
   DeleteSyllabusResponse,
+  GetCourseRequestByIdResponse,
   GetMyCourseRequestsResponse,
   UploadSyllabusResponse,
 } from "@/types/course-requests/course-request.response";
@@ -46,6 +47,14 @@ export const CourseRequestService = {
       { params }
     );
     return res.data;
+  },
+
+    // ✅ GET /api/CourseRequests/{id}
+  getById: async (id: string): Promise<GetCourseRequestByIdResponse> => {
+    const response = await courseAxiosInstance.get<GetCourseRequestByIdResponse>(
+      `/CourseRequests/${id}`
+    );
+    return response.data;
   },
 
   // POST /api/CourseRequests/{courseRequestId}/syllabus/upload

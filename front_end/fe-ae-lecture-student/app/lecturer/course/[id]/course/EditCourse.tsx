@@ -142,7 +142,7 @@ export default function EditCourse() {
                     {course.status !== CourseStatus.PendingApproval && (
                         <Link href={`/lecturer/course/${id}`}>
                             <Button size="sm" variant="outline" className="btn btn-gradient-slow text-violet-800">
-                                In Course
+                                Course Details
                             </Button>
                         </Link>
                     )}

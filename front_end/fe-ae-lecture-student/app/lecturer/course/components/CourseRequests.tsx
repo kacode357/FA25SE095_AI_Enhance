@@ -2,9 +2,12 @@
 
 import PaginationBar from "@/components/common/pagination-all";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMyCourseRequests } from "@/hooks/course-request/useMyCourseRequests";
 import { CourseRequestStatus } from "@/types/course-requests/course-request.response";
+import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import RequestsFilterBar from "./RequestsFilterBar";
@@ -163,15 +166,13 @@ export default function CourseRequests({ active = true }: Props) {
                       )}
                     </div>
 
-                    {/* Spacer */}
-                    <div className="flex-1" />
-
                     {/* Reason badge (if any) above footer */}
                     {r.requestReason && (
                       <div className="px-3.5">
-                        <Badge className="bg-slate-100 text-slate-700 max-w-full truncate" title={r.requestReason}>
-                          Reason: {r.requestReason}
-                        </Badge>
+                        <div className="text-[13px] text-slate-700 line-clamp-2 overflow-hidden" title={r.requestReason}>
+                          <span className="font-medium text-slate-700 mr-1">Reason:</span>
+                          <span className="text-slate-600">{r.requestReason}</span>
+                        </div>
                       </div>
                     )}
 
@@ -188,8 +189,8 @@ export default function CourseRequests({ active = true }: Props) {
                     )}
 
                     {/* Footer pinned */}
-                    <div className="px-3.5 pt-2 mt-auto gap-2">
-                      <div className="flex flex-row items-center justify-between gap-1">
+                    <div className="px-3.5 pt-2 mt-auto gap-2 relative">
+                      <div className="flex flex-row items-center justify-start gap-5">
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge className="text-xs bg-brand/10 text-brand border border-brand/20">
                             {r.term}
@@ -197,15 +198,23 @@ export default function CourseRequests({ active = true }: Props) {
                         </div>
                         <div className="text-[11px] text-slate-500">Created: {new Date(r.createdAt).toLocaleDateString("en-GB")}</div>
                       </div>
-                      {/* <Button
-                        size="sm"
-                        variant="ghost"
-                        className="btn btn-gradient-slow rounded-md text-white px-3 py-1 shadow text-xs cursor-pointer"
-                        onClick={() => router.push(`/lecturer/course/request/${r.id}`)}
-                        aria-label="Request details"
-                      >
-                        Details
-                      </Button> */}
+                      {/* Eye button: view details (tooltip on the button) */}
+                      <div className="absolute right-3 bottom-0">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="p-0 text-violet-600 hover:text-violet-800 shadow-sm hover:bg-violet-100 bg-violet-50"
+                              onClick={() => router.push(`/lecturer/course/request/${r.id}`)}
+                              aria-label="View details"
+                            >
+                              <Eye className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">View Details</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   </Card>
                 );

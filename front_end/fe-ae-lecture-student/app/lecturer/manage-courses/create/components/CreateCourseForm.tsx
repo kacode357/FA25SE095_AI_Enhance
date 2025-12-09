@@ -71,7 +71,7 @@ export default function CreateCourseForm({ codes, terms, loadingOptions, form, s
                 <h1 className="text-sm uppercase font-semibold mb-4">Create new a Course</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                        <Tooltip open={showCourseTooltip} onOpenChange={(v) => setShowCourseTooltip(Boolean(v))}>
+                        <Tooltip open={showCourseTooltip && !form.courseCodeId} onOpenChange={(v) => setShowCourseTooltip(Boolean(v))}>
                             <TooltipTrigger asChild>
                                 <Label className="text-sm mb-2">Course Code <span className="text-red-500 text-xs">(* required)</span></Label>
                             </TooltipTrigger>

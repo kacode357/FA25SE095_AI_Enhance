@@ -90,7 +90,7 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
 
   return (
     <Card className="relative py-0 gap-3 p-3 overflow-hidden h-full flex flex-col rounded-lg border-slate-200 hover:shadow-lg transition-shadow">
-      <div className="relative w-full h-32 rounded-lg overflow-hidden bg-slate-50">
+      <div className="relative w-full h-32 rounded-lg overflow-hidden bg-slate-50 group">
         <img src={backgroundImage} alt="" className="w-full h-full object-cover" />
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} aria-label="Upload course image" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -102,16 +102,7 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
           </div>
         </div>
 
-        {/* Upload button (always available, stops propagation) */}
-        <button
-          onClick={onImageClick}
-          title={course.img ? "Change course image" : "Upload course image"}
-          aria-label={course.img ? "Change course image" : "Upload course image"}
-          className="absolute top-2 right-2 z-20 cursor-pointer bg-white/90 rounded-full p-2 text-slate-700 shadow"
-        >
-          <ImageUp className="size-4" />
-        </button>
-
+        {/* When an image exists, render the Trash button first as a peer so it can hide the centered ImageUp on hover. */}
         {course.img && (
           <button
             onClick={(e) => {
@@ -126,9 +117,32 @@ export default function CourseCard({ course, onEdit, onDelete, onUpdated }: Prop
             }}
             title="Delete image"
             aria-label="Delete course image"
-            className="absolute top-3 right-3 z-20 bg-white/90 rounded-full p-2 text-red-500 shadow"
+            className="absolute top-2 right-2 z-30 bg-white/90 cursor-pointer hover:shadow-md rounded-full p-2 text-red-500 shadow peer"
           >
             <Trash2 className="size-4" />
+          </button>
+        )}
+
+        {/* Upload button: - if there's an image, show a centered button that appears on hover; - otherwise keep small top-right button */}
+        {course.img ? (
+          <button
+            onClick={onImageClick}
+            title="Change course image"
+            aria-label="Change course image"
+            className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 peer-hover:opacity-0 transition-opacity cursor-pointer duration-150"
+          >
+            <span className="bg-white/90 rounded-full p-3 text-slate-700 shadow cursor-pointer">
+              <ImageUp className="size-5" />
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={onImageClick}
+            title={course.img ? "Change course image" : "Upload course image"}
+            aria-label={course.img ? "Change course image" : "Upload course image"}
+            className="absolute top-2 right-2 z-20 cursor-pointer bg-white/90 rounded-full p-2 text-slate-700 shadow"
+          >
+            <ImageUp className="size-4" />
           </button>
         )}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import TinyMCE from "@/components/common/TinyMCE";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Select from "@/components/ui/select/Select";
@@ -46,7 +47,7 @@ export default function EditCourseForm({
 
     const selectedTerm = (terms ?? []).find((t: any) => t.id === selectedTermId);
     return (
-        <form className="grid grid-cols-2 gap-x-6 gap-y-10 text-sm mt-1" onSubmit={async (e) => { e.preventDefault(); await handleSave(); }}>
+        <form className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm mt-1" onSubmit={async (e) => { e.preventDefault(); await handleSave(); }}>
             <div className="flex flex-col">
                 <label className="text-slate-500 text-xs cursor-text uppercase mb-1">Name</label>
                 <Input value={name ?? ""} readOnly className="!bg-white text-slate-700 cursor-not-allowed" />
@@ -78,7 +79,12 @@ export default function EditCourseForm({
 
             <div className="flex flex-col col-span-2">
                 <label className="text-slate-500 cursor-text text-xs uppercase mb-1">Announcement (optional)</label>
-                <Textarea rows={2} value={announcement} onChange={(e) => setAnnouncement(e.target.value)} placeholder="Enter announcement for students (optional)" className="resize-none bg-white focus:ring-2 focus:border-emerald-100 border rounded-lg border-slate-200 focus:ring-emerald-500" />
+                <TinyMCE
+                    value={announcement || ""}
+                    onChange={(html) => setAnnouncement(html)}
+                    placeholder="Enter announcement for students (optional)"
+                    className="bg-white focus:ring-2 focus:border-emerald-100 border rounded-lg border-slate-200 focus:ring-emerald-500"
+                />
             </div>
 
             <div className="col-span-2 mt-2 flex border-t border-slate-200 justify-end">

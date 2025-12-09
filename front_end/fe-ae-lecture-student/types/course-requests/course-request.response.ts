@@ -47,6 +47,12 @@ export interface GetMyCourseRequestsResponse {
   hasNextPage: boolean;
 }
 
+export interface GetCourseRequestByIdResponse {
+  success: boolean;
+  message: string;
+  courseRequest: CreateCourseRequestResponse;
+}
+
 export interface UploadSyllabusResponse {
   success: boolean;
   message: string;
