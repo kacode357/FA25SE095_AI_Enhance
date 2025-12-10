@@ -4,11 +4,11 @@
 import { useCallback, useState } from "react";
 
 import { PaymentService } from "@/services/payment.services";
-import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/subscription-payment.payload";
+import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/payment.payload";
 import type {
   GetAdminSubscriptionPaymentsResponse,
   SubscriptionPaymentItem,
-} from "@/types/payments/subscription-payment.response";
+} from "@/types/payments/payment.response";
 
 type PaginationState = {
   page: number;

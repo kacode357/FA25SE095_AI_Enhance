@@ -2,14 +2,30 @@ import { Users2, Megaphone, CreditCard, LayoutDashboard } from "lucide-react";
 
 export const mainNav = [
   {
-    href: "/admin",
+    href: "/admin/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
     description: "Overview & system stats",
     children: [
       {
-        href: "/admin",
+        href: "/admin/dashboard",
         label: "Overview",
+      },
+      {
+        href: "/admin/dashboard/revenue",
+        label: "Revenue",
+      },
+      {
+        href: "/admin/dashboard/payments",
+        label: "Payments",
+      },
+      {
+        href: "/admin/dashboard/subscriptions",
+        label: "Subscriptions",
+      },
+      {
+        href: "/admin/dashboard/users",
+        label: "Users",
       },
     ],
   },

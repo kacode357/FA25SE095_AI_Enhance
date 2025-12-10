@@ -7,8 +7,8 @@ import { PaymentService } from "@/services/payment.services";
 import type {
   GetAdminSubscriptionPaymentsSummaryResponse,
   SubscriptionPaymentsSummary,
-} from "@/types/payments/subscription-payment.response";
-import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/subscription-payment.payload";
+} from "@/types/payments/payment.response";
+import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/payment.payload";
 
 export function useAdminSubscriptionPaymentsSummary() {
   const [loading, setLoading] = useState(false);

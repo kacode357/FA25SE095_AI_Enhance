@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { SubscriptionPaymentStatus } from "@/types/payments/subscription-payment.response";
+import { SubscriptionPaymentStatus } from "@/types/payments/payment.response";
 import { CheckCircle2, Clock, XCircle, AlertCircle, Ban } from "lucide-react";
 
 export function PaymentStatusBadge({ status }: { status: SubscriptionPaymentStatus }) {

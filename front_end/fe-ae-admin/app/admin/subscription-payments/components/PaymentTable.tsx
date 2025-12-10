@@ -3,7 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
-import type { SubscriptionPaymentItem } from "@/types/payments/subscription-payment.response";
+import type { SubscriptionPaymentItem } from "@/types/payments/payment.response";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
 
 type Props = {

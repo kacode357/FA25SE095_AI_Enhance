@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SubscriptionPaymentStatus } from "@/types/payments/subscription-payment.response";
+import { SubscriptionPaymentStatus } from "@/types/payments/payment.response";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 export type PaymentFiltersState = {

@@ -10,7 +10,7 @@ import PaymentTable from "./components/PaymentTable";
 
 // Hooks & Types
 import { useAdminSubscriptionPayments } from "@/hooks/payments/useAdminSubscriptionPayments";
-import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/subscription-payment.payload";
+import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/payment.payload";
 import type { SubscriptionTier } from "@/types/subscription/subscription.response";
 
 const PAGE_SIZE = 20;

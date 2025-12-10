@@ -1,10 +1,10 @@
 import { userAxiosInstance } from "@/config/axios.config";
 
-import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/subscription-payment.payload";
+import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/payment.payload";
 import type {
   GetAdminSubscriptionPaymentsResponse,
   GetAdminSubscriptionPaymentsSummaryResponse,
-} from "@/types/payments/subscription-payment.response";
+} from "@/types/payments/payment.response";
 
 const cleanQuery = (query: Record<string, unknown>) =>
   Object.fromEntries(
