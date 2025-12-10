@@ -79,13 +79,13 @@ export default function CoursesPage() {
             <Table className="table-auto w-full">
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
-                  <TableHead className="w-60 text-left font-bold pl-5">Course Name</TableHead>
-                  <TableHead className="w-32 text-left font-bold">Code</TableHead>
-                  <TableHead className="w-44 text-left font-bold">Lecturer</TableHead>
-                  <TableHead className="w-28 text-center font-bold">Enrollments</TableHead>
-                  <TableHead className="w-36 text-center font-bold">Created At</TableHead>
+                  <TableHead className="w-60 text-xs text-left font-bold pl-5">Course Name</TableHead>
+                  <TableHead className="w-32 text-xs text-left font-bold">Code</TableHead>
+                  <TableHead className="w-44 text-xs text-left font-bold">Lecturer</TableHead>
+                  <TableHead className="w-28 text-xs text-center font-bold">Enrollments</TableHead>
+                  <TableHead className="w-36 text-xs text-center font-bold">Created At</TableHead>
                   {/* ➕ Action column */}
-                  <TableHead className="w-28 text-center font-bold">Action</TableHead>
+                  <TableHead className="w-28 text-xs text-center font-bold">Action</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -116,10 +116,10 @@ export default function CoursesPage() {
                     transition={{ duration: 0.2 }}
                     className="border-b border-slate-100 hover:bg-slate-50"
                   >
-                    <TableCell className="text-left pl-5">{c.name}</TableCell>
-                    <TableCell className="text-left">{c.courseCode}</TableCell>
-                    <TableCell className="text-left">{c.lecturerName}</TableCell>
-                    <TableCell className="text-center">{c.enrollmentCount}</TableCell>
+                    <TableCell className="text-xs text-left pl-5">{c.name}</TableCell>
+                    <TableCell className="text-xs text-left">{c.courseCode}</TableCell>
+                    <TableCell className="text-xs text-left">{c.lecturerName}</TableCell>
+                    <TableCell className="text-xs text-center">{c.enrollmentCount}</TableCell>
                     <TableCell className="text-center text-xs whitespace-nowrap">
                       {formatToVN(c.createdAt, { year: "numeric", month: "2-digit", day: "2-digit" })}
                     </TableCell>

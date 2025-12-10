@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useUpdateCourseCode } from "@/hooks/course-code/useUpdateCourseCode";
 import { CourseCodeService } from "@/services/course-codes.services";
 import { CourseCode } from "@/types/course-codes/course-codes.response";
@@ -78,7 +79,8 @@ export default function EditDialog({
           </div>
           <div>
             <Label className="mb-2">Description</Label>
-            <Input
+            <Textarea
+              className="border-slate-200"
               value={courseCode.description}
               onChange={(e) => setCourseCode({ ...courseCode, description: e.target.value })}
             />

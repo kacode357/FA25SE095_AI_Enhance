@@ -72,7 +72,7 @@ export default function ProcessActions({
       {/* Reject — outline để không bị “ô trắng không chữ” */}
       <Button
         variant="outline"
-        className="px-5 whitespace-nowrap shadow-lg rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-slate-300"
+        className="px-5 whitespace-nowrap shadow-lg cursor-pointer rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-slate-300"
         onClick={() => openWith("reject")}
         disabled={loading}
       >
@@ -112,18 +112,21 @@ export default function ProcessActions({
             >
               Cancel
             </Button>
-
             <Button
-              variant={action === "reject" ? "danger" : "primary"}
-              className="h-10 px-5 btn btn-green-slow rounded-xl"
+              className={
+                "h-10 px-5 rounded-xl " +
+                (action === "reject"
+                  ? "bg-red-600 hover:bg-red-700 cursor-pointer hover:shadow-md text-white shadow"
+                  : "btn btn-green-slow")
+              }
               onClick={handleSubmit}
               disabled={loading}
             >
               {loading
                 ? "Processing..."
                 : action === "approve"
-                ? "Confirm Approve"
-                : "Confirm Reject"}
+                  ? "Confirm Approve"
+                  : "Confirm Reject"}
             </Button>
           </DialogFooter>
         </DialogContent>

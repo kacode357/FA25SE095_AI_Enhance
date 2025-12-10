@@ -127,14 +127,14 @@ export default function TermsPage() {
             <Table className="table-auto w-full">
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
-                  <TableHead className="w-56 text-left font-bold pl-5">Name</TableHead>
-                  <TableHead className="text-left font-bold">Description</TableHead>
-                  <TableHead className="w-36 text-center font-bold">Start Date</TableHead>
-                  <TableHead className="w-36 text-center font-bold">End Date</TableHead>
-                  <TableHead className="w-28 text-center font-bold">Active</TableHead>
-                  <TableHead className="w-36 text-center font-bold">Created At</TableHead>
-                  <TableHead className="w-36 text-center font-bold">Updated At</TableHead>
-                  <TableHead className="w-36 text-center font-bold">Actions</TableHead>
+                  <TableHead className="w-56 text-xs text-left font-bold pl-5">Name</TableHead>
+                  <TableHead className="text-xs text-left font-bold">Description</TableHead>
+                  <TableHead className="w-36 text-xs text-center font-bold">Start Date</TableHead>
+                  <TableHead className="w-36 text-xs text-center font-bold">End Date</TableHead>
+                  <TableHead className="w-28 text-xs text-center font-bold">Active</TableHead>
+                  <TableHead className="w-36 text-xs text-center font-bold">Created At</TableHead>
+                  <TableHead className="w-36 text-xs text-center font-bold">Updated At</TableHead>
+                  <TableHead className="w-36 text-xs text-center font-bold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -147,27 +147,27 @@ export default function TermsPage() {
                     transition={{ duration: 0.2 }}
                     className="border-b border-slate-100 hover:bg-emerald-50/50"
                   >
-                    <TableCell className="text-left text-sm pl-5">{t.name}</TableCell>
-                    <TableCell className="text-sm text-left">{t.description}</TableCell>
-                    <TableCell className="text-sm text-center">{formatDateTime(t.startDate)}</TableCell>
-                    <TableCell className="text-sm text-center">{formatDateTime(t.endDate)}</TableCell>
-                    <TableCell className="text-sm text-center">
+                    <TableCell className="text-left text-xs pl-5">{t.name}</TableCell>
+                    <TableCell className="text-xs text-left">{t.description}</TableCell>
+                    <TableCell className="text-xs text-center">{formatDateTime(t.startDate)}</TableCell>
+                    <TableCell className="text-xs text-center">{formatDateTime(t.endDate)}</TableCell>
+                    <TableCell className="text-xs text-center">
                       {t.isActive ? (
-                        <span className="text-sm text-emerald-600 font-semibold">Active</span>
+                        <span className="text-xs text-emerald-600 font-semibold">Active</span>
                       ) : (
-                        <span className="text-sm text-slate-500">Inactive</span>
+                        <span className="text-xs text-slate-500">Inactive</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-center whitespace-nowrap">{t.createdAt ? formatToVN(t.createdAt) : ""}</TableCell>
-                    <TableCell className="text-sm text-center whitespace-nowrap">{t.updatedAt ? formatToVN(t.updatedAt) : ""}</TableCell>
-                    <TableCell className="text-sm text-center">
+                    <TableCell className="text-xs text-center whitespace-nowrap">{t.createdAt ? formatToVN(t.createdAt) : ""}</TableCell>
+                    <TableCell className="text-xs text-center whitespace-nowrap">{t.updatedAt ? formatToVN(t.updatedAt) : ""}</TableCell>
+                    <TableCell className="text-xs text-center">
                       <div className="flex items-center justify-center gap-2">
                         {/* Edit */}
                         <Dialog open={openEditId === t.id} onOpenChange={(o) => setOpenEditId(o ? t.id : null)}>
                           <DialogTrigger asChild>
                             <Button
                               variant="ghost"
-                              className="h-8 -mx-2 cursor-pointer text-sm text-emerald-600 bg-violet-50 rounded-lg hover:bg-green-100 hover:shadow-md"
+                              className="h-8 -mx-2 cursor-pointer text-xs text-emerald-600 bg-violet-50 rounded-lg hover:bg-green-100 hover:shadow-md"
                             >
                               <PencilLine className="size-3 text-green-600" />
                             </Button>

@@ -15,6 +15,7 @@ export interface CourseRequest {
   processedAt: string | null;
   processingComments: string | null;
   createdCourseId: string | null;
+  syllabusFile?: string;
   createdAt: string;
   department: string;
 }

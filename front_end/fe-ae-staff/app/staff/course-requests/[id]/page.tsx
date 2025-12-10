@@ -12,7 +12,7 @@ import { useCourseRequestById } from "@/hooks/course-request/useCourseRequestByI
 import { formatToVN } from "@/utils/datetime/time";
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import ProcessActions from "../components/ProcessActions";
 
 export default function CourseRequestDetailPage() {
@@ -116,20 +116,38 @@ export default function CourseRequestDetailPage() {
               Basic Information
             </h3>
             <div className="grid md:grid-cols-2 gap-x-8 gap-y-5 text-sm">
-              <Field label="Lecturer" value={request.lecturerName} />
-              <Field label="Course Code" value={request.courseCode} />
-              <Field label="Title" value={request.courseCodeTitle} />
-              <Field label="Department" value={request.department} />
-              <Field label="Term" value={request.term} />
-              <Field
+              <Field className="text-xs" label="Lecturer" value={request.lecturerName} />
+              <Field className="text-xs" label="Course Code" value={request.courseCode} />
+              <Field className="text-xs" label="Title" value={request.courseCodeTitle} />
+              <Field className="text-xs" label="Department" value={request.department} />
+              <Field className="text-xs" label="Term" value={request.term} />
+              <Field className="text-xs"
                 label="Created At"
                 value={fmtDate(request.createdAt)}
+              />
+              <Field
+                className="text-xs"
+                label="Syllabus"
+                value={
+                  request.syllabusFile ? (
+                    <a
+                      href={request.syllabusFile}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-600 underline"
+                    >
+                      {request.syllabusFile || 'Download syllabus'}
+                    </a>
+                  ) : (
+                    '-'
+                  )
+                }
               />
             </div>
           </section>
 
           {/* Section: Processing */}
-          <section>
+          {/* <section>
             <h3 className="text-sm font-medium text-slate-600 mb-3">
               Processing
             </h3>
@@ -140,20 +158,20 @@ export default function CourseRequestDetailPage() {
               />
               <Field label="Processed At" value={fmtDate(request.processedAt, true)} />
             </div>
-          </section>
+          </section> */}
 
           {/* Section: Notes */}
           <section>
             <h3 className="text-sm font-medium text-slate-600 mb-3">Notes</h3>
             <div className="grid gap-3">
+              <HighlightBox label="Request Reason">
+                <span className="text-xs">{request.requestReason || '-'}</span>
+              </HighlightBox>
+
               <Field
-                label="Request Reason"
-                value={request.requestReason || "-"}
-                multiline
-              />
-              <Field
-                label="Processing Comments"
-                value={request.processingComments || "-"}
+                label="Description"
+                className="text-xs"
+                value={request.description || "-"}
                 multiline
               />
             </div>
@@ -184,7 +202,7 @@ function Field({
   className = "",
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   multiline?: boolean;
   className?: string;
 }) {
@@ -194,10 +212,20 @@ function Field({
         {label}
       </div>
       <div
-        className={`mt-1 text-slate-900 ${multiline ? "whitespace-pre-wrap" : ""
-          }`}
+        className={`mt-1 text-slate-900 ${multiline ? "whitespace-pre-wrap" : ""}`}
       >
         {value}
+      </div>
+    </div>
+  );
+}
+
+function HighlightBox({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
+  return (
+    <div className={className}>
+      <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium mb-2">{label}</div>
+      <div className="bg-emerald-50 border-l-4 border-emerald-400 rounded p-4 text-slate-900 whitespace-pre-wrap shadow-sm">
+        {children}
       </div>
     </div>
   );

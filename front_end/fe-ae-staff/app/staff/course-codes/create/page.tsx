@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useCreateCourseCode } from "@/hooks/course-code/useCreateCourseCode";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -77,9 +78,9 @@ export default function CreateCourseCodePage() {
 
                                 <div>
                                     <Label className="mb-2">Description</Label>
-                                    <Input
+                                    <Textarea
                                         placeholder="Short description"
-                                        className="placeholder:text-sm text-sm rounded-md"
+                                        className="placeholder:text-sm border-slate-200 text-sm rounded-md"
                                         value={form.description}
                                         onChange={(e) => handleChange('description', e.target.value)}
                                     />

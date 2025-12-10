@@ -78,12 +78,12 @@ export default function CourseApprovalsPage() {
               {/* Header + Filter (no dark borders) */}
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
-                  <TableHead className="pl-4 font-bold w-1/4 text-left">Course Name</TableHead>
-                  <TableHead className="font-bold w-1/5 text-left">Lecturer</TableHead>
-                  <TableHead className="font-bold w-1/6 text-center">Term</TableHead>
-                  {/* <TableHead className="font-bold w-1/6 text-center">Year</TableHead> */}
-                  <TableHead className="font-bold w-1/6 text-center">Created At</TableHead>
-                  <TableHead className="font-bold w-[120px] text-center">Action</TableHead>
+                  <TableHead className="text-xs pl-4 font-bold w-1/4 text-left">Course Name</TableHead>
+                  <TableHead className="text-xs font-bold w-1/5 text-left">Lecturer</TableHead>
+                  <TableHead className="text-xs font-bold w-1/6 text-center">Term</TableHead>
+                  {/* <TableHead className="text-xs font-bold w-1/6 text-center">Year</TableHead> */}
+                  <TableHead className="text-xs font-bold w-1/6 text-center">Created At</TableHead>
+                  <TableHead className="text-xs font-bold w-[120px] text-center">Action</TableHead>
                 </TableRow>
 
                 {/* Filter row đặt trong Header cho đồng bộ */}
@@ -109,7 +109,7 @@ export default function CourseApprovalsPage() {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-blue-50/40"
+                      className="border-b text-xs border-slate-100 hover:bg-blue-50/40"
                     >
                       <TableCell className="pl-4 text-left">{c.courseCodeTitle}</TableCell>
                       <TableCell className="text-left">{c.lecturerName}</TableCell>

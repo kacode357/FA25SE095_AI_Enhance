@@ -79,8 +79,8 @@ export default function TopicsPage() {
                     transition={{ duration: 0.18 }}
                     className="border-b border-slate-100 hover:bg-slate-50"
                   >
-                    <TableCell className="text-left pl-5">{t.name}</TableCell>
-                    <TableCell className="text-left">
+                    <TableCell className="text-xs text-left pl-5">{t.name}</TableCell>
+                    <TableCell className="text-xs text-left">
                       <span className="block max-w-[420px] truncate whitespace-nowrap align-middle" title={t.description}>
                         {t.description}
                       </span>

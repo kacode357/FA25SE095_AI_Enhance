@@ -120,12 +120,12 @@ export default function CourseCodesPage() {
             <Table className="table-auto w-full">
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-600 border-b border-t border-slate-200">
-                  <TableHead className="w-28 text-left font-bold pl-5">Code</TableHead>
-                  <TableHead className="w-56 text-left font-bold">Title</TableHead>
-                  <TableHead className="w-44 text-left font-bold">Department</TableHead>
-                  <TableHead className="w-28 text-center font-bold">Active</TableHead>
-                  <TableHead className="w-36 text-center font-bold">Created At</TableHead>
-                  <TableHead className="w-32 text-center font-bold">Actions</TableHead>
+                  <TableHead className="w-28 text-xs text-left font-bold pl-5">Code</TableHead>
+                  <TableHead className="w-56 text-xs text-left font-bold">Title</TableHead>
+                  <TableHead className="w-44 text-xs text-left font-bold">Department</TableHead>
+                  <TableHead className="w-28 text-xs text-center font-bold">Active</TableHead>
+                  <TableHead className="w-36 text-xs text-center font-bold">Created At</TableHead>
+                  <TableHead className="w-32 text-xs text-center font-bold">Actions</TableHead>
                 </TableRow>
 
                 <FilterRow
@@ -155,10 +155,10 @@ export default function CourseCodesPage() {
                     transition={{ duration: 0.2 }}
                     className="border-b border-slate-100 hover:bg-emerald-50/50"
                   >
-                    <TableCell className="text-left pl-5">{c.code}</TableCell>
-                    <TableCell className="text-left">{c.title}</TableCell>
-                    <TableCell className="text-left">{c.department}</TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-xs text-left pl-5">{c.code}</TableCell>
+                    <TableCell className="text-xs text-left">{c.title}</TableCell>
+                    <TableCell className="text-xs text-left">{c.department}</TableCell>
+                    <TableCell className="text-xs text-center">
                       {c.isActive ? (
                         <span className="text-emerald-600 font-semibold">Active</span>
                       ) : (

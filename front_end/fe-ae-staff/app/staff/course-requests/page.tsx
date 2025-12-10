@@ -77,13 +77,13 @@ export default function CourseRequestsPage() {
               {/* ✅ Header */}
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-700 border-b border-slate-200">
-                  <TableHead className="pl-5 font-semibold">Lecturer</TableHead>
-                  <TableHead className="font-semibold">Course Code</TableHead>
-                  <TableHead className="font-semibold">Title</TableHead>
-                  <TableHead className="text-center font-semibold">Term</TableHead>
-                  <TableHead className="text-center font-semibold">Status</TableHead>
-                  <TableHead className="text-center font-semibold">Created At</TableHead>
-                  <TableHead className="text-center font-semibold">Action</TableHead>
+                  <TableHead className="text-xs pl-5 font-semibold">Lecturer</TableHead>
+                  <TableHead className="text-xs font-semibold">Course Code</TableHead>
+                  <TableHead className="text-xs font-semibold">Title</TableHead>
+                  <TableHead className="text-xs text-center font-semibold">Term</TableHead>
+                  <TableHead className="text-xs text-center font-semibold">Status</TableHead>
+                  <TableHead className="text-xs text-center font-semibold">Created At</TableHead>
+                  <TableHead className="text-xs text-center font-semibold">Action</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -123,7 +123,7 @@ export default function CourseRequestsPage() {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-blue-50/30"
+                      className="border-b text-xs border-slate-100 hover:bg-blue-50/30"
                     >
                       <TableCell className="pl-5">{r.lecturerName}</TableCell>
                       <TableCell>{r.courseCode}</TableCell>
