@@ -82,6 +82,7 @@ export type StudentCourseGradesDetailResponse =
 
 export interface PendingAssignmentItem {
   assignmentId: string;
+  courseId?: string;
   title: string;
   courseName: string;
   topicName: string;

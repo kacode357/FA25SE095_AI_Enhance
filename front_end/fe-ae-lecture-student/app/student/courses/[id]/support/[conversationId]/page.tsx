@@ -25,6 +25,7 @@ import { getSavedAccessToken } from "@/utils/auth/access-token";
 
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import ResolveSupportRequestDialog from "@/app/student/courses/[id]/support/components/ResolveSupportRequestDialog";
+import { CourseMiniHeader } from "../../components/CourseMiniHeader";
 
 import {
   parseServerDate,
@@ -422,30 +423,18 @@ export default function SupportChatPage() {
 
   /* ===== Render ===== */
   return (
-    <div className="p-4">
-      {/* Top header: left text + right button */}
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            // [CHANGE 2]: Sửa logic navigate về trang danh sách support thay vì back()
-            onClick={() => router.push(`/student/courses/${courseId}/support`)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white text-slate-700"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-[var(--brand)]" />
-              <h1 className="text-base font-semibold text-nav">
-                Support conversation
-              </h1>
-            </div>
-            <p className="text-xs text-[var(--text-muted)]">
-              Chat with <span className="font-medium">{peerName}</span>
-            </p>
-          </div>
-        </div>
+    <div className="p-4 space-y-3">
+      <CourseMiniHeader section="Support" />
+
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => router.push(`/student/courses/${courseId}/support`)}
+          className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-muted)] hover:text-brand transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to support list
+        </button>
 
         {canResolve && (
           <button

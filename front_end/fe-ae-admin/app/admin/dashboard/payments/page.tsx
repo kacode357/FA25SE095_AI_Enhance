@@ -11,6 +11,9 @@ import {
   Legend,
   Line,
   LineChart as ReLineChart,
+  Pie,
+  PieChart as RePieChart,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -168,18 +171,30 @@ export default function AdminDashboardPaymentsPage() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={statusData} barSize={26}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
-                  <XAxis dataKey="status" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(value: number) => formatNumber(value)} />
-                  <Bar
+                <RePieChart>
+                  <Pie
+                    data={statusData}
                     dataKey="total"
-                    name="Payments"
-                    fill="#f4a23b"
-                    radius={[8, 8, 0, 0]}
-                  />
-                </BarChart>
+                    nameKey="status"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(1)}%`
+                    }
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell
+                        key={entry.status}
+                        fill={["#7f71f4", "#22c55e", "#f97316", "#ef4444", "#0ea5e9"][index % 5]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => formatNumber(value)} />
+                  <Legend />
+                </RePieChart>
               </ResponsiveContainer>
             )}
           </div>

@@ -14,6 +14,7 @@ import {
   BookOpen,
   FileText,
 } from "lucide-react";
+import { CourseMiniHeader } from "../components/CourseMiniHeader";
 
 export default function MyGroupsByCoursePage() {
   const params = useParams();
@@ -51,15 +52,7 @@ export default function MyGroupsByCoursePage() {
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-bold text-nav flex items-center gap-2">
-            <ListChecks className="w-6 h-6 text-nav-active" />
-            My Groups
-          </h1>
-        </div>
-      </div>
+      <CourseMiniHeader section="My Groups" />
 
       {/* Wrapper */}
       <div className="card rounded-2xl p-0">

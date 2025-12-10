@@ -134,6 +134,45 @@ header.fixed, header {
   box-shadow: 0 6px 24px rgba(2, 6, 23, 0.06);
 }
 
+/* Dashboard glassy cards */
+.dashboard-ghost {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(127, 113, 244, 0.06), rgba(255, 255, 255, 0.92));
+  backdrop-filter: blur(8px);
+}
+.dashboard-ghost::before {
+  content: "";
+  position: absolute;
+  inset: -30% -10% auto auto;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(127, 113, 244, 0.14), transparent 60%);
+  filter: blur(12px);
+  pointer-events: none;
+}
+.dashboard-ghost::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  transform: translateX(-120%);
+  animation: dashboard-shine 10s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes dashboard-shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  55% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
 /* Glass-style card for auth pages */
 .glass-card {
   background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.64));

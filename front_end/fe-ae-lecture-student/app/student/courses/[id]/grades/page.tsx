@@ -20,6 +20,7 @@ import type {
   StudentCourseGradeStatistics,
   StudentAssignmentGradeItem,
 } from "@/types/assignments/assignment.response";
+import { CourseMiniHeader } from "../components/CourseMiniHeader";
 
 // Use the exact type returned by the API for assignmentGrades
 type Row = StudentAssignmentGradeItem;
@@ -123,14 +124,7 @@ export default function GradesPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold text-nav flex items-center gap-2">
-          <Award className="w-7 h-7 text-nav-active" />
-          Grades
-        </h1>
-    
-      </div>
+      <CourseMiniHeader section="Grades" />
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

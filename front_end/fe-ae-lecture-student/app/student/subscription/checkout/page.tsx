@@ -168,7 +168,7 @@ export default function SubscriptionCheckoutPage() {
     query.set("tier", String(selectedTier.tier)); // số: 0/1/2/3
     query.set("planId", selectedTier.id);
 
-    const returnUrl = `${origin}/student/subscription/checkout?${query.toString()}`;
+    const returnUrl = `${origin}/student/subscription/success?${query.toString()}`;
     const cancelUrl = `${origin}/student/subscription`;
 
     // 👇 Gửi đúng payload mới: subscriptionPlanId + return/cancel

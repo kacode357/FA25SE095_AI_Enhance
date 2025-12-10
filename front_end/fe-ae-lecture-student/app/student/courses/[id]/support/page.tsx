@@ -7,6 +7,7 @@ import { Headset } from "lucide-react";
 
 import { SupportRequestCreate } from "./components/SupportRequestCreate";
 import { SupportRequestList } from "./components/SupportRequestList";
+import { CourseMiniHeader } from "../components/CourseMiniHeader";
 
 export default function CourseSupportPage() {
   const params = useParams();
@@ -32,8 +33,7 @@ export default function CourseSupportPage() {
 
   return (
     <div className="py-6 space-y-6">
-      {/* Header */}
-   
+      <CourseMiniHeader section="Support" />
 
       {/* Create + List */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">

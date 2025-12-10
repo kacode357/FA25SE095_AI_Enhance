@@ -16,6 +16,7 @@ import {
 
 import { useMyAssignments } from "@/hooks/assignment/useMyAssignments";
 import { AssignmentStatus } from "@/config/classroom-service/assignment-status.enum";
+import { CourseMiniHeader } from "../components/CourseMiniHeader";
 // Đã xóa import parseCourseName
 
 /** Map enum -> CSS class (match app/styles/assignment-status.css) */
@@ -150,22 +151,7 @@ export default function CourseAssignmentsPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold flex items-center gap-2 text-nav">
-            <ListTodo className="w-6 h-6 text-brand" />
-            <span>Assignments</span>
-            {totalAssignments > 0 && (
-              <span className="ml-1 text-xs font-medium text-muted">
-                ({totalAssignments})
-              </span>
-            )}
-          </h1>
-
-          {/* Phần hiển thị chi tiết Course Info đã bị xóa */}
-        </div>
-      </div>
+      <CourseMiniHeader section="Assignments" />
 
       {/* Collapse all / Expand all */}
       {!loading && assignments.length > 0 && (

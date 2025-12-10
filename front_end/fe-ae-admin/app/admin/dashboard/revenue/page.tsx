@@ -11,6 +11,9 @@ import {
   Legend,
   Line,
   LineChart as ReLineChart,
+  Pie,
+  PieChart,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -192,25 +195,34 @@ export default function AdminDashboardRevenuePage() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueByTierData} barSize={26}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
-                  <XAxis dataKey="tier" tick={{ fontSize: 11 }} />
-                  <YAxis
-                    tickFormatter={(v) => formatNumber(v)}
-                    tick={{ fontSize: 11 }}
-                  />
+                <PieChart>
+                  <Pie
+                    data={revenueByTierData}
+                    dataKey="value"
+                    nameKey="tier"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(1)}%`
+                    }
+                  >
+                    {revenueByTierData.map((entry, index) => (
+                      <Cell
+                        key={entry.tier}
+                        fill={["#7f71f4", "#f4a23b", "#10b981", "#22c55e", "#2563eb"][index % 5]}
+                      />
+                    ))}
+                  </Pie>
                   <Tooltip
-                    formatter={(value: number) =>
-                      formatCurrency(value, revenue?.currency)
+                    formatter={(value: number, name) =>
+                      `${formatCurrency(value, revenue?.currency)} (${name})`
                     }
                   />
-                  <Bar
-                    dataKey="value"
-                    name="Revenue"
-                    fill="#7f71f4"
-                    radius={[8, 8, 0, 0]}
-                  />
-                </BarChart>
+                  <Legend />
+                </PieChart>
               </ResponsiveContainer>
             )}
           </div>

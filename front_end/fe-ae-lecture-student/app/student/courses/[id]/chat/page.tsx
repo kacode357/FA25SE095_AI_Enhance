@@ -8,6 +8,7 @@ import StudentsList from "./components/StudentsList";
 import ChatWindow from "./components/ChatWindow";
 import type { CourseChatUserItemResponse as ChatUser } from "@/types/chat/chat.response";
 import { loadDecodedUser } from "@/utils/secure-user";
+import { CourseMiniHeader } from "../components/CourseMiniHeader";
 
 /* ===== Token helpers ===== */
 const ACCESS_TOKEN_KEY = "accessToken";
@@ -99,7 +100,10 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="py-6 grid grid-cols-12 gap-6">
+    <div className="py-6 space-y-4">
+      <CourseMiniHeader section="Chat" />
+
+      <div className="grid grid-cols-12 gap-6">
       <StudentsList
         courseId={courseId}
         selectedUserId={selectedUser?.id}
@@ -116,6 +120,7 @@ export default function ChatPage() {
         onUnreadCountChanged={handleUnreadCountChanged}
         onUnreadCountsBatch={handleUnreadCountsBatch}
       />
+      </div>
     </div>
   );
 }

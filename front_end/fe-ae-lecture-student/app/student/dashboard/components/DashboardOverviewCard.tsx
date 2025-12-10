@@ -1,57 +1,107 @@
+// app/student/dashboard/components/DashboardOverviewCard.tsx
 "use client";
 
-import { useEffect } from "react";
 import { TrendingUp } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useStudentGradesOverview } from "@/hooks/dashboard/useStudentGradesOverview";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function DashboardOverviewCard({ termId }: { termId?: string }) {
-  const { data, loading, fetchOverview } = useStudentGradesOverview();
+import type { StudentGradesOverviewData } from "@/types/dashboard/dashboard.response";
 
-  useEffect(() => {
-    fetchOverview(termId);
-  }, [termId]);
+type Props = {
+  data?: StudentGradesOverviewData;
+  loading: boolean;
+};
 
-  const d = data?.data;
+export default function DashboardOverviewCard({ data, loading }: Props) {
+  const currentTermGpa = data?.currentTermGpa;
+  const overallGpa = data?.overallGpa;
 
   return (
-    <Card className="border-indigo-100">
+    <Card className="dashboard-ghost border border-indigo-100 shadow-sm transition duration-200 hover:-translate-y-[2px] hover:shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">GPA Overview</CardTitle>
+        <CardTitle className="text-sm font-semibold text-nav">
+          GPA Overview
+        </CardTitle>
         <TrendingUp className="h-4 w-4 text-indigo-500" />
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-sm text-slate-500">Loading...</div>
+          <OverviewSkeleton />
         ) : (
           <>
             <div className="flex items-end gap-8">
-              <div>
-                <p className="text-xs text-slate-600">Current Term GPA</p>
-                <p className="text-2xl font-bold">{d?.currentTermGpa ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-600">Overall GPA</p>
-                <p className="text-xl font-semibold">{d?.overallGpa ?? "—"}</p>
-              </div>
+              <NumberBlock
+                label="Current term GPA"
+                value={formatNumber(currentTermGpa)}
+                accent
+              />
+              <NumberBlock label="Overall GPA" value={formatNumber(overallGpa)} />
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded bg-slate-50 p-2">
-                <div className="text-[11px] text-slate-500">Weight Earned</div>
-                <div className="font-semibold">
-                  {d?.totalWeightEarned ?? 0} / {d?.totalWeightPossible ?? 0}
-                </div>
-              </div>
-
-              <div className="rounded bg-slate-50 p-2">
-                <div className="text-[11px] text-slate-500">Courses</div>
-                <div className="font-semibold">{d?.courses.length ?? 0}</div>
-              </div>
+              <StatPill
+                label="Weight earned"
+                value={`${data?.totalWeightEarned ?? 0} / ${
+                  data?.totalWeightPossible ?? 0
+                }`}
+              />
+              <StatPill label="Courses" value={data?.courses.length ?? 0} />
             </div>
           </>
         )}
       </CardContent>
     </Card>
   );
+}
+
+function NumberBlock({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-xs text-slate-600">{label}</p>
+      <p
+        className={`whitespace-nowrap text-2xl font-bold ${
+          accent ? "text-nav" : "text-slate-800"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function StatPill({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-lg bg-slate-50 p-2">
+      <div className="text-[11px] text-slate-500">{label}</div>
+      <div className="font-semibold text-nav">{value}</div>
+    </div>
+  );
+}
+
+function OverviewSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-end gap-8">
+        <Skeleton className="h-12 w-24" />
+        <Skeleton className="h-10 w-20" />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    </div>
+  );
+}
+
+function formatNumber(value: number | null | undefined) {
+  if (value === null || value === undefined) return "—";
+  return Number.isFinite(value) ? value.toFixed(2) : "—";
 }

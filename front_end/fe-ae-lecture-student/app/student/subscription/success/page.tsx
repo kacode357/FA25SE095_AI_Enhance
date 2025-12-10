@@ -1,12 +1,14 @@
 // app/student/subscription/success/page.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, Crown, ArrowRight } from "lucide-react";
 import Cookies from "js-cookie";
+import { toast } from "sonner";
 
+import { useConfirmSubscriptionPayment } from "@/hooks/payments/useConfirmSubscriptionPayment";
 import { loadDecodedUser, saveEncodedUser } from "@/utils/secure-user";
 import { getUserSubscriptionPlanName } from "@/config/user-service/plan";
 
@@ -16,23 +18,110 @@ export default function SubscriptionSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const updatedRef = useRef(false);
+  const hasHandledReturnRef = useRef(false);
 
-  // tier từ query: có thể là "0" / "1" / "free" / "basic" ...
+  const { confirmSubscriptionPayment, loading: confirming } =
+    useConfirmSubscriptionPayment();
+
   const tier = searchParams.get("tier") || "";
+  const planId = searchParams.get("planId") || "";
+  const confirmationToken =
+    searchParams.get("confirmationToken") ||
+    searchParams.get("ConfirmationToken");
+  const orderCode =
+    searchParams.get("orderCode") || searchParams.get("OrderCode");
+  const status = searchParams.get("status");
+  const cancel = searchParams.get("cancel");
+  const cameFromPayOsReturn = Boolean(confirmationToken && orderCode);
+  const [canUpdateUser, setCanUpdateUser] = useState(!cameFromPayOsReturn);
   const planName = getUserSubscriptionPlanName(tier);
 
-  // ✅ Cập nhật subscriptionTier trong encoded user + báo cho app biết user đã update
+  // Confirm payment directly when PayOS returns to this page
   useEffect(() => {
+    if (!cameFromPayOsReturn) return;
+    if (hasHandledReturnRef.current) return;
+
+    if (cancel === "true") {
+      toast.error("Payment was cancelled.");
+      router.replace("/student/subscription");
+      return;
+    }
+
+    if (status && status.toUpperCase() !== "PAID") {
+      toast.error("Payment not completed. Please try again.");
+      const fallback = new URLSearchParams();
+      if (tier) fallback.set("tier", tier);
+      if (planId) fallback.set("planId", planId);
+      const fallbackQuery = fallback.toString();
+      router.replace(
+        `/student/subscription/checkout${
+          fallbackQuery ? `?${fallbackQuery}` : ""
+        }`,
+      );
+      return;
+    }
+
+    hasHandledReturnRef.current = true;
+
+    (async () => {
+      const res = await confirmSubscriptionPayment({
+        orderCode: orderCode as string,
+        token: confirmationToken as string,
+      });
+
+      if (!res || res.status !== 200) {
+        setCanUpdateUser(false);
+        toast.error(
+          res?.message || "Could not confirm your subscription payment.",
+        );
+        const fallback = new URLSearchParams();
+        if (tier) fallback.set("tier", tier);
+        if (planId) fallback.set("planId", planId);
+        const fallbackQuery = fallback.toString();
+        router.replace(
+          `/student/subscription/checkout${
+            fallbackQuery ? `?${fallbackQuery}` : ""
+          }`,
+        );
+        return;
+      }
+
+      setCanUpdateUser(true);
+
+      // Clean sensitive query params but keep plan info for downstream logic
+      const cleanQuery = new URLSearchParams();
+      if (tier) cleanQuery.set("tier", tier);
+      if (planId) cleanQuery.set("planId", planId);
+
+      const cleanQueryString = cleanQuery.toString();
+      if (cleanQueryString) {
+        router.replace(`/student/subscription/success?${cleanQueryString}`);
+      } else if (status || cancel || confirmationToken || orderCode) {
+        router.replace("/student/subscription/success");
+      }
+    })();
+  }, [
+    cancel,
+    cameFromPayOsReturn,
+    confirmationToken,
+    confirmSubscriptionPayment,
+    orderCode,
+    planId,
+    router,
+    status,
+    tier,
+  ]);
+
+  // Update cached user data once payment is confirmed (or when arriving from a trusted redirect)
+  useEffect(() => {
+    if (!tier || !canUpdateUser) return;
     if (updatedRef.current) return;
     updatedRef.current = true;
 
     (async () => {
-      if (!tier) return;
-
       const user = await loadDecodedUser();
       if (!user) return;
 
-      // Nếu cùng tier string rồi thì thôi
       if (
         user.subscriptionTier &&
         user.subscriptionTier.toLowerCase() === tier.toLowerCase()
@@ -44,18 +133,16 @@ export default function SubscriptionSuccessPage() {
 
       const updatedUser = {
         ...user,
-        // vẫn lưu raw tier (vd: "0", "1", "free"...)
         subscriptionTier: tier,
       };
 
       await saveEncodedUser(updatedUser, remember);
 
-      // 🔔 báo cho các component khác (UserMenu) reload lại user
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("app:user-updated"));
       }
     })();
-  }, [tier]);
+  }, [tier, canUpdateUser]);
 
   const handleGoToPlans = () => {
     router.push("/student/subscription");
@@ -97,10 +184,30 @@ export default function SubscriptionSuccessPage() {
           )}
         </p>
 
+        {cameFromPayOsReturn && confirming && (
+          <div
+            className="mb-4 inline-flex items-center gap-2 rounded-full bg-slate-50 px-4 py-2 text-[11px] font-medium"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand" />
+            Confirming your payment with PayOS...
+          </div>
+        )}
+
         <div className="mb-6 inline-flex items-center rounded-full bg-slate-50 px-4 py-2 text-xs font-medium">
-          <span className="mr-1 inline-block h-2 w-2 rounded-full bg-green-500" />
+          <span
+            className={`mr-1 inline-block h-2 w-2 rounded-full ${
+              confirming ? "bg-brand" : "bg-green-500"
+            }`}
+          />
           Subscription status:{" "}
-          <span className="ml-1 text-green-600">Active</span>
+          <span
+            className={`ml-1 ${
+              confirming ? "text-brand" : "text-green-600"
+            }`}
+          >
+            {confirming ? "Confirming..." : "Active"}
+          </span>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">

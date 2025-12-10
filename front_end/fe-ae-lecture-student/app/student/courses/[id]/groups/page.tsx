@@ -17,6 +17,7 @@ import {
   FileText,
   ChevronRight,
 } from "lucide-react";
+import { CourseMiniHeader } from "../components/CourseMiniHeader";
 // Đã xóa import parseCourseName
 
 export default function CourseGroupsPage() {
@@ -76,16 +77,7 @@ export default function CourseGroupsPage() {
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-bold text-brand flex items-center gap-2">
-            <Users className="w-6 h-6 text-brand" />
-            Groups
-          </h1>
-        
-        </div>
-      </div>
+      <CourseMiniHeader section="Groups" />
 
       {/* Main layout 7/3 */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">

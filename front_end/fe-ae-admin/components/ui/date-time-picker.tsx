@@ -106,7 +106,7 @@ function TimeSelector({
       >
         <div className="flex gap-2 text-sm">
           {/* Hours */}
-          <div className="max-h-40 w-12 overflow-auto pr-1 no-scrollbar">
+          <div className="max-h-40 w-12 overflow-y-auto pr-1">
             {hours.map((h) => {
               const label = h.toString().padStart(2, "0");
               const active = h === curH;
@@ -129,7 +129,7 @@ function TimeSelector({
             })}
           </div>
           {/* Minutes */}
-          <div className="max-h-40 w-12 overflow-auto pr-1 no-scrollbar">
+          <div className="max-h-40 w-12 overflow-y-auto pr-1">
             {minutes.map((m) => {
               const label = m.toString().padStart(2, "0");
               const active = m === curM;
