@@ -15,7 +15,7 @@ import UserActionMenu from "./UserActionMenu";
 type Props = {
   loading?: boolean;
   items: AdminUserItem[];
-  onRefresh: () => void; // ✅ Thêm prop này để refresh data từ cha
+  onRefresh: () => void;
 };
 
 export default function UserTable({ loading, items, onRefresh }: Props) {
@@ -32,16 +32,16 @@ export default function UserTable({ loading, items, onRefresh }: Props) {
   return (
     <div className="rounded-md border border-[var(--border)] bg-white">
       <table className="w-full table-fixed text-sm">
+        {/* Đã bỏ cột Quota → còn 7 cột */}
         <colgroup>
           {[
-            "w-[22%]", // User
-            "w-[10%]", // Role
+            "w-[25%]", // User (tăng width một chút để bù lại)
+            "w-[12%]", // Role
             "w-[12%]", // Status
-            "w-[12%]", // Subscription
-            "w-[14%]", // Quota
-            "w-[12%]", // Last login
-            "w-[12%]", // Created at
-            "w-[6%]",  // Actions
+            "w-[14%]", // Subscription
+            "w-[14%]", // Last login
+            "w-[14%]", // Created at
+            "w-[9%]",  // Actions (tăng nhẹ để cân đối)
           ].map((className, idx) => (
             <col key={idx} className={className} />
           ))}
@@ -53,20 +53,33 @@ export default function UserTable({ loading, items, onRefresh }: Props) {
             <th className="px-3 py-2 text-left truncate">Role</th>
             <th className="px-3 py-2 text-left truncate">Status</th>
             <th className="px-3 py-2 text-left truncate">Subscription</th>
-            <th className="px-3 py-2 text-left truncate">Quota</th>
             <th className="px-3 py-2 text-left truncate">Last login</th>
             <th className="px-3 py-2 text-left truncate">Created at</th>
             <th className="px-3 py-2 text-right truncate">Actions</th>
           </tr>
         </thead>
+
         <tbody>
           {showSkeleton
             ? Array.from({ length: 5 }).map((_, idx) => (
                 <tr key={idx} className="border-b border-[var(--border)]">
-                    {/* ... (Phần Skeleton giữ nguyên như code cũ của mày) ... */}
-                     <td className="px-3 py-3 text-right">
-                       <Skeleton className="h-9 w-9 ml-auto" />
-                     </td>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-40" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3"><Skeleton className="h-6 w-16" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-6 w-20" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-6 w-24" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-28" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-28" /></td>
+                  <td className="px-3 py-3 text-right">
+                    <Skeleton className="h-9 w-9 ml-auto" />
+                  </td>
                 </tr>
               ))
             : items.map((u) => (
@@ -86,12 +99,15 @@ export default function UserTable({ loading, items, onRefresh }: Props) {
                       </span>
                     </div>
                   </td>
+
                   <td className="px-3 py-3">
                     <UserRoleBadge role={u.role} />
                   </td>
+
                   <td className="px-3 py-3">
                     <UserStatusBadge status={u.status} />
                   </td>
+
                   <td className="px-3 py-3">
                     <Badge
                       variant="outline"
@@ -100,28 +116,17 @@ export default function UserTable({ loading, items, onRefresh }: Props) {
                       {u.subscriptionTier}
                     </Badge>
                   </td>
-                  <td className="px-3 py-3 text-xs text-slate-700">
-                    <div className="flex flex-col">
-                      <span className="truncate">
-                        {u.crawlQuotaUsed} / {u.crawlQuotaLimit}
-                      </span>
-                      <span className="text-[11px] text-slate-400 truncate">
-                        URLs used / limit
-                      </span>
-                    </div>
-                  </td>
+
                   <td className="px-3 py-3 text-xs text-slate-700 truncate">
                     {formatDateOnlyVN(u.lastLoginAt)}
                   </td>
+
                   <td className="px-3 py-3 text-xs text-slate-700 truncate">
                     {formatDateOnlyVN(u.createdAt)}
                   </td>
+
                   <td className="px-3 py-3 text-right">
-                    {/* ✅ Thay thế Dropdown cũ bằng Component mới */}
-                    <UserActionMenu 
-                      user={u} 
-                      onRefresh={onRefresh} 
-                    />
+                    <UserActionMenu user={u} onRefresh={onRefresh} />
                   </td>
                 </tr>
               ))}

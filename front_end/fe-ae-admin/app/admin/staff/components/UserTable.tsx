@@ -48,16 +48,15 @@ export default function UserTable({ loading, items }: Props) {
   return (
     <div className="rounded-md border border-[var(--border)] bg-white">
       <table className="w-full table-fixed text-sm">
-  <colgroup>
+        <colgroup>
           {[
-            "w-[22%]", // User
-            "w-[10%]", // Role
+            "w-[25%]", // User (tăng lên để bù không gian)
+            "w-[12%]", // Role
             "w-[12%]", // Status
-            "w-[12%]", // Subscription
-            "w-[14%]", // Quota
-            "w-[12%]", // Last login
-            "w-[12%]", // Created at
-            "w-[6%]",  // Actions
+            "w-[14%]", // Subscription
+            "w-[15%]", // Last login
+            "w-[15%]", // Created at
+            "w-[7%]",  // Actions (tăng nhẹ cho cân đối)
           ].map((className, idx) => (
             <col key={idx} className={className} />
           ))}
@@ -69,7 +68,6 @@ export default function UserTable({ loading, items }: Props) {
             <th className="px-3 py-2 text-left truncate">Role</th>
             <th className="px-3 py-2 text-left truncate">Status</th>
             <th className="px-3 py-2 text-left truncate">Subscription</th>
-            <th className="px-3 py-2 text-left truncate">Quota</th>
             <th className="px-3 py-2 text-left truncate">Last login</th>
             <th className="px-3 py-2 text-left truncate">Created at</th>
             <th className="px-3 py-2 text-right truncate">Actions</th>
@@ -93,9 +91,6 @@ export default function UserTable({ loading, items }: Props) {
                   </td>
                   <td className="px-3 py-3">
                     <Skeleton className="h-4 w-3/4" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <Skeleton className="h-4 w-4/5" />
                   </td>
                   <td className="px-3 py-3">
                     <Skeleton className="h-4 w-4/5" />
@@ -138,16 +133,6 @@ export default function UserTable({ loading, items }: Props) {
                     >
                       {u.subscriptionTier}
                     </Badge>
-                  </td>
-                  <td className="px-3 py-3 text-xs text-slate-700">
-                    <div className="flex flex-col">
-                      <span className="truncate">
-                        {u.crawlQuotaUsed} / {u.crawlQuotaLimit}
-                      </span>
-                      <span className="text-[11px] text-slate-400 truncate">
-                        URLs used / limit
-                      </span>
-                    </div>
                   </td>
                   <td className="px-3 py-3 text-xs text-slate-700 truncate">
                     {formatDateOnlyVN(u.lastLoginAt)}
