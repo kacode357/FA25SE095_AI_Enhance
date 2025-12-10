@@ -181,7 +181,7 @@ export default function AdminDashboardPaymentsPage() {
                     innerRadius={55}
                     outerRadius={90}
                     paddingAngle={2}
-                    label={({ name, percent }) =>
+                    label={({ name, percent = 0 }) =>
                       `${name}: ${(percent * 100).toFixed(1)}%`
                     }
                   >

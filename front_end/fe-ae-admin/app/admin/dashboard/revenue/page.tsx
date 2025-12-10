@@ -205,7 +205,7 @@ export default function AdminDashboardRevenuePage() {
                     innerRadius={60}
                     outerRadius={90}
                     paddingAngle={3}
-                    label={({ name, percent }) =>
+                    label={({ name, percent = 0 }) =>
                       `${name}: ${(percent * 100).toFixed(1)}%`
                     }
                   >
