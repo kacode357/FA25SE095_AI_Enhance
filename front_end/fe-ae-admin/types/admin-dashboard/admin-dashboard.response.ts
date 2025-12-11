@@ -18,6 +18,9 @@ export interface RevenueTimelinePoint {
   revenue: number;
   orders?: number;
   averageOrderValue?: number;
+  /** Some responses provide amount/orderCount instead of revenue/orders */
+  amount?: number;
+  orderCount?: number;
 }
 
 export interface RevenueStatistics {
@@ -50,6 +53,10 @@ export interface PaymentTimelinePoint {
   successfulOrders?: number;
   failedOrders?: number;
   successRate?: number;
+  /** Some responses provide count fields instead of total/success/failed */
+  totalCount?: number;
+  successCount?: number;
+  failedCount?: number;
 }
 
 export interface PaymentStatistics {

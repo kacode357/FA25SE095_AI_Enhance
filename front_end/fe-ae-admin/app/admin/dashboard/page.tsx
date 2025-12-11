@@ -95,16 +95,25 @@ export default function AdminDashboardOverviewPage() {
   const revenueTimeline =
     overview?.revenue.timeline?.map((item) => ({
       name: toShortDate(item.date),
-      revenue: item.revenue,
-      orders: item.orders ?? 0,
+      revenue: item.revenue ?? item.amount ?? 0,
+      orders: item.orders ?? item.orderCount ?? 0,
     })) || [];
 
   const paymentsTimeline =
-    overview?.payments.timeline?.map((item) => ({
-      name: toShortDate(item.date),
-      totalOrders: item.totalOrders,
-      successRate: item.successRate ?? 0,
-    })) || [];
+    overview?.payments.timeline?.map((item) => {
+      const totalOrders = item.totalOrders ?? item.totalCount ?? 0;
+      const successfulOrders =
+        item.successfulOrders ?? item.successCount ?? 0;
+      const successRate =
+        item.successRate ??
+        (totalOrders > 0 ? (successfulOrders / totalOrders) * 100 : 0);
+
+      return {
+        name: toShortDate(item.date),
+        totalOrders,
+        successRate,
+      };
+    }) || [];
 
   const subscriptionTimeline =
     overview?.subscriptions.timeline?.map((item) => ({

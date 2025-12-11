@@ -45,14 +45,25 @@ export default function AdminDashboardPaymentsPage() {
   }, [fetchAdminDashboardPayments]);
 
   const timelineData =
-    payments?.timeline?.map((item) => ({
-      name: toShortDate(item.date),
-      totalOrders: item.totalOrders,
-      successfulOrders: item.successRate
-        ? Math.round((item.successRate / 100) * (item.totalOrders || 0))
-        : item.successRate,
-      successRate: item.successRate,
-    })) || [];
+    payments?.timeline?.map((item) => {
+      const totalOrders = item.totalOrders ?? item.totalCount ?? 0;
+      const successfulOrders =
+        item.successfulOrders ??
+        item.successCount ??
+        (item.successRate !== undefined
+          ? Math.round((item.successRate / 100) * totalOrders)
+          : 0);
+      const successRate =
+        item.successRate ??
+        (totalOrders > 0 ? (successfulOrders / totalOrders) * 100 : 0);
+
+      return {
+        name: toShortDate(item.date),
+        totalOrders,
+        successfulOrders,
+        successRate,
+      };
+    }) || [];
 
   const statusData = useMemo(
     () =>

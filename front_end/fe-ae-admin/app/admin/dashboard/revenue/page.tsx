@@ -54,8 +54,8 @@ export default function AdminDashboardRevenuePage() {
   const revenueTimeline =
     revenue?.timeline?.map((item) => ({
       name: toShortDate(item.date),
-      revenue: item.revenue,
-      orders: item.orders ?? 0,
+      revenue: item.revenue ?? item.amount ?? 0,
+      orders: item.orders ?? item.orderCount ?? 0,
     })) || [];
 
   const revenueByTierData = useMemo(
