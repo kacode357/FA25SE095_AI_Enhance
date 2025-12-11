@@ -1,17 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-
-import { Eye, MoreHorizontal, RotateCcw } from "lucide-react";
 import type { AdminUserItem } from "@/types/admin/admin-user.response";
 import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
 import {
@@ -19,13 +9,16 @@ import {
   UserStatusBadge,
 } from "@/app/admin/components/UserBadge";
 
+// Import component Action mới
+import UserActionMenu from "./UserActionMenu";
+
 type Props = {
   loading?: boolean;
   items: AdminUserItem[];
+  onRefresh: () => void;
 };
 
-export default function UserTable({ loading, items }: Props) {
-  const router = useRouter();
+export default function UserTable({ loading, items, onRefresh }: Props) {
   const showSkeleton = loading && items.length === 0;
 
   if (!loading && items.length === 0) {
@@ -36,27 +29,19 @@ export default function UserTable({ loading, items }: Props) {
     );
   }
 
-  const handleViewDetail = (u: AdminUserItem) => {
-    router.push(`/admin/users/${u.id}`);
-  };
-
-  const handleReactivate = (u: AdminUserItem) => {
-    // TODO: wire reactivate API
-    console.log("Reactivate user", u.id);
-  };
-
   return (
     <div className="rounded-md border border-[var(--border)] bg-white">
       <table className="w-full table-fixed text-sm">
+        {/* Đã bỏ cột Quota → còn 7 cột */}
         <colgroup>
           {[
-            "w-[25%]", // User (tăng lên để bù không gian)
+            "w-[25%]", // User (tăng width một chút để bù lại)
             "w-[12%]", // Role
             "w-[12%]", // Status
             "w-[14%]", // Subscription
-            "w-[15%]", // Last login
-            "w-[15%]", // Created at
-            "w-[7%]",  // Actions (tăng nhẹ cho cân đối)
+            "w-[14%]", // Last login
+            "w-[14%]", // Created at
+            "w-[9%]",  // Actions (tăng nhẹ để cân đối)
           ].map((className, idx) => (
             <col key={idx} className={className} />
           ))}
@@ -73,31 +58,25 @@ export default function UserTable({ loading, items }: Props) {
             <th className="px-3 py-2 text-right truncate">Actions</th>
           </tr>
         </thead>
+
         <tbody>
           {showSkeleton
             ? Array.from({ length: 5 }).map((_, idx) => (
                 <tr key={idx} className="border-b border-[var(--border)]">
                   <td className="px-3 py-3">
-                    <div className="flex flex-col gap-1">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-3 w-3/4" />
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-40" />
+                      </div>
                     </div>
                   </td>
-                  <td className="px-3 py-3">
-                    <Skeleton className="h-4 w-2/3" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <Skeleton className="h-4 w-3/4" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <Skeleton className="h-4 w-3/4" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <Skeleton className="h-4 w-4/5" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <Skeleton className="h-4 w-4/5" />
-                  </td>
+                  <td className="px-3 py-3"><Skeleton className="h-6 w-16" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-6 w-20" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-6 w-24" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-28" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-28" /></td>
                   <td className="px-3 py-3 text-right">
                     <Skeleton className="h-9 w-9 ml-auto" />
                   </td>
@@ -120,12 +99,15 @@ export default function UserTable({ loading, items }: Props) {
                       </span>
                     </div>
                   </td>
+
                   <td className="px-3 py-3">
                     <UserRoleBadge role={u.role} />
                   </td>
+
                   <td className="px-3 py-3">
                     <UserStatusBadge status={u.status} />
                   </td>
+
                   <td className="px-3 py-3">
                     <Badge
                       variant="outline"
@@ -134,42 +116,17 @@ export default function UserTable({ loading, items }: Props) {
                       {u.subscriptionTier}
                     </Badge>
                   </td>
+
                   <td className="px-3 py-3 text-xs text-slate-700 truncate">
                     {formatDateOnlyVN(u.lastLoginAt)}
                   </td>
+
                   <td className="px-3 py-3 text-xs text-slate-700 truncate">
                     {formatDateOnlyVN(u.createdAt)}
                   </td>
+
                   <td className="px-3 py-3 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="h-9 w-9 rounded-2xl bg-[#efeaff] flex items-center justify-center shadow-sm hover:bg-[#e2d7ff] transition"
-                        >
-                          <MoreHorizontal className="h-4 w-4 text-brand" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="min-w-[170px] rounded-2xl border border-[var(--border)] bg-white px-1 py-1 shadow-lg"
-                      >
-                        <DropdownMenuItem
-                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#15157a] focus:bg-slate-50/90 cursor-pointer"
-                          onClick={() => handleViewDetail(u)}
-                        >
-                          <Eye className="h-4 w-4 text-brand" />
-                          <span>Details</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#15157a] focus:bg-slate-50/90 cursor-pointer"
-                          onClick={() => handleReactivate(u)}
-                        >
-                          <RotateCcw className="h-4 w-4 text-brand" />
-                          <span>Reactivate</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <UserActionMenu user={u} onRefresh={onRefresh} />
                   </td>
                 </tr>
               ))}

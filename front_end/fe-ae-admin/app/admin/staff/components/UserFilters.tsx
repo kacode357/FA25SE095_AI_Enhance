@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react"; // Import thêm icon X nếu muốn nút clear gọn hơn
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,14 +35,14 @@ export default function UserFilters({ loading, filters, onChange }: Props) {
   };
 
   return (
-    // Flex row để xếp hàng ngang, Search co giãn, Sort cố định
+    // Flex row để xếp hàng ngang
     <div className="flex flex-col gap-3 rounded-lg border border-[var(--border)] bg-slate-50/70 p-3 sm:flex-row sm:items-center">
       
-      {/* 1. Search Bar - Chiếm phần lớn diện tích (flex-1) */}
+      {/* 1. Search Bar - Cho chiếm hết khoảng trống còn lại (flex-1) */}
       <div className="relative flex-1">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
         <Input
-          placeholder="Search students by email, name..."
+          placeholder="Search by email, name..."
           className="pl-8 text-sm h-9"
           value={filters.searchTerm ?? ""}
           disabled={loading}
@@ -50,7 +50,7 @@ export default function UserFilters({ loading, filters, onChange }: Props) {
         />
       </div>
 
-      {/* 2. Sort Select - Nằm gọn bên phải */}
+      {/* 2. Sort Select - Giữ lại để sắp xếp, nhưng xếp cùng dòng */}
       <div className="w-full sm:w-[200px]">
         <Select
           disabled={loading}
@@ -93,7 +93,7 @@ export default function UserFilters({ loading, filters, onChange }: Props) {
         </Select>
       </div>
 
-      {/* 3. Nút Clear (Hiện khi có search) */}
+      {/* 3. Reset Button (Optional) - Nếu muốn nút clear nằm cuối cùng */}
       {(filters.searchTerm) && (
         <Button
           variant="ghost"
@@ -101,6 +101,7 @@ export default function UserFilters({ loading, filters, onChange }: Props) {
           className="h-9 px-2 text-slate-500 hover:text-slate-900"
           onClick={handleReset}
           disabled={loading}
+          title="Clear search"
         >
           Clear
         </Button>

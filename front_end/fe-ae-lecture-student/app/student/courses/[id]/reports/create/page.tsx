@@ -1,4 +1,3 @@
-// app/student/courses/[id]/reports/create/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -17,16 +16,15 @@ import {
 
 import { useGetMyReports } from "@/hooks/reports/useGetMyReports";
 import type { ReportListItem } from "@/types/reports/reports.response";
-// Nếu MyReportsQuery có, import type để TS check (không bắt buộc):
-// import type { MyReportsQuery } from "@/types/reports/reports.payload";
 
-/** =========== utils =========== */
 const dt = (s?: string | null) => {
   if (!s) return "—";
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return s;
   return d.toLocaleString("en-GB"); // DD/MM/YYYY, HH:mm:ss
 };
+
+const headerButtonClass = "btn bg-white border border-brand text-nav hover:text-nav-active";
 
 export default function ReportsCreatePage() {
   const params = useParams();
@@ -46,14 +44,12 @@ export default function ReportsCreatePage() {
     return "Your Reports";
   }, [assignmentId]);
 
-  // fetch on mount (and when assignmentId changes)
   useEffect(() => {
     let mounted = true;
 
     (async () => {
       setError(null);
       try {
-        // Nếu MyReportsQuery hỗ trợ assignmentId thì truyền, không thì thôi
         const res = await getMyReports(
           assignmentId
             ? 
@@ -89,7 +85,6 @@ export default function ReportsCreatePage() {
   };
 
   const handleReload = () => {
-    // trigger lại effect bằng cách thay đổi search params nhẹ nhàng (hoặc có thể refetch trực tiếp)
     router.refresh();
   };
 
@@ -110,7 +105,6 @@ export default function ReportsCreatePage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-3xl font-bold text-nav flex items-center gap-2">
@@ -126,27 +120,8 @@ export default function ReportsCreatePage() {
 
         <div className="shrink-0 flex items-center gap-2">
           <button
-            onClick={handleReload}
-            disabled={loading}
-            className="btn bg-white border border-brand text-nav hover:text-nav-active"
-            title="Reload"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Refreshing…
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4" />
-                Reload
-              </>
-            )}
-          </button>
-
-          <button
             onClick={handleBack}
-            className="btn bg-white border border-brand text-nav hover:text-nav-active"
+            className={headerButtonClass}
             title="Back to Course"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -155,14 +130,12 @@ export default function ReportsCreatePage() {
         </div>
       </div>
 
-      {/* Hints for assignment filter */}
       {assignmentId && (
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
           Filtering by <b>assignmentId</b>: <code className="text-[11px]">{assignmentId}</code>
         </div>
       )}
 
-      {/* Error */}
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
@@ -170,7 +143,6 @@ export default function ReportsCreatePage() {
         </div>
       )}
 
-      {/* Loading */}
       {loading && !items.length ? (
         <div className="flex items-center justify-center h-[40vh] text-nav">
           <Loader2 className="w-6 h-6 mr-2 animate-spin text-nav-active" />
@@ -178,19 +150,12 @@ export default function ReportsCreatePage() {
         </div>
       ) : null}
 
-      {/* Empty */}
       {!loading && filtered.length === 0 && !error && (
         <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-600">
           <p className="text-sm">No reports found{assignmentId ? " for this assignment" : ""}.</p>
-          {/* Tuỳ flow BE: có thể điều hướng qua trang create thực sự nếu mày có API tạo */}
-          {/* <button className="btn btn-gradient mt-3" onClick={() => router.push(`/student/courses/${courseId}/reports/new?assignmentId=${assignmentId ?? ""}`)}>
-            <FilePlus2 className="w-4 h-4" />
-            New Report
-          </button> */}
         </div>
       )}
 
-      {/* List */}
       {filtered.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((r) => (
@@ -225,7 +190,6 @@ export default function ReportsCreatePage() {
         </div>
       )}
 
-      {/* CTA nếu filter theo assignment và có draft thì gợi ý tiếp tục */}
       {assignmentId && existsDraftForAssignment && (
         <div className="text-xs text-slate-600">
           You already have a draft for this assignment. Click the card above to continue.

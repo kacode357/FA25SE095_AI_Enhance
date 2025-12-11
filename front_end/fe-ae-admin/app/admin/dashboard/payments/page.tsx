@@ -28,6 +28,9 @@ const formatNumber = (value?: number) =>
 const formatPercent = (value?: number) =>
   `${Number.isFinite(value) ? (value ?? 0).toFixed(2) : "0.00"}%`;
 
+const formatProcessingTime = (value?: number) =>
+  Number.isFinite(value) ? (value ?? 0).toFixed(2) : "0.00";
+
 const toShortDate = (value?: string) =>
   value
     ? new Date(value).toLocaleDateString("vi-VN", {
@@ -104,7 +107,7 @@ export default function AdminDashboardPaymentsPage() {
         <StatCard title="Success Rate" value={formatPercent(payments?.successRate)} icon={PieChart} />
         <StatCard
           title="Avg Processing Time"
-          value={`${payments?.averageProcessingTime ?? 0} ms`}
+          value={`${formatProcessingTime(payments?.averageProcessingTime)} ms`}
           icon={Clock3}
         />
       </div>

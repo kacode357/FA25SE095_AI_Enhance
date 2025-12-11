@@ -16,6 +16,8 @@ export type NotificationMetadata = {
   GroupId?: string;
   SupportRequestId?: string;
   ConversationId?: string;
+  AssignedStaffId?: string;
+  AssignedStaffName?: string;
   AssignmentId?: string;
   ReportId?: string;
   EnrollmentId?: string; // Thêm field này cho đủ bộ
@@ -55,6 +57,8 @@ export function getNotificationHref(metaJson?: string): string | null {
     GroupId,
     SupportRequestId,
     ConversationId,
+    AssignedStaffId,
+    AssignedStaffName,
     AssignmentId,
   } = meta;
 
@@ -87,6 +91,12 @@ export function getNotificationHref(metaJson?: string): string | null {
         const query: string[] = [];
         if (SupportRequestId) {
           query.push(`requestId=${encodeURIComponent(SupportRequestId)}`);
+        }
+        if (AssignedStaffId) {
+          query.push(`peerId=${encodeURIComponent(AssignedStaffId)}`);
+        }
+        if (AssignedStaffName) {
+          query.push(`peerName=${encodeURIComponent(AssignedStaffName)}`);
         }
         const qs = query.length ? `?${query.join("&")}` : "";
         

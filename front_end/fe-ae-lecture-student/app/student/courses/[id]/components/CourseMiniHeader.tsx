@@ -30,9 +30,9 @@ export function CourseMiniHeader({ section }: Props) {
   if (!courseId) return null;
 
   return (
-    <Card className="dashboard-ghost border border-indigo-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3">
+    <Card className="dashboard-ghost border border-indigo-100 shadow-sm px-4 py-3 sm:px-5 sm:py-4 flex items-start gap-3 text-left">
       {loading && !course ? (
-        <div className="flex w-full items-center gap-3">
+        <div className="flex w-full items-start gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-48" />
@@ -41,7 +41,7 @@ export function CourseMiniHeader({ section }: Props) {
         </div>
       ) : course ? (
         <>
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
               <BookOpen className="h-5 w-5" />
             </div>
@@ -62,7 +62,7 @@ export function CourseMiniHeader({ section }: Props) {
       {/* Back button removed per request */}
     </>
   ) : (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-start gap-2 text-sm text-muted-foreground">
           <BookOpen className="h-4 w-4" />
           Course info unavailable
         </div>

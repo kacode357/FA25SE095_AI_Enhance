@@ -15,5 +15,5 @@ export interface LecturerCoursesOverviewQuery {
 }
 
 export interface LecturerPendingGradingQuery {
-  courseId?: string;
+  courseId: string;
 }

@@ -11,12 +11,12 @@ export function useLecturerPendingGrading() {
     useState<LecturerPendingGradingResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchPendingGrading = async (courseId?: string) => {
+  const fetchPendingGrading = async (courseId: string) => {
     setLoading(true);
     try {
       const res =
         await DashboardService.getLecturerPendingGrading(
-          courseId ? { courseId } : undefined
+          { courseId }
         );
       setData(res);
       return res;

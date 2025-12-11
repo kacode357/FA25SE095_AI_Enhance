@@ -2,10 +2,49 @@
 
 import { useAvailableCourses } from "@/hooks/course/useAvailableCourses";
 import { AvailableCourseItem } from "@/types/courses/course.response";
-import { BookOpen, ChevronLeft, ChevronRight, ChevronsRight, KeyRound, Lock, PlusCircle, Unlock, Users } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, ChevronsRight, Clock, KeyRound, Lock, PlayCircle, PlusCircle, Unlock, Users } from "lucide-react";
 // use a regular <img> fallback to avoid next/image domain config issues
 import { useRouter } from "next/navigation"; // ✅ thêm dòng này
 import { useEffect, useRef } from "react";
+
+type CTAIntent = "go" | "join" | "join-code" | "pending";
+type CTAState = {
+    label: string;
+    intent: CTAIntent;
+    disabled: boolean;
+};
+
+const getCTA = (course: AvailableCourseItem): CTAState => {
+    const status = (course.enrollmentStatus?.status || "").toLowerCase();
+    const isEnrolled = !!course.enrollmentStatus?.isEnrolled;
+    const canJoin = course.canJoin ?? true;
+
+    if (isEnrolled) return { label: "Go to Course", intent: "go", disabled: false };
+    if (status === "pending" || status === "pendingapproval") {
+        return { label: "Pending Approval", intent: "pending", disabled: true };
+    }
+
+    if (course.requiresAccessCode) {
+        return {
+            label: "Join with Code",
+            intent: "join-code",
+            disabled: !!course.isAccessCodeExpired || !canJoin,
+        };
+    }
+
+    if (!canJoin) return { label: "Join", intent: "join", disabled: true };
+
+    return { label: "Join", intent: "join", disabled: false };
+};
+
+const buildJoinParams = (course: AvailableCourseItem) => {
+    const params = new URLSearchParams();
+    const title = `${course.courseCode}${course.description ? ` - ${course.description}` : ""}`;
+    params.set("title", title);
+    if (course.lecturerName) params.set("lecturer", course.lecturerName);
+    if (course.uniqueCode) params.set("classCode", course.uniqueCode);
+    return params.toString();
+};
 
 interface AvailableCoursesSectionProps {
     courses?: AvailableCourseItem[];
@@ -28,6 +67,29 @@ export default function AvailableCoursesSection({
 
     const DEFAULT_IMAGE_URL =
         "https://i.postimg.cc/VL3PwwpK/Gemini-Generated-Image-pu4lm6pu4lm6pu4l.png";
+
+    const handleCTA = (course: AvailableCourseItem) => {
+        const cta = getCTA(course);
+        if (cta.disabled) return;
+
+        const isEnrolled = !!course.enrollmentStatus?.isEnrolled;
+        if (isEnrolled) {
+            router.push(`/student/courses/${course.id}`);
+            return;
+        }
+
+        if (course.requiresAccessCode) {
+            router.push(`/student/all-courses/${course.id}/join?${buildJoinParams(course)}`);
+            return;
+        }
+
+        if (course.joinUrl) {
+            window.open(course.joinUrl, "_blank", "noopener,noreferrer");
+            return;
+        }
+
+        router.push(`/student/courses/${course.id}`);
+    };
 
     return (
         <section className="min-h-screen bg-gradient-to-br from-[#fff7f9] via-[#f3e8ff] to-[#e0f2fe] py-20">
@@ -137,28 +199,32 @@ export default function AvailableCoursesSection({
                                             </span>
                                         </div>
 
-                                        {course.canJoin && course.joinUrl ? (
-                                            <a
-                                                href={course.joinUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-sm font-semibold btn btn-gradient text-white bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-1.5 rounded-full hover:opacity-90 transition"
-                                            >
-                                                {course.requiresAccessCode ? (
-                                                    <div className="flex items-center gap-1">
-                                                        <KeyRound className="w-3.5 h-3.5" /> Join with Code
-                                                    </div>
+                                        {(() => {
+                                            const cta = getCTA(course);
+                                            const icon =
+                                                cta.intent === "go" ? (
+                                                    <PlayCircle className="w-3.5 h-3.5" />
+                                                ) : cta.intent === "join-code" ? (
+                                                    <KeyRound className="w-3.5 h-3.5" />
+                                                ) : cta.intent === "pending" ? (
+                                                    <Clock className="w-3.5 h-3.5" />
                                                 ) : (
-                                                    <div className="flex items-center gap-1">
-                                                        <PlusCircle className="w-3.5 h-3.5" /> Join Now
-                                                    </div>
-                                                )}
-                                            </a>
-                                        ) : (
-                                            <span className="text-xs italic text-slate-400">
-                                                Not Available
-                                            </span>
-                                        )}
+                                                    <PlusCircle className="w-3.5 h-3.5" />
+                                                );
+
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    disabled={cta.disabled}
+                                                    onClick={() => handleCTA(course)}
+                                                    className={`text-sm font-semibold btn btn-gradient text-white bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-1.5 rounded-full hover:opacity-90 transition inline-flex items-center gap-1 ${cta.disabled ? "opacity-60 cursor-not-allowed" : ""
+                                                        }`}
+                                                >
+                                                    {icon}
+                                                    <span>{cta.label}</span>
+                                                </button>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>

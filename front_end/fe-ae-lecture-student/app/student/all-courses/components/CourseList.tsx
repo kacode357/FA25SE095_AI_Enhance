@@ -55,6 +55,7 @@ const StatusChip = ({ status }: { status?: string | null }) => {
 const getCTA = (course: AvailableCourseItem) => {
   const status = (course.enrollmentStatus?.status || "").toLowerCase();
   const isEnrolled = !!course.enrollmentStatus?.isEnrolled;
+  const canJoin = course.canJoin ?? true;
 
   if (isEnrolled)
     return { label: "Go to Course", intent: "go" as const, disabled: false };
@@ -65,17 +66,15 @@ const getCTA = (course: AvailableCourseItem) => {
       disabled: true,
     };
 
-  if (course.canJoin) {
-    if (course.requiresAccessCode)
-      return {
-        label: "Join with Code",
-        intent: "join-code" as const,
-        disabled: !!course.isAccessCodeExpired,
-      };
-    return { label: "Join", intent: "join" as const, disabled: false };
-  }
+  if (course.requiresAccessCode)
+    return {
+      label: "Join with Code",
+      intent: "join-code" as const,
+      disabled: !!course.isAccessCodeExpired || !canJoin,
+    };
+  if (!canJoin) return { label: "Join", intent: "join" as const, disabled: true };
 
-  return { label: "Not Available", intent: "disabled" as const, disabled: true };
+  return { label: "Join", intent: "join" as const, disabled: false };
 };
 
 const getLecturerAvatarUrl = (course: any): string | null => {
@@ -291,7 +290,7 @@ function CourseCard({
                     onClick={() => onGoToCourse(course.id)}
                   >
                     <PlayCircle className="w-5 h-5" />
-                    <span>Go to Course</span>
+                    <span>{cta.label}</span>
                   </button>
                 )}
 
@@ -299,7 +298,7 @@ function CourseCard({
                   <button
                     className="btn btn-gradient-slow"
                     style={styleBase}
-                    disabled={isBusy}
+                    disabled={isBusy || cta.disabled}
                     onClick={() => onJoinClick(course)}
                   >
                     {isBusy ? (
@@ -310,7 +309,7 @@ function CourseCard({
                     ) : (
                       <>
                         <PlusCircle className="w-5 h-5" />
-                        <span>Join</span>
+                        <span>{cta.label}</span>
                       </>
                     )}
                   </button>
@@ -320,7 +319,7 @@ function CourseCard({
                   <button
                     className="btn btn-gradient-slow"
                     style={styleBase}
-                    disabled={isBusy || !!course.isAccessCodeExpired}
+                    disabled={isBusy || cta.disabled}
                     onClick={() => onJoinClick(course)}
                   >
                     {isBusy ? (
@@ -331,13 +330,13 @@ function CourseCard({
                     ) : (
                       <>
                         <KeyRound className="w-5 h-5" />
-                        <span>Join</span>
+                        <span>{cta.label}</span>
                       </>
                     )}
                   </button>
                 )}
 
-                {(cta.intent === "pending" || cta.intent === "disabled") && (
+                {cta.intent === "pending" && (
                   <button
                     className="btn btn-gradient-slow"
                     style={{

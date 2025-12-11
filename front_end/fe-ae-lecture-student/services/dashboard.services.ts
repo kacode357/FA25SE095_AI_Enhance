@@ -87,7 +87,7 @@ export const DashboardService = {
 
   /** GET /api/Dashboard/lecturer/grading/pending */
   getLecturerPendingGrading: async (
-    params?: LecturerPendingGradingQuery
+    params: LecturerPendingGradingQuery
   ): Promise<LecturerPendingGradingResponse> => {
     const res =
       await courseAxiosInstance.get<LecturerPendingGradingResponse>(
