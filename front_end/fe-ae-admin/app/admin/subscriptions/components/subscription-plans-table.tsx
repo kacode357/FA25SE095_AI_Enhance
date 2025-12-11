@@ -1,6 +1,8 @@
 // app/admin/subscriptions/components/subscription-plans-table.tsx
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import type { SubscriptionPlan } from "@/types/subscription/subscription.response";
 import { useToggleSubscriptionPlan } from "@/hooks/subscription/useToggleSubscriptionPlan";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,18 +11,17 @@ import { Button } from "@/components/ui/button";
 type Props = {
   plans: SubscriptionPlan[];
   loading: boolean;
-  onEditPlan: (plan: SubscriptionPlan) => void;
   onChanged: () => void;
 };
 
 export function SubscriptionPlansTable({
   plans,
   loading,
-  onEditPlan,
   onChanged,
 }: Props) {
   const { loading: toggling, toggleSubscriptionPlan } =
     useToggleSubscriptionPlan();
+  const router = useRouter();
 
   const handleToggleActive = async (plan: SubscriptionPlan) => {
     const confirmMsg = plan.isActive
@@ -38,42 +39,39 @@ export function SubscriptionPlansTable({
   };
 
   return (
-    <Card className="card border border-[var(--border)] overflow-hidden">
+    <Card className="card border border-[var(--border)] shadow-sm overflow-hidden rounded-2xl py-0">
       <CardContent className="p-0">
-        <table className="min-w-full divide-y text-sm">
-          <thead className="bg-slate-50">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-50 text-slate-600">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
+              <th className="px-3 sm:px-4 py-2.5 text-left text-xs font-semibold">
                 Name
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
-                Tier
-              </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
+              <th className="px-3 sm:px-4 py-2.5 text-left text-xs font-semibold">
                 Price
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
+              <th className="px-3 sm:px-4 py-2.5 text-left text-xs font-semibold">
                 Duration
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
+              <th className="px-3 sm:px-4 py-2.5 text-left text-xs font-semibold">
                 Quota
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
+              <th className="px-3 sm:px-4 py-2.5 text-left text-xs font-semibold">
                 Active
               </th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-slate-500">
+              <th className="px-3 sm:px-4 py-2.5 text-right text-xs font-semibold">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody>
             {loading && plans.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-4 py-4 text-center text-xs text-slate-500"
                 >
-                  Loading plans...
+                  Loading...
                 </td>
               </tr>
             )}
@@ -81,35 +79,35 @@ export function SubscriptionPlansTable({
             {!loading && plans.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-4 py-4 text-center text-xs text-slate-500"
                 >
-                  No subscription plans found.
+                  No plans yet.
                 </td>
               </tr>
             )}
 
             {plans.map((plan) => (
-              <tr key={plan.id} className="hover:bg-slate-50/60">
-                <td className="px-4 py-2 align-top">
+              <tr
+                key={plan.id}
+                className="transition-colors hover:bg-slate-50/70"
+              >
+                <td className="px-3 sm:px-4 py-3 align-top">
                   <div className="font-medium text-slate-900">{plan.name}</div>
                   <div className="text-xs text-slate-500 line-clamp-2">
                     {plan.description}
                   </div>
                 </td>
-                <td className="px-4 py-2 align-top text-xs text-slate-700">
-                  {plan.tier}
-                </td>
-                <td className="px-4 py-2 align-top text-xs text-slate-700">
+                <td className="px-3 sm:px-4 py-3 align-top text-xs text-slate-700">
                   {plan.price.toLocaleString("vi-VN")} {plan.currency}
                 </td>
-                <td className="px-4 py-2 align-top text-xs text-slate-700">
+                <td className="px-3 sm:px-4 py-3 align-top text-xs text-slate-700">
                   {plan.durationDays} days
                 </td>
-                <td className="px-4 py-2 align-top text-xs text-slate-700">
+                <td className="px-3 sm:px-4 py-3 align-top text-xs text-slate-700">
                   {plan.quotaLimit}
                 </td>
-                <td className="px-4 py-2 align-top">
+                <td className="px-3 sm:px-4 py-3 align-top">
                   <span
                     className={`inline-flex rounded-full px-2 py-0.5 text-[11px] ${
                       plan.isActive
@@ -120,20 +118,22 @@ export function SubscriptionPlansTable({
                     {plan.isActive ? "Active" : "Inactive"}
                   </span>
                 </td>
-                <td className="px-4 py-2 align-top text-right">
-                  <div className="flex justify-end gap-2">
+                <td className="px-3 sm:px-4 py-3 align-top text-right">
+                  <div className="flex justify-end gap-1.5 sm:gap-2">
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-[var(--border)] px-2 py-1 text-[11px]"
-                      onClick={() => onEditPlan(plan)}
+                      className="btn-table"
+                      onClick={() => router.push(`/admin/subscriptions/${plan.id}`)}
                     >
                       Edit
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-[var(--border)] px-2 py-1 text-[11px]"
+                      className={`btn-table ${
+                        plan.isActive ? "btn-table-danger" : "btn-table-success"
+                      }`}
                       onClick={() => handleToggleActive(plan)}
                       disabled={toggling}
                     >

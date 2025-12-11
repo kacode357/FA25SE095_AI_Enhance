@@ -4,18 +4,15 @@
 import { useEffect, useState } from "react";
 
 import { useSubscriptionPlans } from "@/hooks/subscription/useSubscriptionPlans";
-import type { SubscriptionPlan } from "@/types/subscription/subscription.response";
 
 import { SubscriptionsHeader } from "./components/subscriptions-header";
 import { SubscriptionPlansTable } from "./components/subscription-plans-table";
-import { SubscriptionPlanForm } from "./components/subscription-plan-form";
 import { SubscriptionPlansSideInfo } from "./components/subscription-plans-side-info";
 
 export default function AdminSubscriptionsPage() {
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(
     true
   );
-  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
 
   const { loading, plans, fetchSubscriptionPlans } = useSubscriptionPlans();
 
@@ -24,13 +21,8 @@ export default function AdminSubscriptionsPage() {
     fetchSubscriptionPlans({ isActive: isActiveFilter });
   }, [fetchSubscriptionPlans, isActiveFilter]);
 
-  const handleRefresh = () => {
-    if (loading) return;
+  const reloadPlans = () => {
     fetchSubscriptionPlans({ isActive: isActiveFilter });
-  };
-
-  const handleSelectPlanForEdit = (plan: SubscriptionPlan | null) => {
-    setEditingPlan(plan);
   };
 
   return (
@@ -38,27 +30,16 @@ export default function AdminSubscriptionsPage() {
       <SubscriptionsHeader
         isActiveFilter={isActiveFilter}
         onFilterChange={setIsActiveFilter}
-        loading={loading}
-        onRefresh={handleRefresh}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[2fr,1.2fr]">
+      <div className="grid gap-6">
         <SubscriptionPlansTable
           plans={plans}
           loading={loading}
-          onEditPlan={(plan) => handleSelectPlanForEdit(plan)}
-          onChanged={handleRefresh}
+          onChanged={reloadPlans}
         />
 
-        <div className="space-y-4">
-          <SubscriptionPlanForm
-            editingPlan={editingPlan}
-            onSaved={handleRefresh}
-            onClearSelection={() => handleSelectPlanForEdit(null)}
-          />
-
-          <SubscriptionPlansSideInfo />
-        </div>
+        <SubscriptionPlansSideInfo />
       </div>
     </div>
   );

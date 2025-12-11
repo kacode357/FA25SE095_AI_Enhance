@@ -383,6 +383,38 @@ header.fixed, header {
 .btn-red-slow:hover::after {
   clip-path: circle(150% at 50% 50%);
 }
+
+/* Table action buttons: compact + color cues */
+.btn-table {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: #0f172a;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.btn-table:hover {
+  background: #f8fafc;
+  border-color: #d9e1f2;
+}
+.btn-table-success {
+  color: #047857;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+.btn-table-success:hover {
+  background: #dcfce7;
+}
+.btn-table-danger {
+  color: #b91c1c;
+  border-color: #fecdd3;
+  background: #fff1f2;
+}
+.btn-table-danger:hover {
+  background: #ffe4e6;
+}
 /* Joyride primary button = .btn-gradient */
 .react-joyride__tooltip button[data-action="primary"],
 .react-joyride__button--primary {
@@ -465,4 +497,3 @@ header.fixed, header {
 .price-digits {
   text-shadow: 0 10px 30px rgba(15,23,42,0.14), 0 4px 10px rgba(15,23,42,0.06);
 }
-

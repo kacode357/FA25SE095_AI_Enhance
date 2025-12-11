@@ -7,15 +7,11 @@ import { Button } from "@/components/ui/button";
 type Props = {
   isActiveFilter?: boolean;
   onFilterChange: (value: boolean | undefined) => void;
-  loading: boolean;
-  onRefresh: () => void;
 };
 
 export function SubscriptionsHeader({
   isActiveFilter,
   onFilterChange,
-  loading,
-  onRefresh,
 }: Props) {
   const router = useRouter();
 
@@ -41,16 +37,6 @@ export function SubscriptionsHeader({
           />
           <span>Show only active plans</span>
         </label>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="border-[var(--border)] text-xs sm:text-sm"
-          onClick={onRefresh}
-          disabled={loading}
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </Button>
 
         <Button
           type="button"

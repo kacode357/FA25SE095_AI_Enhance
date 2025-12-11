@@ -69,8 +69,6 @@ export const mainNav = [
       },
     ],
   },
-
-  // Agent Train AI với 2 list con
   {
     href: "/admin/agent-train-ai",
     label: "Agent Train AI",
@@ -101,6 +99,22 @@ export const mainNav = [
       {
         href: "/admin/announcements/create",
         label: "Create Announcement",
+      },
+    ],
+  },
+  {
+    href: "/admin/subscriptions",
+    label: "Subscriptions",
+    icon: CreditCard,
+    description: "Manage subscription plans",
+    children: [
+      {
+        href: "/admin/subscriptions",
+        label: "All Plans",
+      },
+      {
+        href: "/admin/subscriptions/create",
+        label: "Create Plan",
       },
     ],
   },
