@@ -273,6 +273,7 @@ header.fixed, header {
 
 .btn-gradient:hover::after {
   clip-path: circle(150% at 50% 50%);
+  
 }
 
 /* Gradient tím-hồng kiểu pill (hover chậm hơn) */

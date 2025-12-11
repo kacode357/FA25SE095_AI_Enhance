@@ -5,29 +5,25 @@ import Link from "next/link";
 
 export default function NotFound() {
     return (
-        <div className="min-h-dvh flex flex-row items-center justify-center gap-8 text-white px-6
-                    bg-gradient-to-r from-green-800 via-gray-900 to-gray-via-gray-900">
-            {/* Logo */}
-            <div className="flex items-center justify-center relative w-64 h-64">
-                <Image
-                    src="/short-logo-aids.png"
-                    alt="AIDS-LMS"
-                    fill
-                    className="opacity-90 object-contain"
-                    priority
-                />
-            </div>
+        <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-sky-50 text-nav flex items-center justify-center px-6">
+            <div className="flex w-full max-w-5xl flex-col items-center gap-8 rounded-3xl border border-indigo-100 bg-white/80 p-8 shadow-lg backdrop-blur">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative h-20 w-20">
+                        <Image
+                            src="/short-logo-aids.png"
+                            alt="AIDS-LMS"
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
+                    <h1 className="text-3xl font-semibold text-nav">Page not found</h1>
+                    <p className="text-sm text-slate-600 text-center max-w-lg">
+                        The page you're looking for doesn't exist or has been moved. Please return to the home page.
+                    </p>
+                </div>
 
-            {/* Divider */}
-            <div className="h-56 border-l border-white/30" />
-
-            {/* Text */}
-            <div className="text-center max-w-md">
-                <h1 className="text-2xl font-semibold">Page not found</h1>
-                <p className="mt-2 text-white/70">
-                    The page you’re looking for doesn’t exist or has been moved.
-                </p>
-                <Link href="/" className="btn btn-primary mt-6 inline-block">
+                <Link href="/" className="btn btn-gradient px-6 py-3 text-sm">
                     Go home
                 </Link>
             </div>
