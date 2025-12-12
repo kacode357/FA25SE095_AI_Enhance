@@ -22,7 +22,7 @@ export interface CrawlerChatMessageItem {
   userId: string;
   userName: string;
   content: string;
-  // swagger khai báo uuid nhưng thực tế BE có thể cho null => để string | null
+  // swagger khai báo uuid nhưng thực tế BE có thể cho null => về string | null
   groupId: string | null;
   // swagger cũng là uuid, nhưng để an toàn: cho phép null
   assignmentId: string | null;
@@ -42,8 +42,11 @@ export interface CrawlerChatMessageItem {
  */
 export interface CrawlerChatConversationItem {
   conversationId: string;
+  /** Tên hội thoại nếu BE cung cấp, fallback hiển thị "Conversation" */
+  conversationName?: string | null;
   messageCount: number;
   lastMessageAt: string;
   /** BE trả mảng (có thể rỗng) */
   participantNames: string[];
 }
+

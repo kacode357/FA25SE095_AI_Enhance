@@ -149,7 +149,22 @@ type ContentProps = {
   router: any;
 };
 
+function getProfilePath(user: UserProfile) {
+  switch (user.role) {
+    case "Student":
+      return `/admin/students/${user.id}`;
+    case "Staff":
+      return `/admin/staff/${user.id}`;
+    case "Lecturer":
+      return `/admin/lecturers/${user.id}`;
+    default:
+      return "/admin/dashboard";
+  }
+}
+
 function UserMenuContent({ user, onLogout, isLoggingOut, router }: ContentProps) {
+  const profilePath = getProfilePath(user);
+
   return (
     <DropdownMenuContent 
       className="w-60 bg-white border border-slate-200 shadow-xl z-[100]" 
@@ -172,7 +187,7 @@ function UserMenuContent({ user, onLogout, isLoggingOut, router }: ContentProps)
       <div className="p-1.5 space-y-0.5">
         <DropdownMenuGroup>
           <DropdownMenuItem 
-            onClick={() => router.push(`/admin/users/${user.id}`)} 
+            onClick={() => router.push(profilePath)} 
             className="cursor-pointer gap-2.5 px-3 py-2.5 rounded-md hover:bg-slate-100 focus:bg-slate-100"
           >
             <User className="h-4.5 w-4.5 text-slate-500" />

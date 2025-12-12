@@ -7,9 +7,9 @@ export interface SmartCrawlJobResponse {
   resultCount: number;
   executionTimeMs: number;
   errorMessage?: string | null;
-  failedStep?: number | null;
-  /** Optional HTML/text snapshot (string) */
+  failedStep?: number | null
   pageSnapshot?: string | null;
+  conversationName : string | null;
 }
 
 /** Job list item (summary) — GET /jobs */

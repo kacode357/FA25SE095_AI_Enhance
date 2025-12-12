@@ -3,14 +3,22 @@
 
 import Cookies from "js-cookie";
 import type { UserProfile } from "@/types/user/user.response";
+import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "a:u";
 const ENC_KEY = process.env.NEXT_PUBLIC_CLIENT_ENC_KEY || "cdp-dev-key";
 const IV_BYTES = 12;
-const COOKIE_OPTS = { secure: true, sameSite: "strict" as const, path: "/" as const, expires: 7 };
+const REMEMBER_EXPIRES_DAYS = 7;
+const SHORT_SESSION_MINUTES = 59;
+const SHORT_SESSION_EXPIRES_DAYS = SHORT_SESSION_MINUTES / (24 * 60);
+const COOKIE_OPTS_BASE = { secure: true, sameSite: "strict" as const, path: "/" as const };
 
 const te = new TextEncoder();
 const td = new TextDecoder();
+
+function cookieOpts(remember: boolean) {
+  return { ...COOKIE_OPTS_BASE, expires: remember ? REMEMBER_EXPIRES_DAYS : SHORT_SESSION_EXPIRES_DAYS };
+}
 
 function b64enc(buf: ArrayBuffer): string {
   return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -45,32 +53,40 @@ async function decryptJSON(blob: string): Promise<any> {
   return JSON.parse(td.decode(plain));
 }
 
-/** Lưu user đã mã hoá: remember=true -> cookie, false -> sessionStorage */
+/** Lưu user đã mã hoá: remember=true -> cookie 7 ngày, false -> cookie 30 phút */
 export async function saveEncodedUser(user: UserProfile | null, remember: boolean): Promise<void> {
   if (typeof window === "undefined") return;
-  sessionStorage.removeItem(STORAGE_KEY);
+  try {
+    sessionStorage.removeItem(STORAGE_KEY); // dọn dữ liệu cũ
+  } catch {}
   Cookies.remove(STORAGE_KEY, { path: "/" });
 
   if (!user) return;
   const blob = await encryptJSON(user);
-  if (remember) {
-    Cookies.set(STORAGE_KEY, blob, COOKIE_OPTS);
-  } else {
-    sessionStorage.setItem(STORAGE_KEY, blob);
-  }
+  Cookies.set(STORAGE_KEY, blob, cookieOpts(remember));
 }
 
-/** Đọc user đã mã hoá: ưu tiên sessionStorage, fallback cookie */
+/** Đọc user đã mã hoá: cookie only */
 export async function loadDecodedUser(): Promise<UserProfile | null> {
   if (typeof window === "undefined") return null;
-  const blob = sessionStorage.getItem(STORAGE_KEY) || Cookies.get(STORAGE_KEY);
+  const blob = Cookies.get(STORAGE_KEY);
+
+  // clean legacy sessionStorage copy if it still exists
+  try {
+    if (sessionStorage.getItem(STORAGE_KEY)) {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {}
+
   if (!blob) return null;
   try {
     const obj = await decryptJSON(blob);
     return obj as UserProfile;
   } catch {
-    sessionStorage.removeItem(STORAGE_KEY);
     Cookies.remove(STORAGE_KEY, { path: "/" });
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {}
     return null;
   }
 }
@@ -78,6 +94,28 @@ export async function loadDecodedUser(): Promise<UserProfile | null> {
 /** Xoá cả hai nơi */
 export function clearEncodedUser(): void {
   if (typeof window === "undefined") return;
-  sessionStorage.removeItem(STORAGE_KEY);
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {}
   Cookies.remove(STORAGE_KEY, { path: "/" });
+}
+
+export function useDecodedUser() {
+  const [decoded, setDecoded] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    loadDecodedUser()
+      .then((u) => {
+        if (mounted) setDecoded(u);
+      })
+      .catch(() => {
+        if (mounted) setDecoded(null);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return decoded;
 }

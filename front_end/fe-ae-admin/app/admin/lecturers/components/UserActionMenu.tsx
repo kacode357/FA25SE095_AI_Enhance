@@ -71,7 +71,7 @@ export default function UserActionMenu({ user, onRefresh }: Props) {
 
   const handleViewDetail = () => {
     setIsMenuOpen(false);
-    router.push(`/admin/users/${user.id}`);
+    router.push(`/admin/lecturers/${user.id}`);
   };
 
   const openSuspendDialog = () => {

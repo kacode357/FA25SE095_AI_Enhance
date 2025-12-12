@@ -82,6 +82,9 @@ export default function CrawlerAssignmentConversationsSection({
                   .map((c) => {
                     const isActive =
                       c.conversationId === selectedConversationId;
+                    const title =
+                      (c.conversationName && c.conversationName.trim()) ||
+                      "Conversation";
 
                     return (
                       <li
@@ -108,7 +111,7 @@ export default function CrawlerAssignmentConversationsSection({
                               isActive ? "text-blue-700" : "text-slate-800"
                             }`}
                           >
-                            Conversation
+                            {title}
                           </span>
                           <span className="text-[10px] text-slate-500">
                             {new Date(c.lastMessageAt).toLocaleDateString()}

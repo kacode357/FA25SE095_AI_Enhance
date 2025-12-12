@@ -24,18 +24,18 @@ export default function CrawlerAssignmentDescription({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="card px-4 py-3">
+    <div className="rounded-2xl border border-[var(--border)] bg-white/95 px-4 py-4 shadow-sm">
       <Collapsible open={open} onOpenChange={setOpen}>
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50">
-              <FileText className="h-4 w-4 text-slate-600" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+              <FileText className="h-5 w-5 text-slate-600" />
             </div>
             <div>
               <div className="text-sm font-semibold text-[var(--foreground)]">
                 Assignment details
               </div>
-              <p className="text-[11px] text-[var(--text-muted)]">
+              <p className="text-[12px] text-[var(--text-muted)]">
                 Content & instructions for this assignment
               </p>
             </div>
@@ -44,21 +44,12 @@ export default function CrawlerAssignmentDescription({
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium transition-all ${
-                // [ĐÃ ĐỔI MÀU] Sang tone Amber (Vàng cam)
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-all ${
                 !open
-                  ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
-                  : "border-[var(--border)] bg-white text-[var(--text-muted)] hover:bg-slate-50"
+                  ? "border-[var(--border)] bg-slate-50 text-[var(--foreground)]"
+                  : "border-[var(--border)] bg-white text-[var(--text-muted)]"
               }`}
             >
-              {/* Hiệu ứng nháy nháy (Ping) màu vàng */}
-              {!open && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                </span>
-              )}
-
               <span>{open ? "Collapse" : "Expand"}</span>
               <ChevronDown
                 className={`h-3 w-3 transition-transform duration-200 ${

@@ -80,7 +80,7 @@ export default function AdminStudentsPage() {
       {/* Header / Breadcrumb Area */}
       <div className="flex flex-col gap-2 px-4 pt-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Lecturers Management</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Staff Management</h1>
           <p className="text-sm text-slate-500">
             View, search and manage all lecturer accounts.
           </p>

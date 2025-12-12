@@ -1,6 +1,7 @@
 // config/axios.config.ts
 import {
   updateAccessToken,
+  clearAuthTokens,
   updateRefreshToken,
 } from "@/utils/auth/access-token";
 import { clearEncodedUser } from "@/utils/secure-user";
@@ -18,13 +19,11 @@ const NOTIFICATION_BASE_URL = process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL_API!
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 
-/** Đọc accessToken: ưu tiên cookie, fallback sessionStorage */
+/** Đọc accessToken: cookie only */
 function readAccessToken(): string | undefined {
-  const fromCookie = Cookies.get(ACCESS_TOKEN_KEY);
-  if (fromCookie) return fromCookie;
   if (typeof window !== "undefined") {
-    const fromSession = window.sessionStorage.getItem(ACCESS_TOKEN_KEY);
-    return fromSession || undefined;
+    const fromCookie = Cookies.get(ACCESS_TOKEN_KEY);
+    if (fromCookie) return fromCookie;
   }
   return undefined;
 }
@@ -81,13 +80,7 @@ function pickErrorMessage(data: any, fallback: string): string {
 function forceLogoutToLogin() {
   if (typeof window === "undefined") return;
 
-  Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
-  Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
-
-  try {
-    window.sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-    window.sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-  } catch {}
+  clearAuthTokens();
 
   try {
     clearEncodedUser();

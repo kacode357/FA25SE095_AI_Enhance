@@ -4,9 +4,8 @@
 import { ROLE_LECTURER, ROLE_STUDENT, UserServiceRole } from "@/config/user-service/user-role";
 import { UserService } from "@/services/user.services";
 import type { UserProfile } from "@/types/user/user.response";
-import { clearAuthTokens } from "@/utils/auth/access-token";
+import { clearAuthTokens, getRememberMeFlag } from "@/utils/auth/access-token";
 import { clearEncodedUser, loadDecodedUser, saveEncodedUser } from "@/utils/secure-user";
-import Cookies from "js-cookie";
 import { usePathname } from "next/navigation";
 import {
     createContext,
@@ -44,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loaded, setLoaded] = useState(false);
   const pathname = usePathname();
 
-  // load user từ cache (cookie/session) lúc mount
+  // load user từ cache cookie lúc mount
   useEffect(() => {
     (async () => {
       const cached = await loadDecodedUser();
@@ -100,9 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Try to fetch latest profile from server
       const res = await UserService.getProfile();
       if (res && (res.status === 200 || res.status === 100) && res.data) {
-        // persist updated profile into the same storage (cookie vs session)
-        const STORAGE_KEY = "a:u";
-        const remember = !!Cookies.get(STORAGE_KEY);
+        // persist updated profile using current remember flag
+        const remember = getRememberMeFlag();
         await saveEncodedUser(res.data, remember);
         setUser(res.data);
         return;

@@ -2,24 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import Cookies from "js-cookie";
 
 import StudentsList from "./components/StudentsList";
 import ChatWindow from "./components/ChatWindow";
 import type { CourseChatUserItemResponse as ChatUser } from "@/types/chat/chat.response";
+import { getSavedAccessToken } from "@/utils/auth/access-token";
 import { loadDecodedUser } from "@/utils/secure-user";
 import { CourseMiniHeader } from "../components/CourseMiniHeader";
 
 /* ===== Token helpers ===== */
-const ACCESS_TOKEN_KEY = "accessToken";
-
 function getAccessToken() {
-  if (typeof window !== "undefined") {
-    const ss = sessionStorage.getItem(ACCESS_TOKEN_KEY);
-    if (ss) return ss; // rememberMe=false
-  }
-  const ck = Cookies.get(ACCESS_TOKEN_KEY); // rememberMe=true
-  return ck || "";
+  const token = getSavedAccessToken();
+  return token || "";
 }
 
 /* Lấy đúng id từ user đã giải mã (không fallback) */

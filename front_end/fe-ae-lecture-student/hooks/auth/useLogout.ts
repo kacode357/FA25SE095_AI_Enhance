@@ -2,26 +2,11 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Cookies from "js-cookie";
 import { AuthService } from "@/services/auth.services";
 import type { LogoutPayload } from "@/types/auth/auth.payload";
 import type { ApiResponse, LogoutResponse } from "@/types/auth/auth.response";
+import { clearAuthTokens } from "@/utils/auth/access-token";
 import { clearEncodedUser } from "@/utils/secure-user";
-
-const ACCESS_TOKEN_KEY = "accessToken";
-const REFRESH_TOKEN_KEY = "refreshToken";
-const REMEMBER_ME = "rememberMe";
-// Xóa toàn bộ token ở cookie + sessionStorage
-function clearTokens() {
-  Cookies.remove(ACCESS_TOKEN_KEY, { path: "/" });
-  Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
-  Cookies.remove(REMEMBER_ME, { path: "/" });
-
-  if (typeof window !== "undefined") {
-    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-  }
-}
 
 export function useLogout() {
   const [loading, setLoading] = useState(false);
@@ -49,7 +34,7 @@ export function useLogout() {
         }
 
         // Logout = clear token + clear user + về /login
-        clearTokens();
+        clearAuthTokens();
         clearEncodedUser();
 
         if (typeof window !== "undefined") {
@@ -59,7 +44,7 @@ export function useLogout() {
         return data;
       } catch {
         // Trong mọi trường hợp lỗi vẫn clear session + cookie và về /login
-        clearTokens();
+        clearAuthTokens();
         clearEncodedUser();
 
         if (typeof window !== "undefined") {

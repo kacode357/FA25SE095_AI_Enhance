@@ -5,9 +5,11 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 import {
   useCrawlerChatHub,
@@ -21,81 +23,44 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAssignmentById } from "@/hooks/assignment/useAssignmentById";
 import { useCrawlerAssignmentConversations } from "@/hooks/crawler-chat/useCrawlerAssignmentConversations";
 import { useCrawlerConversationMessages } from "@/hooks/crawler-chat/useCrawlerConversationMessages";
+import { useSmartCrawlerJob } from "@/hooks/smart-crawler/useSmartCrawlerJob";
+import { useDecodedUser } from "@/utils/secure-user";
 
-import type { CrawlSummary, UiMessage } from "./crawler-types";
+import type { UiMessage } from "./crawler-types";
 import CrawlerUrlPromptSection from "./components/CrawlerUrlPromptSection";
 import CrawlerResultsSection from "./components/CrawlerResultsSection";
 import CrawlerChatSection from "./components/CrawlerChatSection";
 import CrawlerAssignmentHeader from "./components/CrawlerAssignmentHeader";
 import CrawlerAssignmentDescription from "./components/CrawlerAssignmentDescription";
 import CrawlerAssignmentConversationsSection from "./components/CrawlerAssignmentConversationsSection";
-
-/** Base URL for crawler service (REST) */
-const CRAWLER_BASE_URL =
-  process.env.NEXT_PUBLIC_CRAWLER_BASE_URL ||
-  "https://crawl.fishmakeweb.id.vn";
-
-/** Keywords used to detect follow-up questions that should trigger a summary */
-const SUMMARY_KEYWORDS = [
-            'summary',
-            'summaries',
-            'insights',
-            'overview',
-            'breakdown',
-            'highlights',
-            'khoảng giá',
-            'bao nhiêu',
-            'thống kê',
-            'biểu đồ',
-            'tổng hợp',
-            'phân tích',
-            'xu hướng',
-            'giá cả',
-            'so sánh',
-            'dữ liệu'
-        ];
-
-function makeId() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-function generateGuid() {
-  // giống file HTML
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-// Helper filter lỗi rác khi F5/Mạng yếu
-const isIgnorableSignalRError = (msg: any) => {
-  const errorString = String(msg || "");
-  return (
-    errorString.includes("Canceled") ||
-    errorString.includes("Invocation canceled") ||
-    errorString.includes("WebSocket closed") ||
-    errorString.includes("AbortError") ||
-    errorString.includes("connection is not in the 'Connected' state")
-  );
-};
+import {
+  SUMMARY_KEYWORDS,
+  generateGuid,
+  isIgnorableSignalRError,
+  makeId,
+  buildUserIdentity,
+  safeValidateUrl,
+} from "@/utils/crawler-helpers";
 
 const CrawlerInner = () => {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
-  const courseId = searchParams.get("courseId");
   const assignmentId = searchParams.get("assignmentId");
   const groupId = searchParams.get("groupId");
 
+  const courseSlug = useMemo(() => {
+    if (!pathname) return "";
+    const parts = pathname.split("/").filter(Boolean);
+    const idx = parts.indexOf("courses");
+    if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+    return "";
+  }, [pathname]);
+
   // ===== User Info =====
   const { user } = useAuth() as any;
-  const userId: string =
-    user?.id || user?.userId || user?.userID || user?.UserId || "";
-  const userName: string =
-    user?.fullName ||
-    user?.name ||
-    user?.userName ||
-    user?.email ||
-    "Student";
+  const decodedUser = useDecodedUser();
+  const { userId, userName } = buildUserIdentity(decodedUser, user);
 
   const getAccessToken = useCallback(() => {
     const token = getSavedAccessToken();
@@ -132,8 +97,19 @@ const CrawlerInner = () => {
     loading: conversationMessagesLoading,
   } = useCrawlerConversationMessages();
 
+  // Fetch job metadata (e.g., conversationName)
+  const { fetchJob } = useSmartCrawlerJob();
+  const appendUiMessage = useCallback(
+    (msg: UiMessage) =>
+      setChatMessages((prev) =>
+        prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
+      ),
+    []
+  );
+
   const [selectedConversationId, setSelectedConversationId] =
     useState<string | null>(null);
+  const joinedConversationRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!assignmentId) return;
@@ -151,17 +127,23 @@ const CrawlerInner = () => {
   // ===== OVERLAY & PROGRESS STATE (NEW) =====
   const [isCrawling, setIsCrawling] = useState(false);
   const [crawlProgress, setCrawlProgress] = useState(0);
-  const [crawlStatusMsg, setCrawlStatusMsg] = useState("Initializing...");
-
-  // ===== Summary State =====
-  const [summary, setSummary] = useState<CrawlSummary | null>(null);
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [crawlStatusMsg, setCrawlStatusMsg] = useState("");
 
   // ===== Chat State =====
   const [chatMessages, setChatMessages] = useState<UiMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [showAssignmentDrawer, setShowAssignmentDrawer] = useState(false);
+  const handleOpenDataPage = useCallback(() => {
+    if (!activeJobId) return;
+    const courseSegment = courseSlug || assignmentId || "unknown";
+    const href = `/student/courses/${courseSegment}/crawler/data?jobId=${activeJobId}`;
+    window.open(href, "_blank", "noopener,noreferrer");
+  }, [activeJobId, assignmentId, courseSlug]);
+  const pendingOutgoingRef = useRef<
+    { content: string; conversationId: string | null; messageType?: MessageType }[]
+  >([]);
 
   // UI Toggle
   const [showAnalysis, setShowAnalysis] = useState(true);
@@ -229,13 +211,17 @@ const CrawlerInner = () => {
       }
 
       setActiveJobId(jid);
-      setSummary(null);
 
       setTimeout(async () => {
         try {
           await fetchJobResults(jid);
+          // Fetch job metadata (e.g., conversationName) and refresh history list
+          await fetchJob(jid);
+          if (assignmentId) {
+            await fetchAssignmentConversations(assignmentId, { myOnly: true });
+          }
         } catch (err) {
-          console.error("[CrawlerWorkspace] fetchJobResults error:", err);
+          console.error("[CrawlerWorkspace] fetchJobResults/fetchJob error:", err);
         } finally {
           setIsCrawling(false);
           setSubmitting(false);
@@ -249,89 +235,36 @@ const CrawlerInner = () => {
         if (isCrawling) {
           setIsCrawling(false);
           setSubmitting(false);
-          alert("Connection interrupted. Please try again.");
+          toast.error("Connection interrupted. Please try again.");
         }
       }
     },
   });
 
-  // ===== Helper: Fetch Summary =====
-const fetchSummaryForJob = useCallback(
-  async (jobId: string, _opts?: { source?: "manual" | "keyword" }) => {
-    const normalizedJobId = jobId.trim();
-    if (!normalizedJobId) return;
-
-    const token = getAccessToken();
-    if (!token) {
-      setSummaryError("Missing access token.");
-      return;
-    }
-
-    setSummaryLoading(true);
-    setSummaryError(null);
-
-    try {
-      const response = await fetch(
-        `${CRAWLER_BASE_URL.replace(
-          /\/+$/g,
-          ""
-        )}/api/analytics/jobs/${normalizedJobId}/summary`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!response.ok) {
-        const text = await response.text();
-        // cố parse JSON để lấy thông điệp "đẹp" hơn
-        let message = "Không thể tạo summary cho job này.";
-        try {
-          const parsed = JSON.parse(text);
-          if (parsed?.error) {
-            message = parsed.error;
-          }
-        } catch {
-          // text không phải JSON, dùng luôn
-          if (text) message = text;
-        }
-
-        console.warn(
-          "[CrawlerWorkspace] summary API not ok:",
-          response.status,
-          text
-        );
-        setSummaryError(message);
-        return; // ❗ DỪNG Ở ĐÂY, KHÔNG throw nữa
-      }
-
-      const raw = await response.json();
-      const mapped: CrawlSummary = {
-        summaryText: raw.summaryText || raw.SummaryText || "",
-        insightHighlights: raw.insightHighlights || raw.InsightHighlights || [],
-        fieldCoverage:
-          (raw.fieldCoverage ||
-            raw.FieldCoverage ||
-            []) as CrawlSummary["fieldCoverage"],
-        chartPreviews:
-          (raw.chartPreviews ||
-            raw.ChartPreviews ||
-            []) as CrawlSummary["chartPreviews"],
-      };
-
-      setSummary(mapped);
-    } catch (err: any) {
-      console.error("[CrawlerWorkspace] fetch summary error:", err);
-      setSummaryError(err?.message || "Failed to load summary");
-    } finally {
-      setSummaryLoading(false);
-    }
-  },
-  [getAccessToken]
-);
-
-
   const pushUiMessageFromDto = useCallback(
     (message: ChatMessageDto) => {
+      // Skip echoing back messages we already showed optimistically
+      if (
+        message.userId &&
+        message.userId === userId &&
+        (message.messageType === MessageType.UserMessage ||
+          message.messageType === MessageType.FollowUpQuestion ||
+          message.messageType === MessageType.CrawlRequest)
+      ) {
+        const contentNormalized = (message.content || "").trim();
+        const convId = message.conversationId || null;
+        const pendingIdx = pendingOutgoingRef.current.findIndex(
+          (p) =>
+            p.content === contentNormalized &&
+            p.conversationId === convId &&
+            p.messageType === message.messageType
+        );
+        if (pendingIdx !== -1) {
+          pendingOutgoingRef.current.splice(pendingIdx, 1);
+          return;
+        }
+      }
+
       const role: UiMessage["role"] =
         message.messageType === MessageType.SystemNotification
           ? "system"
@@ -351,17 +284,12 @@ const fetchSummaryForJob = useCallback(
         messageType: message.messageType,
         crawlJobId: message.crawlJobId,
         visualizationData: (message as any).visualizationData,
+        extractedData: (message as any).extractedData,
       };
 
-      setChatMessages((prev) => [...prev, ui]);
-
-      if (message.messageType === MessageType.AiSummary && message.crawlJobId) {
-        fetchSummaryForJob(message.crawlJobId, { source: "keyword" }).catch(
-          (err) => console.error("Auto summary fetch failed", err)
-        );
-      }
+      appendUiMessage(ui);
     },
-    [userId, fetchSummaryForJob]
+    [userId, appendUiMessage]
   );
 
   // ===== ChatHub (Realtime) =====
@@ -373,6 +301,8 @@ const fetchSummaryForJob = useCallback(
     disconnect: disconnectChat,
     subscribeToAssignment,
     joinGroupWorkspace,
+    joinConversation,
+    leaveConversation,
     sendCrawlerMessage,
   } = useCrawlerChatHub({
     getAccessToken,
@@ -383,7 +313,6 @@ const fetchSummaryForJob = useCallback(
       if (!jid) return;
 
       setActiveJobId(jid);
-      setSummary(null);
 
       setCrawlStatusMsg("Job queued successfully...");
       setCrawlProgress(5);
@@ -434,11 +363,45 @@ const fetchSummaryForJob = useCallback(
   }, [chatConnected, assignmentId, groupId, subscribeToAssignment, joinGroupWorkspace]);
 
   useEffect(() => {
+    if (!chatConnected || !conversationId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const prev = joinedConversationRef.current;
+        if (prev && prev !== conversationId) {
+          try {
+            await leaveConversation(prev);
+          } catch (err) {
+            if (!cancelled && !isIgnorableSignalRError(err)) {
+              console.error("[CrawlerChatHub] leaveConversation error:", err);
+            }
+          }
+        }
+
+        await joinConversation(conversationId);
+        if (!cancelled) {
+          joinedConversationRef.current = conversationId;
+        }
+      } catch (err) {
+        if (!cancelled && !isIgnorableSignalRError(err)) {
+          console.error("[CrawlerChatHub] joinConversation error:", err);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatConnected, conversationId, joinConversation, leaveConversation]);
+
+  useEffect(() => {
     if (!crawlConnected || !assignmentId) return;
     let isSubscribed = true;
     (async () => {
       try { await subscribeToAssignmentJobs(assignmentId); } catch (err) { if(isSubscribed) console.error(err); }
-      if (groupId) { try { await subscribeToGroupJobs(groupId); } catch (err) { if(isSubscribed) console.error(err); } }
+      if (groupId) { try { await subscribeToGroupJobs(groupId); } catch (err) { if(isSubscribed) console.error(err); } 
+}
     })();
     return () => { isSubscribed = false; };
   }, [crawlConnected, assignmentId, groupId, subscribeToAssignmentJobs, subscribeToGroupJobs]);
@@ -453,7 +416,7 @@ const fetchSummaryForJob = useCallback(
 
       setSelectedConversationId(convId);
       setConversationId(convId);
-      setSummary(null);
+      setShowHistoryDrawer(false);
 
       try {
         const res = await fetchConversationMessages(convId, { limit: 100, offset: 0 });
@@ -468,8 +431,9 @@ const fetchSummaryForJob = useCallback(
             createdAt: m.timestamp ?? new Date().toISOString(),
             messageType: mt,
             crawlJobId: m.crawlJobId ?? undefined,
-            // CẬP NHẬT: Map visualizationData
+            // Cập nhật: Map visualizationData
             visualizationData: m.visualizationData,
+            extractedData: m.extractedData,
           };
         });
 
@@ -485,12 +449,11 @@ const fetchSummaryForJob = useCallback(
         setActiveJobId(jid);
 
         try { await fetchJobResults(jid); } catch (err) { console.error(err); }
-        try { await fetchSummaryForJob(jid, { source: "manual" }); } catch (err) { console.error(err); }
       } catch (err) {
         console.error("[Crawler] handleSelectConversation error:", err);
       }
     },
-    [fetchConversationMessages, fetchJobResults, fetchSummaryForJob, userId]
+    [fetchConversationMessages, fetchJobResults, userId]
   );
 
   // ===== Action: Start Crawl =====
@@ -498,29 +461,12 @@ const fetchSummaryForJob = useCallback(
   const trimmedUrl = url.trim();
   const trimmedPrompt = prompt.trim();
 
-  if (!trimmedUrl) {
-    alert("Please enter a URL first.");
-    return;
-  }
-  if (!trimmedPrompt) {
-    alert("Please describe what you want to extract.");
-    return;
-  }
-  try {
-    new URL(trimmedUrl);
-  } catch {
-    alert("Invalid URL.");
-    return;
-  }
-
-  if (!chatConnected) {
-    alert("Chat connection is establishing... Please wait.");
-    return;
-  }
-  if (!userId) {
-    alert("UserId not found. Please reload.");
-    return;
-  }
+  if (!trimmedUrl) return toast.error("Please enter a URL first.");
+  if (!trimmedPrompt) return toast.error("Please describe what you want to extract.");
+  if (!safeValidateUrl(trimmedUrl)) return toast.error("Invalid URL.");
+  if (!chatConnected) return toast.error("Chat connection is establishing... Please wait.");
+  if (!assignmentId) return toast.error("Missing assignmentId. Please reload from assignment context.");
+  if (!userId) return toast.error("UserId not found. Please reload.");
 
   setSubmitting(true);
   setIsCrawling(true);
@@ -528,32 +474,44 @@ const fetchSummaryForJob = useCallback(
   setCrawlProgress(0);
 
   const normalizedGroupId =
-    groupId && groupId !== "demo" ? groupId : null;
+    groupId &&
+    groupId !== "demo" &&
+    groupId !== "null" &&
+    groupId !== "undefined"
+      ? groupId.toString()
+      : null;
   const normalizedAssignmentId =
-    assignmentId && assignmentId !== "demo" ? assignmentId : null;
+    assignmentId && assignmentId !== "demo" ? assignmentId.toString() : null;
+  const normalizedUserId = String(userId);
 
-  // ⚠️ Payload kiểu "thô" y chang file HTML
+  // ƒsÿ‹,? Payload kiểu "thật" y chang file HTML
   const rawPayload: any = {
     messageId: generateGuid(),
-    conversationId,                       // GUID string
-    userId,
+    conversationId: conversationId?.toString() || generateGuid(), // ensure string
+    userId: normalizedUserId,
     userName,
     content: `${trimmedPrompt} | ${trimmedUrl}`, // "prompt | url"
-    messageType: 1,                       // CrawlRequest
-    groupId: normalizedGroupId,           // luôn có field, có thể null
-    assignmentId: normalizedAssignmentId, // luôn có field, có thể null
+    messageType: 1, // CrawlRequest
     timestamp: new Date().toISOString(),
   };
-
-  console.log("[CrawlerWorkspace] SendCrawlerMessage payload (crawl):", rawPayload);
+  rawPayload.groupId = normalizedGroupId ?? null;
+  rawPayload.assignmentId = normalizedAssignmentId ?? null;
 
   try {
     await sendCrawlerMessage(rawPayload as ChatMessageDto);
+    appendUiMessage({
+      id: rawPayload.messageId,
+      role: "user",
+      content: rawPayload.content,
+      createdAt: rawPayload.timestamp,
+      messageType: MessageType.CrawlRequest,
+      crawlJobId: null,
+    });
     setUrl("");
     setPrompt("");
   } catch (err: any) {
     console.error("[CrawlerWorkspace] sendCrawlerMessage error:", err);
-    alert(err?.message || "Failed to send crawl request");
+    toast.error(err?.message || "Failed to send crawl request");
     setIsCrawling(false);
     setSubmitting(false);
   }
@@ -561,142 +519,260 @@ const fetchSummaryForJob = useCallback(
 
 
   // ===== Action: Send Chat =====
-   const handleSendChatMessage = async () => {
-  const content = chatInput.trim();
-  if (!content) return;
-  if (!chatConnected) return;
+  const handleSendChatMessage = async (contentOverride?: string) => {
+    const content = (contentOverride ?? chatInput).trim();
+    if (!content) return;
+    if (!chatConnected) return;
+    const normalizedContent = content.toLowerCase();
+    const shouldMarkFollowUp = SUMMARY_KEYWORDS.some((keyword) =>
+      normalizedContent.includes(keyword)
+    );
+    const messageType = shouldMarkFollowUp
+      ? MessageType.FollowUpQuestion
+      : MessageType.UserMessage;
 
-  const normalizedContent = content.toLowerCase();
-  const shouldMarkFollowUp = SUMMARY_KEYWORDS.some((keyword) =>
-    normalizedContent.includes(keyword)
-  );
-  const messageType = shouldMarkFollowUp
-    ? MessageType.FollowUpQuestion
-    : MessageType.UserMessage;
+    pendingOutgoingRef.current.push({
+      content,
+      conversationId,
+      messageType,
+    });
 
-  setChatInput("");
-  setChatSending(true);
+    setChatInput("");
+    setChatSending(true);
 
-  const normalizedGroupId =
-    groupId && groupId !== "demo" ? groupId : null;
-  const normalizedAssignmentId =
-    assignmentId && assignmentId !== "demo" ? assignmentId : null;
+    const normalizedGroupId =
+      groupId &&
+      groupId !== "demo" &&
+      groupId !== "null" &&
+      groupId !== "undefined"
+        ? groupId.toString()
+        : null;
+    const normalizedAssignmentId =
+      assignmentId && assignmentId !== "demo" ? assignmentId.toString() : null;
+    const normalizedUserId = String(userId);
+    const messageId = generateGuid();
+    const sentAt = new Date().toISOString();
 
-  // ⚠️ Gửi đúng format như HTML test page
-  const rawPayload: any = {
-    messageId: generateGuid(),
-    userId,
-    userName,
-    content,
-    messageType,
-    conversationId,
-    groupId: normalizedGroupId,
-    assignmentId: normalizedAssignmentId,
-    sentAt: new Date().toISOString(),
+    // ’'sA¨ƒ?1,? G ¯-i d §­ng format nh’ø HTML test page
+    const rawPayload: any = {
+      messageId,
+      userId: normalizedUserId,
+      userName,
+      content,
+      messageType,
+      conversationId: conversationId?.toString() || generateGuid(),
+      sentAt,
+    };
+    rawPayload.groupId = normalizedGroupId ?? null;
+    rawPayload.assignmentId = normalizedAssignmentId ?? null;
+
+    appendUiMessage({
+      id: rawPayload.messageId,
+      role: "user",
+      content: rawPayload.content,
+      createdAt: rawPayload.sentAt,
+      messageType,
+      crawlJobId: null,
+    });
+
+    try {
+      await sendCrawlerMessage(rawPayload as ChatMessageDto);
+    } catch (err: any) {
+      console.error("[CrawlerWorkspace] sendCrawlerMessage error:", err);
+      pendingOutgoingRef.current = pendingOutgoingRef.current.filter(
+        (p) =>
+          !(
+            p.content === content &&
+            p.conversationId === conversationId &&
+            p.messageType === messageType
+          )
+      );
+      setChatMessages((prev) => prev.filter((m) => m.id !== rawPayload.messageId));
+      toast.error(err?.message || "Failed to send message");
+    } finally {
+      setChatSending(false);
+    }
   };
-
-  console.log("[CrawlerWorkspace] SendCrawlerMessage payload (chat):", rawPayload);
-
-  try {
-    await sendCrawlerMessage(rawPayload as ChatMessageDto);
-  } catch (err: any) {
-    console.error("[CrawlerWorkspace] sendCrawlerMessage error:", err);
-    alert(err?.message || "Failed to send message");
-  } finally {
-    setChatSending(false);
-  }
-};
 
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] bg-slate-50">
-      <main className="mx-auto flex max-w-6xl flex-col gap-4 py-6">
-        <CrawlerAssignmentHeader
-          assignment={assignment}
-          loading={assignmentLoading}
-          chatConnected={chatConnected}
-          chatConnecting={chatConnecting}
-          crawlConnected={crawlConnected}
-          crawlConnecting={crawlConnecting}
-        />
+      <main
+        className="mx-auto flex max-w-6xl flex-col gap-4 py-6"
+        data-tour="crawler-layout"
+      >
+        <div className="flex items-start gap-3" data-tour="crawler-header">
+          <div className="flex-1">
+            <CrawlerAssignmentHeader
+              assignment={assignment}
+              loading={assignmentLoading}
+              chatConnected={chatConnected}
+              chatConnecting={chatConnecting}
+              crawlConnected={crawlConnected}
+              crawlConnecting={crawlConnecting}
+            />
+          </div>
+          <div className="flex flex-col gap-2 min-w-[230px]" data-tour="crawler-history">
+            <button
+              type="button"
+              onClick={() => setShowAssignmentDrawer(true)}
+              className="action-pill btn-blue-slow action-pill-solid action-pill-slide"
+            >
+              Assignment info
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowHistoryDrawer(true)}
+              className="action-pill btn-green-slow action-pill-solid action-pill-slide"
+            >
+              History
+            </button>
+          </div>
+        </div>
 
         <section className="flex flex-col gap-4">
-          <CrawlerAssignmentDescription
-            assignment={assignment}
-            loading={assignmentLoading}
-          />
+          <div data-tour="crawler-config">
+            <CrawlerUrlPromptSection
+              url={url}
+              prompt={prompt}
+              onUrlChange={setUrl}
+              onPromptChange={setPrompt}
+              onStartCrawl={handleStartCrawl}
+              submitting={submitting}
+              chatConnected={chatConnected}
+              crawlConnected={crawlConnected}
+              assignmentId={assignmentId}
+              promptUsed={promptUsed}
+              isCrawling={isCrawling}
+              progress={crawlProgress}
+              statusMessage={crawlStatusMsg}
+            />
+          </div>
 
-          <CrawlerUrlPromptSection
-            url={url}
-            prompt={prompt}
-            onUrlChange={setUrl}
-            onPromptChange={setPrompt}
-            onStartCrawl={handleStartCrawl}
-            submitting={submitting}
-            chatConnected={chatConnected}
-            crawlConnected={crawlConnected}
-            assignmentId={assignmentId}
-            promptUsed={promptUsed}
-            activeJobId={activeJobId}
-            isCrawling={isCrawling}
-            progress={crawlProgress}
-            statusMessage={crawlStatusMsg}
-          />
-
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] items-start">
-            <CrawlerAssignmentConversationsSection
-              conversations={conversations}
-              loading={conversationsLoading || conversationMessagesLoading}
-              selectedConversationId={selectedConversationId}
-              onSelectConversation={handleSelectConversation}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] items-start">
+            <CrawlerChatSection
+              chatMessages={chatMessages}
+              chatInput={chatInput}
+              onChatInputChange={setChatInput}
+              onSendChat={handleSendChatMessage}
+              chatSending={chatSending}
+              chatConnected={chatConnected}
             />
 
             <div className="flex flex-col gap-4">
-              <div className="card p-4">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-xs font-semibold text-[var(--foreground)]">
-                      Crawled Data &amp; Analysis
-                    </div>
-                    <p className="text-[11px] text-[var(--text-muted)]">
-                      View structured data and AI insights from your latest job
-                    </p>
+              <div className="card p-4" data-tour="crawler-results">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="text-sm font-semibold text-[var(--foreground)]">
+                    Crawled Data
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowAnalysis((prev) => !prev)}
-                    className="rounded-lg border border-[var(--border)] px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:bg-slate-50 transition"
-                  >
-                    {showAnalysis ? "Hide" : "Show"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleOpenDataPage}
+                      disabled={!activeJobId}
+                      className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[var(--foreground)] shadow-sm hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Open data in new page
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAnalysis((prev) => !prev)}
+                      className="rounded-lg border border-[var(--border)] px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:bg-slate-50 transition"
+                    >
+                      {showAnalysis ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </div>
-
                 {showAnalysis && (
-                  <div className="mt-2">
-                    <CrawlerResultsSection
-                      results={results}
-                      resultsLoading={resultsLoading}
-                      summary={summary}
-                      summaryError={summaryError}
-                      summaryLoading={summaryLoading}
-                      activeJobId={activeJobId}
-                    />
-                  </div>
+                  <CrawlerResultsSection results={results} resultsLoading={resultsLoading} />
                 )}
               </div>
 
-              <CrawlerChatSection
-                chatMessages={chatMessages}
-                chatInput={chatInput}
-                onChatInputChange={setChatInput}
-                onSendChat={handleSendChatMessage}
-                chatSending={chatSending}
-                chatConnected={chatConnected}
-              />
+              <div className="card p-4 space-y-3" data-tour="crawler-progress">
+                <div className="flex items-center justify-between text-xs font-semibold text-[var(--foreground)]">
+                  <span>{crawlStatusMsg || "Idle"}</span>
+                  <span>{Math.round(crawlProgress)}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full bg-[var(--brand)] transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, crawlProgress))}%` }}
+                  />
+                </div>
+                <div className="text-[11px] text-[var(--text-muted)]">
+                  {isCrawling
+                    ? "Crawler is running, hang tight..."
+                    : submitting
+                    ? "Submitting crawl request..."
+                    : "No active crawl."}
+                  {activeJobId ? (
+                    <div className="mt-1 truncate text-[10px] text-slate-500">
+                      Job: {activeJobId}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </div>
         </section>
       </main>
+
+      {/* History Drawer */}
+      {showHistoryDrawer && (
+        <div className="fixed inset-0 z-[9998]">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
+            onClick={() => setShowHistoryDrawer(false)}
+          />
+          <div className="absolute inset-y-0 left-0 w-full max-w-sm bg-white shadow-2xl border-r border-[var(--border)] flex flex-col z-10 slide-in-left">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+              <div className="text-sm font-semibold text-[var(--foreground)]">History</div>
+              <button
+                type="button"
+                onClick={() => setShowHistoryDrawer(false)}
+                className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--text-muted)] hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-3 overflow-y-auto flex-1">
+              <CrawlerAssignmentConversationsSection
+                conversations={conversations}
+                loading={conversationsLoading || conversationMessagesLoading}
+                selectedConversationId={selectedConversationId}
+                onSelectConversation={handleSelectConversation}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assignment Drawer */}
+      {showAssignmentDrawer && (
+        <div className="fixed inset-0 z-[9997]">
+          <div
+            className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"
+            onClick={() => setShowAssignmentDrawer(false)}
+          />
+          <div className="absolute inset-y-0 right-0 w-full max-w-3xl bg-white shadow-2xl border-l border-[var(--border)] flex flex-col z-10 slide-in-right">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+              <div className="text-sm font-semibold text-[var(--foreground)]">
+                Assignment details
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAssignmentDrawer(false)}
+                className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--text-muted)] hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
+              <CrawlerAssignmentDescription assignment={assignment} loading={assignmentLoading} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

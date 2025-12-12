@@ -1,7 +1,6 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import type { AdminUserItem } from "@/types/admin/admin-user.response";
 import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
 import {
@@ -9,7 +8,6 @@ import {
   UserStatusBadge,
 } from "@/app/admin/components/UserBadge";
 
-// Import component Action mới
 import UserActionMenu from "./UserActionMenu";
 
 type Props = {
@@ -32,16 +30,14 @@ export default function UserTable({ loading, items, onRefresh }: Props) {
   return (
     <div className="rounded-md border border-[var(--border)] bg-white">
       <table className="w-full table-fixed text-sm">
-        {/* Đã bỏ cột Quota → còn 7 cột */}
         <colgroup>
           {[
-            "w-[25%]", // User (tăng width một chút để bù lại)
-            "w-[12%]", // Role
-            "w-[12%]", // Status
-            "w-[14%]", // Subscription
-            "w-[14%]", // Last login
-            "w-[14%]", // Created at
-            "w-[9%]",  // Actions (tăng nhẹ để cân đối)
+            "w-[28%]", // User
+            "w-[15%]", // Role
+            "w-[15%]", // Status
+            "w-[16%]", // Last login
+            "w-[16%]", // Created at
+            "w-[10%]", // Actions
           ].map((className, idx) => (
             <col key={idx} className={className} />
           ))}
@@ -52,7 +48,6 @@ export default function UserTable({ loading, items, onRefresh }: Props) {
             <th className="px-3 py-2 text-left truncate">User</th>
             <th className="px-3 py-2 text-left truncate">Role</th>
             <th className="px-3 py-2 text-left truncate">Status</th>
-            <th className="px-3 py-2 text-left truncate">Subscription</th>
             <th className="px-3 py-2 text-left truncate">Last login</th>
             <th className="px-3 py-2 text-left truncate">Created at</th>
             <th className="px-3 py-2 text-right truncate">Actions</th>
@@ -72,11 +67,18 @@ export default function UserTable({ loading, items, onRefresh }: Props) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-3"><Skeleton className="h-6 w-16" /></td>
-                  <td className="px-3 py-3"><Skeleton className="h-6 w-20" /></td>
-                  <td className="px-3 py-3"><Skeleton className="h-6 w-24" /></td>
-                  <td className="px-3 py-3"><Skeleton className="h-4 w-28" /></td>
-                  <td className="px-3 py-3"><Skeleton className="h-4 w-28" /></td>
+                  <td className="px-3 py-3">
+                    <Skeleton className="h-6 w-16" />
+                  </td>
+                  <td className="px-3 py-3">
+                    <Skeleton className="h-6 w-20" />
+                  </td>
+                  <td className="px-3 py-3">
+                    <Skeleton className="h-4 w-28" />
+                  </td>
+                  <td className="px-3 py-3">
+                    <Skeleton className="h-4 w-28" />
+                  </td>
                   <td className="px-3 py-3 text-right">
                     <Skeleton className="h-9 w-9 ml-auto" />
                   </td>
@@ -106,15 +108,6 @@ export default function UserTable({ loading, items, onRefresh }: Props) {
 
                   <td className="px-3 py-3">
                     <UserStatusBadge status={u.status} />
-                  </td>
-
-                  <td className="px-3 py-3">
-                    <Badge
-                      variant="outline"
-                      className="border-emerald-200 bg-emerald-50/70 text-[11px] font-medium text-emerald-700 truncate"
-                    >
-                      {u.subscriptionTier}
-                    </Badge>
                   </td>
 
                   <td className="px-3 py-3 text-xs text-slate-700 truncate">

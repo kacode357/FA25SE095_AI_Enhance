@@ -5,14 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, Crown, ArrowRight } from "lucide-react";
-import Cookies from "js-cookie";
 import { toast } from "sonner";
 
 import { useConfirmSubscriptionPayment } from "@/hooks/payments/useConfirmSubscriptionPayment";
+import { getRememberMeFlag } from "@/utils/auth/access-token";
 import { loadDecodedUser, saveEncodedUser } from "@/utils/secure-user";
 import { getUserSubscriptionPlanName } from "@/config/user-service/plan";
-
-const STORAGE_KEY = "a:u";
 
 export default function SubscriptionSuccessPage() {
   const router = useRouter();
@@ -129,7 +127,7 @@ export default function SubscriptionSuccessPage() {
         return;
       }
 
-      const remember = !!Cookies.get(STORAGE_KEY);
+      const remember = getRememberMeFlag();
 
       const updatedUser = {
         ...user,

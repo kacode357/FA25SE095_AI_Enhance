@@ -1,8 +1,12 @@
+// app/student/courses/[id]/crawler/components/CrawlerChatSection.tsx
 "use client";
 
-import React, { useMemo } from "react";
-import { Bot, Send, Info } from "lucide-react";
+import React, { useEffect, useMemo, useRef } from "react";
+import { Bot, Send } from "lucide-react";
 import type { UiMessage } from "../crawler-types";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+import ChatPromptHints from "./ChatPromptHints";
+import { renderMessageContent } from "../utils/chatFormatting";
 
 // Recharts imports
 import {
@@ -25,9 +29,10 @@ type Props = {
   chatMessages: UiMessage[];
   chatInput: string;
   onChatInputChange: (value: string) => void;
-  onSendChat: () => void;
+  onSendChat: (contentOverride?: string) => void;
   chatSending: boolean;
   chatConnected: boolean;
+  thinking?: boolean;
 };
 
 // Kiểu dữ liệu adapter cho Recharts
@@ -38,19 +43,66 @@ type RechartsAdaptedData = {
 
 // Adapter từ chartConfig kiểu Chart.js -> data cho Recharts
 function buildRechartsData(chartConfig: any): RechartsAdaptedData | null {
-  const data = chartConfig?.data;
-  if (!data || !data.labels || !Array.isArray(data.labels)) return null;
+  // Hỗ trợ format Chart.js (labels/datasets) và Apex-like (data: { labels, series })
+  let rawData =
+    chartConfig?.data?.data ?? // Apex nested
+    chartConfig?.data ?? // Chart.js or flattened
+    chartConfig?.dataset;
 
-  const datasets = Array.isArray(data.datasets) ? data.datasets : [];
-  if (!datasets.length) return null;
+  // Nếu data là string JSON thì parse
+  if (typeof rawData === "string") {
+    try {
+      rawData = JSON.parse(rawData);
+    } catch {
+      rawData = null;
+    }
+  }
+
+  if (!rawData) return null;
+
+  // Chuẩn hóa sang datasets/labels
+  let labels: string[] | undefined;
+  let datasets: any[] | undefined;
+
+  if (Array.isArray(rawData.labels)) {
+    labels = rawData.labels;
+    if (Array.isArray(rawData.datasets)) {
+      datasets = rawData.datasets;
+    } else if (Array.isArray(rawData.series)) {
+      // Apex style series: number[] (single series)
+      datasets = [
+        {
+          label:
+            chartConfig?.data?.chart?.title ||
+            chartConfig?.chart?.title ||
+            "Series",
+          data: rawData.series,
+        },
+      ];
+    }
+  } else if (Array.isArray(rawData.series) && Array.isArray(rawData.labelsSeries)) {
+    // Custom shape: labelsSeries + series
+    labels = rawData.labelsSeries;
+    datasets = [
+      {
+        label:
+          chartConfig?.data?.chart?.title ||
+          chartConfig?.chart?.title ||
+          "Series",
+        data: rawData.series,
+      },
+    ];
+  }
+
+  if (!labels || !datasets || !datasets.length) return null;
 
   const seriesKeys: string[] = datasets.map(
     (ds: any, idx: number) => ds.label || `value${idx + 1}`
   );
 
-  const rows = data.labels.map((label: string, i: number) => {
+  const rows = labels.map((label: string, i: number) => {
     const row: Record<string, any> = { label };
-    datasets.forEach((ds: any, idx: number) => {
+    datasets!.forEach((ds: any, idx: number) => {
       const key = seriesKeys[idx];
       const value = Array.isArray(ds.data) ? ds.data[i] ?? null : null;
       row[key] = value;
@@ -66,15 +118,34 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
     if (!rawJson) return null;
 
     try {
-      // 1. Chuẩn hóa: nếu là string thì JSON.parse, nếu là object thì dùng luôn
+      // 1. Chuẩn bị: nếu là string thì JSON.parse, nếu là object thì dùng luôn
       const outer =
         typeof rawJson === "string" ? JSON.parse(rawJson) : (rawJson as any);
 
       // 2. 2 case chính:
       //    - Case 1: { latestResultCrawlJobId, insightHighlights, visualizationData: { type, data, options } }
       //    - Case 2: trực tiếp: { type, data, options }
-      const chartConfig =
+      let chartConfig =
         outer.visualizationData ?? outer.VisualizationData ?? outer;
+
+      // Nếu chartConfig.data là string hoặc nested string -> parse
+      if (chartConfig?.data && typeof chartConfig.data === "string") {
+        try {
+          chartConfig = { ...chartConfig, data: JSON.parse(chartConfig.data) };
+        } catch {
+          // ignore parse error
+        }
+      }
+      if (chartConfig?.data?.data && typeof chartConfig.data.data === "string") {
+        try {
+          chartConfig = {
+            ...chartConfig,
+            data: { ...chartConfig.data, data: JSON.parse(chartConfig.data.data) },
+          };
+        } catch {
+          // ignore parse error
+        }
+      }
 
       if (!chartConfig || !chartConfig.data) return null;
 
@@ -142,7 +213,7 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
   };
 
   const renderPieChart = () => {
-    // Dùng dataset đầu tiên cho Pie
+    // dạng dataset đầu tiên cho Pie
     const firstSeries = seriesKeys[0];
     if (!firstSeries) return null;
 
@@ -193,61 +264,48 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
   );
 };
 
-export default function CrawlerChatSection({
+const ChatMessageList = React.memo(function ChatMessageList({
   chatMessages,
-  chatInput,
-  onChatInputChange,
-  onSendChat,
   chatSending,
+  thinking,
+  onSendChat,
   chatConnected,
-}: Props) {
-  const disabledSend = !chatInput.trim() || chatSending || !chatConnected;
+}: Pick<
+  Props,
+  "chatMessages" | "chatSending" | "thinking" | "onSendChat" | "chatConnected"
+>) {
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [chatMessages.length, thinking, chatSending]);
 
   return (
-    <div className="flex h-full flex-col gap-3 rounded-xl border border-[var(--border)] bg-white/95 p-4 shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
-            <Bot className="h-4 w-4 text-[var(--brand)]" />
-            Chat with Agent
+    <div
+      ref={listRef}
+      className="scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent flex-1 space-y-3 rounded-xl border border-[var(--border)] bg-slate-50/50 px-3 py-3 min-h-[300px] max-h-[500px] overflow-y-auto"
+    >
+      {chatMessages.length === 0 ? (
+        // Removed empty-state suggested prompt + quick buttons
+        <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-xs text-[var(--text-muted)] opacity-80">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
+            <Bot className="h-6 w-6" />
           </div>
-          <p className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
-            <Info className="h-3 w-3" />
-            <span>
-              Keywords like "summary", "insights" trigger{" "}
-              <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px] font-mono text-slate-700">
-                analysis
-              </code>{" "}
-              mode.
-            </span>
-          </p>
-        </div>
-      </div>
-
-      {/* Chat Messages Area */}
-      <div className="scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent flex-1 space-y-3 rounded-xl border border-[var(--border)] bg-slate-50/50 px-3 py-3 min-h-[300px] max-h-[500px] overflow-y-auto">
-        {chatMessages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center text-xs text-[var(--text-muted)] opacity-80">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
-              <Bot className="h-6 w-6" />
-            </div>
-            <p className="max-w-[240px]">
-              Start by asking the agent:
-              <br />
-              <span className="mt-2 block font-medium text-slate-700">
-                &quot;Give me a summary of the crawled products and show key
-                insights&quot;
-              </span>
+          <div>
+            <p className="text-xs text-[var(--text-muted)]">
+              Start by asking the agent.
             </p>
           </div>
-        ) : (
-          chatMessages.map((m) => (
+        </div>
+      ) : (
+        chatMessages.map((m) => {
+          const rendered = renderMessageContent(m.content || "");
+          return (
             <div
               key={m.id}
-              className={`flex ${
-                m.role === "user" ? "justify-end" : "justify-start"
-              }`}
+              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`relative group max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-sm ${
@@ -258,45 +316,86 @@ export default function CrawlerChatSection({
                     : "rounded-bl-sm border border-[var(--border)] bg-white text-slate-800"
                 }`}
               >
-                {/* Nội dung Text */}
-                <div className="whitespace-pre-line">{m.content}</div>
+                <div
+                className="text-[13px] leading-relaxed space-y-1 [&_ul]:ml-4 [&_ul]:list-disc [&_ol]:ml-4 [&_ol]:list-decimal [&_li]:mb-1 [&_a]:text-[var(--brand)] [&_a]:underline [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[11px] [&_strong]:font-semibold [&_p]:last:mb-0 [&_img[data-inline-img]]:my-2 [&_img[data-inline-img]]:max-h-64 [&_img[data-inline-img]]:rounded-lg [&_img[data-inline-img]]:border [&_img[data-inline-img]]:border-[var(--border)] [&_img[data-inline-img]]:bg-white"
+                  dangerouslySetInnerHTML={{ __html: rendered.html }}
+                />
 
-                {/* Render Chart/Visualization nếu có dữ liệu */}
-                {m.visualizationData && (
-                  <ChatVisualization rawJson={m.visualizationData} />
+                {m.extractedData && (
+                  <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-700">
+                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Extracted data
+                    </div>
+                    <div className="whitespace-pre-line">{m.extractedData}</div>
+                  </div>
                 )}
 
-                {/* Meta info */}
+                {m.visualizationData && <ChatVisualization rawJson={m.visualizationData} />}
+
                 <div
                   className={`mt-1 flex items-center justify-end gap-2 text-[10px] opacity-70 ${
                     m.role === "user" ? "text-indigo-100" : "text-slate-400"
                   }`}
                 >
-                  <span>
-                    {new Date(m.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
+                  <span>{formatDateTimeVN(m.createdAt)}</span>
                 </div>
               </div>
             </div>
-          ))
-        )}
+          );
+        })
+      )}
 
-        {chatSending && (
-          <div className="flex justify-start">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] text-[var(--text-muted)] shadow-sm">
-              <span className="flex gap-1">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.3s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.15s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand)]" />
-              </span>
-              <span>Thinking...</span>
-            </div>
+      {(chatSending || thinking) && (
+        <div className="flex justify-start">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] text-[var(--text-muted)] shadow-sm">
+            <span className="flex gap-1">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.3s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.15s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand)]" />
+            </span>
+            <span>Thinking...</span>
           </div>
-        )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+function CrawlerChatSection({
+  chatMessages,
+  chatInput,
+  onChatInputChange,
+  onSendChat,
+  chatSending,
+  chatConnected,
+  thinking = false,
+}: Props) {
+  const disabledSend = !chatInput.trim() || chatSending || !chatConnected;
+
+  return (
+    <div
+      className="flex h-full flex-col gap-3 rounded-xl border border-[var(--border)] bg-white/95 p-4 shadow-sm"
+      data-tour="crawler-chat"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
+            <Bot className="h-4 w-4 text-[var(--brand)]" />
+            Chat with Agent
+          </div>
+        </div>
       </div>
+
+      <ChatPromptHints onSend={onSendChat} disabled={chatSending || !chatConnected} />
+
+      <ChatMessageList
+        chatMessages={chatMessages}
+        chatSending={chatSending}
+        thinking={thinking}
+        onSendChat={onSendChat}
+        chatConnected={chatConnected}
+      />
 
       {/* Input Area */}
       <div className="mt-2 flex items-end gap-2">
@@ -315,7 +414,7 @@ export default function CrawlerChatSection({
         />
         <button
           type="button"
-          onClick={onSendChat}
+           onClick={() => onSendChat()} 
           disabled={disabledSend}
           className="btn-gradient-slow flex h-[44px] w-[44px] items-center justify-center rounded-xl shadow-md transition-transform disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none active:scale-95"
           title="Send Message"
@@ -326,3 +425,5 @@ export default function CrawlerChatSection({
     </div>
   );
 }
+
+export default React.memo(CrawlerChatSection);
