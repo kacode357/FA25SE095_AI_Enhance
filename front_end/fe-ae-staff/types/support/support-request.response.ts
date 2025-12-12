@@ -38,6 +38,8 @@ export interface SupportRequestItem {
    * /pending: swagger ví dụ không có description
    */
   description?: string;
+  /** Optional image URLs attached to the request */
+  images?: string[];
 
   /** Id conversation trong hệ thống chat (nếu đã tạo) */
   conversationId?: string | null;

@@ -1,7 +1,8 @@
 // app/staff/support-requests/components/SupportRequestList.tsx
 "use client";
 
-import { Loader2, MessageCircle } from "lucide-react";
+import { Eye, Loader2, MessageCircle } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,8 +22,9 @@ import PaginationBar from "@/components/common/pagination-all";
 import { formatToVN } from "@/utils/datetime/time";
 import SupportRequestCategoryBadge from "./SupportRequestCategoryBadge";
 import SupportRequestPriorityBadge from "./SupportRequestPriorityBadge";
-import SupportRequestRejectButton from "./SupportRequestRejectButton";
+// Note: Accept/Reject moved to modal; keep reject button in modal component only
 import SupportRequestStatusBadge from "./SupportRequestStatusBadge";
+import SupportRequestViewModal from "./SupportRequestViewModal";
 
 import { SupportRequestStatus } from "@/config/classroom-service/support-request-status.enum";
 import type { SupportRequestItem } from "@/types/support/support-request.response";
@@ -82,6 +84,9 @@ export default function SupportRequestList({
 
   const router = useRouter();
 
+  const [viewOpen, setViewOpen] = useState(false);
+  const [selected, setSelected] = useState<SupportRequestItem | null>(null);
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
@@ -127,14 +132,9 @@ export default function SupportRequestList({
               <TableHeader>
                 <TableRow className="text-xs">
                   <TableHead className="w-[22%]">Subject</TableHead>
-                  <TableHead className="w-[18%]">Course</TableHead>
-                  <TableHead className="w-[18%]">Requester</TableHead>
-                  <TableHead className="w-[16%] text-center">
-                    Category &amp; Priority
-                  </TableHead>
-                  <TableHead className="w-[16%]  text-center">
-                    Status &amp; Timeline
-                  </TableHead>
+                  <TableHead className="w-[36%]">Requester</TableHead>
+                  <TableHead className="w-[16%] text-center">Category &amp; Priority</TableHead>
+                  <TableHead className="w-[16%]  text-center">Status &amp; Timeline</TableHead>
                   <TableHead className="w-[10%]" />
                 </TableRow>
               </TableHeader>
@@ -150,7 +150,7 @@ export default function SupportRequestList({
                       {/* Subject */}
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <div className="text-sm font-medium text-gray-900 line-clamp-2">
+                          <div className="text-xs font-medium text-gray-900 line-clamp-2">
                             {item.subject}
                           </div>
                           {item.description && (
@@ -164,24 +164,20 @@ export default function SupportRequestList({
                         </div>
                       </TableCell>
 
-                      {/* Course */}
+                      {/* Requester + Course (Course shown under role) */}
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                            {item.courseName}
-                          </p>
-                        </div>
-                      </TableCell>
-
-                      {/* Requester */}
-                      <TableCell>
-                        <div className="flex flex-col gap-0.5">
-                          <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                          <p className="text-xs font-medium text-gray-900 line-clamp-1">
                             {item.requesterName}
                           </p>
                           <p className="text-[11px] text-gray-500">
                             Role: {item.requesterRole}
                           </p>
+                          {item.courseName && (
+                            <p className="text-[11px] text-gray-600">
+                              {item.courseName}
+                            </p>
+                          )}
                           {item.assignedStaffName && (
                             <p className="text-[11px] text-blue-600 line-clamp-1">
                               Assigned to: {item.assignedStaffName}
@@ -225,44 +221,7 @@ export default function SupportRequestList({
                       {/* Actions */}
                       <TableCell className="text-right">
                         <div className="flex flex-col items-end gap-1">
-                          {type === "pending" && (
-                            <div className="flex gap-2 px-2">
-                              {onAccept && (
-                                <Button
-                                  size="sm"
-                                  disabled={actionLoading}
-                                  className="btn btn-blue-slow px-3 py-1 text-xs"
-                                  onClick={() => onAccept(item.id)}
-                                >
-                                  {actionLoading && (
-                                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                  )}
-                                  Accept
-                                </Button>
-                              )}
-
-                              <SupportRequestRejectButton
-                                requestId={item.id}
-                                disabled={actionLoading}
-                                onRejected={onReload}
-                              />
-                            </div>
-                          )}
-
-                          {type === "assigned" && onResolve && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="px-3 py-1 cursor-pointer btn btn-green-slow text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                              disabled={actionLoading || isClosed}
-                              onClick={() => onResolve(item.id)}
-                            >
-                              {actionLoading && (
-                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              )}
-                              {isClosed ? "Completed" : "Mark resolved"}
-                            </Button>
-                          )}
+                          {/* Accept/Reject removed from table rows; use View modal */}
 
                           {item.conversationId && item.status !== SupportRequestStatus.Resolved && (
                             <Button
@@ -285,6 +244,19 @@ export default function SupportRequestList({
                               <MessageCircle className="w-4 h-4 text-blue-500" />
                             </Button>
                           )}
+                          {/* Eye button - open detail modal */}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="mt-1 h-7 w-7 !bg-green-50 !hover:text-green-400 cursor-pointer"
+                            title="View request details"
+                            onClick={() => {
+                              setSelected(item);
+                              setViewOpen(true);
+                            }}
+                          >
+                            <Eye className="w-4 h-4 text-green-700" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -295,6 +267,18 @@ export default function SupportRequestList({
           </ScrollArea>
         )}
       </div>
+
+      <SupportRequestViewModal
+        open={viewOpen}
+        onOpenChange={(v) => {
+          setViewOpen(v);
+          if (!v) setSelected(null);
+        }}
+        item={selected}
+        onAccept={onAccept}
+        onReload={onReload}
+        actionLoading={actionLoading}
+      />
 
       {/* Pagination */}
       <div className="mt-3">

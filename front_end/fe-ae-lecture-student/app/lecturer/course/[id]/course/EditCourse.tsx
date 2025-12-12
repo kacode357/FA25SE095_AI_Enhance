@@ -10,7 +10,7 @@ import { useUpdateCourse } from "@/hooks/course/useUpdateCourse";
 import { useTerms } from "@/hooks/term/useTerms";
 import { CourseStatus } from "@/types/courses/course.response";
 import { AnimatePresence, motion } from "framer-motion";
-import { Book, ChevronRight, FolderLock, Loader2, SquarePen, X } from "lucide-react";
+import { Book, ChevronRight, Loader2, SquarePen, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -160,13 +160,13 @@ export default function EditCourse() {
                         </div>
 
                         <div className="flex items-center gap-5">
-                            {!editMode && course.status === CourseStatus.Active && (
+                            {!editMode && course.status !== CourseStatus.Active && (
                                 <>
                                     <button
                                         onClick={() => setInactivateOpen(true)}
-                                        className="flex items-center gap-2 px-3 cursor-pointer py-1.5 rounded-md text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100"
+                                        className="flex items-center gap-2 px-3 cursor-pointer py-1.5 rounded-md text-xs font-medium border border-red-300 text-red-700 bg-red-50 hover:bg-red-100"
                                     >
-                                        <FolderLock className="size-4" /> Inactivate
+                                        <Trash2 className="size-4" /> Delete
                                     </button>
                                     <SquarePen
                                         className="size-5 cursor-pointer text-violet-600 hover:text-violet-800"

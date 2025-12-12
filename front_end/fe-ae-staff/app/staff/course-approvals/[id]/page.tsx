@@ -1,5 +1,6 @@
 "use client";
 
+import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { Badge } from "@/components/ui/badge";
 import Button from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,11 +11,10 @@ import {
 } from "@/config/course-status";
 import { useCourseById } from "@/hooks/course/useCourseById";
 import { formatToVN } from "@/utils/datetime/time";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CloudDownload } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import ProcessCourseActions from "../components/ProcessCourseActions";
-import LiteRichTextEditor from "@/components/common/TinyMCE";
 
 export default function CourseApprovalDetailPage() {
   const { id } = useParams();
@@ -94,7 +94,7 @@ export default function CourseApprovalDetailPage() {
         <CardContent className="space-y-8">
           {/* Grid thông tin chi tiết */}
           <section className="grid md:grid-cols-3 gap-x-8 gap-y-6 text-sm">
-            <Field label="System Name" value={course.name} />
+            <Field label="Name" value={course.name} />
             <Field label="Unique Code" value={course.uniqueCode} />
             <Field label="Department" value={course.department} />
 
@@ -105,6 +105,41 @@ export default function CourseApprovalDetailPage() {
             <Field label="Term Start Date" value={fmtDate(course.termStartDate)} />
             <Field label="Term End Date" value={fmtDate(course.termEndDate)} />
             <Field label="Created At" value={fmtDate(course.createdAt)} />
+
+            <Field
+              label="Image"
+              value={
+                course.img ? (
+                  <div className="flex items-center">
+                    <img
+                      src={course.img}
+                      alt={course.courseCodeTitle || "course image"}
+                      className="h-20 w-auto border-slate-200 rounded-md object-cover border"
+                    />
+                  </div>
+                ) : (
+                  "-"
+                )
+              }
+            />
+
+            <Field
+              label="Syllabus File"
+              value={
+                course.syllabusFile ? (
+                  <a
+                    href={course.syllabusFile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 underline flex items-center gap-1"
+                  >
+                    <div>Download syllabus</div><CloudDownload className="size-4" />
+                  </a>
+                ) : (
+                  "-"
+                )
+              }
+            />
 
             <Field
               label="Requires Access Code"
@@ -118,32 +153,28 @@ export default function CourseApprovalDetailPage() {
           <div className="h-px bg-slate-200/80" />
 
           {/* Section: Description & Announcement */}
-          <section className="grid md:grid-cols-2 gap-8 text-sm">
-            {/* Cột trái: Description */}
-            <Field
-              label="Description"
-              value={course.description || "-"}
-              multiline
-            />
-
-            {/* Cột phải: Announcement (Dùng TinyMCE ReadOnly) */}
-            <div>
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium mb-1">
-                Announcement
+          {/* Announcement - full width */}
+          <section>
+            <h3 className="text-sm font-medium text-slate-600 mb-3">Announcement</h3>
+            {course.announcement ? (
+              <div className="mt-1 rounded-md overflow-hidden">
+                <LiteRichTextEditor
+                  value={course.announcement}
+                  onChange={() => {}}
+                  readOnly={true}
+                  placeholder="No announcement content"
+                />
               </div>
-              {course.announcement ? (
-                // 👇 Đã xóa 'border border-slate-200' ở đây để tránh bị 2 viền
-                <div className="mt-1 rounded-md overflow-hidden">
-                  <LiteRichTextEditor
-                    value={course.announcement}
-                    onChange={() => {}}
-                    readOnly={true}
-                    placeholder="No announcement content"
-                  />
-                </div>
-              ) : (
-                <span className="text-slate-900">-</span>
-              )}
+            ) : (
+              <span className="text-slate-900">-</span>
+            )}
+          </section>
+
+          {/* Description - full width below Announcement */}
+          <section>
+            <h3 className="text-sm font-medium text-slate-600 mb-3">Description</h3>
+            <div className="text-sm">
+              <Field label="" value={course.description || "-"} multiline />
             </div>
           </section>
         </CardContent>
@@ -151,10 +182,7 @@ export default function CourseApprovalDetailPage() {
         {/* Footer actions */}
         {isPending && course && (
           <div className="px-6 py-4 bg-slate-50/70 border-t border-slate-200">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-600">
-                Take an action to approve or reject this course.
-              </p>
+            <div className="flex items-center justify-end">
               <div className="flex items-center gap-2">
                 <ProcessCourseActions
                   id={course.id}
@@ -177,7 +205,7 @@ function Field({
   multiline,
 }: {
   label: string;
-  value: string;
+  value: React.ReactNode;
   multiline?: boolean;
 }) {
   return (

@@ -73,7 +73,7 @@ export default function ProcessCourseActions({
       {/* Reject */}
       <Button
         variant="outline"
-        className="px-5 whitespace-nowrap shadow-lg rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border-none"
+        className="px-5 whitespace-nowrap shadow-lg rounded-xl cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 border-none"
         onClick={() => openWith("reject")}
         disabled={busy}
       >
@@ -114,17 +114,22 @@ export default function ProcessCourseActions({
               Cancel
             </Button> */}
             <Button
-              variant={action === "reject" ? "danger" : "primary"}
-              className="h-10 px-5 btn btn-green-slow rounded-xl"
+              className={
+                "h-10 px-5 rounded-xl " +
+                (action === "reject"
+                  ? "bg-red-600 hover:bg-red-700 cursor-pointer text-white shadow"
+                  : "btn btn-green-slow")
+              }
               onClick={handleSubmit}
               disabled={busy}
             >
               {busy
                 ? "Processing..."
                 : action === "approve"
-                ? "Confirm Approve"
-                : "Confirm Reject"}
+                  ? "Confirm Approve"
+                  : "Confirm Reject"}
             </Button>
+
           </DialogFooter>
         </DialogContent>
       </Dialog>
