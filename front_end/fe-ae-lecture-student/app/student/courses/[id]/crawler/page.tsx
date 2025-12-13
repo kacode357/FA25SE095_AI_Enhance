@@ -97,15 +97,48 @@ const CrawlerInner = () => {
     loading: conversationMessagesLoading,
   } = useCrawlerConversationMessages();
 
+  const mapMessagesToUi = useCallback(
+    (res: any[]): UiMessage[] => {
+      return res.map((m) => {
+        const mt = m.messageType as unknown as MessageType;
+        return {
+          id: m.messageId,
+          role:
+            mt === MessageType.AiSummary
+              ? "assistant"
+              : m.userId === userId
+              ? "user"
+              : "assistant",
+          content: m.content,
+          createdAt: m.timestamp ?? new Date().toISOString(),
+          messageType: mt,
+          crawlJobId: m.crawlJobId ?? undefined,
+          visualizationData: m.visualizationData,
+          extractedData: m.extractedData,
+        };
+      });
+    },
+    [userId]
+  );
+
   // Fetch job metadata (e.g., conversationName)
   const { fetchJob } = useSmartCrawlerJob();
-  const appendUiMessage = useCallback(
-    (msg: UiMessage) =>
-      setChatMessages((prev) =>
-        prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
-      ),
-    []
-  );
+  const appendUiMessage = useCallback((msg: UiMessage) => {
+    setChatMessages((prev) => {
+      const idx = prev.findIndex((m) => m.id === msg.id);
+      if (idx !== -1) {
+        const merged: UiMessage = {
+          ...prev[idx],
+          ...msg,
+          createdAt: msg.createdAt || prev[idx].createdAt,
+        };
+        const next = [...prev];
+        next[idx] = merged;
+        return next;
+      }
+      return [...prev, msg];
+    });
+  }, []);
 
   const [selectedConversationId, setSelectedConversationId] =
     useState<string | null>(null);
@@ -159,6 +192,38 @@ const CrawlerInner = () => {
     if (!results?.length) return "";
     return results[0]?.promptUsed || "";
   }, [results]);
+
+  // Reload conversation messages (used after crawl completes or manual select)
+  const syncConversationMessages = useCallback(
+    async (convId: string | null) => {
+      if (!convId) return;
+      try {
+        const res = await fetchConversationMessages(convId, { limit: 100, offset: 0 });
+        if (!res) return;
+
+        const mappedMessages = mapMessagesToUi(res);
+        setChatMessages(mappedMessages);
+
+        const jobMsg = res.find((m) => m.crawlJobId);
+        if (!jobMsg?.crawlJobId) {
+          setActiveJobId(null);
+          return;
+        }
+
+        const jid = jobMsg.crawlJobId;
+        setActiveJobId(jid);
+
+        try {
+          await fetchJobResults(jid);
+        } catch (err) {
+          console.error(err);
+        }
+      } catch (err) {
+        console.error("[Crawler] syncConversationMessages error:", err);
+      }
+    },
+    [fetchConversationMessages, fetchJobResults, mapMessagesToUi]
+  );
 
   // ===== CrawlHub (Jobs) =====
   const {
@@ -220,6 +285,7 @@ const CrawlerInner = () => {
           if (assignmentId) {
             await fetchAssignmentConversations(assignmentId, { myOnly: true });
           }
+          await syncConversationMessages(conversationId);
         } catch (err) {
           console.error("[CrawlerWorkspace] fetchJobResults/fetchJob error:", err);
         } finally {
@@ -242,7 +308,7 @@ const CrawlerInner = () => {
   });
 
   const pushUiMessageFromDto = useCallback(
-    (message: ChatMessageDto) => {
+    async (message: ChatMessageDto) => {
       // Skip echoing back messages we already showed optimistically
       if (
         message.userId &&
@@ -288,8 +354,25 @@ const CrawlerInner = () => {
       };
 
       appendUiMessage(ui);
+
+      // When backend updates the same messageId with extractedData/visualizationData (CrawlResult/AiSummary),
+      // refetch conversation + results to ensure UI shows latest without F5.
+      const isResultMessage =
+        message.messageType === MessageType.CrawlResult ||
+        message.messageType === MessageType.AiSummary;
+      const jid = message.crawlJobId;
+      const convId = message.conversationId || conversationId;
+      if (isResultMessage && jid && convId) {
+        setActiveJobId(jid);
+        try {
+          await fetchJobResults(jid);
+        } catch (err) {
+          console.error("[CrawlerWorkspace] fetchJobResults on pushUiMessageFromDto error:", err);
+        }
+        await syncConversationMessages(convId);
+      }
     },
-    [userId, appendUiMessage]
+    [userId, appendUiMessage, conversationId, fetchJobResults, syncConversationMessages]
   );
 
   // ===== ChatHub (Realtime) =====
@@ -418,42 +501,9 @@ const CrawlerInner = () => {
       setConversationId(convId);
       setShowHistoryDrawer(false);
 
-      try {
-        const res = await fetchConversationMessages(convId, { limit: 100, offset: 0 });
-        if (!res) return;
-
-        const mappedMessages: UiMessage[] = res.map((m) => {
-          const mt = m.messageType as unknown as MessageType;
-          return {
-            id: m.messageId,
-            role: mt === MessageType.AiSummary ? "assistant" : (m.userId === userId ? "user" : "assistant"),
-            content: m.content,
-            createdAt: m.timestamp ?? new Date().toISOString(),
-            messageType: mt,
-            crawlJobId: m.crawlJobId ?? undefined,
-            // Cập nhật: Map visualizationData
-            visualizationData: m.visualizationData,
-            extractedData: m.extractedData,
-          };
-        });
-
-        setChatMessages(mappedMessages);
-
-        const jobMsg = res.find((m) => m.crawlJobId);
-        if (!jobMsg?.crawlJobId) {
-          setActiveJobId(null);
-          return;
-        }
-
-        const jid = jobMsg.crawlJobId;
-        setActiveJobId(jid);
-
-        try { await fetchJobResults(jid); } catch (err) { console.error(err); }
-      } catch (err) {
-        console.error("[Crawler] handleSelectConversation error:", err);
-      }
+      await syncConversationMessages(convId);
     },
-    [fetchConversationMessages, fetchJobResults, userId]
+    [syncConversationMessages]
   );
 
   // ===== Action: Start Crawl =====
@@ -598,7 +648,7 @@ const CrawlerInner = () => {
   return (
     <div className="relative min-h-[calc(100vh-64px)] bg-slate-50">
       <main
-        className="mx-auto flex max-w-6xl flex-col gap-4 py-6"
+        className="mx-auto flex max-w-7xl flex-col gap-4 py-6"
         data-tour="crawler-layout"
       >
         <div className="flex items-start gap-3" data-tour="crawler-header">
@@ -649,7 +699,37 @@ const CrawlerInner = () => {
             />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] items-start">
+          <div className="card p-4" data-tour="crawler-results">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="text-sm font-semibold text-[var(--foreground)]">
+                Crawled Data
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenDataPage}
+                  disabled={!activeJobId}
+                  className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[var(--foreground)] shadow-sm hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Open data in new page
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAnalysis((prev) => !prev)}
+                  className="rounded-lg border border-[var(--border)] px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:bg-slate-50 transition"
+                >
+                  {showAnalysis ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+            {showAnalysis && (
+              <div className="min-h-[340px]">
+                <CrawlerResultsSection results={results} resultsLoading={resultsLoading} />
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-4 items-start">
             <CrawlerChatSection
               chatMessages={chatMessages}
               chatInput={chatInput}
@@ -658,61 +738,6 @@ const CrawlerInner = () => {
               chatSending={chatSending}
               chatConnected={chatConnected}
             />
-
-            <div className="flex flex-col gap-4">
-              <div className="card p-4" data-tour="crawler-results">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="text-sm font-semibold text-[var(--foreground)]">
-                    Crawled Data
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenDataPage}
-                      disabled={!activeJobId}
-                      className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[var(--foreground)] shadow-sm hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Open data in new page
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAnalysis((prev) => !prev)}
-                      className="rounded-lg border border-[var(--border)] px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:bg-slate-50 transition"
-                    >
-                      {showAnalysis ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-                {showAnalysis && (
-                  <CrawlerResultsSection results={results} resultsLoading={resultsLoading} />
-                )}
-              </div>
-
-              <div className="card p-4 space-y-3" data-tour="crawler-progress">
-                <div className="flex items-center justify-between text-xs font-semibold text-[var(--foreground)]">
-                  <span>{crawlStatusMsg || "Idle"}</span>
-                  <span>{Math.round(crawlProgress)}%</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className="h-full bg-[var(--brand)] transition-all duration-500"
-                    style={{ width: `${Math.min(100, Math.max(0, crawlProgress))}%` }}
-                  />
-                </div>
-                <div className="text-[11px] text-[var(--text-muted)]">
-                  {isCrawling
-                    ? "Crawler is running, hang tight..."
-                    : submitting
-                    ? "Submitting crawl request..."
-                    : "No active crawl."}
-                  {activeJobId ? (
-                    <div className="mt-1 truncate text-[10px] text-slate-500">
-                      Job: {activeJobId}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </div>
           </div>
         </section>
       </main>

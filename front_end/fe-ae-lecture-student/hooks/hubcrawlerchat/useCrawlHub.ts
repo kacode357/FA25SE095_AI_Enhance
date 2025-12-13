@@ -34,7 +34,7 @@ type Options = {
 };
 
 export function useCrawlHub({
-  baseUrl = "https://crawl.fishmakeweb.id.vn",
+  baseUrl = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_HUB || "",
   getAccessToken,
   onConnectedChange,
   onJobStats,

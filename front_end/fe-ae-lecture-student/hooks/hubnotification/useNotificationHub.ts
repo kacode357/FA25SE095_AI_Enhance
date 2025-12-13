@@ -18,8 +18,7 @@ type Options = {
 // Hook to manage SignalR Notification Hub connection and events
 export function useNotificationHub({
   baseUrl =
-    process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL ||
-    "https://noti.fishmakeweb.id.vn",
+    process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL_HUB ||"",
   getAccessToken,
   onNotification,
   onNotificationsBatch,

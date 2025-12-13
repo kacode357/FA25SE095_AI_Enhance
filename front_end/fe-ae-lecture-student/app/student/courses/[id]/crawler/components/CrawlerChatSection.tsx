@@ -1,29 +1,19 @@
 // app/student/courses/[id]/crawler/components/CrawlerChatSection.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Send } from "lucide-react";
+import dynamic from "next/dynamic";
+import type { ApexOptions } from "apexcharts";
 import type { UiMessage } from "../crawler-types";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 import ChatPromptHints from "./ChatPromptHints";
 import { renderMessageContent } from "../utils/chatFormatting";
 
-// Recharts imports
-import {
-  ResponsiveContainer,
-  BarChart,
-  LineChart,
-  PieChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  Legend as RechartsLegend,
-  Bar,
-  Line,
-  Pie,
-  Cell,
-} from "recharts";
+// Avoid SSR issues for charts
+const ReactApexChart = dynamic(() => import("react-apexcharts"), {
+  ssr: false,
+});
 
 type Props = {
   chatMessages: UiMessage[];
@@ -35,214 +25,279 @@ type Props = {
   thinking?: boolean;
 };
 
-// Kiểu dữ liệu adapter cho Recharts
-type RechartsAdaptedData = {
-  data: Array<Record<string, any>>;
-  seriesKeys: string[];
+// Sử dụng NonNullable để lấy type chính xác cho ApexCharts
+type ApexAdapted = {
+  options: ApexOptions;
+  series: ApexOptions["series"];
+  chartType: NonNullable<ApexOptions["chart"]>["type"];
+  highlights: string[];
+  height: number;
 };
 
-// Adapter từ chartConfig kiểu Chart.js -> data cho Recharts
-function buildRechartsData(chartConfig: any): RechartsAdaptedData | null {
-  // Hỗ trợ format Chart.js (labels/datasets) và Apex-like (data: { labels, series })
-  let rawData =
-    chartConfig?.data?.data ?? // Apex nested
-    chartConfig?.data ?? // Chart.js or flattened
-    chartConfig?.dataset;
+const fallbackColors = ["#4F46E5", "#22C55E", "#06B6D4", "#F59E0B", "#EF4444", "#8b5cf6", "#ec4899", "#6366f1"];
 
-  // Nếu data là string JSON thì parse
-  if (typeof rawData === "string") {
+// --- Helper Functions to safely parse JSON ---
+function safeParse(input: unknown): any {
+  if (typeof input === "string") {
     try {
-      rawData = JSON.parse(rawData);
+      return JSON.parse(input);
     } catch {
-      rawData = null;
+      return input;
     }
   }
+  return input;
+}
 
-  if (!rawData) return null;
+// Convert backend payload (Chart.js/Apex-like) into ApexCharts config
+function buildApexConfig(rawJson: unknown): ApexAdapted | null {
+  if (!rawJson) return null;
 
-  // Chuẩn hóa sang datasets/labels
-  let labels: string[] | undefined;
-  let datasets: any[] | undefined;
+  try {
+    const outer = safeParse(rawJson);
+    const chartConfig = outer.visualizationData ?? outer.VisualizationData ?? outer;
 
-  if (Array.isArray(rawData.labels)) {
-    labels = rawData.labels;
-    if (Array.isArray(rawData.datasets)) {
-      datasets = rawData.datasets;
-    } else if (Array.isArray(rawData.series)) {
-      // Apex style series: number[] (single series)
-      datasets = [
-        {
-          label:
-            chartConfig?.data?.chart?.title ||
-            chartConfig?.chart?.title ||
-            "Series",
-          data: rawData.series,
+    if (chartConfig?.data) {
+      chartConfig.data = safeParse(chartConfig.data);
+      if (chartConfig.data?.data) {
+        chartConfig.data.data = safeParse(chartConfig.data.data);
+      }
+    }
+
+    if (!chartConfig || !chartConfig.data) return null;
+
+    const rawType =
+      chartConfig.type ||
+      chartConfig?.data?.chart?.type ||
+      chartConfig?.chart?.type ||
+      "bar";
+
+    const chartType = ([
+      "line", "area", "bar", "pie", "donut", "radialBar",
+      "scatter", "bubble", "heatmap", "candlestick",
+      "boxPlot", "radar", "polarArea", "rangeBar", "treemap"
+    ].includes(rawType)
+      ? rawType
+      : "bar") as NonNullable<ApexOptions["chart"]>["type"];
+
+    const dataNode =
+      chartConfig?.data?.data ?? chartConfig?.data ?? chartConfig?.dataset ?? {};
+
+    const rawSeries =
+      dataNode.series ?? chartConfig?.series ?? chartConfig?.data?.series ?? [];
+    const rawLabels =
+      dataNode.labels ?? dataNode.categories ?? chartConfig?.labels ?? [];
+
+    const colors =
+      chartConfig?.data?.colors || chartConfig?.colors || fallbackColors;
+    const legendPosition =
+      chartConfig?.options?.plugins?.legend?.position || "bottom";
+    const titleText =
+      chartConfig?.data?.chart?.title ||
+      chartConfig?.chart?.title ||
+      chartConfig?.title;
+
+    const highlights = (outer.insightHighlights ||
+      outer.InsightHighlights ||
+      []) as string[];
+
+    // --- CASE 1: PIE / DONUT ---
+    if (chartType === "pie" || chartType === "donut") {
+      const series =
+        Array.isArray(rawSeries) && rawSeries.length && typeof rawSeries[0] === "number"
+          ? rawSeries
+          : Array.isArray(dataNode.values)
+          ? dataNode.values
+          : [];
+
+      const finalSeries = (Array.isArray(series) ? series : []) as number[];
+      const labels = Array.isArray(rawLabels) ? rawLabels : [];
+
+      const baseHeight = 320;
+      const legendHeight = labels.length > 5 ? (labels.length - 5) * 25 : 0;
+      const chartHeight = Math.min(1000, baseHeight + legendHeight);
+
+      const options: ApexOptions = {
+        chart: {
+          toolbar: { show: false },
+          height: chartHeight,
         },
-      ];
+        labels,
+        colors,
+        legend: {
+            position: "bottom",
+            formatter: function(seriesName: string, opts: any) {
+                return seriesName.length > 40 ? seriesName.slice(0, 40) + "..." : seriesName;
+            }
+        },
+        dataLabels: {
+          enabled: true,
+          dropShadow: { enabled: false },
+          style: { fontSize: "11px", fontWeight: 600, colors: ["#fff"] },
+          formatter: function (val: number, opts: any) {
+             return Math.round(val) + "%";
+          },
+        },
+        tooltip: {
+          y: {
+            formatter: (val: number) => String(val),
+          },
+        },
+        stroke: { colors: ["#fff"], width: 1 },
+        title: titleText
+          ? { text: titleText, style: { fontSize: "14px" } }
+          : undefined,
+      };
+
+      return {
+        options,
+        series: finalSeries,
+        chartType,
+        height: chartHeight,
+        highlights,
+      };
     }
-  } else if (Array.isArray(rawData.series) && Array.isArray(rawData.labelsSeries)) {
-    // Custom shape: labelsSeries + series
-    labels = rawData.labelsSeries;
-    datasets = [
-      {
-        label:
-          chartConfig?.data?.chart?.title ||
-          chartConfig?.chart?.title ||
-          "Series",
-        data: rawData.series,
+
+    // --- CASE 2: BAR / LINE / AREA ---
+    const categories = Array.isArray(dataNode.categories)
+      ? dataNode.categories
+      : Array.isArray(rawLabels)
+      ? rawLabels
+      : [];
+
+    const categoriesCount = categories.length;
+    const hasLongLabels = categories.some((c: any) => String(c).length > 24);
+    const horizontal =
+      chartType === "bar" && (categoriesCount > 8 || hasLongLabels);
+    const showDataLabels = categoriesCount <= 12;
+
+    const chartHeight = Math.max(
+      320,
+      Math.min(900, categoriesCount * (horizontal ? 32 : 26) + 160)
+    );
+
+    let series: any[] = [];
+    if (Array.isArray(rawSeries) && rawSeries.length) {
+      const isNumberSeries = rawSeries.every((s: any) => typeof s === "number");
+      const isObjectSeries = rawSeries.every((s: any) =>
+        Array.isArray((s as any)?.data)
+      );
+
+      if (isNumberSeries) {
+        series = [
+          {
+            name: titleText || "Data",
+            data: rawSeries as number[],
+          },
+        ];
+      } else if (isObjectSeries) {
+        series = rawSeries.map((s: any, idx: number) => ({
+          name: s.name || `Series ${idx + 1}`,
+          data: s.data || [],
+        }));
+      }
+    }
+
+    if (!series || series.length === 0) return null;
+
+    const isBar = chartType === "bar";
+
+    const options: ApexOptions = {
+      chart: {
+        toolbar: { show: false },
+        animations: {
+          enabled: true,
+          ...({ easing: "easeinout" } as any),
+        },
+        height: chartHeight,
       },
-    ];
+      colors,
+      plotOptions: isBar
+        ? {
+            bar: {
+              borderRadius: 4,
+              columnWidth: "55%",
+              distributed: series.length === 1,
+              dataLabels: { position: horizontal ? "center" : "top" },
+              horizontal,
+            },
+          }
+        : undefined,
+      dataLabels: {
+        enabled: showDataLabels,
+        formatter: (val: number | string) => String(val),
+        style: { fontSize: "11px", fontWeight: 600 },
+        background: { enabled: false },
+      },
+      stroke: {
+        width: isBar ? 0 : 3,
+        curve: "smooth",
+      },
+      grid: {
+        borderColor: "#E2E8F0",
+        strokeDashArray: 4,
+      },
+      xaxis: {
+        categories,
+        labels: {
+          style: { colors: "#64748b" },
+          rotate: horizontal ? 0 : -25,
+          formatter: (val: string | number) => {
+            const strVal = String(val);
+            return strVal.length > 28 ? `${strVal.slice(0, 28)}…` : strVal;
+          },
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+      },
+      yaxis: {
+        labels: {
+          style: { colors: "#94a3b8" },
+          formatter: (val: number) => {
+            if (horizontal && String(val).length > 40) {
+              return `${String(val).slice(0, 40)}…`;
+            }
+            return String(val);
+          },
+        },
+      },
+      legend: {
+        position: legendPosition as any,
+        markers: { radius: 12 } as any,
+        show: series.length > 1 || (series.length === 1 && isBar),
+      },
+      title: titleText
+        ? { text: titleText, style: { fontSize: "14px", fontWeight: 700 } }
+        : undefined,
+      tooltip: {
+        theme: "light",
+        y: {
+          formatter: (val: number) => String(val),
+        },
+      },
+    };
+
+    return {
+      options,
+      series,
+      chartType,
+      height: chartHeight,
+      highlights,
+    };
+  } catch (err) {
+    console.error("Failed to parse visualizationData:", err, rawJson);
+    return null;
   }
-
-  if (!labels || !datasets || !datasets.length) return null;
-
-  const seriesKeys: string[] = datasets.map(
-    (ds: any, idx: number) => ds.label || `value${idx + 1}`
-  );
-
-  const rows = labels.map((label: string, i: number) => {
-    const row: Record<string, any> = { label };
-    datasets!.forEach((ds: any, idx: number) => {
-      const key = seriesKeys[idx];
-      const value = Array.isArray(ds.data) ? ds.data[i] ?? null : null;
-      row[key] = value;
-    });
-    return row;
-  });
-
-  return { data: rows, seriesKeys };
 }
 
 const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
-  const parsedData = useMemo(() => {
-    if (!rawJson) return null;
+  const adapted = useMemo(() => buildApexConfig(rawJson), [rawJson]);
 
-    try {
-      // 1. Chuẩn bị: nếu là string thì JSON.parse, nếu là object thì dùng luôn
-      const outer =
-        typeof rawJson === "string" ? JSON.parse(rawJson) : (rawJson as any);
+  if (!adapted) return null;
 
-      // 2. 2 case chính:
-      //    - Case 1: { latestResultCrawlJobId, insightHighlights, visualizationData: { type, data, options } }
-      //    - Case 2: trực tiếp: { type, data, options }
-      let chartConfig =
-        outer.visualizationData ?? outer.VisualizationData ?? outer;
-
-      // Nếu chartConfig.data là string hoặc nested string -> parse
-      if (chartConfig?.data && typeof chartConfig.data === "string") {
-        try {
-          chartConfig = { ...chartConfig, data: JSON.parse(chartConfig.data) };
-        } catch {
-          // ignore parse error
-        }
-      }
-      if (chartConfig?.data?.data && typeof chartConfig.data.data === "string") {
-        try {
-          chartConfig = {
-            ...chartConfig,
-            data: { ...chartConfig.data, data: JSON.parse(chartConfig.data.data) },
-          };
-        } catch {
-          // ignore parse error
-        }
-      }
-
-      if (!chartConfig || !chartConfig.data) return null;
-
-      const adapted = buildRechartsData(chartConfig);
-      if (!adapted) return null;
-
-      return {
-        highlights: (outer.insightHighlights ||
-          outer.InsightHighlights ||
-          []) as string[],
-        chartType: (chartConfig.type || "bar") as string,
-        chartConfig,
-        rechartsData: adapted.data,
-        seriesKeys: adapted.seriesKeys,
-      };
-    } catch (e) {
-      console.error("Failed to parse visualizationData:", e, rawJson);
-      return null;
-    }
-  }, [rawJson]);
-
-  if (!parsedData) return null;
-
-  const { highlights, chartType, rechartsData, seriesKeys } = parsedData;
-
-  const renderCartesianChart = () => {
-    if (chartType === "line") {
-      return (
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={rechartsData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="label" />
-            <YAxis />
-            <RechartsTooltip />
-            <RechartsLegend />
-            {seriesKeys.map((key: string) => (
-              <Line
-                key={key}
-                type="monotone"
-                dataKey={key}
-                dot={false}
-                strokeWidth={2}
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      );
-    }
-
-    // default: bar chart
-    return (
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={rechartsData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="label" />
-          <YAxis />
-          <RechartsTooltip />
-          <RechartsLegend />
-          {seriesKeys.map((key: string) => (
-            <Bar key={key} dataKey={key} />
-          ))}
-        </BarChart>
-      </ResponsiveContainer>
-    );
-  };
-
-  const renderPieChart = () => {
-    // dạng dataset đầu tiên cho Pie
-    const firstSeries = seriesKeys[0];
-    if (!firstSeries) return null;
-
-    return (
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <RechartsTooltip />
-          <RechartsLegend />
-          <Pie
-            data={rechartsData}
-            dataKey={firstSeries}
-            nameKey="label"
-            cx="50%"
-            cy="50%"
-            outerRadius="80%"
-            label
-          >
-            {rechartsData.map((_: Record<string, any>, index: number) => (
-              <Cell key={`cell-${index}`} />
-            ))}
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
-    );
-  };
+  const { highlights, options, series, chartType, height } = adapted;
 
   return (
     <div className="mt-3 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-      {/* 1. Insights Text */}
       {highlights && highlights.length > 0 && (
         <div className="text-xs text-slate-700">
           <strong className="mb-1 block text-[var(--brand)]">
@@ -256,9 +311,14 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
         </div>
       )}
 
-      {/* 2. Chart Rendering (Bar / Line / Pie) */}
-      <div className="mt-1 h-[250px] w-full">
-        {chartType === "pie" ? renderPieChart() : renderCartesianChart()}
+      <div className="mt-1 w-full" style={{ height: height }}>
+        <ReactApexChart
+          type={chartType}
+          options={options}
+          series={series}
+          height={height}
+          width="100%"
+        />
       </div>
     </div>
   );
@@ -270,25 +330,27 @@ const ChatMessageList = React.memo(function ChatMessageList({
   thinking,
   onSendChat,
   chatConnected,
+  showPrompts,
 }: Pick<
   Props,
   "chatMessages" | "chatSending" | "thinking" | "onSendChat" | "chatConnected"
->) {
+> & { showPrompts: boolean }) {
   const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [chatMessages.length, thinking, chatSending]);
+  }, [chatMessages.length, thinking, chatSending, showPrompts]);
 
   return (
     <div
       ref={listRef}
-      className="scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent flex-1 space-y-3 rounded-xl border border-[var(--border)] bg-slate-50/50 px-3 py-3 min-h-[300px] max-h-[500px] overflow-y-auto"
+      // FIX CRITICAL: Đã xóa "min-h-[300px] max-h-[500px]".
+      // Thêm "min-h-0" để flex-1 hoạt động đúng, tự động lấp đầy khoảng trống còn lại.
+      className="scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent flex-1 min-h-0 space-y-3 rounded-xl border border-[var(--border)] bg-slate-50/50 px-3 py-3 overflow-y-auto"
     >
       {chatMessages.length === 0 ? (
-        // Removed empty-state suggested prompt + quick buttons
         <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-xs text-[var(--text-muted)] opacity-80">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
             <Bot className="h-6 w-6" />
@@ -317,7 +379,7 @@ const ChatMessageList = React.memo(function ChatMessageList({
                 }`}
               >
                 <div
-                className="text-[13px] leading-relaxed space-y-1 [&_ul]:ml-4 [&_ul]:list-disc [&_ol]:ml-4 [&_ol]:list-decimal [&_li]:mb-1 [&_a]:text-[var(--brand)] [&_a]:underline [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[11px] [&_strong]:font-semibold [&_p]:last:mb-0 [&_img[data-inline-img]]:my-2 [&_img[data-inline-img]]:max-h-64 [&_img[data-inline-img]]:rounded-lg [&_img[data-inline-img]]:border [&_img[data-inline-img]]:border-[var(--border)] [&_img[data-inline-img]]:bg-white"
+                  className="text-[13px] leading-relaxed space-y-1 [&_ul]:ml-4 [&_ul]:list-disc [&_ol]:ml-4 [&_ol]:list-decimal [&_li]:mb-1 [&_a]:text-[var(--brand)] [&_a]:underline [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[11px] [&_strong]:font-semibold [&_p]:last:mb-0 [&_img[data-inline-img]]:my-2 [&_img[data-inline-img]]:max-h-64 [&_img[data-inline-img]]:rounded-lg [&_img[data-inline-img]]:border [&_img[data-inline-img]]:border-[var(--border)] [&_img[data-inline-img]]:bg-white"
                   dangerouslySetInnerHTML={{ __html: rendered.html }}
                 />
 
@@ -371,13 +433,13 @@ function CrawlerChatSection({
   thinking = false,
 }: Props) {
   const disabledSend = !chatInput.trim() || chatSending || !chatConnected;
+  const [showPrompts, setShowPrompts] = useState(true);
 
   return (
     <div
-      className="flex h-full flex-col gap-3 rounded-xl border border-[var(--border)] bg-white/95 p-4 shadow-sm"
+      className="flex h-[850px] flex-col gap-3 rounded-xl border border-[var(--border)] bg-white/95 p-4 shadow-sm"
       data-tour="crawler-chat"
     >
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
@@ -385,9 +447,18 @@ function CrawlerChatSection({
             Chat with Agent
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => setShowPrompts((prev) => !prev)}
+          className="rounded-lg border border-[var(--border)] px-3 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:bg-slate-50 transition"
+        >
+          {showPrompts ? "Hide prompts" : "Show prompts"}
+        </button>
       </div>
 
-      <ChatPromptHints onSend={onSendChat} disabled={chatSending || !chatConnected} />
+      {showPrompts && (
+        <ChatPromptHints onSend={onSendChat} disabled={chatSending || !chatConnected} />
+      )}
 
       <ChatMessageList
         chatMessages={chatMessages}
@@ -395,9 +466,9 @@ function CrawlerChatSection({
         thinking={thinking}
         onSendChat={onSendChat}
         chatConnected={chatConnected}
+        showPrompts={showPrompts}
       />
 
-      {/* Input Area */}
       <div className="mt-2 flex items-end gap-2">
         <textarea
           rows={1}
@@ -414,7 +485,7 @@ function CrawlerChatSection({
         />
         <button
           type="button"
-           onClick={() => onSendChat()} 
+          onClick={() => onSendChat()}
           disabled={disabledSend}
           className="btn-gradient-slow flex h-[44px] w-[44px] items-center justify-center rounded-xl shadow-md transition-transform disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none active:scale-95"
           title="Send Message"

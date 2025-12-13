@@ -159,7 +159,7 @@ export default function CrawlerUrlPromptSection({
                 Sample prompt
               </div>
               <p className="leading-snug">
-                Get me the information for all products on this page, including images, names,
+                Get me the information for all products on this page, including images, brand, names,
                 current prices, prices before discounts, and categories.
               </p>
             </div>
