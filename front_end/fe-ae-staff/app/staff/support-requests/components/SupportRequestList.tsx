@@ -237,6 +237,12 @@ export default function SupportRequestList({
                                 q.set("courseId", item.courseId);
                                 q.set("peerId", item.requesterId);
                                 q.set("peerName", item.requesterName || "");
+                                // include support request id in query so chat window can attach it to messages
+                                if (item.id) {
+                                  q.set("supportRequestId", item.id);
+                                  // also set legacy name `requestId` where other parts expect it
+                                  q.set("requestId", item.id);
+                                }
                                 if (item.conversationId) q.set("conversationId", item.conversationId);
                                 router.push(`/staff/support-requests/chat?${q.toString()}`);
                               }}

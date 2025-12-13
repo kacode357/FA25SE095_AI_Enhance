@@ -362,7 +362,7 @@ export default function ReportsRequiringGradingPage() {
                                                             onClick={(e: any) => { e.stopPropagation(); setExpandedId(r.id); setEditingReportId(r.id); setRevisionReportId(null); setRejectReportId(null); }}
                                                         >
                                                             <ClipboardPenLine className="w-4 h-4" />
-                                                            Change Grade
+                                                            Grade
                                                         </Button>
                                                     )}
                                                 </div>

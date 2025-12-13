@@ -13,6 +13,8 @@ export default function ChatPage() {
     const peerId = search.get("peerId") ?? "";
     const peerName = search.get("peerName") ?? "";
     const conversationId = search.get("conversationId") ?? null;
+    // supportRequestId may be passed as `supportRequestId` or `requestId` in query
+    const supportRequestId = search.get("supportRequestId") ?? search.get("requestId") ?? undefined;
 
     return (
         <div className=" h-screen flex flex-col overflow-hidden">
@@ -31,6 +33,7 @@ export default function ChatPage() {
                         peerId={peerId}
                         peerName={peerName}
                         conversationId={conversationId ?? undefined}
+                        supportRequestId={supportRequestId}
                         onClose={() => router.back()}
                     />
                 </div>

@@ -199,19 +199,6 @@ export default function LecturerCourseReportsPage() {
                             >
                                 By Course
                             </button>
-                            <button
-                                className={`px-3 py-1 text-sm rounded cursor-pointer ${activeTab === "late" ? "bg-white shadow-sm" : "text-slate-600"}`}
-                                onClick={() => {
-                                    setActiveTab("late");
-                                    // when switching to late tab, fetch late data and assignments
-                                    if (courseId) {
-                                        fetchAssignments({ courseId, pageNumber: 1, pageSize: 200 });
-                                        fetchLateData(courseId, assignmentId || undefined);
-                                    }
-                                }}
-                            >
-                                Late Submissions
-                            </button>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">

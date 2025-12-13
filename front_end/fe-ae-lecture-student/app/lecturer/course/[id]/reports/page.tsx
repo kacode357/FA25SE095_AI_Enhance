@@ -177,17 +177,6 @@ export default function LecturerAssignmentReportsPage() {
                         <li role="presentation">
                             <button
                                     role="tab"
-                                        aria-selected={activeTab === "late"}
-                                        onClick={() => { setActiveTab("late"); syncTab("late"); }}
-                                        className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "late" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}
-                                >
-                                Late Submissions
-                            </button>
-                        </li>
-
-                        <li role="presentation">
-                            <button
-                                    role="tab"
                                         aria-selected={activeTab === "requiring"}
                                         onClick={() => { setActiveTab("requiring"); syncTab("requiring"); }}
                                         className={`pb-3 pt-4 cursor-pointer text-sm ${activeTab === "requiring" ? "text-violet-600 font-medium border-b-2 border-violet-600" : "text-slate-600 hover:text-slate-800"}`}

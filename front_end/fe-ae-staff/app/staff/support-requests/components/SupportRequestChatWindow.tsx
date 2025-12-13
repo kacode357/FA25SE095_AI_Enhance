@@ -18,7 +18,7 @@ import {
     timeHHmm,
 } from "@/utils/chat/time";
 import { ArrowLeft, EllipsisVertical, Send } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SupportRequestResolved from "./SupportRequestResolved";
 import SupportRequestResolvePrompt from "./SupportRequestResolvePrompt";
@@ -76,6 +76,13 @@ export default function SupportRequestChatWindow({
     );
 
     const tokenProvider = useCallback(() => getSavedAccessToken() || "", []);
+
+    // fallback: read supportRequestId directly from URL if prop wasn't provided
+    const search = useSearchParams();
+    const querySupportRequestId =
+        (search?.get("supportRequestId") as string | null) ??
+        (search?.get("requestId") as string | null) ??
+        undefined;
 
     const handleReceiveMessagesBatch = useCallback((batch: ChatMessage[] | undefined) => {
         if (!batch?.length) return;
@@ -443,10 +450,14 @@ export default function SupportRequestChatWindow({
 
         try {
             setSending(true);
-            const dto: SendMessagePayload = { courseId, receiverId: peerId, message, supportRequestId };
+            const effectiveSupportRequestId = supportRequestId ?? querySupportRequestId ?? undefined;
+            const dto: SendMessagePayload = { courseId, receiverId: peerId, message, supportRequestId: effectiveSupportRequestId };
+
             await sendMessage(dto);
             setInput("");
-            // sau khi send thì coi như hết typing (input rỗng -> effect sẽ tự gọi stopTyping)
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            throw e;
         } finally {
             setSending(false);
         }
