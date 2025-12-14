@@ -308,7 +308,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             value={form.description}
             onChange={(html) => setForm((p) => ({ ...p, description: html }))}
             placeholder="Exercise description…"
-          // onImageUpload={uploadImageToServer}
+            // No server upload for images; keep data URLs inline
           />
         </div>
 

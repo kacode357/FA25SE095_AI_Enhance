@@ -79,7 +79,7 @@ export default function LiteRichTextEditor({
   return (
     <div className={className}>
       <Editor
-        initialValue={initialValueRef.current}
+        initialValue={value || ""}
         apiKey={apiKey}
         tinymceScriptSrc={tinymceScriptSrc}
         disabled={readOnly}
@@ -91,6 +91,14 @@ export default function LiteRichTextEditor({
 
           editorRef.current = api;
           onInit?.(api);
+          try {
+            const currentValue = value || "";
+            if (currentValue) {
+              pushContentFromOutside(currentValue);
+            }
+          } catch (e) {
+            console.warn("TinyMCE init content push failed", e);
+          }
         }}
         onEditorChange={(content) => {
           if (readOnly) return;
@@ -109,6 +117,7 @@ export default function LiteRichTextEditor({
             "preview",
             "code",
           ],
+          automatic_uploads: false,
           toolbar: readOnly
             ? false
             : "undo redo | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | link image table | code preview",
@@ -119,6 +128,8 @@ export default function LiteRichTextEditor({
           default_link_target: "_blank",
           rel_list: [{ title: "No Referrer", value: "noopener noreferrer" }],
           forced_root_block: "p",
+          extended_valid_elements: "img[src|alt|width|height]",
+          images_file_types: "jpeg,jpg,jpe,jfi,jif,jfif,png,gif,webp,bmp,ico",
 
           // Cho phép dán ảnh từ clipboard
           paste_data_images: true,
@@ -140,13 +151,47 @@ export default function LiteRichTextEditor({
               if (!file) return;
               try {
                 if (onUploadImage) {
-                  const url = await onUploadImage(file);
-                  callback(url, { alt: file.name });
+                  try {
+                    const url = await onUploadImage(file);
+                    if (url) {
+                      callback(url, { alt: file.name });
+                      return;
+                    }
+                    console.warn("Upload returned empty URL, falling back to data URL.");
+                  } catch (e) {
+                    console.warn("Upload failed, falling back to data URL.", e);
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const result = String(reader.result || "");
+                    const isDataUrl = result.startsWith("data:");
+                    const mime = file.type || "image/png";
+                    const url = isDataUrl ? result : `data:${mime};base64,${result}`;
+                    if (!url || url.endsWith(",")) {
+                      console.warn("Empty image data, ignoring.");
+                      return;
+                    }
+                    callback(url, { alt: file.name });
+                  };
+                  reader.onerror = () => {
+                    console.error("FileReader failed to read image");
+                  };
+                  reader.readAsDataURL(file);
                 } else {
                   const reader = new FileReader();
                   reader.onload = () => {
-                    const base64 = String(reader.result || "");
-                    callback(base64, { alt: file.name });
+                    const result = String(reader.result || "");
+                    const isDataUrl = result.startsWith("data:");
+                    const mime = file.type || "image/png";
+                    const url = isDataUrl ? result : `data:${mime};base64,${result}`;
+                    if (!url || url.endsWith(",")) {
+                      console.warn("Empty image data, ignoring.");
+                      return;
+                    }
+                    callback(url, { alt: file.name });
+                  };
+                  reader.onerror = () => {
+                    console.error("FileReader failed to read image");
                   };
                   reader.readAsDataURL(file);
                 }
@@ -168,10 +213,18 @@ export default function LiteRichTextEditor({
               type: blob.type || "image/png",
             });
             if (onUploadImage) {
-              const url = await onUploadImage(file);
-              return url;
+              try {
+                const url = await onUploadImage(file);
+                if (url) return url;
+                console.warn("Upload returned empty URL; using data URL fallback.");
+              } catch (e) {
+                console.warn("Upload failed; using data URL fallback.", e);
+              }
             }
-            return blobInfo.base64();
+            const mime = blob.type || "image/png";
+            const base64 = blobInfo.base64();
+            if (!base64) throw new Error("Empty image data");
+            return `data:${mime};base64,${base64}`;
           },
 
           // 🔽 chiều cao tối thiểu 400, autoresize sẽ grow thêm theo content

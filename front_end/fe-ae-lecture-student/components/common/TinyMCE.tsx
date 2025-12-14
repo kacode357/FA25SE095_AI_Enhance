@@ -76,7 +76,7 @@ export default function LiteRichTextEditor({
   return (
     <div className={className}>
       <Editor
-        initialValue={initialValueRef.current}
+        initialValue={value || ""}
         apiKey={apiKey}
         tinymceScriptSrc={tinymceScriptSrc}
         disabled={readOnly}
@@ -88,6 +88,15 @@ export default function LiteRichTextEditor({
 
           editorRef.current = api;
           onInit?.(api);
+          // Ensure the current prop value is reflected even if it arrived after mount
+          try {
+            const currentValue = value || "";
+            if (currentValue) {
+              pushContentFromOutside(currentValue);
+            }
+          } catch (e) {
+            console.warn("TinyMCE init content push failed", e);
+          }
         }}
         onEditorChange={(content) => {
           if (readOnly) return;
@@ -106,6 +115,7 @@ export default function LiteRichTextEditor({
             "preview",
             "code",
           ],
+          automatic_uploads: false,
           toolbar: readOnly
             ? false
             : "undo redo | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | link image table | code preview",
@@ -116,6 +126,8 @@ export default function LiteRichTextEditor({
           default_link_target: "_blank",
           rel_list: [{ title: "No Referrer", value: "noopener noreferrer" }],
           forced_root_block: "p",
+          extended_valid_elements: "img[src|alt|width|height]",
+          images_file_types: "jpeg,jpg,jpe,jfi,jif,jfif,png,gif,webp,bmp,ico",
 
           paste_data_images: true,
           // Chỉ mở file picker cho ảnh
@@ -136,14 +148,50 @@ export default function LiteRichTextEditor({
               if (!file) return;
               try {
                 if (onUploadImage) {
-                  const url = await onUploadImage(file);
-                  callback(url, { alt: file.name });
+                  try {
+                    const url = await onUploadImage(file);
+                    if (url) {
+                      callback(url, { alt: file.name });
+                      return;
+                    }
+                    console.warn("Upload returned empty URL, falling back to data URL.");
+                  } catch (e) {
+                    console.warn("Upload failed, falling back to data URL.", e);
+                  }
+                  // Fallback to data URL if upload failed or returned empty
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const result = String(reader.result || "");
+                    const isDataUrl = result.startsWith("data:");
+                    const mime = file.type || "image/png";
+                    const url = isDataUrl ? result : `data:${mime};base64,${result}`;
+                    if (!url || url.endsWith(",")) {
+                      console.warn("Empty image data, ignoring.");
+                      return;
+                    }
+                    callback(url, { alt: file.name });
+                  };
+                  reader.onerror = () => {
+                    console.error("FileReader failed to read image");
+                  };
+                  reader.readAsDataURL(file);
                 } else {
                   // Fallback: inline base64 nếu không có hàm upload
                   const reader = new FileReader();
                   reader.onload = () => {
-                    const base64 = String(reader.result || "");
-                    callback(base64, { alt: file.name });
+                    const result = String(reader.result || "");
+                    // Ensure it is a proper data URL so TinyMCE renders it
+                    const isDataUrl = result.startsWith("data:");
+                    const mime = file.type || "image/png";
+                    const url = isDataUrl ? result : `data:${mime};base64,${result}`;
+                    if (!url || url.endsWith(",")) {
+                      console.warn("Empty image data, ignoring.");
+                      return;
+                    }
+                    callback(url, { alt: file.name });
+                  };
+                  reader.onerror = () => {
+                    console.error("FileReader failed to read image");
                   };
                   reader.readAsDataURL(file);
                 }
@@ -165,11 +213,19 @@ export default function LiteRichTextEditor({
               type: blob.type || "image/png",
             });
             if (onUploadImage) {
-              const url = await onUploadImage(file);
-              return url; // TinyMCE sẽ chèn URL này vào nội dung
+              try {
+                const url = await onUploadImage(file);
+                if (url) return url; // TinyMCE sẽ chèn URL này vào nội dung
+                console.warn("Upload returned empty URL; using data URL fallback.");
+              } catch (e) {
+                console.warn("Upload failed; using data URL fallback.", e);
+              }
             }
-            // Fallback: trả về base64 để vẫn lưu trong HTML
-            return blobInfo.base64();
+            // Fallback: trả về đầy đủ data URL để trình duyệt hiển thị đúng
+            const mime = blob.type || "image/png";
+            const base64 = blobInfo.base64();
+            if (!base64) throw new Error("Empty image data");
+            return `data:${mime};base64,${base64}`;
           },
 
           // 🔽 chiều cao tối thiểu 400, autoresize sẽ grow thêm theo content

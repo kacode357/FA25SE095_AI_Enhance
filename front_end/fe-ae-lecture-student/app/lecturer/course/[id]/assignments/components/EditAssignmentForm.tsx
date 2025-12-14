@@ -203,6 +203,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
                 <div>
                     <Label className="text-sm block mt-10 mb-1">Description</Label>
                     <LiteRichTextEditor
+                        key={id}
                         className="w-full"
                         value={form.description}
                         onChange={(html) => setForm((p) => ({ ...p, description: html }))}
