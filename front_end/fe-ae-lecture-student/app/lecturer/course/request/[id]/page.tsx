@@ -1,16 +1,28 @@
 "use client";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCourseRequestById } from "@/hooks/course-request/useCourseRequestById";
+import { useDeleteCourseRequest } from "@/hooks/course-request/useDeleteCourseRequest";
 import { useDeleteSyllabus } from '@/hooks/course-request/useDeleteSyllabus';
 import { useUploadSyllabus } from '@/hooks/course-request/useUploadSyllabus';
 import { CourseRequestStatus } from "@/types/course-requests/course-request.response";
 import { formatToVN } from "@/utils/datetime/time";
 import { ArrowLeft, CloudUpload, Loader2, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export default function LecturerCourseRequestDetailPage() {
     const { id } = useParams();
@@ -18,7 +30,9 @@ export default function LecturerCourseRequestDetailPage() {
     const { data, loading, fetchCourseRequestById } = useCourseRequestById();
     const { deleteSyllabus, loading: deleting } = useDeleteSyllabus();
     const { uploadSyllabus, loading: uploading } = useUploadSyllabus();
+    const { deleteCourseRequest, loading: deletingRequest } = useDeleteCourseRequest();
     const fileRef = useRef<HTMLInputElement | null>(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
     useEffect(() => {
         if (id && typeof id === "string") fetchCourseRequestById(id);
@@ -34,10 +48,10 @@ export default function LecturerCourseRequestDetailPage() {
 
     if (!request) {
         return (
-            <div className="p-6 text-center text-slate-500">
-                Course request not found.
+            <div className="p-6 flex flex-col items-center justify-center text-center text-slate-500">
+                <p>Course request not found.</p>
                 <div className="mt-4 btn btn-green-slow">
-                    <Button onClick={() => router.push('/lecturer/course/requests')}>← Back to Course Request List</Button>
+                    <Button onClick={() => router.push('/lecturer/manage-courses/requests')}>← Back to Course Request List</Button>
                 </div>
             </div>
         );
@@ -74,9 +88,61 @@ export default function LecturerCourseRequestDetailPage() {
                     <ArrowLeft className="mr-0 h-4 w-4" />
                     Back to Course Requests
                 </Button>
-                <Badge className={`text-xs px-2 py-1 border ${info.className}`}>
-                    {info.label}
-                </Badge>
+                <div className="flex items-center gap-3">
+                    {request.status === CourseRequestStatus.Pending && (
+                        <>
+                            <button
+                                type="button"
+                                title="Delete course request"
+                                className="flex items-center gap-2 px-3 cursor-pointer py-1.5 rounded-md text-xs font-medium border border-red-300 text-red-700 bg-red-50 hover:bg-red-100"
+                                onClick={() => setConfirmOpen(true)}
+                            >
+                                {deletingRequest ? (
+                                    <Loader2 className="h-4 w-4 text-slate-500 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                )}
+                                Delete
+                            </button>
+
+                            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete this course request?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Are you sure you want to delete this pending course request? This action cannot be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            variant="destructive"
+                                            className="cursor-pointer"
+                                            onClick={async () => {
+                                                if (!id || typeof id !== 'string') return;
+                                                try {
+                                                    const res = await deleteCourseRequest(id);
+                                                    setConfirmOpen(false);
+                                                    toast.success(res.message || 'Course request deleted');
+                                                    router.push('/lecturer/manage-courses/requests');
+                                                } catch (err) {
+                                                    const e = err as Error;
+                                                    toast.error(e.message || 'Failed to delete course request');
+                                                }
+                                            }}
+                                        >
+                                            {deletingRequest ? 'Deleting...' : 'Delete'}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </>
+                    )}
+
+                    <Badge className={`text-xs px-2 py-1 border ${info.className}`}>
+                        {info.label}
+                    </Badge>
+                </div>
             </div>
 
             <Card className="border border-slate-200 shadow-sm">

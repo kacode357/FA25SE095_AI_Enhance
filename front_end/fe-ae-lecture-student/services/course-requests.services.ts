@@ -2,6 +2,7 @@ import { courseAxiosInstance } from "@/config/axios.config";
 import { CourseRequestPayload, GetMyCourseRequestsQuery } from "@/types/course-requests/course-request.payload";
 import {
   CourseRequestResponse,
+  DeleteCourseRequestResponse,
   DeleteSyllabusResponse,
   GetCourseRequestByIdResponse,
   GetMyCourseRequestsResponse,
@@ -56,6 +57,12 @@ export const CourseRequestService = {
     );
     return response.data;
   },
+
+    // DELETE /api/CourseRequests/{id}
+    delete: async (id: string): Promise<DeleteCourseRequestResponse> => {
+      const response = await courseAxiosInstance.delete<DeleteCourseRequestResponse>(`/CourseRequests/${id}`);
+      return response.data;
+    },
 
   // POST /api/CourseRequests/{courseRequestId}/syllabus/upload
   uploadSyllabus: async (

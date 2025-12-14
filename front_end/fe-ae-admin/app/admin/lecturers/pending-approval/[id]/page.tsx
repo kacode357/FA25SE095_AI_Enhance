@@ -1,28 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
 import {
+  ArrowLeft,
   Building2,
+  Calendar,
   CheckCircle2,
   Mail,
   User,
   XCircle,
-  Calendar,
-  ArrowLeft,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { useAdminUserDetail } from "@/hooks/admin/useAdminUserDetail";
 import {
   UserRoleBadge,
   UserStatusBadge,
 } from "@/app/admin/components/UserBadge";
-import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
-import { useApproveAdminUser } from "@/hooks/admin/useApproveAdminUser";
+import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +30,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAdminUserDetail } from "@/hooks/admin/useAdminUserDetail";
+import { useApproveAdminUser } from "@/hooks/admin/useApproveAdminUser";
+import { useSuspendAdminUser } from "@/hooks/admin/useSuspendAdminUser";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 export default function PendingLecturerDetailPage() {
   const router = useRouter();
@@ -40,8 +45,12 @@ export default function PendingLecturerDetailPage() {
   const { user, loading, fetchAdminUserDetail } = useAdminUserDetail();
   const { loading: approving, approveAdminUser } = useApproveAdminUser();
 
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [isSuspendOpen, setIsSuspendOpen] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
+  const [suspendReason, setSuspendReason] = useState("");
+  const [suspendUntil, setSuspendUntil] = useState<string | undefined>(undefined);
+
+  const { suspendAdminUser, loading: suspendLoading } = useSuspendAdminUser();
 
   useEffect(() => {
     if (lecturerId) {
@@ -64,9 +73,25 @@ export default function PendingLecturerDetailPage() {
     }
   };
 
-  const handleReject = () => {
-    // Tạm thời chưa có API => chỉ mở dialog
-    setShowRejectDialog(true);
+  const openSuspendDialog = () => {
+    setIsSuspendOpen(true);
+  };
+
+  const handleSuspendSubmit = async () => {
+    if (!user || !suspendReason.trim()) return;
+    try {
+      await suspendAdminUser(user.id, {
+        reason: suspendReason,
+        suspendUntil: suspendUntil || null,
+      });
+      setIsSuspendOpen(false);
+      setSuspendReason("");
+      setSuspendUntil(undefined);
+      // refresh detail to reflect new status
+      await fetchAdminUserDetail(lecturerId);
+    } catch (e) {
+      // errors handled by interceptor/hooks
+    }
   };
 
   if (loading) {
@@ -120,11 +145,11 @@ export default function PendingLecturerDetailPage() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={handleReject}
+                onClick={openSuspendDialog}
                 className="btn btn-red-slow text-sm px-4 py-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <XCircle className="h-4 w-4" />
-                <span>Reject Request</span>
+                <span>Suspend</span>
               </button>
               <button
                 type="button"
@@ -284,24 +309,62 @@ export default function PendingLecturerDetailPage() {
         </div>
       </div>
 
-      {/* Reject dialog: chưa có function */}
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
+      {/* Suspend dialog */}
+      <Dialog open={isSuspendOpen} onOpenChange={setIsSuspendOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-white p-6">
           <DialogHeader>
-            <DialogTitle>Feature not available</DialogTitle>
-            <DialogDescription>
-              The reject lecturer request feature has not been implemented yet.
-              Please try again later.
+            <DialogTitle className="flex items-center gap-2 text-amber-600 text-lg">
+              Suspend Lecturer Account
+            </DialogTitle>
+            <DialogDescription className="text-slate-500">
+              This action will restrict the lecturer's access. Provide a reason.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={() => setShowRejectDialog(false)}
-              className="btn btn-blue-slow text-sm px-4 py-2"
+
+          <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="reason" className="font-medium text-slate-700">Reason (Required)</Label>
+              <Textarea
+                id="reason"
+                placeholder="Violation of terms, spamming, etc."
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                className="resize-none min-h-[80px] border-slate-200 focus-visible:ring-1 focus-visible:ring-brand focus-visible:border-brand"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="date" className="font-medium text-slate-700">Suspend Until (Optional)</Label>
+              <DateTimePicker
+                value={suspendUntil}
+                onChange={setSuspendUntil}
+                placeholder="Select date (Indefinite if empty)"
+                minDate={new Date()}
+                className="w-full"
+              />
+              <p className="text-[11px] text-slate-400 italic">
+                Leave empty for indefinite suspension.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsSuspendOpen(false)}
+              disabled={suspendLoading}
+              className="border-slate-200"
             >
-              Close
-            </button>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleSuspendSubmit}
+              disabled={suspendLoading}
+              className="bg-amber-600 hover:bg-amber-700 text-white border-none"
+            >
+              {suspendLoading ? "Suspending..." : "Confirm Suspension"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

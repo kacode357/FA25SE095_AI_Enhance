@@ -3,6 +3,11 @@
 
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useRef } from "react";
+type BlobInfo = {
+  blob: () => Blob;
+  base64: () => string;
+  filename: () => string;
+};
 
 type Props = {
   /** HTML ban đầu khi mount editor (không dùng để control từng keystroke) */
@@ -14,6 +19,8 @@ type Props = {
   debounceMs?: number;
   /** Nhận Tiny editor instance (cho collab/caret) */
   onInit?: (editor: any) => void;
+  /** Hàm upload ảnh, trả về URL public của ảnh sau khi lưu */
+  onUploadImage?: (file: File) => Promise<string>;
 };
 
 function normalize(html: string) {
@@ -28,6 +35,7 @@ export default function LiteRichTextEditor({
   readOnly = false,
   debounceMs = 150,
   onInit,
+  onUploadImage,
 }: Props) {
   const editorRef = useRef<any>(null);
   const lastEmittedRef = useRef<string>(normalize(value || ""));
@@ -110,6 +118,60 @@ export default function LiteRichTextEditor({
           default_link_target: "_blank",
           rel_list: [{ title: "No Referrer", value: "noopener noreferrer" }],
           forced_root_block: "p",
+
+          // Cho phép dán ảnh từ clipboard
+          paste_data_images: true,
+          // Chỉ mở file picker cho ảnh
+          file_picker_types: "image",
+
+          // Callback mở dialog chọn ảnh
+          file_picker_callback: async (
+            callback: (url: string, meta?: { alt?: string }) => void,
+            _value: string,
+            _meta: unknown
+          ): Promise<void> => {
+            if (readOnly) return;
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/*";
+            input.onchange = async () => {
+              const file = input.files?.[0];
+              if (!file) return;
+              try {
+                if (onUploadImage) {
+                  const url = await onUploadImage(file);
+                  callback(url, { alt: file.name });
+                } else {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const base64 = String(reader.result || "");
+                    callback(base64, { alt: file.name });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              } catch (err) {
+                console.error("Upload image failed", err);
+              }
+            };
+            input.click();
+          },
+
+          // Xử lý upload ảnh khi dán/drag-drop
+          images_upload_handler: async (
+            blobInfo: BlobInfo,
+            _progress: (percent: number) => void
+          ): Promise<string> => {
+            if (readOnly) throw new Error("Editor is read-only");
+            const blob = blobInfo.blob();
+            const file = new File([blob], blobInfo.filename() || "image.png", {
+              type: blob.type || "image/png",
+            });
+            if (onUploadImage) {
+              const url = await onUploadImage(file);
+              return url;
+            }
+            return blobInfo.base64();
+          },
 
           // 🔽 chiều cao tối thiểu 400, autoresize sẽ grow thêm theo content
           min_height: 400,

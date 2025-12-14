@@ -16,7 +16,7 @@ export default function CourseRequestsPage() {
           <h1 className="text-sm font-semibold uppercase tracking-wide whitespace-nowrap mr-4">Courses Requests Management</h1>
           <div className="ml-auto">
             <Button
-              onClick={() => router.push("/lecturer/course/requests/create")}
+              onClick={() => router.push("/lecturer/manage-courses/requests/create")}
               className="btn btn-gradient text-white"
               size="sm"
             >

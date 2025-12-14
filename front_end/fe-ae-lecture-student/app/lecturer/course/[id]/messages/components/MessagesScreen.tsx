@@ -2,7 +2,7 @@
 
 import { useGetConversations } from "@/hooks/chat/useGetConversations";
 import type { ConversationItemResponse } from "@/types/chat/chat.response";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CourseUsersList from "./CourseUsersList";
 import MessageThread from "./MessageThread";
@@ -17,6 +17,12 @@ export default function MessagesScreen({ courseId, courseName }: Props) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const loadingRef = useRef(false);
     const lastLoadedCourseIdRef = useRef<string | null>(null);
+    const search = useSearchParams();
+    // parse desired selection from url once per render
+    const desiredConversationId = search?.get("conversationId") ?? null;
+    const desiredStudentId = search?.get("studentId") ?? null;
+    const desiredEnrollmentStudentId = search?.get("enrollmentStudentId") ?? null;
+    const desiredStudentName = search?.get("studentName") ?? null;
 
     // Load conversations once per courseId; avoid infinite loops from function identity changes
     useEffect(() => {
@@ -38,7 +44,22 @@ export default function MessagesScreen({ courseId, courseName }: Props) {
                 if (cancelled) return;
                 setConversations(arr);
                 if (arr.length > 0) {
-                    const first = arr[0];
+                    // If the URL requested a specific conversation or student, prefer that one
+                    let picked: ConversationItemResponse | null = null;
+                    if (desiredConversationId) {
+                        picked = arr.find((c) => String(c.id) === String(desiredConversationId)) ?? null;
+                    }
+                    if (!picked && desiredStudentId) {
+                        picked = arr.find((c) => String(c.otherUserId) === String(desiredStudentId)) ?? null;
+                    }
+                    if (!picked && desiredEnrollmentStudentId) {
+                        picked = arr.find((c) => String(c.otherUserId) === String(desiredEnrollmentStudentId)) ?? null;
+                    }
+                    if (!picked && desiredStudentName) {
+                        picked = arr.find((c) => String(c.otherUserName).toLowerCase() === String(desiredStudentName).toLowerCase()) ?? null;
+                    }
+
+                    const first = picked ?? arr[0];
                     // Only update selection if different to avoid extra renders
                     if (selectedConv?.id !== first.id) setSelectedConv(first);
                     const firstUserId = String(first.otherUserId);
@@ -53,9 +74,71 @@ export default function MessagesScreen({ courseId, courseName }: Props) {
         return () => {
             cancelled = true;
         };
-        // Intentionally exclude getConversations from deps to avoid re-fetch loops
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId]);
+
+    useEffect(() => {
+        try {
+            const sid = search?.get("studentId"); // chat user id or fallback id we passed
+            const convId = search?.get("conversationId");
+            const sname = search?.get("studentName");
+            const enrollmentStudentId = search?.get("enrollmentStudentId");
+            const studentEmail = search?.get("studentEmail");
+            if (!sid && !enrollmentStudentId) return;
+
+            // prefer the chat id for selectedId, else enrollment id
+            const preferredId = sid ?? enrollmentStudentId ?? null;
+            if (preferredId) setSelectedId(String(preferredId));
+
+            // Prefer explicit conversationId when provided
+            if (convId) {
+                const found = conversations.find((c) => String(c.id) === String(convId));
+                if (found) {
+                    setSelectedConv(found);
+                    return;
+                }
+            }
+
+            // Try find conversation by otherUserId matching either chat id or enrollment student id
+            const foundByOther = conversations.find((c) => {
+                const oid = String(c.otherUserId ?? "");
+                if (sid && oid === String(sid)) return true;
+                if (enrollmentStudentId && oid === String(enrollmentStudentId)) return true;
+                return false;
+            });
+            if (foundByOther) {
+                setSelectedConv(foundByOther);
+                return;
+            }
+
+            // Try match by otherUserName or email if provided
+            const foundByNameOrEmail = conversations.find((c) => {
+                if (sname && c.otherUserName && String(c.otherUserName).toLowerCase() === String(sname).toLowerCase()) return true;
+                if (studentEmail && c.otherUserName && String(c.otherUserName).toLowerCase() === String(studentEmail).toLowerCase()) return true;
+                return false;
+            });
+            if (foundByNameOrEmail) {
+                setSelectedConv(foundByNameOrEmail);
+                return;
+            }
+
+            // No existing conversation found: create placeholder so MessageThread can render
+            const placeholder: ConversationItemResponse = {
+                id: convId ?? "",
+                courseId: courseId,
+                courseName: null,
+                otherUserId: String(preferredId ?? sid ?? enrollmentStudentId ?? ""),
+                otherUserName: sname ?? studentEmail ?? "",
+                otherUserRole: "",
+                lastMessagePreview: null,
+                lastMessageAt: null,
+                unreadCount: 0,
+            };
+            setSelectedConv(placeholder);
+        } catch (e) {
+            // ignore
+        }
+        // only re-run when conversations or search changes
+    }, [search?.toString(), conversations, courseId]);
 
     const onSelectUser = useCallback((u: { id: string; fullName: string }) => {
         setSelectedId(String(u.id));

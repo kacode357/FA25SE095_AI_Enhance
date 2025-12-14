@@ -63,3 +63,11 @@ export interface DeleteSyllabusResponse {
   success: boolean;
   message: string;
 }
+
+export interface DeleteCourseRequestResponse {
+    success: boolean;
+    message: string;
+    courseRequestId: string;
+}
+
+export type CourseRequestId = string;

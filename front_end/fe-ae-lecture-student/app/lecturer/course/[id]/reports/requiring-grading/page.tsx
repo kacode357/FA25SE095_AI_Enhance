@@ -11,7 +11,7 @@ import { useMyCourses } from "@/hooks/course/useMyCourses";
 import { useGetReportsRequiringGrading } from "@/hooks/reports/useGetReportsRequiringGrading";
 import type { CourseItem } from "@/types/courses/course.response";
 import type { RequiringGradingReportItem } from "@/types/reports/reports.response";
-import { ChevronDown, ChevronUp, ClipboardPenLine, Loader2, PencilOff, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import RejectForm from "../[reportId]/components/RejectForm";
 import RevisionForm from "../[reportId]/components/RevisionForm";
 import StatusBadge from "../utils/status";
@@ -329,42 +329,20 @@ export default function ReportsRequiringGradingPage() {
                                                 </div>
 
                                                 <div className="absolute right-4 bottom-2 flex items-center gap-2">
-                                                    {/* Request Revision button (left of Change Grade) */}
-                                                    {revisionReportId !== r.id && (
-                                                        <Button
-                                                            size="sm"
-                                                            className="cursor-pointer text-blue-500 shadow-lg"
-                                                            onClick={(e: any) => { e.stopPropagation(); setRevisionReportId(r.id); setEditingReportId(null); setRejectReportId(null); setExpandedId(r.id); }}
-                                                        >
-                                                            <PencilOff className="w-4 h-4 mr-1" />
-                                                            Request Revision
-                                                        </Button>
-                                                    )}
-
-                                                    {/* Reject Report button */}
-                                                    {rejectReportId !== r.id && (
-                                                        <Button
-                                                            size="sm"
-                                                            className="cursor-pointer text-red-500 shadow-lg"
-                                                            onClick={(e: any) => { e.stopPropagation(); setRejectReportId(r.id); setRevisionReportId(null); setEditingReportId(null); setExpandedId(r.id); }}
-                                                        >
-                                                            <X className="w-4 h-4 mr-1" />
-                                                            Reject Report
-                                                        </Button>
-                                                    )}
-
-                                                    {/* Change Grade button */}
-                                                    {editingReportId !== r.id && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="text-sm btn btn-gradient-slow text-slate-600 hover:text-slate-700"
-                                                            onClick={(e: any) => { e.stopPropagation(); setExpandedId(r.id); setEditingReportId(r.id); setRevisionReportId(null); setRejectReportId(null); }}
-                                                        >
-                                                            <ClipboardPenLine className="w-4 h-4" />
-                                                            Grade
-                                                        </Button>
-                                                    )}
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="text-sm text-violet-700 btn btn-gradient-slow hover:text-violet-800"
+                                                        onClick={(e: any) => {
+                                                            e.stopPropagation();
+                                                            // Navigate to Report Details page for this report
+                                                            const base = `/lecturer/course/${courseId || selectedCourse?.id || ""}/reports/${r.id}`;
+                                                            const url = assignmentId ? `${base}?assignmentId=${assignmentId}` : base;
+                                                            router.push(url);
+                                                        }}
+                                                    >
+                                                        Details
+                                                    </Button>
                                                 </div>
                                             </div>
                                         {editingReportId === r.id && (

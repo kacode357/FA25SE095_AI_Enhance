@@ -16,6 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { useGetUsersInCourse } from "@/hooks/chat/useGetUsersInCourse";
 import { useCourseStudents } from "@/hooks/enrollments/useCourseStudents";
 import { useUnenrollStudent } from "@/hooks/enrollments/useUnenrollStudent";
 import { formatToVN } from "@/utils/datetime/time";
@@ -58,6 +59,7 @@ export default function StudentList({
     const students = courseStudents || [];
     const [unenrollTarget, setUnenrollTarget] = useState<string | null>(null);
     const router = useRouter();
+    const { getUsersInCourse } = useGetUsersInCourse();
 
     return (
         <div className="-mt-9">
@@ -153,7 +155,46 @@ export default function StudentList({
                                                 <DropdownMenuItem className="cursor-pointer hover:bg-violet-50" onSelect={() => { /* details handler */ }}>
                                                     <Eye className="size-4 mr-2 text-violet-500" /> Details
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="cursor-pointer hover:bg-blue-50" onSelect={() => { /* message handler */ }}>
+                                                <DropdownMenuItem
+                                                    className="cursor-pointer hover:bg-blue-50"
+                                                    onSelect={async () => {
+                                                        if (!courseId) return;
+                                                        // Try to resolve chat user id by matching email (preferred) or fullName
+                                                        let chatUserId: string | null = null;
+                                                        let chatUserName: string | undefined = undefined;
+                                                        try {
+                                                            const users = await getUsersInCourse(courseId);
+                                                            if (Array.isArray(users) && users.length > 0) {
+                                                                const found = users.find((u) => String(u.email).toLowerCase() === String(s.email).toLowerCase());
+                                                                if (found) {
+                                                                    chatUserId = String(found.id);
+                                                                    chatUserName = String(found.fullName || found.email || "");
+                                                                }
+                                                            }
+                                                        } catch (err) {
+                                                            // ignore and fallback
+                                                        }
+
+                                                        const idToUse = chatUserId ?? String(s.studentId);
+                                                        const nameToUse = chatUserName ?? (s.fullName ?? "");
+
+                                                        try {
+                                                            const params = new URLSearchParams();
+                                                            if (courseName) params.set("courseName", String(courseName));
+                                                            params.set("studentId", idToUse);
+                                                            // also pass enrollment student id and email to help matching on messages page
+                                                            params.set("enrollmentStudentId", String(s.studentId));
+                                                            if (nameToUse) params.set("studentName", nameToUse);
+                                                            if (s.email) params.set("studentEmail", String(s.email));
+                                                            const qs = params.toString();
+                                                            router.push(`/lecturer/course/${courseId}/messages?${qs}`);
+                                                        } catch (e) {
+                                                            const base = courseName ? `?courseName=${encodeURIComponent(String(courseName))}` : "";
+                                                            const add = `&studentId=${encodeURIComponent(idToUse)}&enrollmentStudentId=${encodeURIComponent(String(s.studentId))}&studentEmail=${encodeURIComponent(String(s.email || ""))}`;
+                                                            router.push(`/lecturer/course/${courseId}/messages${base}${add}`);
+                                                        }
+                                                    }}
+                                                >
                                                     <MessageSquare className="size-4 mr-2 text-blue-500" /> Message
                                                 </DropdownMenuItem>
 

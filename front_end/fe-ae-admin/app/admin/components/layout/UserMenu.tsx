@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { 
-  LogOut, 
-  Settings, 
-  User, 
-  MoreVertical 
-} from "lucide-react";
 import { clsx } from "clsx";
+import {
+  LogOut,
+  MoreVertical,
+  Settings,
+  User
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +21,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { loadDecodedUser } from "@/utils/secure-user";
 import type { UserProfile } from "@/types/user/user.response";
+import { loadDecodedUser } from "@/utils/secure-user";
 
 // ✅ Import Hook Logout
 import { useLogout } from "@/hooks/auth/useLogout";
@@ -150,16 +150,8 @@ type ContentProps = {
 };
 
 function getProfilePath(user: UserProfile) {
-  switch (user.role) {
-    case "Student":
-      return `/admin/students/${user.id}`;
-    case "Staff":
-      return `/admin/staff/${user.id}`;
-    case "Lecturer":
-      return `/admin/lecturers/${user.id}`;
-    default:
-      return "/admin/dashboard";
-  }
+  // Unified profile path for admin to their own profile page
+  return "/admin/profile/my-profile";
 }
 
 function UserMenuContent({ user, onLogout, isLoggingOut, router }: ContentProps) {
@@ -195,11 +187,11 @@ function UserMenuContent({ user, onLogout, isLoggingOut, router }: ContentProps)
           </DropdownMenuItem>
           
           <DropdownMenuItem 
-            onClick={() => router.push("/admin/settings")} 
+            onClick={() => router.push("/admin/profile/change-password")} 
             className="cursor-pointer gap-2.5 px-3 py-2.5 rounded-md hover:bg-slate-100 focus:bg-slate-100"
           >
             <Settings className="h-4.5 w-4.5 text-slate-500" />
-            <span className="font-medium text-slate-700">Settings</span>
+            <span className="font-medium text-slate-700">Change Password</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
