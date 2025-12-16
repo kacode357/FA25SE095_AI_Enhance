@@ -77,8 +77,6 @@ export const CrawlLogConsole: React.FC<CrawlLogConsoleProps> = ({
     }
   };
 
-  if (!isActive && logs.length === 0) return null;
-
   const colorClass = (message: string) => {
     const t = getLogType(message);
     if (t === "init") return "text-sky-300";
@@ -94,24 +92,26 @@ export const CrawlLogConsole: React.FC<CrawlLogConsoleProps> = ({
 
   return (
     <div
-      className={`mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${
-        isCollapsed ? "max-h-11" : "max-h-96"
+      className={`mt-4 flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${
+        isCollapsed ? "max-h-11" : "h-[400px]"
       } transition-all duration-300`}
     >
-      <button
-        type="button"
-        onClick={toggleCollapse}
-        className="flex w-full items-center justify-between bg-slate-50 px-3 py-2 text-left text-xs text-slate-700"
-      >
-        <span className="inline-flex items-center gap-2 font-medium">
-          <span>{isCollapsed ? "▶" : "▼"}</span>
-          <span>🔍 Crawl Logs</span>
-          {logs.length > 0 && (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-700">
-              {logs.length}
-            </span>
-          )}
-        </span>
+      <div className="flex items-center justify-between bg-slate-50 px-3 py-2">
+        <button
+          type="button"
+          onClick={toggleCollapse}
+          className="flex flex-1 items-center justify-between text-left text-xs text-slate-700"
+        >
+          <span className="inline-flex items-center gap-2 font-medium">
+            <span>{isCollapsed ? "▶" : "▼"}</span>
+            <span>🔍 Crawl Logs</span>
+            {logs.length > 0 && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-700">
+                {logs.length}
+              </span>
+            )}
+          </span>
+        </button>
         {!isCollapsed && (
           <button
             type="button"
@@ -119,18 +119,18 @@ export const CrawlLogConsole: React.FC<CrawlLogConsoleProps> = ({
               e.stopPropagation();
               handleClear();
             }}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+            className="ml-3 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
           >
             Clear
           </button>
         )}
-      </button>
+      </div>
 
       {!isCollapsed && (
-        <div className="max-h-80 overflow-y-auto bg-slate-950 px-3 py-2 text-xs font-mono text-slate-100">
+        <div className="flex-1 overflow-y-auto bg-slate-950 px-3 py-2 text-xs font-mono text-slate-100">
           {logs.length === 0 ? (
-            <div className="py-5 text-center text-slate-400">
-              No logs yet. Start a crawl to see real-time logs.
+            <div className="flex h-full items-center justify-center text-center text-slate-400">
+              No crawl activity yet. Start a crawl to see live logs here.
             </div>
           ) : (
             logs.map((log, idx) => (

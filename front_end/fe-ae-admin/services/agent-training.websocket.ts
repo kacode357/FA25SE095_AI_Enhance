@@ -4,7 +4,9 @@ import { io, Socket } from "socket.io-client";
 import type { WebSocketMessage } from "@/types/agent-training/training.types";
 
 const WS_URL =
-  process.env.NEXT_PUBLIC_TRAINING_SERVICE_URL || "https://train.fishmakeweb.id.vn";
+  process.env.NEXT_PUBLIC_TRAINING_WS_URL ||
+  process.env.NEXT_PUBLIC_CRAWL_BASE_URL_HUB ||
+  "http://localhost:8091";
 
 const RECONNECTION_DELAY = 1000;
 const MAX_RECONNECTION_DELAY = 5000;

@@ -180,7 +180,7 @@ export default function LiteRichTextEditor({
           /** ===============================
            *  ADD: Enable paste image
            *  =============================== */
-          paste_data_images: true,
+          paste_data_images: false,
           file_picker_types: "image",
 
           file_picker_callback: async (
@@ -232,41 +232,48 @@ export default function LiteRichTextEditor({
            *  ADD: Paste image → compress → insert
            *  =============================== */
           setup: (editor: any) => {
-            editor.on("init", () => {
-              const body = editor.getBody();
-              if (!body) return;
+            const handlePasteImage = (event: ClipboardEvent | any) => {
+              if (editor.mode.get() === "readonly") return;
 
-              body.addEventListener("paste", (e: ClipboardEvent) => {
-                if (editor.mode.get() === "readonly") {
-                  return;
-                }
+              const nativeEvent =
+                (event?.originalEvent as ClipboardEvent | undefined) ||
+                (event as ClipboardEvent | undefined);
+              const clipboardData =
+                nativeEvent?.clipboardData ?? (event as ClipboardEvent)?.clipboardData;
 
-                const clipboardData = e.clipboardData;
-                if (!clipboardData) return;
+              if (!clipboardData) return;
+              const items = clipboardData.items;
+              if (!items?.length) return;
 
-                const items = clipboardData.items;
-                if (!items) return;
+              const imageItem = Array.from(items).find((item) =>
+                item.type?.startsWith("image/")
+              );
+              if (!imageItem) return;
 
-                for (const item of items) {
-                  if (item.type.startsWith("image/")) {
-                    e.preventDefault();
+              event?.preventDefault?.();
+              event?.stopPropagation?.();
+              event?.stopImmediatePropagation?.();
+              nativeEvent?.preventDefault?.();
+              nativeEvent?.stopPropagation?.();
+              nativeEvent?.stopImmediatePropagation?.();
 
-                    const file = item.getAsFile();
-                    if (!file) return;
+              const file = imageItem.getAsFile();
+              if (!file) return;
 
-                    setTimeout(async () => {
-                      const compressedBase64 = await resizeAndCompressImage(file, {
-                        maxWidth: 1200,
-                        quality: 0.7,
-                        mimeType: "image/jpeg",
-                      });
+              setTimeout(async () => {
+                const compressedBase64 = await resizeAndCompressImage(file, {
+                  maxWidth: 1200,
+                  quality: 0.7,
+                  mimeType: "image/jpeg",
+                });
 
-                      editor.insertContent(`<img src="${compressedBase64}" />`);
-                    }, 0);
-                  }
-                }
-              });
+                editor.insertContent(`<img src="${compressedBase64}" />`);
+              }, 0);
+            };
 
+            editor.on("paste", handlePasteImage);
+            editor.on("remove", () => {
+              editor.off("paste", handlePasteImage);
             });
           },
 

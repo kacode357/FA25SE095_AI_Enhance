@@ -16,7 +16,7 @@ const CRAWL_BASE_URL = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_API!;
 const NOTIFICATION_BASE_URL = process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL_API!;
 const TRAINING_BASE_URL =
   process.env.NEXT_PUBLIC_TRAINING_SERVICE_URL ||
-  "https://train.fishmakeweb.id.vn";
+  "http://localhost:8091";
 /** ===== Token keys ===== */
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";

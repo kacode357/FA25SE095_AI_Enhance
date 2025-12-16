@@ -131,19 +131,122 @@ function mapChangeToServerPayload(c: ReportChangeDto) {
   };
 }
 
-// Replace large inline data-URL images with a tiny transparent placeholder
-// to avoid exceeding hub message size limits. This is intentionally
-// conservative: for real-time sync we avoid sending full image payloads.
+const MAX_INLINE_IMG_LENGTH = 26_000;
+const INLINE_IMG_PLACEHOLDER =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+const INLINE_IMG_STEPS = [
+  { maxWidth: 900, quality: 0.6 },
+  { maxWidth: 720, quality: 0.52 },
+  { maxWidth: 560, quality: 0.48 },
+  { maxWidth: 420, quality: 0.42 },
+  { maxWidth: 320, quality: 0.36 },
+  { maxWidth: 240, quality: 0.33 },
+  { maxWidth: 180, quality: 0.3 },
+];
+
+async function downscaleDataUrl(
+  dataUrl: string,
+  opts?: { maxWidth?: number; quality?: number; format?: "image/webp" | "image/jpeg" }
+) {
+  if (typeof window === "undefined") return dataUrl;
+  const { maxWidth = 900, quality = 0.6, format = "image/webp" } = opts || {};
+
+  return new Promise<string>((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const ratio = Math.min(1, maxWidth / (img.width || maxWidth));
+        const width = Math.max(1, Math.round(img.width * ratio));
+        const height = Math.max(1, Math.round(img.height * ratio));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let mime: "image/webp" | "image/jpeg" = format;
+        if (mime === "image/webp") {
+          try {
+            const test = canvas.toDataURL("image/webp");
+            if (!test?.startsWith("data:image/webp")) {
+              mime = "image/jpeg";
+            }
+          } catch {
+            mime = "image/jpeg";
+          }
+        }
+        const compressed = canvas.toDataURL(mime, quality);
+        resolve(compressed || dataUrl);
+      } catch (e) {
+        console.warn("[Hub] downscaleDataUrl failed", e);
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+async function shrinkDataUrlToLimit(src: string) {
+  let current = src;
+  for (const step of INLINE_IMG_STEPS) {
+    if (current.length <= MAX_INLINE_IMG_LENGTH) break;
+    const next = await downscaleDataUrl(current, step);
+    if (!next) break;
+    if (next.length >= current.length) {
+      current = next;
+      continue;
+    }
+    current = next;
+  }
+  if (current.length > MAX_INLINE_IMG_LENGTH) {
+    const emergency = await downscaleDataUrl(current, {
+      maxWidth: 140,
+      quality: 0.22,
+      format: "image/jpeg",
+    });
+    if (emergency && emergency.length < current.length) {
+      current = emergency;
+    }
+  }
+  if (current.length > MAX_INLINE_IMG_LENGTH) {
+    console.warn(
+      "[Hub] inline image still too large after compression, falling back to placeholder"
+    );
+    current = INLINE_IMG_PLACEHOLDER;
+  }
+  return current;
+}
+
+// Compress inline images to keep SignalR payloads under the hub cap.
 async function compressDataUrlsInHtml(html: string) {
-  if (!html) return html;
-  // 1x1 transparent GIF base64 (very small)
-  const placeholder = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-  // Replace base64 image data URIs globally. This covers common cases
-  // like pasted screenshots which embed large data:image/...;base64,... strings.
+  if (!html || typeof window === "undefined") return html;
+  if (!html.includes("data:image")) return html;
+  if (typeof DOMParser === "undefined") return html;
+
   try {
-    return html.replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, placeholder);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const images = Array.from(doc.querySelectorAll("img[src^=\"data:image\"]"));
+    if (!images.length) return html;
+
+    await Promise.all(
+      images.map(async (img) => {
+        const src = img.getAttribute("src");
+        if (!src) return;
+        if (!src.startsWith("data:image")) return;
+        if (src.length <= MAX_INLINE_IMG_LENGTH) return;
+        const compressed = await shrinkDataUrlToLimit(src);
+        if (compressed && compressed.length < src.length) {
+          img.setAttribute("src", compressed);
+        }
+      })
+    );
+
+    return doc.body?.innerHTML ?? html;
   } catch (e) {
-    console.warn('[Hub] compressDataUrlsInHtml replacement failed', e);
+    console.warn("[Hub] compressDataUrlsInHtml replacement failed", e);
     return html;
   }
 }

@@ -11,13 +11,14 @@ import {
 } from "@/types/agent-training/training.types";
 import { trainingApi } from "@/services/agent-training.service";
 import wsService from "@/services/agent-training.websocket";
+import { Button } from "@/components/ui/button";
 
 import { ErrorBoundary } from "../../components/agent-training/ErrorBoundary";
 import { CrawlJobForm } from "../../components/agent-training/CrawlJobForm";
 import { CrawlResults } from "../../components/agent-training/CrawlResults";
 import { CrawlLogConsole } from "../../components/agent-training/CrawlLogConsole";
 import { FeedbackForm } from "../../components/agent-training/FeedbackForm";
-import { ClarificationDialog } from "../../components/agent-training/ClarificationDialog";
+import { TrainingGuide } from "../../components/agent-training/TrainingGuide";
 
 const WS_CHECK_INTERVAL = 1000;
 const MAX_NOTIFICATIONS = 5;
@@ -34,18 +35,14 @@ const TrainingInterfacePage: React.FC = () => {
   const [crawling, setCrawling] = useState(false);
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackRequired, setFeedbackRequired] = useState(false);
-
-  const [clarificationNeeded, setClarificationNeeded] = useState<{
-    question: string;
-    confidence: number;
-    originalFeedback: string;
-  } | null>(null);
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
 
   const [wsConnected, setWsConnected] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const notificationTimeoutsRef =
     useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const feedbackSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     wsService.connect();
@@ -124,17 +121,28 @@ const TrainingInterfacePage: React.FC = () => {
     notificationTimeoutsRef.current.set(id, timeout);
   };
 
+  const scrollToFeedbackSection = () => {
+    if (feedbackSectionRef.current) {
+      feedbackSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   const handleCrawlSubmit = async (job: CrawlJob) => {
     setCrawling(true);
     setCurrentResult(null);
     setCurrentJobId(null);
     setFeedbackRequired(false);
+    setResultDialogOpen(false);
 
     try {
       const result = await trainingApi.submitCrawl(job);
       setCurrentResult(result);
       setCurrentJobId(result.job_id);
       setFeedbackRequired(true);
+      setResultDialogOpen(true);
       addNotification("Crawl completed! Please provide feedback.");
     } catch (error) {
       const errorMessage =
@@ -160,16 +168,15 @@ const TrainingInterfacePage: React.FC = () => {
       );
 
       if (response.status === "clarification_needed") {
-        setClarificationNeeded({
-          question:
-            response.question || "Could you clarify your feedback, please?",
-          confidence: response.confidence || 0,
-          originalFeedback: feedback,
-        });
+        addNotification(
+          response.question
+            ? `Feedback received. Clarification skipped: ${response.question}`
+            : "Feedback received. Clarification skipped."
+        );
       } else {
-        setFeedbackRequired(false);
         addNotification("Feedback accepted! Agent is learning...");
       }
+      setFeedbackRequired(false);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
@@ -182,43 +189,18 @@ const TrainingInterfacePage: React.FC = () => {
     }
   };
 
-  const handleClarificationResponse = async (response: string) => {
-    if (!currentResult || !clarificationNeeded || submittingFeedback) return;
-
-    setSubmittingFeedback(true);
-
-    try {
-      const combinedFeedback = `${clarificationNeeded.originalFeedback}\n\nClarification: ${response}`;
-
-      const feedbackResponse: FeedbackResponse =
-        await trainingApi.submitFeedback(currentResult.job_id, combinedFeedback);
-
-      if (feedbackResponse.status === "clarification_needed") {
-        setClarificationNeeded({
-          question:
-            feedbackResponse.question || "Could you clarify further, please?",
-          confidence: feedbackResponse.confidence || 0,
-          originalFeedback: combinedFeedback,
-        });
-      } else {
-        setClarificationNeeded(null);
-        setFeedbackRequired(false);
-        addNotification("Feedback accepted after clarification!");
+  const handleResultsDialogChange = (open: boolean) => {
+    if (!open) {
+      setResultDialogOpen(false);
+      if (feedbackRequired) {
+        scrollToFeedbackSection();
       }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      if (process.env.NODE_ENV === "development") {
-        console.error("Clarification submission failed:", error);
-      }
-      addNotification(`Clarification failed: ${errorMessage}`);
-    } finally {
-      setSubmittingFeedback(false);
+      return;
     }
-  };
 
-  const handleClarificationCancel = () => {
-    setClarificationNeeded(null);
+    if (currentResult) {
+      setResultDialogOpen(true);
+    }
   };
 
   return (
@@ -261,7 +243,7 @@ const TrainingInterfacePage: React.FC = () => {
         </div>
       )}
 
-      <main className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
+      <main className="grid gap-4 lg:grid-cols-2">
         <ErrorBoundary>
           <section className="space-y-3">
             <h2 className="text-sm font-semibold text-slate-900">
@@ -269,37 +251,55 @@ const TrainingInterfacePage: React.FC = () => {
             </h2>
             <CrawlJobForm onSubmit={handleCrawlSubmit} disabled={crawling} />
           </section>
+        </ErrorBoundary>
 
+        <ErrorBoundary>
           <section className="space-y-3">
-            <div className="space-y-2">
-              <h2 className="text-sm font-semibold text-slate-900">
-                Crawl Results
-              </h2>
-              <CrawlResults result={currentResult} />
-              <CrawlLogConsole jobId={currentJobId} isActive={crawling} />
-            </div>
-
-            {feedbackRequired && currentResult && (
-              <div className="space-y-2">
-                <FeedbackForm
-                  jobId={currentResult.job_id}
-                  onSubmit={handleFeedbackSubmit}
-                  disabled={submittingFeedback}
-                />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Live Crawl Logs
+                </h2>
+          
               </div>
-            )}
+            </div>
+            <CrawlLogConsole jobId={currentJobId} isActive={crawling} />
           </section>
         </ErrorBoundary>
       </main>
 
-      {clarificationNeeded && (
-        <ClarificationDialog
-          question={clarificationNeeded.question}
-          confidence={clarificationNeeded.confidence}
-          onResponse={handleClarificationResponse}
-          onCancel={handleClarificationCancel}
+      <ErrorBoundary>
+        <TrainingGuide
+          action={
+            currentResult ? (
+              <Button
+                size="sm"
+                variant="primary"
+                className="view-last-crawl-btn"
+                onClick={() => setResultDialogOpen(true)}
+              >
+                View last crawl result
+              </Button>
+            ) : null
+          }
         />
+      </ErrorBoundary>
+
+      {feedbackRequired && currentResult && (
+        <div className="space-y-2" ref={feedbackSectionRef}>
+          <FeedbackForm
+            jobId={currentResult.job_id}
+            onSubmit={handleFeedbackSubmit}
+            disabled={submittingFeedback}
+          />
+        </div>
       )}
+
+      <CrawlResults
+        result={currentResult}
+        open={resultDialogOpen && !!currentResult}
+        onOpenChange={handleResultsDialogChange}
+      />
     </div>
   );
 };
