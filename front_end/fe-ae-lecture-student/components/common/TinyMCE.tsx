@@ -2,6 +2,7 @@
 
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useRef } from "react";
+
 type BlobInfo = {
   blob: () => Blob;
   base64: () => string;
@@ -22,6 +23,64 @@ type Props = {
 
 function normalize(html: string) {
   return (html ?? "").trim();
+}
+
+/** ===============================
+ *  ADD: Resize + Compress Image (FE only)
+ *  =============================== */
+function resizeAndCompressImage(
+  file: Blob,
+  options?: {
+    maxWidth?: number;
+    quality?: number;
+    mimeType?: "image/jpeg" | "image/webp";
+  }
+): Promise<string> {
+  const { maxWidth = 1200, quality = 0.7, mimeType = "image/jpeg" } =
+    options || {};
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      img.src = reader.result as string;
+    };
+
+    reader.onerror = reject;
+    img.onerror = reject;
+
+    img.onload = () => {
+      let { width, height } = img;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject();
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return reject();
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result as string);
+          fr.readAsDataURL(blob);
+        },
+        mimeType,
+        quality
+      );
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function LiteRichTextEditor({
@@ -109,6 +168,7 @@ export default function LiteRichTextEditor({
           toolbar: readOnly
             ? false
             : "undo redo | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | link image table | code preview",
+
           branding: false,
           statusbar: false,
           placeholder,
@@ -117,18 +177,15 @@ export default function LiteRichTextEditor({
           rel_list: [{ title: "No Referrer", value: "noopener noreferrer" }],
           forced_root_block: "p",
 
-
-
+          /** ===============================
+           *  ADD: Enable paste image
+           *  =============================== */
           paste_data_images: true,
-          // Chỉ mở file picker cho ảnh
           file_picker_types: "image",
 
-          // Callback mở dialog chọn ảnh (hoặc từ camera nếu thiết bị hỗ trợ)
           file_picker_callback: async (
-            callback: (url: string, meta?: { alt?: string }) => void,
-            _value: string,
-            _meta: unknown
-          ): Promise<void> => {
+            callback: (url: string, meta?: { alt?: string }) => void
+          ) => {
             if (readOnly) return;
             const input = document.createElement("input");
             input.type = "file";
@@ -141,40 +198,79 @@ export default function LiteRichTextEditor({
                   const url = await onUploadImage(file);
                   callback(url, { alt: file.name });
                 } else {
-                  // Fallback: inline base64 nếu không có hàm upload
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const base64 = String(reader.result || "");
-                    callback(base64, { alt: file.name });
-                  };
-                  reader.readAsDataURL(file);
+                  const compressed = await resizeAndCompressImage(file);
+                  callback(compressed, { alt: file.name });
                 }
               } catch (err) {
-                console.error("Upload image failed", err);
+                console.error("Pick image failed", err);
               }
             };
             input.click();
           },
 
-          // Xử lý upload ảnh khi dán/drag-drop
-          images_upload_handler: async (
-            blobInfo: BlobInfo,
-            _progress: (percent: number) => void
-          ): Promise<string> => {
-            if (readOnly) throw new Error("Editor is read-only");
+          images_upload_handler: async (blobInfo: BlobInfo): Promise<string> => {
+            if (readOnly) {
+              // In read-only mode, still return a valid data URL so images render
+              const type = blobInfo.blob().type || "image/png";
+              const base64 = blobInfo.base64();
+              return Promise.resolve(`data:${type};base64,${base64}`);
+            }
+
             const blob = blobInfo.blob();
             const file = new File([blob], blobInfo.filename() || "image.png", {
               type: blob.type || "image/png",
             });
+
             if (onUploadImage) {
-              const url = await onUploadImage(file);
-              return url; // TinyMCE sẽ chèn URL này vào nội dung
+              return await onUploadImage(file);
             }
-            // Fallback: trả về base64 để vẫn lưu trong HTML
-            return blobInfo.base64();
+
+            return await resizeAndCompressImage(blob);
           },
 
-          // 🔽 chiều cao tối thiểu 400, autoresize sẽ grow thêm theo content
+          /** ===============================
+           *  ADD: Paste image → compress → insert
+           *  =============================== */
+          setup: (editor: any) => {
+            editor.on("init", () => {
+              const body = editor.getBody();
+              if (!body) return;
+
+              body.addEventListener("paste", (e: ClipboardEvent) => {
+                if (editor.mode.get() === "readonly") {
+                  return;
+                }
+
+                const clipboardData = e.clipboardData;
+                if (!clipboardData) return;
+
+                const items = clipboardData.items;
+                if (!items) return;
+
+                for (const item of items) {
+                  if (item.type.startsWith("image/")) {
+                    e.preventDefault();
+
+                    const file = item.getAsFile();
+                    if (!file) return;
+
+                    setTimeout(async () => {
+                      const compressedBase64 = await resizeAndCompressImage(file, {
+                        maxWidth: 1200,
+                        quality: 0.7,
+                        mimeType: "image/jpeg",
+                      });
+
+                      editor.insertContent(`<img src="${compressedBase64}" />`);
+                    }, 0);
+                  }
+                }
+              });
+
+            });
+          },
+
+
           min_height: 300,
           autoresize_bottom_margin: 0,
           autoresize_overflow_padding: 0,
