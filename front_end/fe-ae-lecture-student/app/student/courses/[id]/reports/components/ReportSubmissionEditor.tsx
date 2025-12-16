@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import LiteRichTextEditor from "@/components/common/TinyMCE";
-import { useUploadReportFile } from "@/hooks/reports/useUploadReportFile";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,9 +60,6 @@ export default function ReportSubmissionEditor({
   // ====== SAVE (UPDATE REPORT) ======
   const { updateReport, loading: saving } = useUpdateReport();
 
-  // hook to upload image files for this report
-  const { uploadFile: uploadReportFile } = useUploadReportFile();
-
   // ref giữ html mới nhất, tránh closure bị cũ
   const htmlRef = useRef(html);
   useEffect(() => {
@@ -111,38 +107,14 @@ export default function ReportSubmissionEditor({
 
     if (currentHtml === lastSavedHtmlRef.current) return;
 
-    // Before saving, upload any inline data-URL images and replace them with server URLs
-    let htmlToSave = currentHtml;
-    try {
-      const dataUrlRegex = /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g;
-      const matches = Array.from(new Set(htmlToSave.match(dataUrlRegex) || []));
-      for (const dataUrl of matches) {
-        try {
-          // Convert data URL to blob
-          const resBlob = await fetch(dataUrl);
-          const blob = await resBlob.blob();
-          const file = new File([blob], `pasted-image.${(blob.type || 'png').split('/').pop()}`, { type: blob.type || 'image/png' });
-          const uploadRes = await uploadReportFile(report.id, file);
-          const url = uploadRes?.fileUrl;
-          if (url) {
-            htmlToSave = htmlToSave.split(dataUrl).join(url);
-          }
-        } catch (e) {
-          console.warn('Uploading inline image failed, keeping inline data URL.', e);
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to process inline images before save', e);
-    }
-
     const payload: UpdateReportPayload = {
-      submission: htmlToSave,
+      submission: currentHtml,
     };
 
     const res = await updateReport(report.id, payload);
 
     if (res?.success) {
-      lastSavedHtmlRef.current = htmlToSave;
+      // lastSavedHtmlRef.current = htmlToSave;
       markSaved();
       // Không toast ở đây, hook / chỗ khác lo UI
       router.refresh();
@@ -256,16 +228,6 @@ export default function ReportSubmissionEditor({
         <LiteRichTextEditor
           value={html}
           onChange={readOnly ? () => {} : onChange}
-          onUploadImage={async (file: File) => {
-            try {
-              if (!report.id) return "";
-              const res = await uploadReportFile(report.id, file);
-              return res?.fileUrl ?? "";
-            } catch (e) {
-              console.warn("report image upload failed", e);
-              return "";
-            }
-          }}
           readOnly={readOnly}
           placeholder={
             readOnly
