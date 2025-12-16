@@ -30,6 +30,7 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
   const basePath = `/student/courses/${courseId}`;
 
   const [reportHotkeyLabel, setReportHotkeyLabel] = useState<string>("");
+  const [hideTabs, setHideTabs] = useState(false);
 
   const tabs = [
     { label: "Course", href: `${basePath}`, icon: BookOpen },
@@ -79,20 +80,81 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const MIN_SCROLL_TO_HIDE = 40;
+    const MIN_DELTA = 4;
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const handleScroll = () => {
+      const run = () => {
+        const currentY = window.scrollY;
+        const delta = currentY - lastScrollY;
+        if (currentY <= MIN_SCROLL_TO_HIDE) {
+          setHideTabs(false);
+        } else if (delta > MIN_DELTA) {
+          setHideTabs(true);
+        } else if (delta < -MIN_DELTA) {
+          setHideTabs(false);
+        }
+        lastScrollY = currentY;
+        ticking = false;
+      };
+      if (!ticking) {
+        window.requestAnimationFrame(run);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const shouldIgnoreWheel = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return false;
+      return Boolean(target.closest("[data-prevent-tab-hide=\"true\"]"));
+    };
+
+    const handleWheel = (event: WheelEvent) => {
+      if (shouldIgnoreWheel(event.target)) {
+        return;
+      }
+      if (event.deltaY > 0) {
+        setHideTabs(true);
+      } else if (event.deltaY < 0) {
+        setHideTabs(false);
+      }
+    };
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
+  useEffect(() => {
+    setHideTabs(false);
+  }, [pathname]);
+
   return (
     <div className="flex flex-col">
       <div
-        className="sticky z-30 backdrop-blur-sm"
+        className={clsx(
+          "sticky z-30 border-b border-[var(--border)] bg-white transition-all duration-200 ease-out",
+          hideTabs
+            ? "opacity-0 pointer-events-none -translate-y-3 scale-y-[0.9]"
+            : "opacity-100 translate-y-0 scale-y-100"
+        )}
         style={{
           top: "var(--app-header-h, 64px)",
-          background: "rgba(255,255,255,0.9)",
-          borderBottom: "1px solid var(--border)",
         }}
       >
-        <div
-          className="mx-auto flex items-center justify-between gap-6"
-          style={{ maxWidth: 1280, padding: "8px 24px" }}
-        >
+        <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-6 px-6 py-2">
           {/* Tabs */}
           <div className="flex items-center gap-6">
             {tabs.map((tab) => {

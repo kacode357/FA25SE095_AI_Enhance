@@ -19,6 +19,13 @@ const NOTIFICATION_BASE_URL = process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL_API!
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 
+type RefreshResult = {
+  accessToken: string;
+  refreshToken?: string | null;
+} | null;
+
+let refreshPromise: Promise<RefreshResult> | null = null;
+
 /** Đọc accessToken: cookie only */
 function readAccessToken(): string | undefined {
   if (typeof window !== "undefined") {
@@ -74,6 +81,62 @@ function pickErrorMessage(data: any, fallback: string): string {
   if (Array.isArray(data.details) && data.details.length) return data.details[0];
 
   return title || fallback;
+}
+
+async function requestTokenRefresh(refreshToken: string): Promise<RefreshResult> {
+  try {
+    const payload = {
+      refreshToken,
+      ipAddress: "",
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    };
+
+    const refreshResp = await axios.post(
+      `${USER_BASE_URL}/Auth/refresh-token`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json; charset=UTF-8" },
+        timeout: 15000,
+        validateStatus: () => true,
+      }
+    );
+
+    if (refreshResp.status !== 200) {
+      const msg = pickErrorMessage(
+        refreshResp.data,
+        "Your session has expired. Please sign in again."
+      );
+      toast.error(msg);
+      return null;
+    }
+
+    const raw = refreshResp.data as any;
+    const refreshData = raw?.data ?? raw;
+    const newAccessToken: string | undefined = refreshData?.accessToken;
+    const newRefreshToken: string | undefined = refreshData?.refreshToken;
+
+    if (!newAccessToken) {
+      toast.error("Your session has expired. Please sign in again.");
+      return null;
+    }
+
+    updateAccessToken(newAccessToken);
+    if (newRefreshToken) updateRefreshToken(newRefreshToken);
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  } catch {
+    toast.error("Your session has expired. Please sign in again.");
+    return null;
+  }
+}
+
+function queueTokenRefresh(refreshToken: string) {
+  if (!refreshPromise) {
+    refreshPromise = requestTokenRefresh(refreshToken).finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
 }
 
 /** Clear token + user + redirect login */
@@ -164,58 +227,17 @@ const createAxiosInstance = (
 
         originalRequest._retry = true;
 
-        try {
-          const payload = {
-            refreshToken,
-            ipAddress: "",
-            userAgent:
-              typeof navigator !== "undefined" ? navigator.userAgent : "",
-          };
-
-          const refreshResp = await axios.post(
-            `${USER_BASE_URL}/Auth/refresh-token`,
-            payload,
-            {
-              headers: { "Content-Type": "application/json; charset=UTF-8" },
-              timeout: 15000,
-              validateStatus: () => true,
-            }
-          );
-
-          if (refreshResp.status !== 200) {
-            const msg = pickErrorMessage(
-              refreshResp.data,
-              "Your session has expired. Please sign in again."
-            );
-            toast.error(msg);
-            forceLogoutToLogin();
-            return response;
-          }
-
-          const raw = refreshResp.data as any;
-          const refreshData = raw?.data ?? raw;
-
-          const newAccessToken: string | undefined = refreshData?.accessToken;
-          const newRefreshToken: string | undefined = refreshData?.refreshToken;
-
-          if (!newAccessToken) {
-            forceLogoutToLogin();
-            return response;
-          }
-
-          updateAccessToken(newAccessToken);
-          if (newRefreshToken) updateRefreshToken(newRefreshToken);
-
-          originalRequest.headers = originalRequest.headers ?? {};
-          (originalRequest.headers as any).Authorization =
-            `Bearer ${newAccessToken}`;
-
-          return instance(originalRequest);
-        } catch {
-          toast.error("Your session has expired. Please sign in again.");
+        const refreshResult = await queueTokenRefresh(refreshToken);
+        if (!refreshResult) {
           forceLogoutToLogin();
           return response;
         }
+
+        originalRequest.headers = originalRequest.headers ?? {};
+        (originalRequest.headers as any).Authorization =
+          `Bearer ${refreshResult.accessToken}`;
+
+        return instance(originalRequest);
       }
 
       if (status >= 400) {

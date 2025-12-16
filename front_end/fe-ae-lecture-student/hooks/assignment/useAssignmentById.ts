@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { AssignmentService } from "@/services/assignment.services";
 import { GetAssignmentByIdResponse } from "@/types/assignments/assignment.response";
 
@@ -8,7 +8,7 @@ export function useAssignmentById() {
   const [data, setData] = useState<GetAssignmentByIdResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchAssignment = async (id: string) => {
+  const fetchAssignment = useCallback(async (id: string) => {
     setLoading(true);
     try {
       const res = await AssignmentService.getById(id);
@@ -16,7 +16,7 @@ export function useAssignmentById() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return { data, loading, fetchAssignment };
 }

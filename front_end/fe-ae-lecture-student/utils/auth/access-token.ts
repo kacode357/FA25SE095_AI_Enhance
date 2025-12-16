@@ -46,9 +46,9 @@ export function getRememberMeFlag(): boolean {
 }
 
 /**
- * Lưu token khi login
- * - rememberMe = true  -> access + refresh cookie, 7 ngày
- * - rememberMe = false -> access + refresh cookie, hết hạn sau 30 phút
+ * Persist tokens khi login.
+ * - rememberMe = true  -> giữ cả access + refresh cookie (7 ngày)
+ * - rememberMe = false -> chỉ giữ access token (30 phút), refresh bị xóa
  */
 export function saveTokensFromLogin(
   accessToken: string,
@@ -67,8 +67,10 @@ export function saveTokensFromLogin(
   if (accessToken) {
     Cookies.set(ACCESS_TOKEN_KEY, accessToken, opts);
   }
-  if (refreshToken) {
+  if (rememberMe && refreshToken) {
     Cookies.set(REFRESH_TOKEN_KEY, refreshToken, opts);
+  } else {
+    Cookies.remove(REFRESH_TOKEN_KEY, { path: "/" });
   }
 }
 

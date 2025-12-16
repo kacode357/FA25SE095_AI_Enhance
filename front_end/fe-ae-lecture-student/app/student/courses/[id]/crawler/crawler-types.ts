@@ -18,3 +18,11 @@ export type UiMessage = {
   visualizationData?: string | null; 
   extractedData?: string | null;
 };
+
+export type JobHistoryEntry = {
+  messageId: string;
+  jobId: string;
+  timestamp?: string;
+  prompt?: string;
+  summary?: string | null;
+};

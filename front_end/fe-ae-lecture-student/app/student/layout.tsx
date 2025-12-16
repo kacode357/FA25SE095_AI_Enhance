@@ -13,8 +13,6 @@ export default function StudentLayout({
     <div className="student-shell min-h-screen text-slate-900">
       <Header />
       <main className="pt-16">{children}</main>
-
-      {/* Floating hotkey button + global listener */}
       <HotkeySettings />
     </div>
   );

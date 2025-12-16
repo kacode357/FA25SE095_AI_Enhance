@@ -1,13 +1,7 @@
 // app/.../crawler/components/CrawlerAssignmentConversationsSection.tsx
 "use client";
 
-import { ChevronDown, MessageCircle } from "lucide-react";
-import { useState } from "react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { MessageCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CrawlerChatConversationItem } from "@/types/crawler-chat/crawler-chat.response";
 
@@ -24,42 +18,25 @@ export default function CrawlerAssignmentConversationsSection({
   selectedConversationId,
   onSelectConversation,
 }: Props) {
-  const [open, setOpen] = useState<boolean>(true);
-
   return (
     <section className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 shadow-sm">
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50">
-              <MessageCircle className="h-4 w-4 text-slate-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">
-                AI History
-              </p>
-              <p className="text-xs text-[var(--text-muted)]">
-                Previous chats with the assistant.
-              </p>
-            </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50">
+            <MessageCircle className="h-4 w-4 text-slate-600" />
           </div>
-
-          <CollapsibleTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
-            >
-              {open ? "Collapse" : "Expand"}
-              <ChevronDown
-                className={`h-3 w-3 transition-transform ${
-                  open ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-          </CollapsibleTrigger>
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              AI History
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Previous chats with the assistant.
+            </p>
+          </div>
         </div>
+      </div>
 
-        <CollapsibleContent className="mt-3 space-y-3">
+      <div className="mt-3 space-y-3">
           {loading ? (
             <div className="space-y-2">
               <Skeleton className="h-5 w-full" />
@@ -134,8 +111,7 @@ export default function CrawlerAssignmentConversationsSection({
               </ul>
             </div>
           )}
-        </CollapsibleContent>
-      </Collapsible>
+      </div>
     </section>
   );
 }

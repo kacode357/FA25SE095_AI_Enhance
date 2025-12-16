@@ -82,6 +82,15 @@ function buildSanitizedHtml(content: string) {
       return;
     }
 
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)/);
+    if (headingMatch) {
+      flushList();
+      const level = Math.min(6, headingMatch[1].length);
+      const headingContent = applyInlineFormatting(headingMatch[2]);
+      blocks.push(`<h${level}>${headingContent}</h${level}>`);
+      return;
+    }
+
     if (trimmed === "") {
       flushList();
       return;
