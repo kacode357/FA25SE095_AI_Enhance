@@ -1,6 +1,6 @@
 "use client";
 
-import { Send } from "lucide-react";
+import { Info, Send } from "lucide-react";
 
 const cx = (...a: Array<string | false | undefined>) =>
     a.filter(Boolean).join(" ");
@@ -13,10 +13,10 @@ export default function ChatComposer({
     isResolved,
 }: any) {
     return (
-        <div className="sticky bottom-0 bg-[var(--card)] border-t border-[var(--border)] px-4 py-3 z-20">
+        <div className="sticky bottom-0 bg-[var(--card)] border-t border-[var(--border)] px-4 py-5 z-20">
             {isResolved ? (
-                <div className="text-xs text-[var(--text-muted)]">
-                    This support request has been marked as <span className="font-semibold text-brand">resolved</span>. You can no longer send new messages in this conversation.
+                <div className="text-xs flex items-center gap-2 text-[var(--text-muted)]">
+                    <Info className="size-4 text-violet-600" />This support request has been marked as <span className="font-semibold text-green-600">Resolved</span>. You can no longer send new messages in this conversation.
                 </div>
             ) : (
                 <div className="flex items-center gap-2">

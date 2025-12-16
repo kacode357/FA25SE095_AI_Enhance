@@ -1,21 +1,21 @@
 "use client";
 
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  useCallback,
 } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
 
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useChatHub } from "@/hooks/hubchat/useChatHub";
 import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
+import { useChatHub } from "@/hooks/hubchat/useChatHub";
 import { useResolveSupportRequest } from "@/hooks/support-requests/useResolveSupportRequest";
 
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
@@ -23,15 +23,15 @@ import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.r
 
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 
-import { ArrowLeft, MessageCircle } from "lucide-react";
 import ResolveSupportRequestDialog from "@/app/student/courses/[id]/support/components/ResolveSupportRequestDialog";
+import { ArrowLeft } from "lucide-react";
 import { CourseMiniHeader } from "../../components/CourseMiniHeader";
 
 import {
-  parseServerDate,
-  timeHHmm,
   buildChatTimeline,
   ChatTimelineItem,
+  parseServerDate,
+  timeHHmm,
 } from "@/utils/chat/time";
 
 import { useChatDeleteMessage } from "@/hooks/chat/useChatDeleteMessage";
@@ -631,7 +631,7 @@ export default function SupportChatPage() {
                   <>
                     This support request has been marked as{" "}
                     <span className="font-semibold text-brand">
-                      resolved
+                      Resolved
                     </span>
                     . You can no longer send new messages in this conversation.
                   </>

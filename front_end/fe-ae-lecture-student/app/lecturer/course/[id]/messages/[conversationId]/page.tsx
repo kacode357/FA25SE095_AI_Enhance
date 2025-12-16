@@ -12,6 +12,7 @@ import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
 import { useGetConversationMessages } from "@/hooks/chat/useGetConversationMessages";
 import { useChatHub } from "@/hooks/hubchat/useChatHub";
 import { useResolveSupportRequest } from "@/hooks/support-requests/useResolveSupportRequest";
+import { useSupportRequestById } from "@/hooks/support-requests/useSupportRequest";
 
 import type { SendMessagePayload } from "@/types/chat/chat.payload";
 import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.response";
@@ -19,6 +20,7 @@ import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.r
 import { getSavedAccessToken } from "@/utils/auth/access-token";
 
 import ResolveSupportRequestDialog from "@/app/student/courses/[id]/support/components/ResolveSupportRequestDialog";
+import { SupportRequestStatus } from "@/types/support/support-request.response";
 import { buildChatTimeline, parseServerDate } from "@/utils/chat/time";
 import ChatComposer from "./components/ChatComposer";
 import ChatHeader from "./components/ChatHeader";
@@ -58,6 +60,8 @@ export default function LecturerSupportChatPage() {
     const peerId = searchParams.get("peerId");
     const peerName = searchParams.get("peerName") ?? "Support Staff";
     const requestTitle = searchParams.get("requestTitle") ?? searchParams.get("supportRequestTitle") ?? null;
+    const supportRequestId =
+        searchParams.get("requestId") ?? searchParams.get("supportRequestId") ?? null;
 
     const currentUserId = user?.id ?? null;
 
@@ -73,6 +77,8 @@ export default function LecturerSupportChatPage() {
         useResolveSupportRequest();
     const [resolveHandled, setResolveHandled] = useState(false);
     const [isResolved, setIsResolved] = useState(false); // sau khi confirm resolved thì khóa chat
+
+    const { fetchSupportRequest, data: supportRequestData, loading: loadingSupportRequest } = useSupportRequestById();
 
     // scroll
     const listRef = useRef<HTMLDivElement | null>(null);
@@ -211,6 +217,26 @@ export default function LecturerSupportChatPage() {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [peerId, conversationId]);
+
+    // fetch support request status when conversation/supportRequest changes
+    useEffect(() => {
+        if (!supportRequestId) return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetchSupportRequest(supportRequestId);
+                if (cancelled) return;
+                setIsResolved(res.supportRequest.status === SupportRequestStatus.Resolved);
+            } catch {
+                // ignore
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [supportRequestId, fetchSupportRequest]);
 
     // typing edge-based
     const prevNonEmpty = useRef(false);

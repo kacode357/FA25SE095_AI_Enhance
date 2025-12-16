@@ -1,25 +1,26 @@
 // app/student/courses/[id]/reports/components/ReportSubmissionEditor.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import LiteRichTextEditor from "@/components/common/TinyMCE";
-import ReportCollabClient from "./ReportCollabClient";
-import type { ReportDetail } from "@/types/reports/reports.response";
-import { ReportStatus } from "@/config/classroom-service/report-status.enum";
+import { useUploadReportFile } from "@/hooks/reports/useUploadReportFile";
 import { Button } from "@/components/ui/button";
-import { useUpdateReport } from "@/hooks/reports/useUpdateReport";
-import type { UpdateReportPayload } from "@/types/reports/reports.payload";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import { ReportStatus } from "@/config/classroom-service/report-status.enum";
+import { useUpdateReport } from "@/hooks/reports/useUpdateReport";
+import type { UpdateReportPayload } from "@/types/reports/reports.payload";
+import type { ReportDetail } from "@/types/reports/reports.response";
+import ReportCollabClient from "./ReportCollabClient";
 
 type Props = {
   report: ReportDetail;
@@ -59,6 +60,9 @@ export default function ReportSubmissionEditor({
 
   // ====== SAVE (UPDATE REPORT) ======
   const { updateReport, loading: saving } = useUpdateReport();
+
+  // hook to upload image files for this report
+  const { uploadFile: uploadReportFile } = useUploadReportFile();
 
   // ref giữ html mới nhất, tránh closure bị cũ
   const htmlRef = useRef(html);
@@ -104,16 +108,41 @@ export default function ReportSubmissionEditor({
 
     const currentHtml = htmlRef.current ?? "";
     // Không cần gọi API nếu nội dung không đổi
+
     if (currentHtml === lastSavedHtmlRef.current) return;
 
+    // Before saving, upload any inline data-URL images and replace them with server URLs
+    let htmlToSave = currentHtml;
+    try {
+      const dataUrlRegex = /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g;
+      const matches = Array.from(new Set(htmlToSave.match(dataUrlRegex) || []));
+      for (const dataUrl of matches) {
+        try {
+          // Convert data URL to blob
+          const resBlob = await fetch(dataUrl);
+          const blob = await resBlob.blob();
+          const file = new File([blob], `pasted-image.${(blob.type || 'png').split('/').pop()}`, { type: blob.type || 'image/png' });
+          const uploadRes = await uploadReportFile(report.id, file);
+          const url = uploadRes?.fileUrl;
+          if (url) {
+            htmlToSave = htmlToSave.split(dataUrl).join(url);
+          }
+        } catch (e) {
+          console.warn('Uploading inline image failed, keeping inline data URL.', e);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to process inline images before save', e);
+    }
+
     const payload: UpdateReportPayload = {
-      submission: currentHtml,
+      submission: htmlToSave,
     };
 
     const res = await updateReport(report.id, payload);
 
     if (res?.success) {
-      lastSavedHtmlRef.current = currentHtml;
+      lastSavedHtmlRef.current = htmlToSave;
       markSaved();
       // Không toast ở đây, hook / chỗ khác lo UI
       router.refresh();
@@ -169,7 +198,7 @@ export default function ReportSubmissionEditor({
     <>
       <div className="flex flex-col gap-3">
         {/* Info banner */}
-        <div className="rounded-xl p-3 border border-slate-200 bg-slate-50 text-slate-700 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="rounded-xl flex flex-col p-3 border border-slate-200 bg-slate-50 text-slate-700 gap-3 md:flex-row md:items-center md:justify-between">
           <div
             className={`flex items-start gap-2 ${
               isGroupSubmission ? "max-w-xl" : "w-full"
@@ -227,6 +256,16 @@ export default function ReportSubmissionEditor({
         <LiteRichTextEditor
           value={html}
           onChange={readOnly ? () => {} : onChange}
+          onUploadImage={async (file: File) => {
+            try {
+              if (!report.id) return "";
+              const res = await uploadReportFile(report.id, file);
+              return res?.fileUrl ?? "";
+            } catch (e) {
+              console.warn("report image upload failed", e);
+              return "";
+            }
+          }}
           readOnly={readOnly}
           placeholder={
             readOnly

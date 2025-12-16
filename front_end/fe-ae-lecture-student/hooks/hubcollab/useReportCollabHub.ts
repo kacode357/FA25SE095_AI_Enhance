@@ -131,6 +131,23 @@ function mapChangeToServerPayload(c: ReportChangeDto) {
   };
 }
 
+// Replace large inline data-URL images with a tiny transparent placeholder
+// to avoid exceeding hub message size limits. This is intentionally
+// conservative: for real-time sync we avoid sending full image payloads.
+async function compressDataUrlsInHtml(html: string) {
+  if (!html) return html;
+  // 1x1 transparent GIF base64 (very small)
+  const placeholder = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+  // Replace base64 image data URIs globally. This covers common cases
+  // like pasted screenshots which embed large data:image/...;base64,... strings.
+  try {
+    return html.replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, placeholder);
+  } catch (e) {
+    console.warn('[Hub] compressDataUrlsInHtml replacement failed', e);
+    return html;
+  }
+}
+
 export function useReportCollabHub({
   baseUrl = process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ,
   getAccessToken,
@@ -337,7 +354,9 @@ export function useReportCollabHub({
 
   const broadcastChange = useCallback(async (change: ReportChangeDto) => {
     const conn = ensureCanSend();
-    const payload = mapChangeToServerPayload(change);
+    // Compress inline data URLs in content to avoid hitting hub message size limits
+    const safeContent = await compressDataUrlsInHtml(change.content || "");
+    const payload = mapChangeToServerPayload({ ...change, content: safeContent });
     console.log("[Hub] broadcastChange sending:", payload);
     await conn.invoke("BroadcastChange", payload);
     console.log("[Hub] change sent OK");
@@ -353,7 +372,9 @@ export function useReportCollabHub({
       if (!c) return;
       try {
         const conn = ensureCanSend();
-        const payload = mapChangeToServerPayload(c);
+        // Compress inline data URLs before sending
+        const safeContent = await compressDataUrlsInHtml(c.content || "");
+        const payload = mapChangeToServerPayload({ ...c, content: safeContent });
         console.log("[Hub] debounced change sending:", payload);
         await conn.invoke("BroadcastChange", payload);
         console.log("[Hub] debounced change sent OK");

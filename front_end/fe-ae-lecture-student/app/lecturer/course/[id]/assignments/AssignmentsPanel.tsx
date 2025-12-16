@@ -30,7 +30,7 @@ import { useDeleteAssignment } from "@/hooks/assignment/useDeleteAssignment";
 import type { AssignmentItem } from "@/types/assignments/assignment.response";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
 import { ArrowLeft, ChevronDown, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import AssignmentDetailView from "./components/AssignmentDetailView";
 import AssignmentsFilterBar, { FilterState } from "./components/AssignmentsFilterBar";
@@ -216,6 +216,18 @@ export default function AssignmentsPanel({
   const backToList = () => {
     setMode("list");
     fetchAssignments(query); // keep current filters
+    // update URL to reflect list view without assignmentId
+    if (courseId) {
+      try {
+        // use push so user can still navigate
+        // keep tab=assignments
+        // router is defined below but available at runtime
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        (typeof window !== "undefined") && (router.push(`/lecturer/course/${courseId}?tab=assignments`));
+      } catch (e) {
+        // ignore
+      }
+    }
   };
 
   const openCreate = () => setMode("create");
@@ -229,6 +241,22 @@ export default function AssignmentsPanel({
   };
 
   const router = useRouter();
+  const search = useSearchParams();
+
+  // If URL contains ?tab=assignments&assignmentId=..., open detail mode for that assignment
+  useEffect(() => {
+    try {
+      const tab = search?.get?.("tab");
+      const assignmentIdParam = search?.get?.("assignmentId");
+      if (tab === "assignments" && assignmentIdParam) {
+        setDetailId(assignmentIdParam);
+        setMode("detail");
+      }
+    } catch (e) {
+      // ignore
+    }
+    // Re-run when search string changes
+  }, [search?.toString()]);
   const { activate: debugActivate, loading: activating, error: activateError } = useDebugActivateAssignment();
   const isDebug = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEBUG === "true";
 
@@ -473,7 +501,11 @@ export default function AssignmentsPanel({
                                 size="sm"
                                 variant="outline"
                                 className="text-xs btn btn-gradient-slow cursor-pointer"
-                                onClick={() => openDetail(a.id)}
+                                onClick={() =>
+                                  router.push(
+                                    `/lecturer/course/${courseId}?tab=assignments&assignmentId=${a.id}`
+                                  )
+                                }
                               >
                                 Details
                               </Button>

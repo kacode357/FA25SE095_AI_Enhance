@@ -104,3 +104,9 @@ export interface UploadSupportRequestImagesResponse {
   uploadedImageUrls: string[];
   uploadedCount: number;
 }
+
+export interface GetSupportRequestByIdResponse {
+  success: boolean;
+  message: string;
+  supportRequest: SupportRequestItem;
+}

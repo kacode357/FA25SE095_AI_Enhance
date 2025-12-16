@@ -16,6 +16,7 @@ import {
   AssignGroupsResponse,
   CloseAssignmentResponse,
   CreateAssignmentResponse,
+  DeleteAssignmentAttachmentResponse,
   DeleteAssignmentResponse,
   ExtendDueDateResponse,
   GetAssignmentByIdResponse,
@@ -152,6 +153,14 @@ export const AssignmentService = {
     const res = await courseAxiosInstance.post<UploadAssignmentAttachmentsResponse>(`/Assignments/${id}/attachments`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return res.data;
+  },
+
+  /** DELETE /api/Assignments/{id}/attachments/{fileId} */
+  deleteAttachment: async (id: string, fileId: string): Promise<DeleteAssignmentAttachmentResponse> => {
+    const res = await courseAxiosInstance.delete<DeleteAssignmentAttachmentResponse>(
+      `/Assignments/${id}/attachments/${fileId}`
+    );
     return res.data;
   },
 

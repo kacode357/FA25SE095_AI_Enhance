@@ -25,6 +25,80 @@ function normalize(html: string) {
   return (html ?? "").trim();
 }
 
+// Compress / resize an image blob or file to a target max width and max bytes.
+async function compressImageFile(
+  input: Blob | File,
+  opts?: { maxWidth?: number; maxBytes?: number; mime?: string }
+): Promise<Blob> {
+  const { maxWidth = 1200, maxBytes = 500 * 1024, mime = "image/jpeg" } =
+    opts || {};
+
+  // Read blob as data URL
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = (e) => reject(e);
+    fr.readAsDataURL(input);
+  });
+
+  // Create image
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = (e) => reject(e);
+    i.src = dataUrl;
+  });
+
+  const srcWidth = img.naturalWidth || img.width;
+  const srcHeight = img.naturalHeight || img.height;
+  if (!srcWidth || !srcHeight) return input;
+
+  // Compute target dimensions preserving aspect ratio
+  let targetWidth = srcWidth;
+  let targetHeight = srcHeight;
+  if (srcWidth > maxWidth) {
+    targetWidth = maxWidth;
+    targetHeight = Math.round((srcHeight * maxWidth) / srcWidth);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return input;
+  ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+  // Try decreasing quality until under maxBytes or quality floor
+  let quality = 0.85;
+  const minQuality = 0.45;
+  // Helper to export to blob
+  const exportBlob = (q: number) =>
+    new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), mime, q)
+    );
+
+  let out: Blob | null = await exportBlob(quality);
+  // If original fit already and smaller, prefer that
+  try {
+    const originalSize = input.size;
+    if (originalSize > 0 && out && out.size > originalSize) {
+      // If compressed blob larger than original, return original
+      return input;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  while (out && out.size > maxBytes && quality > minQuality) {
+    quality -= 0.1;
+    out = await exportBlob(Math.max(quality, minQuality));
+  }
+
+  // If compression failed, fallback to original input
+  if (!out) return input;
+  return out;
+}
+
 export default function LiteRichTextEditor({
   value,
   onChange,
@@ -147,9 +221,25 @@ export default function LiteRichTextEditor({
               const file = input.files?.[0];
               if (!file) return;
               try {
+                // Compress / resize before upload/insert
+                let compressed: Blob = file;
+                try {
+                  compressed = await compressImageFile(file, {
+                    maxWidth: 1200,
+                    maxBytes: 500 * 1024,
+                    mime: "image/jpeg",
+                  });
+                } catch (e) {
+                  console.warn("Image compression failed, using original file.", e);
+                }
+
+                const compressedFile = new File([compressed], file.name, {
+                  type: compressed.type || file.type || "image/png",
+                });
+
                 if (onUploadImage) {
                   try {
-                    const url = await onUploadImage(file);
+                    const url = await onUploadImage(compressedFile);
                     if (url) {
                       callback(url, { alt: file.name });
                       return;
@@ -158,43 +248,25 @@ export default function LiteRichTextEditor({
                   } catch (e) {
                     console.warn("Upload failed, falling back to data URL.", e);
                   }
-                  // Fallback to data URL if upload failed or returned empty
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const result = String(reader.result || "");
-                    const isDataUrl = result.startsWith("data:");
-                    const mime = file.type || "image/png";
-                    const url = isDataUrl ? result : `data:${mime};base64,${result}`;
-                    if (!url || url.endsWith(",")) {
-                      console.warn("Empty image data, ignoring.");
-                      return;
-                    }
-                    callback(url, { alt: file.name });
-                  };
-                  reader.onerror = () => {
-                    console.error("FileReader failed to read image");
-                  };
-                  reader.readAsDataURL(file);
-                } else {
-                  // Fallback: inline base64 nếu không có hàm upload
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const result = String(reader.result || "");
-                    // Ensure it is a proper data URL so TinyMCE renders it
-                    const isDataUrl = result.startsWith("data:");
-                    const mime = file.type || "image/png";
-                    const url = isDataUrl ? result : `data:${mime};base64,${result}`;
-                    if (!url || url.endsWith(",")) {
-                      console.warn("Empty image data, ignoring.");
-                      return;
-                    }
-                    callback(url, { alt: file.name });
-                  };
-                  reader.onerror = () => {
-                    console.error("FileReader failed to read image");
-                  };
-                  reader.readAsDataURL(file);
                 }
+
+                // Fallback: insert inline data URL from compressed blob
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const result = String(reader.result || "");
+                  const isDataUrl = result.startsWith("data:");
+                  const mime = compressed.type || file.type || "image/png";
+                  const url = isDataUrl ? result : `data:${mime};base64,${result}`;
+                  if (!url || url.endsWith(",")) {
+                    console.warn("Empty image data, ignoring.");
+                    return;
+                  }
+                  callback(url, { alt: file.name });
+                };
+                reader.onerror = () => {
+                  console.error("FileReader failed to read image");
+                };
+                reader.readAsDataURL(compressed);
               } catch (err) {
                 console.error("Upload image failed", err);
               }
@@ -209,23 +281,44 @@ export default function LiteRichTextEditor({
           ): Promise<string> => {
             if (readOnly) throw new Error("Editor is read-only");
             const blob = blobInfo.blob();
-            const file = new File([blob], blobInfo.filename() || "image.png", {
-              type: blob.type || "image/png",
-            });
-            if (onUploadImage) {
-              try {
-                const url = await onUploadImage(file);
-                if (url) return url; // TinyMCE sẽ chèn URL này vào nội dung
-                console.warn("Upload returned empty URL; using data URL fallback.");
-              } catch (e) {
-                console.warn("Upload failed; using data URL fallback.", e);
+            try {
+              const compressed = await compressImageFile(blob, {
+                maxWidth: 1200,
+                maxBytes: 500 * 1024,
+                mime: "image/jpeg",
+              });
+
+              const file = new File([
+                compressed,
+              ], blobInfo.filename() || "image.png", {
+                type: compressed.type || blob.type || "image/png",
+              });
+
+              if (onUploadImage) {
+                try {
+                  const url = await onUploadImage(file);
+                  if (url) return url; // TinyMCE will insert this URL
+                  console.warn("Upload returned empty URL; using data URL fallback.");
+                } catch (e) {
+                  console.warn("Upload failed; using data URL fallback.", e);
+                }
               }
+
+              // Fallback: return data URL from compressed blob
+              const base64 = await new Promise<string>((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(String(fr.result || ""));
+                fr.onerror = (e) => reject(e);
+                fr.readAsDataURL(compressed);
+              });
+              return base64;
+            } catch (e) {
+              console.warn("Image compression/upload fallback path hit.", e);
+              const mime = blob.type || "image/png";
+              const base64 = blobInfo.base64();
+              if (!base64) throw new Error("Empty image data");
+              return `data:${mime};base64,${base64}`;
             }
-            // Fallback: trả về đầy đủ data URL để trình duyệt hiển thị đúng
-            const mime = blob.type || "image/png";
-            const base64 = blobInfo.base64();
-            if (!base64) throw new Error("Empty image data");
-            return `data:${mime};base64,${base64}`;
           },
 
           // 🔽 chiều cao tối thiểu 400, autoresize sẽ grow thêm theo content

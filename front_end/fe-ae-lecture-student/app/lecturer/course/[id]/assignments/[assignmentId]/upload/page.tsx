@@ -10,8 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { useUploadAttachments } from "@/hooks/assignment/useUploadAttachments";
 import type { AssignmentAttachment } from "@/types/assignments/assignment.response";
 import { format } from "date-fns";
-import { AlertCircle, CheckCircle2, FileText, List, Trash2, UploadCloud } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { AlertCircle, ArrowLeft, CheckCircle2, FileText, List, Trash2, UploadCloud } from "lucide-react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 function fileListToArray(files: FileList | null): File[] {
@@ -24,6 +24,9 @@ export default function UploadAttachmentsPage() {
     const router = useRouter();
     const courseId = params.id ?? "";
     const assignmentId = params.assignmentId ?? "";
+    const search = useSearchParams();
+    const from = search?.get?.("fr") ?? null;
+    const showBack = from === "assignment-detail";
 
     const { uploadAttachments, loading } = useUploadAttachments();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -178,10 +181,30 @@ export default function UploadAttachmentsPage() {
                             <p className="text-gray-600 mt-2">Add supporting files, documents, or resources for students</p>
                         </div>
                         <div className="flex gap-3">
-                            <Button variant="ghost" className="btn btn-gradient-slow text-base" size="sm" onClick={() => router.push(`/lecturer/course/${courseId}?tab=assignments`)}>
-                                <List className="mr-2 h-4 w-4" />
-                                Assignment List
-                            </Button>
+                            {showBack ? (
+                                <Button
+                                    variant="ghost"
+                                    className="btn btn-gradient-slow text-base"
+                                    size="sm"
+                                    onClick={() => {
+                                        if (courseId && assignmentId) {
+                                            router.push(
+                                                `/lecturer/course/${courseId}?tab=assignments&assignmentId=${assignmentId}`
+                                            );
+                                        } else {
+                                            router.back();
+                                        }
+                                    }}
+                                >
+                                    <ArrowLeft className="mr-0 h-4 w-4" />
+                                    Back
+                                </Button>
+                            ) : (
+                                <Button variant="ghost" className="btn btn-gradient-slow text-base" size="sm" onClick={() => router.push(`/lecturer/course/${courseId}?tab=assignments`)}>
+                                    <List className="mr-2 h-4 w-4" />
+                                    Assignment List
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>

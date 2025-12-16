@@ -1,6 +1,6 @@
 "use client";
 
-import { Book, ChevronRight } from "lucide-react";
+import { Book, ChevronRight, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -86,7 +86,6 @@ export default function CreateCourseRequestPage() {
     const uploadRef = useRef<HTMLDivElement | null>(null);
 
     const [submitting, setSubmitting] = useState(false);
-    const [showCourseTooltip, setShowCourseTooltip] = useState(false);
     const isValid = useMemo(() => {
         return !!(form.courseCodeId && form.termId && form.year && form.description);
     }, [form]);
@@ -107,6 +106,8 @@ export default function CreateCourseRequestPage() {
         };
         loadOptions();
     }, []);
+
+    
 
     const handleSubmit = async () => {
         if (!isValid || submitting) return;
@@ -149,16 +150,20 @@ export default function CreateCourseRequestPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-7 h-[calc(100vh-300)]">
                             {/* Left: form fields (Course Code, Term, Reason) */}
-                            <div className="flex flex-col gap-6" onMouseEnter={() => setShowCourseTooltip(true)} onMouseLeave={() => setShowCourseTooltip(false)}>
+                            <div className="flex flex-col gap-6">
                                 <div>
-                                    <Tooltip open={showCourseTooltip} onOpenChange={(v) => setShowCourseTooltip(Boolean(v))}>
-                                        <TooltipTrigger asChild>
-                                            <Label className="text-sm mb-2">Course Code <span className="text-slate-500">(*)</span></Label>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="left" className="max-w-xs text-xs">
-                                            This is the course code (e.g. CS101). Used to identify the course in the system.
-                                        </TooltipContent>
-                                    </Tooltip>
+                                    <Label className="text-sm mb-2">Course Code
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="text-slate-500 ml-0">
+                                                    <Info className="size-4 cursor-pointer" />
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                                                This is the course code (e.g. CS101). Used to identify the course in the system.
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </Label>
                                     <div className="mt-1">
                                         <Select value={form.courseCodeId} onValueChange={(v) => setForm((f) => ({ ...f, courseCodeId: v }))}>
                                             <SelectTrigger className="w-full border-slate-200">

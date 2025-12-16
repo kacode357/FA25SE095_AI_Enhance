@@ -78,6 +78,11 @@ export interface UploadAssignmentAttachmentsResponse {
   uploadedCount: number;
 }
 
+export interface DeleteAssignmentAttachmentResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface GetAssignmentByIdResponse {
   success: boolean;
   message: string;

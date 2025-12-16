@@ -57,11 +57,11 @@ export default function InactivateCourseDialog({
                         <Label className="mb-2 cursor-text">Course Name</Label>
                         <Input value={courseName || "-"} disabled className="!bg-slate-100 cursor-text" />
                     </div>
-{/* 
+
                     <div>
                         <Label className="mb-2 mt-5 cursor-text">Reason (required)</Label>
                         <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why do you want to inactivate this course?" />
-                    </div> */}
+                    </div>
                 </div>
 
                 <DialogFooter className="flex justify-end gap-2 mt-4">

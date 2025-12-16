@@ -2,21 +2,22 @@ import { courseAxiosInstance } from "@/config/axios.config";
 
 import type {
   CreateSupportRequestPayload,
+  GetAssignedSupportRequestsQuery,
   GetMySupportRequestsQuery,
   GetPendingSupportRequestsQuery,
-  GetAssignedSupportRequestsQuery,
   RejectSupportRequestPayload,
 } from "@/types/support/support-request.payload";
 
 import type {
-  CreateSupportRequestResponse,
-  GetMySupportRequestsResponse,
-  GetPendingSupportRequestsResponse,
-  GetAssignedSupportRequestsResponse,
   AcceptSupportRequestResponse,
   CancelSupportRequestResponse,
-  ResolveSupportRequestResponse,
+  CreateSupportRequestResponse,
+  GetAssignedSupportRequestsResponse,
+  GetMySupportRequestsResponse,
+  GetPendingSupportRequestsResponse,
+  GetSupportRequestByIdResponse,
   RejectSupportRequestResponse,
+  ResolveSupportRequestResponse,
   UploadSupportRequestImagesResponse,
 } from "@/types/support/support-request.response";
 
@@ -82,6 +83,19 @@ export const SupportRequestService = {
         "/SupportRequests/assigned",
         { params }
       );
+    return res.data;
+  },
+
+  getSupportRequestById: async (id: string): Promise<GetSupportRequestByIdResponse> => {
+    const res = await courseAxiosInstance.get<GetSupportRequestByIdResponse>(
+      `/SupportRequests/${id}`,
+      {
+        headers: {
+          Accept: "text/plain",
+        },
+      }
+    );
+
     return res.data;
   },
 

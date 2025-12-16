@@ -100,9 +100,11 @@ inactivateCourse: async (
   id: string,
   data: InactivateCoursePayload
 ): Promise<InactivateCourseResponse> => {
-  const res = await courseAxiosInstance.put<InactivateCourseResponse>(
+  const res = await courseAxiosInstance.delete<InactivateCourseResponse>(
     `/Courses/${id}/inactivate`,
-    data
+      {
+        data
+      }
   );
   return res.data;
 },
