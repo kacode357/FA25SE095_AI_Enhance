@@ -12,7 +12,7 @@ import { CourseStatus } from "@/types/courses/course.response";
 import { AnimatePresence, motion } from "framer-motion";
 import { Book, ChevronRight, Loader2, SquarePen, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CourseSidebar from "./components/CourseSidebar"; // ĐÃ IMPORT
 import { StatusChip } from "./components/CourseStatus";
@@ -36,6 +36,7 @@ export default function EditCourse() {
     const { data: terms, fetchTerms } = useTerms();
     const { updateCourse, loading: updating } = useUpdateCourse();
     const { id } = useParams<{ id: string }>();
+    const router = useRouter();
     const { data: course, loading, error, fetchCourseById, refetch } = useGetCourseById();
     const pathname = usePathname();
     const isEditRoute = pathname?.includes(`/lecturer/course/${id}/course`);
@@ -117,7 +118,10 @@ export default function EditCourse() {
                 courseId={id || ""}
                 courseName={course?.name}
                 lecturerId={course?.lecturerId}
-                onConfirmed={() => id && refetch(id)}
+                onConfirmed={() => {
+                    // After successful delete, redirect to course list
+                    router.push("/lecturer/course");
+                }}
             />
 
             {/* Breadcrumb */}

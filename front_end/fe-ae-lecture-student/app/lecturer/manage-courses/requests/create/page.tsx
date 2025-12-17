@@ -33,7 +33,7 @@ function BreadcrumbRequest({ router }: { router: ReturnType<typeof useRouter> })
                 <li className="flex flex-row gap-0 hover:text-violet-800 items-center">
                     <Book className="size-4" />
                     <button
-                        onClick={() => router.push("/canrequests")}
+                        onClick={() => router.push("/lecturer/manage-courses/requests")}
                         className="px-1 py-0.5 cursor-pointer rounded hover:text-violet-800 transition max-w-[130px] truncate"
                     >
                         Courses Requests

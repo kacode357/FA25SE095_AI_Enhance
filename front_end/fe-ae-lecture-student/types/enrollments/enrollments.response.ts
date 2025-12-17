@@ -123,6 +123,23 @@ export interface GetCourseEnrolledStudentsResponse {
   totalStudents: number;
 }
 
+export interface EnrollmentStudentDetail {
+  studentId: string;
+  studentName: string;
+  email: string;
+  enrolledAt: string; // ISO datetime
+  status: string;
+  groupId?: string | null;
+  groupName?: string | null;
+  isGroupLeader?: boolean;
+}
+
+export interface GetEnrollmentStudentResponse {
+  success: boolean;
+  message: string;
+  student: EnrollmentStudentDetail | null;
+}
+
 export interface UnenrolledStudent {
   id: string;
   courseId: string;

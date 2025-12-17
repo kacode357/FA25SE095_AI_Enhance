@@ -194,7 +194,7 @@ export default function GroupsPanel({
                             variant="ghost"
                             onClick={confirmDelete}
                             disabled={deleting}
-                            className="btn btn-gradient-slow"
+                            className="bg-red-50 text-red-500 hover:text-red-600 hover:bg-red-100"
                         >
                             {deleting ? "Deleting..." : "Delete"}
                         </Button>

@@ -152,7 +152,14 @@ export default function StudentList({
                                             </DropdownMenuTrigger>
 
                                             <DropdownMenuContent className="border-white flex flex-col gap-2 shadow-md cursor-pointer -translate-x-10">
-                                                <DropdownMenuItem className="cursor-pointer hover:bg-violet-50" onSelect={() => { /* details handler */ }}>
+                                                <DropdownMenuItem
+                                                    className="cursor-pointer hover:bg-violet-50"
+                                                    onSelect={() => {
+                                                        if (!courseId) return;
+                                                        const qs = courseName ? `?courseName=${encodeURIComponent(String(courseName))}` : "";
+                                                        router.push(`/lecturer/course/${courseId}/student/${s.studentId}${qs}`);
+                                                    }}
+                                                >
                                                     <Eye className="size-4 mr-2 text-violet-500" /> Details
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem

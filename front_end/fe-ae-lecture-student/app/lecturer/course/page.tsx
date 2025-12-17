@@ -259,8 +259,10 @@ export default function LecturerCoursesPage() {
                         {getCourseStatusText(course.status)}
                       </span>
                     </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      <span>Term {course.term}</span>
+                    <div className="mt-2 flex text-xs text-slate-500">
+                      <span className="flex items-center gap-1">Unique Code: <p className="text-violet-500">{course.uniqueCode}</p></span>
+                      <span className="mx-2">•</span>
+                      <span>{course.term}</span>
                       <span className="mx-2">•</span>
                       <span>{course.enrollmentCount} students</span>
                       {course.requiresAccessCode && course.accessCode && (

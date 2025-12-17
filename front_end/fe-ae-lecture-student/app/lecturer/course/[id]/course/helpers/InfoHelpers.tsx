@@ -1,5 +1,7 @@
 "use client";
 
+import { ReactNode } from "react";
+
 export function Info({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
     return (
         <p className="flex justify-between">
@@ -9,7 +11,7 @@ export function Info({ label, value, mono = false }: { label: string; value: str
     );
 }
 
-export function InfoV2({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+export function InfoV2({ label, value, mono = false }: { label: string; value: ReactNode; mono?: boolean }) {
     return (
         <div className="flex flex-col">
             <span className="text-slate-500 text-xs uppercase tracking-wide">{label}</span>

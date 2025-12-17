@@ -8,6 +8,7 @@ import {
 } from "@/types/enrollments/enrollments.payload";
 import {
   GetCourseEnrolledStudentsResponse,
+  GetEnrollmentStudentResponse,
   GetMyEnrolledCoursesResponse,
   ImportEnrollmentsResponse,
   ImportStudentsSpecificCourseResponse,
@@ -178,6 +179,17 @@ export const EnrollmentsService = {
       { data: body }
     );
 
+    return res.data;
+  },
+
+  /** 👤 Get a specific enrolled student's details */
+  getCourseStudent: async (
+    courseId: string,
+    studentId: string
+  ): Promise<GetEnrollmentStudentResponse> => {
+    const res = await courseAxiosInstance.get<GetEnrollmentStudentResponse>(
+      `/enrollments/courses/${courseId}/students/${studentId}`
+    );
     return res.data;
   },
 
