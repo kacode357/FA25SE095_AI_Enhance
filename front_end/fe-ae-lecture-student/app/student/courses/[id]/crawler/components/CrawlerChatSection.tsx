@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Database, Send, Copy, Check } from "lucide-react";
+import { Bot, Database, Send, Copy, Check, Upload, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { ApexOptions } from "apexcharts";
 import type { UiMessage } from "../crawler-types";
@@ -17,6 +17,8 @@ type Props = {
   chatInput: string;
   onChatInputChange: (value: string) => void;
   onSendChat: (contentOverride?: string) => void;
+  onUploadCsv?: (file: File) => Promise<void> | void;
+  uploadingCsv?: boolean;
   chatSending: boolean;
   chatConnected: boolean;
   thinking?: boolean;
@@ -76,29 +78,27 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
       chartConfig?.chart?.type ||
       "bar";
 
-    const chartType = ([
-    "summary",
-"summaries",
-"summarize",
-"insight",
-"insights",
-"highlights",
-"results",
-"findings",
-"what did we find",
-"what were the results",
-"recap",
-// Vietnamese keywords
-"tổng hợp",
-"tóm tắt",
-"thống kê",
-"phân tích",
-"kết quả",
-"biểu đồ",
-"xu hướng",
-    ].includes(rawType)
-      ? rawType
-      : "bar") as NonNullable<ApexOptions["chart"]>["type"];
+    const normalizedType = typeof rawType === "string" ? rawType.trim().toLowerCase() : "";
+    const allowedTypes = new Set([
+      "bar",
+      "column",
+      "line",
+      "area",
+      "pie",
+      "donut",
+      "radar",
+      "polararea",
+      "scatter",
+      "bubble",
+      "heatmap",
+    ]);
+
+    let chartType: NonNullable<ApexOptions["chart"]>["type"] = "bar";
+    if (normalizedType === "column") {
+      chartType = "bar";
+    } else if (allowedTypes.has(normalizedType as any)) {
+      chartType = normalizedType as NonNullable<ApexOptions["chart"]>["type"];
+    }
 
     const dataNode =
       chartConfig?.data?.data ?? chartConfig?.data ?? chartConfig?.dataset ?? {};
@@ -519,10 +519,11 @@ const ChatMessageList = React.memo(function ChatMessageList({
           const rendered = renderMessageContent(m.content || "");
           const isUserMessage = m.role === "user";
           const baseContentClass =
-            "text-[11px] leading-relaxed space-y-0.5 [&_ul]:ml-3 [&_ul]:list-disc [&_ol]:ml-3 [&_ol]:list-decimal [&_li]:mb-0.5 [&_a]:underline [&_a]:underline-offset-2 [&_a]:break-words [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[9px] [&_strong]:font-semibold [&_p]:last:mb-0 [&_img[data-inline-img]]:my-1.5 [&_img[data-inline-img]]:max-h-52 [&_img[data-inline-img]]:rounded-md [&_img[data-inline-img]]:border [&_img[data-inline-img]]:border-[var(--border)] [&_img[data-inline-img]]:bg-white";
-          const anchorToneClass = isUserMessage
-            ? "[&_a]:text-white [&_a:visited]:text-white [&_a]:decoration-white/40 [&_a:hover]:text-white/90 [&_a:focus-visible]:text-white"
-            : "[&_a]:text-[var(--brand)] [&_a:visited]:text-[var(--brand)] [&_a:hover]:text-[var(--brand)]/80 [&_a:focus-visible]:text-[var(--brand)]";
+            "text-[11px] leading-relaxed space-y-0.5 [&_ul]:ml-3 [&_ul]:list-disc [&_ul]:list-inside [&_ol]:ml-3 [&_ol]:list-decimal [&_ol]:list-inside [&_li]:mb-0.5 [&_a]:underline [&_a]:underline-offset-2 [&_a]:break-words [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[9px] [&_strong]:font-semibold [&_p]:last:mb-0 [&_img[data-inline-img]]:my-1.5 [&_img[data-inline-img]]:max-h-52 [&_img[data-inline-img]]:rounded-md [&_img[data-inline-img]]:border [&_img[data-inline-img]]:border-[var(--border)] [&_img[data-inline-img]]:bg-white";
+const anchorToneClass = isUserMessage
+  ? "[&_a]:!text-amber-200 [&_a:visited]:!text-amber-200 [&_a]:decoration-amber-200/60 [&_a:hover]:!text-amber-50 [&_a:focus-visible]:!text-amber-50"
+  : "[&_a]:text-[#2563eb] [&_a:visited]:text-[#1d4ed8] [&_a]:decoration-[#2563eb]/50 [&_a:hover]:text-[#1d4ed8] [&_a:focus-visible]:text-[#1d4ed8]";
+
           const headingClass =
             "[&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-[12px] [&_h1]:font-semibold [&_h1]:leading-snug [&_h1]:tracking-tight [&_h1]:text-current [&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-[11.5px] [&_h2]:font-semibold [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-current [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-[11px] [&_h3]:font-semibold [&_h3]:leading-snug [&_h3]:tracking-tight [&_h3]:text-current [&_h4]:mt-1.5 [&_h4]:mb-1 [&_h4]:text-[10.5px] [&_h4]:font-semibold [&_h4]:tracking-tight [&_h4]:text-current";
           const contentClass = `${baseContentClass} ${anchorToneClass} ${headingClass}`;
@@ -568,13 +569,9 @@ const ChatMessageList = React.memo(function ChatMessageList({
 
       {(chatSending || thinking) && (
         <div className="flex justify-start">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-2.5 py-1 text-[9px] text-[var(--text-muted)] shadow-sm">
-            <span className="flex gap-1">
-              <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.3s]" />
-              <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.15s]" />
-              <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--brand)]" />
-            </span>
-            <span>Thinking...</span>
+          <div className="thinking-chip" role="status" aria-live="polite">
+            <span className="thinking-label">Thinking</span>
+            <span className="thinking-loader" aria-hidden="true" />
           </div>
         </div>
       )}
@@ -587,6 +584,8 @@ function CrawlerChatSection({
   chatInput,
   onChatInputChange,
   onSendChat,
+  onUploadCsv,
+  uploadingCsv = false,
   chatSending,
   chatConnected,
   thinking = false,
@@ -594,6 +593,24 @@ function CrawlerChatSection({
   resultsAvailable = false,
 }: Props) {
   const disabledSend = !chatInput.trim() || chatSending || !chatConnected;
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleUploadButtonClick = useCallback(() => {
+    if (!onUploadCsv || uploadingCsv || !chatConnected) return;
+    fileInputRef.current?.click();
+  }, [chatConnected, onUploadCsv, uploadingCsv]);
+
+  const handleFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file || !onUploadCsv) return;
+      await onUploadCsv(file);
+    },
+    [onUploadCsv]
+  );
+
+  const uploadDisabled = !onUploadCsv || uploadingCsv || !chatConnected;
 
   return (
     <div
@@ -630,6 +647,27 @@ function CrawlerChatSection({
       <ChatMessageList chatMessages={chatMessages} chatSending={chatSending} thinking={thinking} />
 
       <div className="mt-1.5 flex items-end gap-1.5">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <button
+          type="button"
+          onClick={handleUploadButtonClick}
+          disabled={uploadDisabled}
+          className="flex h-[36px] items-center gap-1 rounded-lg border border-dashed border-[var(--border)] bg-slate-50/70 px-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--brand)] transition hover:bg-[var(--brand)]/10 disabled:cursor-not-allowed disabled:opacity-60"
+          title="Upload CSV file"
+        >
+          {uploadingCsv ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          <span>Upload CSV</span>
+        </button>
         <textarea
           rows={1}
           value={chatInput}

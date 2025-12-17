@@ -26,6 +26,7 @@ import { useCrawlerAssignmentConversations } from "@/hooks/crawler-chat/useCrawl
 import { useCrawlerConversationMessages } from "@/hooks/crawler-chat/useCrawlerConversationMessages";
 import { useSmartCrawlerJob } from "@/hooks/smart-crawler/useSmartCrawlerJob";
 import { useDecodedUser } from "@/utils/secure-user";
+import { useUploadConversationCsv } from "@/hooks/chat/useUploadConversationCsv";
 
 import type { UiMessage } from "./crawler-types";
 import CrawlerUrlPromptSection from "./components/CrawlerUrlPromptSection";
@@ -201,6 +202,11 @@ const CrawlerInner = () => {
     userId,
     resultsLoading,
   });
+
+  const {
+    uploadConversationCsv,
+    loading: uploadingConversationCsv,
+  } = useUploadConversationCsv();
 
   const promptUsed = useMemo(() => {
     if (!results?.length) return "";
@@ -746,6 +752,45 @@ const CrawlerInner = () => {
     ]
   );
 
+  const handleUploadConversationCsv = useCallback(
+    async (file: File) => {
+      if (!file) return;
+      if (!conversationId) {
+        toast.error("Conversation is not ready. Please try again.");
+        return;
+      }
+
+      try {
+        const res = await uploadConversationCsv(conversationId, { file });
+        if (!res) {
+          toast.error("Upload already in progress. Please wait.");
+          return;
+        }
+
+        const segments: string[] = [];
+        if (typeof res.rowCount === "number") {
+          segments.push(`${res.rowCount} rows`);
+        }
+        if (res.columnNames?.length) {
+          const columnPreview = res.columnNames.slice(0, 4).join(", ");
+          segments.push(
+            `Columns: ${columnPreview}${res.columnNames.length > 4 ? "..." : ""}`
+          );
+        }
+
+        toast.success(res.message || `Uploaded ${res.fileName || file.name}`, {
+          description: segments.length ? segments.join(" · ") : undefined,
+        });
+
+        await reloadConversation({ conversationOverride: conversationId });
+      } catch (err: any) {
+        console.error("[CrawlerPage] upload csv error:", err);
+        toast.error(err?.message || "Failed to upload CSV file");
+      }
+    },
+    [conversationId, reloadConversation, uploadConversationCsv]
+  );
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] bg-slate-50">
       <main className="mx-auto flex max-w-7xl flex-col gap-4 py-6" data-tour="crawler-layout">
@@ -803,6 +848,8 @@ const CrawlerInner = () => {
               chatInput={chatInput}
               onChatInputChange={setChatInput}
               onSendChat={handleSendChatMessage}
+              onUploadCsv={handleUploadConversationCsv}
+              uploadingCsv={uploadingConversationCsv}
               chatSending={chatSending}
               chatConnected={chatConnected}
               onOpenResults={() => setShowResultsModal(true)}

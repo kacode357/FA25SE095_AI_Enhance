@@ -10,7 +10,11 @@ export interface GetMessagesQuery {
   supportRequestId?: string;
 }
 
-/** Payload dùng cho Hub (SignalR) */
+export interface UploadConversationCsvPayload {
+  file: File;
+}
+
+/** Payload dA1ng cho Hub (SignalR) */
 export interface SendMessagePayload {
   message: string;
   receiverId: string;

@@ -51,6 +51,15 @@ export interface CourseUsersApiResponse {
   users: CourseChatUserItemResponse[];
 }
 
+export interface UploadConversationCsvResponse {
+  success: boolean;
+  message: string;
+  fileId: string;
+  fileName: string;
+  rowCount: number;
+  columnNames: string[];
+}
+
 export type GetUsersInCourseResponse =
   | CourseUsersApiResponse
   | CourseChatUserItemResponse[];

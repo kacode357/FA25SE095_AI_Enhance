@@ -50,9 +50,25 @@ function buildSanitizedHtml(content: string) {
   const lines = content.split(/\r?\n/);
   const blocks: string[] = [];
   let activeList: { type: "ul" | "ol"; items: string[] } | null = null;
+  let pendingNestedItems: string[] | null = null;
 
   const flushList = () => {
     if (!activeList) return;
+    if (activeList.type === "ol" && pendingNestedItems && activeList.items.length) {
+      const nestedHtml = `<ul>${pendingNestedItems
+        .map((item) => `<li>${item}</li>`)
+        .join("")}</ul>`;
+      const lastIdx = activeList.items.length - 1;
+      activeList.items[lastIdx] = `${activeList.items[lastIdx]}${nestedHtml}`;
+      pendingNestedItems = null;
+    } else if (pendingNestedItems) {
+      const nestedHtml = `<ul>${pendingNestedItems
+        .map((item) => `<li>${item}</li>`)
+        .join("")}</ul>`;
+      blocks.push(nestedHtml);
+      pendingNestedItems = null;
+    }
+
     const items = activeList.items.map((item) => `<li>${item}</li>`).join("");
     blocks.push(`<${activeList.type}>${items}</${activeList.type}>`);
     activeList = null;
@@ -65,7 +81,16 @@ function buildSanitizedHtml(content: string) {
     const bulletMatch = trimmed.match(/^[-*+]\s+(.*)/);
 
     if (orderedMatch) {
-      if (!activeList || activeList.type !== "ol") {
+      if (activeList?.type === "ol") {
+        if (pendingNestedItems) {
+          const lastIdx = activeList.items.length - 1;
+          const nestedHtml = `<ul>${pendingNestedItems
+            .map((item) => `<li>${item}</li>`)
+            .join("")}</ul>`;
+          activeList.items[lastIdx] = `${activeList.items[lastIdx]}${nestedHtml}`;
+          pendingNestedItems = null;
+        }
+      } else {
         flushList();
         activeList = { type: "ol", items: [] };
       }
@@ -74,6 +99,11 @@ function buildSanitizedHtml(content: string) {
     }
 
     if (bulletMatch) {
+      if (activeList?.type === "ol") {
+        if (!pendingNestedItems) pendingNestedItems = [];
+        pendingNestedItems.push(applyInlineFormatting(bulletMatch[1]));
+        return;
+      }
       if (!activeList || activeList.type !== "ul") {
         flushList();
         activeList = { type: "ul", items: [] };
@@ -92,7 +122,6 @@ function buildSanitizedHtml(content: string) {
     }
 
     if (trimmed === "") {
-      flushList();
       return;
     }
 

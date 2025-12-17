@@ -1,11 +1,16 @@
 // services/chat.services.ts
 import { courseAxiosInstance as api } from "@/config/axios.config";
-import type { GetConversationsQuery, GetMessagesQuery } from "@/types/chat/chat.payload";
+import type {
+  GetConversationsQuery,
+  GetMessagesQuery,
+  UploadConversationCsvPayload,
+} from "@/types/chat/chat.payload";
 import type {
   ConversationItemResponse,
   ChatMessageItemResponse,
   CourseChatUserItemResponse,
   GetMessagesApiResponse,
+  UploadConversationCsvResponse,
 } from "@/types/chat/chat.response";
 
 export const ChatService = {
@@ -34,6 +39,24 @@ export const ChatService = {
     courseId: string
   ): Promise<CourseChatUserItemResponse[]> => {
     const res = await api.get<CourseChatUserItemResponse[]>(`/Chat/courses/${courseId}/users`);
+    return res.data;
+  },
+
+  /** ? POST /api/Chat/conversations/{conversationId}/upload-csv */
+  uploadConversationCsv: async (
+    conversationId: string,
+    payload: UploadConversationCsvPayload
+  ): Promise<UploadConversationCsvResponse> => {
+    const formData = new FormData();
+    formData.append("file", payload.file);
+
+    const res = await api.post<UploadConversationCsvResponse>(
+      `/Chat/conversations/${conversationId}/upload-csv`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
     return res.data;
   },
 

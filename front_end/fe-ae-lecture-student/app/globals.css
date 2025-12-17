@@ -559,3 +559,53 @@ header.fixed, header {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Chat thinking chip */
+.thinking-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 113, 244, 0.4);
+  background: linear-gradient(135deg, rgba(127, 113, 244, 0.92), rgba(94, 79, 232, 0.88));
+  color: #f5f3ff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 24px rgba(95, 70, 215, 0.35);
+}
+
+.thinking-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.thinking-loader {
+  position: relative;
+  width: 72px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.thinking-loader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  animation: thinking-sweep 1.4s linear infinite;
+}
+
+@keyframes thinking-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
