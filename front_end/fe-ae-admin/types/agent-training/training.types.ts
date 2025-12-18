@@ -79,7 +79,18 @@ export type WebSocketMessageType =
   | "crawl_log"
   | "crawl_started"
   | "pending_rollouts_updated"
-  | "learning_cycle_complete";
+  | "learning_cycle_complete"
+  | "training_queued"
+  | "training_started"
+  | "training_completed"
+  | "training_failed"
+  | "version_committed"
+  | "buffer_discarded"
+  | "queue_updated"
+  | "commit_progress"
+  | "buffer_created"
+  | "buffer_ready"
+  | "version_created";
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;
@@ -89,6 +100,9 @@ export interface WebSocketMessage {
   quality_rating?: number;
   cycle?: number;
   message?: string;
+  position?: number;
+  version?: number;
+  admin_id?: string;
 }
 
 // Log entry from crawl4ai
@@ -116,5 +130,142 @@ export interface LearningCycleComplete {
     failure_patterns: number;
     feedback_insights: number;
     avg_reward: number;
+  };
+}
+
+export interface TrainingJob {
+  job_id: string;
+  prompt: string;
+  admin_id: string;
+  url: string;
+  description: string;
+  timestamp: string;
+  status: "pending" | "active" | "completed" | "failed";
+  position?: number;
+}
+
+export interface QueueStatus {
+  summary: {
+    pending_count: number;
+    active_count: number;
+    completed_count: number;
+    current_version: number;
+    total_processed: number;
+  };
+  pending_jobs: TrainingJob[];
+  active_jobs: TrainingJob[];
+  pending_count: number;
+  active_count: number;
+}
+
+export interface BufferMetadata {
+  job_id: string;
+  admin_id: string;
+  url: string;
+  description: string;
+  timestamp: string;
+  patterns_count: number;
+  ttl_hours: number;
+}
+
+export interface BufferData {
+  job_id: string;
+  admin_id: string;
+  url: string;
+  description: string;
+  timestamp: string;
+  result?: {
+    success: boolean;
+    data: any[];
+    error?: string;
+    execution_time_ms?: number;
+  };
+  patterns: any[];
+  metrics: {
+    success: boolean;
+    items_extracted: number;
+    execution_time_ms: number;
+    base_reward: number;
+  };
+  training_history: any[];
+}
+
+export interface VersionInfo {
+  version: number | string;
+  timestamp: string;
+  admin_id?: string;
+  patterns_count?: number | string;
+  is_latest?: boolean;
+  file_path?: string;
+  commit_count?: number | string;
+  total_domains?: number | string;
+  total_patterns?: number | string;
+}
+
+export interface PendingCommitsStatus {
+  pending_count: number;
+  commits_needed: number;
+  threshold: number;
+  ready_for_version: boolean;
+}
+
+export interface VersionHistoryResponse {
+  current_version: number;
+  versions: VersionInfo[];
+  total_versions: number;
+}
+
+export interface QueuedJobResponse {
+  status: "queued";
+  job_id: string;
+  position: number;
+  message: string;
+}
+
+// Learning Insights Types
+export interface DomainExpertise {
+  domain: string;
+  pattern_count: number;
+  avg_success_rate: number;
+  total_usage: number;
+  confidence: "high" | "medium" | "low";
+}
+
+export interface LearningInsights {
+  summary: {
+    total_patterns: number;
+    domains_learned: number;
+    avg_success_rate: number;
+    learning_cycles: number;
+  };
+  domain_expertise: DomainExpertise[];
+  pattern_types: Record<string, number>;
+  recent_performance: Array<{
+    cycle: number;
+    avg_reward: number;
+    timestamp: string;
+  }>;
+  domain_distribution?: Array<{
+    domain: string;
+    patterns: number;
+    success_rate: number;
+  }>;
+  success_distribution?: {
+    excellent: number;
+    good: number;
+    moderate: number;
+    poor: number;
+  };
+  storage_metrics?: {
+    vector_size_mb: number;
+    graph_nodes: number;
+    graph_relationships: number;
+    total_stored_patterns: number;
+    pattern_redundancy: number;
+  };
+  knowledge_quality?: {
+    high_confidence_domains: number;
+    medium_confidence_domains: number;
+    low_confidence_domains: number;
   };
 }

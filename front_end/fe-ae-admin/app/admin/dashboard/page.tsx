@@ -27,6 +27,7 @@ import {
 
 import { useAdminDashboardOverview } from "@/hooks/admin-dashboard/useAdminDashboardOverview";
 
+// Helper functions
 const formatCurrency = (value?: number, currency?: string) =>
   new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -150,6 +151,7 @@ export default function AdminDashboardOverviewPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
+      {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">
@@ -168,6 +170,7 @@ export default function AdminDashboardOverviewPage() {
         </div>
       </div>
 
+      {/* Headline Cards */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {headlineCards.map((card) => (
           <div
@@ -188,7 +191,9 @@ export default function AdminDashboardOverviewPage() {
         ))}
       </div>
 
+      {/* Row 1: Revenue Trend & Payments */}
       <div className="grid gap-4 lg:grid-cols-2">
+        {/* Revenue Trend Chart */}
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <header className="mb-3 flex items-center justify-between">
             <div>
@@ -216,8 +221,8 @@ export default function AdminDashboardOverviewPage() {
                     tickFormatter={(v) => formatNumber(v)}
                   />
                   <Tooltip
-                    formatter={(value: number) =>
-                      formatCurrency(value, overview?.revenue.currency)
+                    formatter={(value: any) =>
+                      formatCurrency(value as number, overview?.revenue.currency)
                     }
                   />
                   <Legend />
@@ -243,6 +248,7 @@ export default function AdminDashboardOverviewPage() {
           </div>
         </section>
 
+        {/* Payments & Success Chart */}
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <header className="mb-3 flex items-center justify-between">
             <div>
@@ -267,10 +273,10 @@ export default function AdminDashboardOverviewPage() {
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip
-                    formatter={(value: number, key) =>
+                    formatter={(value: any, key: any) =>
                       key === "successRate"
-                        ? formatPercent(value)
-                        : formatNumber(value)
+                        ? formatPercent(value as number)
+                        : formatNumber(value as number)
                     }
                   />
                   <Legend />
@@ -297,7 +303,9 @@ export default function AdminDashboardOverviewPage() {
         </section>
       </div>
 
+      {/* Row 2: Revenue by Tier & Users by Role */}
       <div className="grid gap-4 lg:grid-cols-2">
+        {/* Revenue by Tier Pie Chart */}
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <header className="mb-3 flex items-center justify-between">
             <div>
@@ -334,13 +342,20 @@ export default function AdminDashboardOverviewPage() {
                     {revenueByTierData.map((entry, index) => (
                       <Cell
                         key={entry.tier}
-                        fill={["#7f71f4", "#f4a23b", "#10b981", "#22c55e", "#2563eb"][index % 5]}
+                        fill={
+                          ["#7f71f4", "#f4a23b", "#10b981", "#22c55e", "#2563eb"][
+                            index % 5
+                          ]
+                        }
                       />
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number, name) =>
-                      `${formatCurrency(value, overview?.revenue.currency)} (${name})`
+                    formatter={(value: any, name: any) =>
+                      `${formatCurrency(
+                        value as number,
+                        overview?.revenue.currency
+                      )} (${name})`
                     }
                   />
                   <Legend />
@@ -350,6 +365,7 @@ export default function AdminDashboardOverviewPage() {
           </div>
         </section>
 
+        {/* Users by Role Bar Chart */}
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <header className="mb-3 flex items-center justify-between">
             <div>
@@ -372,9 +388,19 @@ export default function AdminDashboardOverviewPage() {
                 <BarChart data={usersByRoleData} barSize={26}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
                   <XAxis dataKey="role" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(value: number) => formatNumber(value)} />
-                  <Bar dataKey="value" name="Users" fill="#f4a23b" radius={6} />
+                  <YAxis
+                    tickFormatter={(v) => formatNumber(v)}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip
+                    formatter={(value: any) => formatNumber(value as number)}
+                  />
+                  <Bar
+                    dataKey="value"
+                    name="Users"
+                    fill="#f4a23b"
+                    radius={6}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -382,6 +408,7 @@ export default function AdminDashboardOverviewPage() {
         </section>
       </div>
 
+      {/* Row 3: Subscription Timeline */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <header className="mb-3 flex items-center justify-between">
           <div>
@@ -404,8 +431,13 @@ export default function AdminDashboardOverviewPage() {
               <BarChart data={subscriptionTimeline} stackOffset="none">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value: number) => formatNumber(value)} />
+                <YAxis
+                  tickFormatter={(v) => formatNumber(v)}
+                  tick={{ fontSize: 11 }}
+                />
+                <Tooltip
+                  formatter={(value: any) => formatNumber(value as number)}
+                />
                 <Legend />
                 <Bar
                   dataKey="newSubs"
@@ -435,10 +467,13 @@ export default function AdminDashboardOverviewPage() {
         </div>
       </div>
 
+      {/* Row 4: Users Timeline */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <header className="mb-3 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Users timeline</h3>
+            <h3 className="text-lg font-semibold text-slate-900">
+              Users timeline
+            </h3>
             <p className="text-sm text-slate-500">
               New users and paid conversions
             </p>
@@ -455,8 +490,13 @@ export default function AdminDashboardOverviewPage() {
               <LineChart data={usersTimeline}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value: number) => formatNumber(value)} />
+                <YAxis
+                  tickFormatter={(v) => formatNumber(v)}
+                  tick={{ fontSize: 11 }}
+                />
+                <Tooltip
+                  formatter={(value: any) => formatNumber(value as number)}
+                />
                 <Legend />
                 <Line
                   type="monotone"

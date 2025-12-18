@@ -71,19 +71,9 @@ export const mainNav = [
   },
   {
     href: "/admin/agent-train-ai",
-    label: "Agent Train AI",
+    label: "Agent Training",
     icon: Users2,
-    description: "Manage & train AI agents",
-    children: [
-      {
-        href: "/admin/agent-train-ai/training-interface",
-        label: "Training Interface",
-      },
-      {
-        href: "/admin/agent-train-ai/learning-dashboard",
-        label: "Learning Dashboard",
-      },
-    ],
+    description: "Agent training control center",
   },
 
   {

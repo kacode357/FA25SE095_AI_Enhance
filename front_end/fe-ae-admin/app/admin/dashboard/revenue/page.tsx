@@ -146,11 +146,12 @@ export default function AdminDashboardRevenuePage() {
                     tick={{ fontSize: 11 }}
                     tickFormatter={(v) => formatNumber(v)}
                   />
+                  {/* Sửa lỗi type ở đây: dùng any cho value và key */}
                   <Tooltip
-                    formatter={(value: number, key) =>
+                    formatter={(value: any, key: any) =>
                       key === "orders"
-                        ? formatNumber(value)
-                        : formatCurrency(value, revenue?.currency)
+                        ? formatNumber(value as number)
+                        : formatCurrency(value as number, revenue?.currency)
                     }
                   />
                   <Legend />
@@ -212,13 +213,21 @@ export default function AdminDashboardRevenuePage() {
                     {revenueByTierData.map((entry, index) => (
                       <Cell
                         key={entry.tier}
-                        fill={["#7f71f4", "#f4a23b", "#10b981", "#22c55e", "#2563eb"][index % 5]}
+                        fill={
+                          ["#7f71f4", "#f4a23b", "#10b981", "#22c55e", "#2563eb"][
+                            index % 5
+                          ]
+                        }
                       />
                     ))}
                   </Pie>
+                  {/* Sửa lỗi type ở đây: dùng any cho value và name */}
                   <Tooltip
-                    formatter={(value: number, name) =>
-                      `${formatCurrency(value, revenue?.currency)} (${name})`
+                    formatter={(value: any, name: any) =>
+                      `${formatCurrency(
+                        value as number,
+                        revenue?.currency
+                      )} (${name})`
                     }
                   />
                   <Legend />

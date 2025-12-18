@@ -5,11 +5,6 @@ import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, Clock3, CreditCard, PieChart } from "lucide-react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
   LineChart as ReLineChart,
   Pie,
   PieChart as RePieChart,
@@ -18,6 +13,9 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  CartesianGrid,
+  Legend,
+  Line,
 } from "recharts";
 
 import { useAdminDashboardPayments } from "@/hooks/admin-dashboard/useAdminDashboardPayments";
@@ -102,9 +100,21 @@ export default function AdminDashboardPaymentsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Total Orders" value={formatNumber(payments?.totalOrders)} icon={CreditCard} />
-        <StatCard title="New Orders" value={formatNumber(payments?.newOrders)} icon={CreditCard} />
-        <StatCard title="Success Rate" value={formatPercent(payments?.successRate)} icon={PieChart} />
+        <StatCard
+          title="Total Orders"
+          value={formatNumber(payments?.totalOrders)}
+          icon={CreditCard}
+        />
+        <StatCard
+          title="New Orders"
+          value={formatNumber(payments?.newOrders)}
+          icon={CreditCard}
+        />
+        <StatCard
+          title="Success Rate"
+          value={formatPercent(payments?.successRate)}
+          icon={PieChart}
+        />
         <StatCard
           title="Avg Processing Time"
           value={`${formatProcessingTime(payments?.averageProcessingTime)} ms`}
@@ -136,11 +146,12 @@ export default function AdminDashboardPaymentsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
+                  {/* Sửa lỗi type ở đây: dùng any cho value và key */}
                   <Tooltip
-                    formatter={(value: number, key) =>
+                    formatter={(value: any, key: any) =>
                       key === "successRate"
-                        ? formatPercent(value)
-                        : formatNumber(value)
+                        ? formatPercent(value as number)
+                        : formatNumber(value as number)
                     }
                   />
                   <Legend />
@@ -202,11 +213,18 @@ export default function AdminDashboardPaymentsPage() {
                     {statusData.map((entry, index) => (
                       <Cell
                         key={entry.status}
-                        fill={["#7f71f4", "#22c55e", "#f97316", "#ef4444", "#0ea5e9"][index % 5]}
+                        fill={
+                          ["#7f71f4", "#22c55e", "#f97316", "#ef4444", "#0ea5e9"][
+                            index % 5
+                          ]
+                        }
                       />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatNumber(value)} />
+                  {/* Sửa lỗi type ở đây */}
+                  <Tooltip
+                    formatter={(value: any) => formatNumber(value as number)}
+                  />
                   <Legend />
                 </RePieChart>
               </ResponsiveContainer>

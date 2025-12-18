@@ -1,7 +1,10 @@
 // src/services/agent-training.websocket.ts
 
 import { io, Socket } from "socket.io-client";
-import type { WebSocketMessage } from "@/types/agent-training/training.types";
+import type {
+  WebSocketMessage,
+  WebSocketMessageType,
+} from "@/types/agent-training/training.types";
 
 const WS_URL =
   process.env.NEXT_PUBLIC_TRAINING_WS_URL ||
@@ -14,7 +17,10 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 
 class WebSocketService {
   private socket: Socket | null = null;
-  private messageHandlers: Map<string, Set<(data: any) => void>> = new Map();
+  private messageHandlers: Map<
+    WebSocketMessageType | "all",
+    Set<(data: any) => void>
+  > = new Map();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = MAX_RECONNECT_ATTEMPTS;
 
@@ -61,6 +67,50 @@ class WebSocketService {
       this.handleMessage({ type: "learning_cycle_complete", ...data });
     });
 
+    this.socket.on("training_queued", (data: any) => {
+      this.handleMessage({ type: "training_queued", ...data });
+    });
+
+    this.socket.on("training_started", (data: any) => {
+      this.handleMessage({ type: "training_started", ...data });
+    });
+
+    this.socket.on("training_completed", (data: any) => {
+      this.handleMessage({ type: "training_completed", ...data });
+    });
+
+    this.socket.on("training_failed", (data: any) => {
+      this.handleMessage({ type: "training_failed", ...data });
+    });
+
+    this.socket.on("version_committed", (data: any) => {
+      this.handleMessage({ type: "version_committed", ...data });
+    });
+
+    this.socket.on("version_created", (data: any) => {
+      this.handleMessage({ type: "version_created", ...data });
+    });
+
+    this.socket.on("buffer_discarded", (data: any) => {
+      this.handleMessage({ type: "buffer_discarded", ...data });
+    });
+
+    this.socket.on("buffer_created", (data: any) => {
+      this.handleMessage({ type: "buffer_created", ...data });
+    });
+
+    this.socket.on("buffer_ready", (data: any) => {
+      this.handleMessage({ type: "buffer_ready", ...data });
+    });
+
+    this.socket.on("queue_updated", (data: any) => {
+      this.handleMessage({ type: "queue_updated", ...data });
+    });
+
+    this.socket.on("commit_progress", (data: any) => {
+      this.handleMessage({ type: "commit_progress", ...data });
+    });
+
     this.socket.on("connect_error", (error) => {
       if (process.env.NODE_ENV === "development") {
         console.error("Training WebSocket connection error:", error);
@@ -83,14 +133,14 @@ class WebSocketService {
     this.reconnectAttempts = 0;
   }
 
-  on(eventType: string, handler: (data: any) => void) {
+  on(eventType: WebSocketMessageType | "all", handler: (data: any) => void) {
     if (!this.messageHandlers.has(eventType)) {
       this.messageHandlers.set(eventType, new Set());
     }
     this.messageHandlers.get(eventType)!.add(handler);
   }
 
-  off(eventType: string, handler: (data: any) => void) {
+  off(eventType: WebSocketMessageType | "all", handler: (data: any) => void) {
     const handlers = this.messageHandlers.get(eventType);
     if (handlers) {
       handlers.delete(handler);
@@ -111,6 +161,50 @@ class WebSocketService {
 
   isConnected(): boolean {
     return this.socket?.connected || false;
+  }
+
+  joinRoom(roomName: string) {
+    if (this.socket?.connected) {
+      this.socket.emit("join_room", roomName);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`Joining room: ${roomName}`);
+      }
+    }
+  }
+
+  leaveRoom(roomName: string) {
+    if (this.socket?.connected) {
+      this.socket.emit("leave_room", roomName);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`Leaving room: ${roomName}`);
+      }
+    }
+  }
+
+  subscribeDashboard() {
+    if (this.socket?.connected) {
+      this.socket.emit("subscribe_dashboard");
+      if (process.env.NODE_ENV === "development") {
+        console.log("Subscribed to dashboard updates");
+      }
+    }
+  }
+
+  joinAdminWorkspace(adminId: string) {
+    if (this.socket?.connected) {
+      this.socket.emit("join_admin_workspace", adminId);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`Joined admin workspace: ${adminId}`);
+      }
+    }
+  }
+
+  joinTrainingSession(jobId: string) {
+    this.joinRoom(`training_${jobId}`);
+  }
+
+  leaveTrainingSession(jobId: string) {
+    this.leaveRoom(`training_${jobId}`);
   }
 }
 

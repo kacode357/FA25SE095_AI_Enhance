@@ -129,7 +129,10 @@ export default function AdminDashboardSubscriptionsPage() {
                     tickFormatter={(v) => formatNumber(v)}
                     tick={{ fontSize: 11 }}
                   />
-                  <Tooltip formatter={(value: number) => formatNumber(value)} />
+                  {/* Sửa lỗi type ở đây */}
+                  <Tooltip
+                    formatter={(value: any) => formatNumber(value as number)}
+                  />
                   <Bar
                     dataKey="total"
                     name="Active"
@@ -197,8 +200,14 @@ export default function AdminDashboardSubscriptionsPage() {
               <BarChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value: number) => formatNumber(value)} />
+                <YAxis
+                  tickFormatter={(v) => formatNumber(v)}
+                  tick={{ fontSize: 11 }}
+                />
+                {/* Sửa lỗi type ở đây */}
+                <Tooltip
+                  formatter={(value: any) => formatNumber(value as number)}
+                />
                 <Legend />
                 <Bar
                   dataKey="newSubs"

@@ -89,10 +89,26 @@ export default function AdminDashboardUsersPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Total Users" value={formatNumber(users?.totalUsers)} icon={UsersIcon} />
-        <StatCard title="New Users" value={formatNumber(users?.newUsers)} icon={UserRound} />
-        <StatCard title="Active Users" value={formatNumber(users?.activeUsers)} icon={Activity} />
-        <StatCard title="Conversion Rate" value={formatPercent(users?.conversionRate)} icon={Activity} />
+        <StatCard
+          title="Total Users"
+          value={formatNumber(users?.totalUsers)}
+          icon={UsersIcon}
+        />
+        <StatCard
+          title="New Users"
+          value={formatNumber(users?.newUsers)}
+          icon={UserRound}
+        />
+        <StatCard
+          title="Active Users"
+          value={formatNumber(users?.activeUsers)}
+          icon={Activity}
+        />
+        <StatCard
+          title="Conversion Rate"
+          value={formatPercent(users?.conversionRate)}
+          icon={Activity}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -118,8 +134,14 @@ export default function AdminDashboardUsersPage() {
                 <BarChart data={usersByTierData} barSize={26}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
                   <XAxis dataKey="tier" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(value: number) => formatNumber(value)} />
+                  <YAxis
+                    tickFormatter={(v) => formatNumber(v)}
+                    tick={{ fontSize: 11 }}
+                  />
+                  {/* Sửa lỗi type ở đây */}
+                  <Tooltip
+                    formatter={(value: any) => formatNumber(value as number)}
+                  />
                   <Bar
                     dataKey="total"
                     name="Users"
@@ -138,9 +160,7 @@ export default function AdminDashboardUsersPage() {
               <h3 className="text-lg font-semibold text-slate-900">
                 Users by Role
               </h3>
-              <p className="text-sm text-slate-500">
-                Breakdown across roles
-              </p>
+              <p className="text-sm text-slate-500">Breakdown across roles</p>
             </div>
             <UserRound className="h-5 w-5 text-slate-500" />
           </header>
@@ -154,8 +174,14 @@ export default function AdminDashboardUsersPage() {
                 <BarChart data={usersByRoleData} barSize={26}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
                   <XAxis dataKey="role" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(value: number) => formatNumber(value)} />
+                  <YAxis
+                    tickFormatter={(v) => formatNumber(v)}
+                    tick={{ fontSize: 11 }}
+                  />
+                  {/* Sửa lỗi type ở đây */}
+                  <Tooltip
+                    formatter={(value: any) => formatNumber(value as number)}
+                  />
                   <Bar
                     dataKey="total"
                     name="Users"
@@ -227,8 +253,14 @@ export default function AdminDashboardUsersPage() {
                 <ReLineChart data={timelineData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => formatNumber(v)} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(value: number) => formatNumber(value)} />
+                  <YAxis
+                    tickFormatter={(v) => formatNumber(v)}
+                    tick={{ fontSize: 11 }}
+                  />
+                  {/* Sửa lỗi type ở đây */}
+                  <Tooltip
+                    formatter={(value: any) => formatNumber(value as number)}
+                  />
                   <Legend />
                   <Line
                     type="monotone"
