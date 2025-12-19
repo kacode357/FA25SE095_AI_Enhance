@@ -14,6 +14,18 @@ function formatHeader(key: string) {
     .trim();
 }
 
+function getImageUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return null;
+  try {
+    const url = new URL(trimmed);
+    if (/\.(jpe?g|png|gif|webp)$/i.test(url.pathname)) return url.toString();
+  } catch {
+    if (/\.(jpe?g|png|gif|webp)(\?.*)?(#.*)?$/i.test(trimmed)) return trimmed;
+  }
+  return null;
+}
+
 function formatCellValue(value: any): React.ReactNode {
   if (value === null || value === undefined) {
     return <span className="text-slate-300 italic">-</span>;
@@ -41,11 +53,12 @@ function formatCellValue(value: any): React.ReactNode {
   if (typeof value === "object") return JSON.stringify(value);
 
   const strVal = String(value);
-  if (strVal.match(/\.(jpeg|jpg|gif|png|webp)$/i) && strVal.startsWith("http")) {
+  const imageUrl = getImageUrl(strVal);
+  if (imageUrl) {
     return (
-      <a href={strVal} target="_blank" rel="noreferrer" className="inline-flex items-center">
+      <a href={imageUrl} target="_blank" rel="noreferrer" className="inline-flex items-center">
         <img
-          src={strVal}
+          src={imageUrl}
           alt="preview"
           className="h-14 w-14 rounded-md border border-[var(--border)] object-cover shadow-sm"
           referrerPolicy="no-referrer"
