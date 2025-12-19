@@ -248,7 +248,7 @@ export default function AiCheckModal({ open, onClose, loading, result, assignmen
                                         disabled={loading || !onReassess}
                                         className={`inline-flex items-center btn btn-green-slow gap-2 rounded-md px-3 py-1.5 text-sm font-medium border ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50'}`}
                                     >
-                                        Re-assess
+                                        Evaluate
                                     </button>
                                 </div>
                             </Dialog.Panel>

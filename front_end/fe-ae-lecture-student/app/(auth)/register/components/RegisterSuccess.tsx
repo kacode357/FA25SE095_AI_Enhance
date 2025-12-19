@@ -22,7 +22,7 @@ export default function RegisterSuccessPage() {
     }, []);
 
     const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "—";
-    const roleLabel = user?.role === 1 ? "Lecturer" : user?.role === 2 ? "Student" : "—";
+    const roleLabel = user?.role === 1 ? "Lecturer" : user?.role === 0 ? "Student" : "—";
 
     const infoItems = [
         { icon: User, label: "Full name", value: fullName },

@@ -31,7 +31,7 @@ export default function VerifyEmailPage() {
           ? "Authentication successful!"
           : "Authentication failed"
       }
-      footer={<Link href="/" className="underline">Back to login</Link>}
+      footer={<Link href="/login" className="underline">Back to login</Link>}
     >
       <motion.div
         initial={{ opacity: 0, y: 10 }}
