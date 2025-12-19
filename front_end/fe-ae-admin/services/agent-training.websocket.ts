@@ -8,7 +8,6 @@ import type {
 
 const WS_URL =
   process.env.NEXT_PUBLIC_TRAINING_WS_URL ||
-  process.env.NEXT_PUBLIC_CRAWL_BASE_URL_HUB ||
   "http://localhost:8091";
 
 const RECONNECTION_DELAY = 1000;
