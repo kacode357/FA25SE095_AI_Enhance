@@ -118,7 +118,19 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
 
     const shouldIgnoreWheel = (target: EventTarget | null) => {
       if (!(target instanceof Element)) return false;
-      return Boolean(target.closest("[data-prevent-tab-hide=\"true\"]"));
+      return Boolean(
+        target.closest(
+          [
+            "[data-prevent-tab-hide=\"true\"]",
+            "[data-slot=\"dialog-content\"]",
+            "[data-slot=\"alert-dialog-content\"]",
+            "[data-slot=\"dialog-overlay\"]",
+            "[data-slot=\"alert-dialog-overlay\"]",
+            "[role=\"dialog\"]",
+            "[role=\"alertdialog\"]",
+          ].join(",")
+        )
+      );
     };
 
     const handleWheel = (event: WheelEvent) => {

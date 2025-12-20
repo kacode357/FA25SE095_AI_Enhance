@@ -16,13 +16,7 @@ import {
 
 import { useGetMyReports } from "@/hooks/reports/useGetMyReports";
 import type { ReportListItem } from "@/types/reports/reports.response";
-
-const dt = (s?: string | null) => {
-  if (!s) return "—";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleString("en-GB"); // DD/MM/YYYY, HH:mm:ss
-};
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 const headerButtonClass = "btn bg-white border border-brand text-nav hover:text-nav-active";
 
@@ -173,11 +167,11 @@ export default function ReportsCreatePage() {
                   <div className="mt-1 text-xs text-slate-600 flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1">
                       <CalendarDays className="w-3 h-3" />
-                      {dt(r.createdAt)}
+                      {formatDateTimeVN(r.createdAt)}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {r.submittedAt ? `Submitted: ${dt(r.submittedAt)}` : "Draft"}
+                      {r.submittedAt ? `Submitted: ${formatDateTimeVN(r.submittedAt)}` : "Draft"}
                     </span>
                   </div>
                   <div className="mt-2 text-xs text-slate-700">

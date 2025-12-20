@@ -6,13 +6,7 @@ import { CalendarDays, Gauge, Zap, Crown, Loader2 } from "lucide-react";
 
 import { useGetSubscription } from "@/hooks/subscription/useGetSubscription";
 import type { SubscriptionProfile } from "@/types/subscription/subscription.response";
-
-const dt = (s: string | null) => {
-  if (!s) return "-";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleDateString();
-};
+import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
 
 export default function MySubscriptionPage() {
   const router = useRouter();
@@ -177,7 +171,7 @@ export default function MySubscriptionPage() {
                   <Zap className="w-3 h-3" />
                   Quota resets on{" "}
                   <span className="font-medium">
-                    {dt(profile.quotaResetDate)}
+                    {formatDateOnlyVN(profile.quotaResetDate)}
                   </span>
                 </p>
               </div>
@@ -195,7 +189,7 @@ export default function MySubscriptionPage() {
                       Start date
                     </span>
                     <span className="font-medium">
-                      {dt(profile.subscriptionStartDate)}
+                      {formatDateOnlyVN(profile.subscriptionStartDate)}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
@@ -203,7 +197,7 @@ export default function MySubscriptionPage() {
                       End date
                     </span>
                     <span className="font-medium">
-                      {dt(profile.subscriptionEndDate)}
+                      {formatDateOnlyVN(profile.subscriptionEndDate)}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
@@ -211,7 +205,7 @@ export default function MySubscriptionPage() {
                       Last login
                     </span>
                     <span className="font-medium">
-                      {dt(profile.lastLoginAt)}
+                      {formatDateOnlyVN(profile.lastLoginAt)}
                     </span>
                   </div>
                 </div>

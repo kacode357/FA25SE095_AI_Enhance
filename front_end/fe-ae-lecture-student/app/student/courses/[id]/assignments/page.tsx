@@ -17,6 +17,7 @@ import {
 import { useMyAssignments } from "@/hooks/assignment/useMyAssignments";
 import { AssignmentStatus } from "@/config/classroom-service/assignment-status.enum";
 import { CourseMiniHeader } from "../components/CourseMiniHeader";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 // Đã xóa import parseCourseName
 
 /** Map enum -> CSS class (match app/styles/assignment-status.css) */
@@ -200,13 +201,7 @@ export default function CourseAssignmentsPage() {
                     const href = `/student/courses/${courseId}/assignments/${a.id}`;
 
                     const dueLabel = a.dueDate
-                      ? new Date(a.dueDate).toLocaleString("en-GB", {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
+                      ? formatDateTimeVN(a.dueDate)
                       : "—";
 
                     const showDaysLeft =

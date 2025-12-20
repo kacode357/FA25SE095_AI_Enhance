@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { useStudentAnnouncements } from "@/hooks/announcements/useStudentAnnouncements";
-import { parseServerDate, dayLabel, timeHHmm } from "@/utils/chat/time";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 export default function StudentHomePage() {
   const {
@@ -74,10 +74,8 @@ export default function StudentHomePage() {
   };
 
   const formatTime = (ts: string) => {
-    const d = parseServerDate(ts);
-    if (Number.isNaN(d.getTime())) return "";
-    return `${dayLabel(d)} • ${timeHHmm(d)}`;
-  };
+  return formatDateTimeVN(ts);
+};
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">

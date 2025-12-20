@@ -203,6 +203,17 @@ export const useCrawlerConversationState = ({
     [historyIndex, loadHistoryEntry]
   );
 
+  const startNewConversation = useCallback(() => {
+    const newConversationId = generateGuid();
+    setConversationId(newConversationId);
+    setSelectedConversationId(newConversationId);
+    setChatMessages([]);
+    setActiveJobId(null);
+    setJobHistory([]);
+    setHistoryIndex(-1);
+    return newConversationId;
+  }, []);
+
   const selectConversation = useCallback(
     async (convId: string) => {
       if (!convId) return null;
@@ -235,5 +246,6 @@ export const useCrawlerConversationState = ({
     handleNavigateHistory,
     loadHistoryEntry,
     selectConversation,
+    startNewConversation,
   };
 };

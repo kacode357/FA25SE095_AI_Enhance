@@ -3,11 +3,12 @@
 import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSmartCrawlerJobResults } from "@/hooks/smart-crawler/useSmartCrawlerJobResults";
-import CrawlerResultsSection from "../components/CrawlerResultsSection";
+import CrawlerResultsTabs from "../components/CrawlerResultsTabs";
 
 const DataContent = () => {
   const searchParams = useSearchParams();
   const jobId = searchParams.get("jobId");
+  const conversationId = searchParams.get("conversationId");
 
   const { fetchJobResults, loading, results } = useSmartCrawlerJobResults();
 
@@ -44,7 +45,11 @@ const DataContent = () => {
             Missing job id. Please open this page from the crawler workspace after a crawl completes.
           </div>
         ) : (
-          <CrawlerResultsSection results={results} resultsLoading={loading} />
+          <CrawlerResultsTabs
+            conversationId={conversationId}
+            results={results}
+            resultsLoading={loading}
+          />
         )}
       </div>
     </div>

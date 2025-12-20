@@ -5,6 +5,7 @@ import { useMemo } from "react";
 
 import type { SmartCrawlJobResultItem } from "@/types/smart-crawler/smart-crawler.response";
 import type { JobHistoryEntry } from "../crawler-types";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 function formatHeader(key: string) {
   return key
@@ -33,6 +34,31 @@ function formatCellValue(value: any): React.ReactNode {
   if (typeof value === "boolean") return value ? "True" : "False";
 
   if (Array.isArray(value)) {
+    const imageUrls = value
+      .map((item) => (typeof item === "string" ? getImageUrl(item) : null))
+      .filter((item): item is string => Boolean(item));
+
+    if (imageUrls.length > 0) {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {imageUrls.slice(0, 3).map((url, idx) => (
+            <a key={`${url}-${idx}`} href={url} target="_blank" rel="noreferrer">
+              <img
+                src={url}
+                alt="preview"
+                className="h-10 w-10 rounded border border-[var(--border)] object-cover"
+                referrerPolicy="no-referrer"
+                loading="lazy"
+              />
+            </a>
+          ))}
+          {imageUrls.length > 3 && (
+            <span className="text-[10px] text-slate-400">+{imageUrls.length - 3}</span>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-wrap gap-1">
         {value.slice(0, 3).map((item, idx) => (
@@ -127,7 +153,7 @@ export default function CrawlerResultsSection({
     const urlLabel = truncateUrl(url);
 
     const timeLabel = entry.timestamp
-      ? new Date(entry.timestamp).toLocaleString()
+      ? formatDateTimeVN(entry.timestamp)
       : "";
 
     const fallback =

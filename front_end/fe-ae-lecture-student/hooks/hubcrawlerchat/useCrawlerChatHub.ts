@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 
 /** ==== Types map từ C# DTO qua FE ==== */
@@ -23,6 +23,8 @@ export type ChatMessageDto = {
   content: string;
   groupId?: string | null;
   assignmentId?: string | null;
+  includeAssignmentContext?: boolean;
+  includeHistory?: boolean;
   messageType?: MessageType;
   crawlJobId?: string | null;
   timestamp?: string;
@@ -48,6 +50,7 @@ export type CrawlJobStatusResponse = any;
 type Options = {
   baseUrl?: string;
   getAccessToken: () => Promise<string> | string;
+  autoConnect?: boolean;
 
   // ===== Callbacks: server -> client =====
 
@@ -108,6 +111,7 @@ export function useCrawlerChatHub({
   baseUrl =   process.env.NEXT_PUBLIC_COURSE_BASE_URL_HUB ||"",
      
   getAccessToken,
+  autoConnect = true,
   onConversationJoined,
   onConversationLeft,
   onGroupWorkspaceJoined,
@@ -332,7 +336,9 @@ export function useCrawlerChatHub({
     } catch (e: any) {
       const rawMsg: string = e?.message ?? "";
       const isStrictModeStop =
-        rawMsg.includes("Failed to start the HttpConnection before stop() was called");
+        rawMsg.includes(
+          "Failed to start the HttpConnection before stop() was called"
+        ) || rawMsg.includes("The connection was stopped during negotiation.");
 
       if (!isStrictModeStop) {
         const friendlyMsg = rawMsg || "Failed to connect CrawlerChatHub";
@@ -362,6 +368,26 @@ export function useCrawlerChatHub({
       setConnectionId(null);
     }
   }, []);
+
+  useEffect(() => {
+    if (!autoConnect) return;
+    let active = true;
+    void (async () => {
+      if (!active) return;
+      try {
+        await connect();
+      } catch (err) {
+        if (active) {
+          console.error("[CrawlerChatHub] auto connect error:", err);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+      disconnect().catch(() => {});
+    };
+  }, [autoConnect, connect, disconnect]);
 
   // ===== wrapper call hub methods (client -> server) =====
 
@@ -409,8 +435,10 @@ export function useCrawlerChatHub({
 
     // đảm bảo default MessageType
     const payload: ChatMessageDto = {
-      messageType: MessageType.UserMessage,
       ...message,
+      messageType: message.messageType ?? MessageType.UserMessage,
+      includeAssignmentContext: message.includeAssignmentContext ?? true,
+      includeHistory: message.includeHistory ?? true,
     };
 
     await conn.invoke("SendCrawlerMessage", payload);

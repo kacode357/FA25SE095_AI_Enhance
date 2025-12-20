@@ -53,3 +53,31 @@ export function formatDateOnlyVN(value?: string | null): string {
     return d.toLocaleDateString("vi-VN");
   }
 }
+
+/**
+ * Format time (HH:mm) in Vietnam timezone.
+ */
+export function formatTimeOnlyVN(value?: string | null): string {
+  if (!value) return "?";
+
+  let dateString = value;
+  if (typeof dateString === "string" && !dateString.endsWith("Z") && !dateString.includes("+")) {
+    dateString += "Z";
+  }
+
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) {
+    return value ?? "?";
+  }
+
+  try {
+    return d.toLocaleTimeString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return d.toLocaleTimeString("vi-VN");
+  }
+}

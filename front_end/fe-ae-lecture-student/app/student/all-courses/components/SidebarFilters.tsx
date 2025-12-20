@@ -5,6 +5,7 @@ import { KeyboardEvent } from "react";
 import { Search } from "lucide-react";
 import type { TermResponse } from "@/types/term/term.response";
 import type { LecturerItem } from "@/types/lecturers/lecturer.response";
+import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
 
 type Props = {
   courseCode: string;
@@ -26,13 +27,8 @@ type Props = {
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "";
-
-  const year = d.getUTCFullYear();
-  if (year === 1) return ""; // 0001-01-01 => ẩn
-
-  return d.toLocaleDateString("en-GB"); // 17/11/2025
+  if (dateStr.startsWith("0001")) return "";
+  return formatDateOnlyVN(dateStr);
 }
 
 function getInitials(name?: string | null) {

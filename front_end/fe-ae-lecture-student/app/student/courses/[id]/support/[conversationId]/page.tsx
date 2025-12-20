@@ -31,8 +31,8 @@ import {
   buildChatTimeline,
   ChatTimelineItem,
   parseServerDate,
-  timeHHmm,
 } from "@/utils/chat/time";
+import { formatTimeOnlyVN } from "@/utils/datetime/format-datetime";
 
 import { useChatDeleteMessage } from "@/hooks/chat/useChatDeleteMessage";
 
@@ -594,7 +594,7 @@ export default function SupportChatPage() {
 
                         {it.showTime && (
                           <div className="mt-1 text-right text-[10px] opacity-70">
-                            {timeHHmm(parseServerDate(it.m.sentAt))}
+                            {formatTimeOnlyVN(it.m.sentAt)}
                           </div>
                         )}
                       </div>

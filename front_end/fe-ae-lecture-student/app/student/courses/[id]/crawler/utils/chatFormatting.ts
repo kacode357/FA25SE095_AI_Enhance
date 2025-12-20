@@ -7,8 +7,9 @@ export type RenderedMessageContent = {
   images: string[];
 };
 
-const IMAGE_REGEX =
-  /(https?:\/\/[^\s<>'"]+\.(?:png|jpe?g|gif|webp|svg))(?:\?\S*)?/gi;
+const MARKDOWN_IMAGE_REGEX = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/gi;
+const IMAGE_URL_REGEX =
+  /(https?:\/\/[^\s<>'"()]+\.(?:png|jpe?g|gif|webp|svg))(?:\?[^\s<>'"]*)?/gi;
 
 function escapeHtml(text: string) {
   return text
@@ -17,15 +18,46 @@ function escapeHtml(text: string) {
     .replace(/>/g, "&gt;");
 }
 
-function replaceImagesWithPlaceholders(value: string, images: string[]) {
+function stripImagesLabel(line: string) {
+  const trimmed = line.trim();
+  if (!trimmed) return line;
+  const normalized = trimmed
+    .replace(/^[-*+]\s*/, "")
+    .replace(/:$/, "")
+    .trim()
+    .toLowerCase();
+  if (normalized === "images" || normalized === "image") return "";
+  return line;
+}
+
+type InlineImage = {
+  src: string;
+  alt?: string;
+};
+
+function replaceImagesWithPlaceholders(value: string, images: InlineImage[]) {
   let text = value;
-  text = text.replace(IMAGE_REGEX, (match) => {
+
+  text = text.replace(MARKDOWN_IMAGE_REGEX, (_, altText, url) => {
+    const safe = DOMPurify.sanitize(url, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    if (!safe) return "";
+    const cleanedAlt = DOMPurify.sanitize(altText || "", {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+    }).trim();
+    const key = `%%IMG${images.length}%%`;
+    images.push({ src: safe, alt: cleanedAlt || undefined });
+    return key;
+  });
+
+  text = text.replace(IMAGE_URL_REGEX, (match) => {
     const safe = DOMPurify.sanitize(match, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
     if (!safe) return "";
     const key = `%%IMG${images.length}%%`;
-    images.push(safe);
+    images.push({ src: safe });
     return key;
   });
+
   return text;
 }
 
@@ -46,11 +78,31 @@ function applyInlineFormatting(value: string) {
 }
 
 function buildSanitizedHtml(content: string) {
-  const images: string[] = [];
+  const images: InlineImage[] = [];
   const lines = content.split(/\r?\n/);
   const blocks: string[] = [];
   let activeList: { type: "ul" | "ol"; items: string[] } | null = null;
   let pendingNestedItems: string[] | null = null;
+  const imageOnlyRegex = /^(?:%%IMG\d+%%\s*)+$/;
+
+  const appendToLastOrderedItem = (html: string) => {
+    if (!activeList || activeList.type !== "ol" || !activeList.items.length) {
+      return false;
+    }
+
+    if (pendingNestedItems) {
+      const nestedHtml = `<ul>${pendingNestedItems
+        .map((item) => `<li>${item}</li>`)
+        .join("")}</ul>`;
+      const lastIdx = activeList.items.length - 1;
+      activeList.items[lastIdx] = `${activeList.items[lastIdx]}${nestedHtml}`;
+      pendingNestedItems = null;
+    }
+
+    const lastIdx = activeList.items.length - 1;
+    activeList.items[lastIdx] = `${activeList.items[lastIdx]}${html}`;
+    return true;
+  };
 
   const flushList = () => {
     if (!activeList) return;
@@ -75,12 +127,24 @@ function buildSanitizedHtml(content: string) {
   };
 
   lines.forEach((line) => {
-    const withPlaceholders = replaceImagesWithPlaceholders(line, images);
+    const sanitizedLine = stripImagesLabel(line);
+    if (!sanitizedLine) return;
+    const withPlaceholders = replaceImagesWithPlaceholders(sanitizedLine, images);
     const trimmed = withPlaceholders.trim();
     const orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
     const bulletMatch = trimmed.match(/^[-*+]\s+(.*)/);
 
     if (orderedMatch) {
+      if (imageOnlyRegex.test(orderedMatch[2].trim())) {
+        const imageBlock = `<div class="inline-image-block">${applyInlineFormatting(
+          orderedMatch[2]
+        )}</div>`;
+        if (!appendToLastOrderedItem(imageBlock)) {
+          flushList();
+          blocks.push(imageBlock);
+        }
+        return;
+      }
       if (activeList?.type === "ol") {
         if (pendingNestedItems) {
           const lastIdx = activeList.items.length - 1;
@@ -99,10 +163,22 @@ function buildSanitizedHtml(content: string) {
     }
 
     if (bulletMatch) {
+      if (imageOnlyRegex.test(bulletMatch[1].trim())) {
+        const imageBlock = `<div class="inline-image-block">${applyInlineFormatting(
+          bulletMatch[1]
+        )}</div>`;
+        if (!appendToLastOrderedItem(imageBlock)) {
+          if (activeList?.type === "ul") {
+            flushList();
+          }
+          blocks.push(imageBlock);
+        }
+        return;
+      }
       if (activeList?.type === "ol") {
         if (!pendingNestedItems) pendingNestedItems = [];
         pendingNestedItems.push(applyInlineFormatting(bulletMatch[1]));
-        return;
+      return;
       }
       if (!activeList || activeList.type !== "ul") {
         flushList();
@@ -125,6 +201,17 @@ function buildSanitizedHtml(content: string) {
       return;
     }
 
+    if (activeList) {
+      // Append as continuation of current list item (preserve numbering)
+      if (activeList.type === "ol") {
+        appendToLastOrderedItem(`<br/>${applyInlineFormatting(trimmed)}`);
+      } else if (activeList.items.length) {
+        const lastIdx = activeList.items.length - 1;
+        activeList.items[lastIdx] = `${activeList.items[lastIdx]}<br/>${applyInlineFormatting(trimmed)}`;
+      }
+      return;
+    }
+
     flushList();
     blocks.push(`<p>${applyInlineFormatting(trimmed)}</p>`);
   });
@@ -133,26 +220,33 @@ function buildSanitizedHtml(content: string) {
 
   const htmlRaw = blocks.length
     ? blocks.join("")
-    : `<p>${applyInlineFormatting(replaceImagesWithPlaceholders(content, images))}</p>`;
+    : content.trim()
+    ? `<p>${applyInlineFormatting(replaceImagesWithPlaceholders(content, images))}</p>`
+    : "";
 
   const htmlWithImages = htmlRaw.replace(/%%IMG(\d+)%%/g, (_, idxStr) => {
     const idx = Number(idxStr);
-    const src = images[idx];
-    if (!src) return "";
-    return `<img src="${src}" alt="message-image" loading="lazy" referrerpolicy="no-referrer" data-inline-img="true" />`;
+    const img = images[idx];
+    if (!img?.src) return "";
+    const caption = img.alt
+      ? `<figcaption>${escapeHtml(img.alt)}</figcaption>`
+      : "";
+    return `<figure class="inline-image"><img src="${img.src}" alt="${escapeHtml(
+      img.alt || "message-image"
+    )}" loading="lazy" referrerpolicy="no-referrer" data-inline-img="true" />${caption}</figure>`;
   });
 
   const sanitized = DOMPurify.sanitize(htmlWithImages, {
-    ADD_TAGS: ["img"],
-    ADD_ATTR: ["loading", "referrerpolicy", "data-inline-img"],
+    ADD_TAGS: ["img", "figure", "figcaption", "div"],
+    ADD_ATTR: ["loading", "referrerpolicy", "data-inline-img", "class"],
   });
 
   return { html: sanitized, images };
 }
 
 export function renderMessageContent(content: string): RenderedMessageContent {
-  const trimmed = (content || "").trim();
-  const { html, images } = buildSanitizedHtml(content || "");
+  const raw = content || "";
+  const { html, images } = buildSanitizedHtml(raw);
 
-  return { html, images };
+  return { html, images: images.map((img) => img.src) };
 }

@@ -6,17 +6,11 @@ import { Clock, Loader2, AlertCircle, Info } from "lucide-react";
 
 import { useGetReportHistoryVersion } from "@/hooks/reports/useGetReportHistoryVersion";
 import type { GetReportHistoryVersionResponse } from "@/types/reports/reports.response";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 type Props = {
   reportId: string;
   version: number | null;
-};
-
-const dt = (s?: string | null) => {
-  if (!s) return "";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s || "";
-  return d.toLocaleString("en-GB");
 };
 
 export default function ReportVersionDetail({ reportId, version }: Props) {
@@ -116,7 +110,7 @@ export default function ReportVersionDetail({ reportId, version }: Props) {
             <div className="flex flex-col items-end text-[11px] text-slate-500 gap-1">
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                <span>{dt(detail.changedAt)}</span>
+                <span>{formatDateTimeVN(detail.changedAt)}</span>
               </div>
             </div>
           </div>

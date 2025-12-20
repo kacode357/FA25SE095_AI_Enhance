@@ -134,6 +134,37 @@ header.fixed, header {
   box-shadow: 0 6px 24px rgba(2, 6, 23, 0.06);
 }
 
+/* Report submit cards */
+.report-submit-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+.report-submit-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(127, 113, 244, 0.9), rgba(244, 162, 59, 0.9));
+}
+.report-submit-card--submitted {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(255, 255, 255, 0.96));
+  border-color: var(--border);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+}
+.report-submit-card--submitted::before {
+  background: linear-gradient(90deg, rgba(127, 113, 244, 0.8), rgba(16, 185, 129, 0.6));
+}
+.report-submit-divider {
+  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+}
+.report-submit-note {
+  color: rgba(5, 150, 105, 0.9);
+}
+
 /* Dashboard glassy cards */
 .dashboard-ghost {
   position: relative;
@@ -564,7 +595,6 @@ header.fixed, header {
 .thinking-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid rgba(127, 113, 244, 0.4);
@@ -580,32 +610,20 @@ header.fixed, header {
 .thinking-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55), #ffffff, rgba(255, 255, 255, 0.55));
+  background-size: 200% 100%;
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-shimmer 1.3s linear infinite;
 }
 
-.thinking-loader {
-  position: relative;
-  width: 72px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
-  overflow: hidden;
-}
-
-.thinking-loader::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 40%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
-  animation: thinking-sweep 1.4s linear infinite;
-}
-
-@keyframes thinking-sweep {
+@keyframes thinking-shimmer {
   0% {
-    transform: translateX(-100%);
+    background-position: 0% 50%;
   }
   100% {
-    transform: translateX(150%);
+    background-position: 200% 50%;
   }
 }

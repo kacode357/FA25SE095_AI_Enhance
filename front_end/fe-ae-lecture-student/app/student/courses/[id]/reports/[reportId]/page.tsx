@@ -1,4 +1,4 @@
-// app/student/courses/[id]/reports/[reportId]/page.tsx
+﻿// app/student/courses/[id]/reports/[reportId]/page.tsx
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -30,17 +30,20 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import ReportSubmissionEditor from "@/app/student/courses/[id]/reports/components/ReportSubmissionEditor";
 import ReportFullHistory from "../components/ReportFullHistory";
-
-/** ============ utils ============ */
-const dt = (s?: string | null) => {
-  if (!s) return "";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleString("en-GB");
-};
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 const getAccessToken = async (): Promise<string> =>
   getSavedAccessToken() || "";
@@ -63,6 +66,7 @@ export default function ReportDetailPage() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [showFullHistory, setShowFullHistory] = useState(false);
+  const [revertDialogOpen, setRevertDialogOpen] = useState(false);
 
   const refetchReport = useCallback(async () => {
     if (!reportId) return;
@@ -110,7 +114,7 @@ export default function ReportDetailPage() {
     return (
       <div className="py-16 text-center">
         <p className="text-[var(--text-muted)]">
-          Không tìm thấy <b>reportId</b> trong URL.
+          KhÃ´ng tÃ¬m tháº¥y <b>reportId</b> trong URL.
         </p>
         <button
           className="btn mt-4 bg-white border border-brand text-nav hover:text-nav-active"
@@ -127,7 +131,7 @@ export default function ReportDetailPage() {
     return (
       <div className="flex items-center justify-center h-[60vh] text-nav">
         <Loader2 className="w-6 h-6 mr-2 animate-spin text-nav-active" />
-        <span className="text-sm">Loading report…</span>
+        <span className="text-sm">Loading reportâ€¦</span>
       </div>
     );
   }
@@ -159,7 +163,7 @@ export default function ReportDetailPage() {
         : "";
 
   const handleOpenHistory = () => {
-    setShowFullHistory(false); // vào latest trước
+    setShowFullHistory(false); // vÃ o latest trÆ°á»›c
     setTimelineOpen(true);
   };
 
@@ -183,22 +187,22 @@ export default function ReportDetailPage() {
             <h1 className="text-3xl font-bold text-nav flex items-center gap-2">
               <FileText className="w-7 h-7 text-nav-active shrink-0" />
               <span className="truncate" title={report.assignmentTitle}>
-                Report — {report.assignmentTitle}
+                Report â€” {report.assignmentTitle}
               </span>
             </h1>
 
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
                 <CalendarDays className="w-3 h-3" />
-                Created: {dt(report.createdAt) || "—"}
+                Created: {formatDateTimeVN(report.createdAt) || "â€”"}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
                 <CalendarDays className="w-3 h-3" />
-                Submitted: {dt(report.submittedAt) || "—"}
+                Submitted: {formatDateTimeVN(report.submittedAt) || "â€”"}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
                 <Clock className="w-3 h-3" />
-                Graded At: {dt(report.gradedAt) || "—"}
+                Graded At: {formatDateTimeVN(report.gradedAt) || "â€”"}
               </span>
             </div>
           </div>
@@ -207,7 +211,7 @@ export default function ReportDetailPage() {
             {canRevertStatus && (
               <button
                 type="button"
-                onClick={handleRevertStatus}
+                onClick={() => setRevertDialogOpen(true)}
                 disabled={updatingStatus}
                 className="btn bg-white border border-amber-400 text-xs text-amber-700 hover:bg-amber-50 flex items-center gap-1 disabled:opacity-60"
                 title="Revert report status to continue editing"
@@ -266,14 +270,14 @@ export default function ReportDetailPage() {
             <div className="flex items-center gap-2">
               <Tag className="w-4 h-4 text-nav-active" />
               <div>
-                <b>Course:</b> {report.courseName || "—"}
+                <b>Course:</b> {report.courseName || "â€”"}
               </div>
             </div>
             {report.assignmentDueDate && (
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-nav-active" />
                 <div>
-                  <b>Due:</b> {dt(report.assignmentDueDate)}
+                  <b>Due:</b> {formatDateTimeVN(report.assignmentDueDate)}
                 </div>
               </div>
             )}
@@ -307,7 +311,40 @@ export default function ReportDetailPage() {
         />
       </motion.div>
 
-      {/* SIDE HISTORY SCREEN - slide từ PHẢI sang TRÁI */}
+      <AlertDialog
+        open={revertDialogOpen}
+        onOpenChange={(open) => {
+          if (!updatingStatus) setRevertDialogOpen(open);
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl border-[var(--border)] bg-[var(--card)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {revertLabel || "Revert report"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to revert this report?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updatingStatus} className="rounded-lg">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={updatingStatus}
+              className="btn btn-yellow-slow text-white px-4 py-2 rounded-lg"
+              onClick={async () => {
+                await handleRevertStatus();
+                setRevertDialogOpen(false);
+              }}
+            >
+              {updatingStatus ? "Ðang revert..." : "Revert"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* SIDE HISTORY SCREEN - slide tá»« PHáº¢I sang TRÃI */}
       <AnimatePresence>
         {timelineOpen && (
           <motion.div
@@ -334,7 +371,7 @@ export default function ReportDetailPage() {
                 </div>
               </div>
 
-              {/* Right: actions (See full + Close) – DỒN SANG PHẢI */}
+              {/* Right: actions (See full + Close) â€“ Dá»’N SANG PHáº¢I */}
               <div className="flex items-center gap-2">
                 {!showFullHistory && (
                   <button
@@ -376,3 +413,5 @@ export default function ReportDetailPage() {
     </>
   );
 }
+
+

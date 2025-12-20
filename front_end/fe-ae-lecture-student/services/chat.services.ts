@@ -7,14 +7,14 @@ import type {
 } from "@/types/chat/chat.payload";
 import type {
   ConversationItemResponse,
-  ChatMessageItemResponse,
   CourseChatUserItemResponse,
+  GetConversationFilesResponse,
   GetMessagesApiResponse,
   UploadConversationCsvResponse,
 } from "@/types/chat/chat.response";
 
 export const ChatService = {
-  /** ✅ GET /api/Chat/conversations?courseId=... */
+  /** GET /api/Chat/conversations?courseId=... */
   getConversations: async (
     params?: GetConversationsQuery
   ): Promise<ConversationItemResponse[]> => {
@@ -22,7 +22,7 @@ export const ChatService = {
     return res.data;
   },
 
-  /** ✅ GET /api/Chat/conversations/{conversationId}/messages?pageNumber=&pageSize=&supportRequestId= */
+  /** GET /api/Chat/conversations/{conversationId}/messages?pageNumber=&pageSize=&supportRequestId= */
   getConversationMessages: async (
     conversationId: string,
     params?: GetMessagesQuery
@@ -34,7 +34,7 @@ export const ChatService = {
     return res.data;
   },
 
-  /** ✅ GET /api/Chat/courses/{courseId}/users */
+  /** GET /api/Chat/courses/{courseId}/users */
   getUsersInCourse: async (
     courseId: string
   ): Promise<CourseChatUserItemResponse[]> => {
@@ -42,7 +42,7 @@ export const ChatService = {
     return res.data;
   },
 
-  /** ? POST /api/Chat/conversations/{conversationId}/upload-csv */
+  /** POST /api/Chat/conversations/{conversationId}/upload-csv */
   uploadConversationCsv: async (
     conversationId: string,
     payload: UploadConversationCsvPayload
@@ -60,7 +60,17 @@ export const ChatService = {
     return res.data;
   },
 
-  /** ✅ DELETE /api/Chat/messages/{messageId} (soft delete) */
+  /** GET /api/Chat/conversations/{conversationId}/files */
+  getConversationFiles: async (
+    conversationId: string
+  ): Promise<GetConversationFilesResponse> => {
+    const res = await api.get<GetConversationFilesResponse>(
+      `/Chat/conversations/${conversationId}/files`
+    );
+    return res.data;
+  },
+
+  /** DELETE /api/Chat/messages/{messageId} (soft delete) */
   deleteMessage: async (messageId: string): Promise<void> => {
     await api.delete(`/Chat/messages/${messageId}`);
   },

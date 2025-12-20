@@ -4,7 +4,7 @@ import type { ReportAiCheckResult } from "@/types/reports/reports.response";
 import { Dialog, Transition } from "@headlessui/react";
 import { motion } from "framer-motion";
 import { AlertCircle, Bot, CheckCircle2, Loader2, X } from "lucide-react";
-import { Fragment, useEffect } from "react";
+import { Fragment } from "react";
 import StatusBadge from "../../utils/status";
 
 interface Props {
@@ -18,14 +18,6 @@ interface Props {
 }
 
 export default function AiCheckModal({ open, onClose, loading, result, assignmentTitle, studentName, onReassess }: Props) {
-    useEffect(() => {
-        if (open) document.body.style.overflow = "hidden";
-        else document.body.style.overflow = "";
-        return () => {
-            document.body.style.overflow = "";
-        };
-    }, [open]);
-
     const aiPercentage = result ? Math.round(result.aiPercentage) : 0;
     const riskLevel = aiPercentage >= 70 ? "high" : aiPercentage >= 40 ? "medium" : "low";
 

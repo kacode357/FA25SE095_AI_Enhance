@@ -10,6 +10,7 @@ import {
   PlusCircle,
   Users,
 } from "lucide-react";
+import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
 
 import type { AvailableCourseItem } from "@/types/courses/course.response";
 
@@ -25,14 +26,6 @@ import { Card, CardContent } from "@/components/ui/card";
 const DEFAULT_IMAGE_URL =
   "https://i.postimg.cc/VL3PwwpK/Gemini-Generated-Image-pu4lm6pu4lm6pu4l.png";
 
-const formatDate = (iso?: string | null) =>
-  iso
-    ? new Date(iso).toLocaleDateString(undefined, {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
 
 /** Chỉ hiển thị chip nếu là PENDING (không show Open/Active). */
 const StatusChip = ({ status }: { status?: string | null }) => {
@@ -142,7 +135,7 @@ function CourseCard({
     }
   }, [bgUrl]);
 
-  const createdAt = formatDate(course.createdAt);
+  const createdAt = formatDateOnlyVN(course.createdAt);
   const cta = getCTA(course);
   const isBusy = loadingCourseId === course.id;
 

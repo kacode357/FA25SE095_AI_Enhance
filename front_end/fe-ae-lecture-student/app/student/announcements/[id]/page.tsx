@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAnnouncementDetail } from "@/hooks/announcements/useAnnouncementDetail";
 import type { AnnouncementItem } from "@/types/announcements/announcement.response";
 
-import { parseServerDate, dayLabel, timeHHmm } from "@/utils/chat/time";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 
 import {
@@ -34,9 +34,7 @@ function formatAudience(audience: AnnouncementItem["audience"]) {
 
 function formatTime(ts?: string) {
   if (!ts) return "";
-  const d = parseServerDate(ts);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${dayLabel(d)} • ${timeHHmm(d)}`;
+  return formatDateTimeVN(ts);
 }
 
 export default function AnnouncementDetailPage() {
