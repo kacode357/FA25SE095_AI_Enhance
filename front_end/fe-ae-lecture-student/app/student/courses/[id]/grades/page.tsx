@@ -19,6 +19,7 @@ import type {
   StudentCourseGradeStatistics,
 } from "@/types/assignments/assignment.response";
 import { CourseMiniHeader } from "../components/CourseMiniHeader";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 // Use the exact type returned by the API for assignmentGrades
 type Row = StudentAssignmentGradeItem;
@@ -214,7 +215,7 @@ export default function GradesPage() {
           )}
 
           {pageRows.map((r) => {
-            const due = new Date(r.dueDate);
+            const dueLabel = formatDateTimeVN(r.dueDate);
 
             return (
               <li
@@ -234,7 +235,7 @@ export default function GradesPage() {
                     </div>
                     <div className="mt-1 text-[11px] text-[var(--text-muted)] flex items-center gap-2">
                       <CalendarDays className="w-3 h-3" />
-                      Due: {due.toLocaleString("en-GB")}
+                      Due: {dueLabel}
                     </div>
                   </div>
                   <div className="col-span-2 text-center text-sm">
@@ -274,7 +275,7 @@ export default function GradesPage() {
                       </div>
                       <div className="mt-1 text-[11px] text-[var(--text-muted)] flex items-center gap-2">
                         <CalendarDays className="w-3 h-3" />
-                        Due: {due.toLocaleString("en-GB")}
+                        Due: {dueLabel}
                       </div>
                     </div>
                     <div className="flex flex-col items-end">

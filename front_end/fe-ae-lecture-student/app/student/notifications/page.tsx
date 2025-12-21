@@ -9,6 +9,7 @@ import { useGetNotifications } from "@/hooks/notifications/useGetNotifications";
 import { useMarkAllNotificationsAsRead } from "@/hooks/notifications/useMarkAllNotificationsAsRead";
 import { useMarkNotificationAsRead } from "@/hooks/notifications/useMarkNotificationAsRead";
 import type { NotificationItem as NotificationDto } from "@/types/notifications/notifications.response";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 type UiNotification = {
   id: string;
@@ -41,13 +42,6 @@ function mapDtoToUi(n: NotificationDto): UiNotification {
     isRead: n.isRead,
     actionUrl,
   };
-}
-
-function formatTime(iso: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString();
 }
 
 export default function NotificationsPage() {
@@ -216,7 +210,7 @@ export default function NotificationsPage() {
                         </p>
                       )}
                       <p className="mt-1 text-[11px] text-slate-400">
-                        {formatTime(item.createdAt)}
+                        {formatDateTimeVN(item.createdAt)}
                       </p>
                     </div>
                   </button>

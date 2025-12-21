@@ -27,16 +27,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 // types BE
 import type { ReportListItem } from "@/types/reports/reports.response";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 // helpers status (chung)
 import { getReportStatusMeta } from "./components/report-labels";
-
-// ===== helpers =====
-const dt = (s?: string | null) => {
-  if (!s) return "";
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? s : d.toLocaleString("en-GB");
-};
 
 // Reuse type từ BE – không tạo UIReportItem riêng nữa
 type UIReportItem = ReportListItem;
@@ -181,15 +175,17 @@ export default function ReportsListPage() {
         {/* Actions */}
         <div className="w-full flex justify-end">
           <div className="flex flex-row flex-wrap items-center gap-2">
-            <CreateReportButton
-              courseId={courseId}
-              assignmentId={assignmentId}
-              assignmentTitle={assignmentTitleForCreate}
-              isGroupSubmission={isGroupSubmissionForCreate}
-              label={report ? "Create / Update report" : "Create report"}
-              className="btn btn-gradient px-5 py-2"
-              {...(resolvedGroupId ? { groupId: resolvedGroupId } : {})}
-            />
+            {!report && (
+              <CreateReportButton
+                courseId={courseId}
+                assignmentId={assignmentId}
+                assignmentTitle={assignmentTitleForCreate}
+                isGroupSubmission={isGroupSubmissionForCreate}
+                label="Create report"
+                className="btn btn-gradient px-5 py-2"
+                {...(resolvedGroupId ? { groupId: resolvedGroupId } : {})}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -293,7 +289,7 @@ export default function ReportsListPage() {
                     <span className="text-foreground/60">Created at</span>
                     <div className="flex items-center gap-2">
                       <CalendarDays className="w-3 h-3" />
-                      <span>{dt(report.createdAt)}</span>
+                      <span>{formatDateTimeVN(report.createdAt)}</span>
                     </div>
                   </div>
                 )}
@@ -304,7 +300,7 @@ export default function ReportsListPage() {
                     <span className="text-foreground/60">Submitted at</span>
                     <div className="flex items-center gap-2">
                       <Clock className="w-3 h-3" />
-                      <span>{dt(report.submittedAt)}</span>
+                      <span>{formatDateTimeVN(report.submittedAt)}</span>
                     </div>
                   </div>
                 )}
@@ -315,7 +311,7 @@ export default function ReportsListPage() {
                     <span className="text-foreground/60">Last updated</span>
                     <div className="flex items-center gap-2">
                       <Clock className="w-3 h-3" />
-                      <span>{dt(report.updatedAt)}</span>
+                      <span>{formatDateTimeVN(report.updatedAt)}</span>
                     </div>
                   </div>
                 )}

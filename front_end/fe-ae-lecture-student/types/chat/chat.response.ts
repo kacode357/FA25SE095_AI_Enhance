@@ -60,6 +60,24 @@ export interface UploadConversationCsvResponse {
   columnNames: string[];
 }
 
+export interface ConversationFileItemResponse {
+  id: string;
+  conversationId: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  rowCount: number;
+  columnNames: string[];
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+export interface GetConversationFilesResponse {
+  success: boolean;
+  message: string;
+  files: ConversationFileItemResponse[];
+}
+
 export type GetUsersInCourseResponse =
   | CourseUsersApiResponse
   | CourseChatUserItemResponse[];

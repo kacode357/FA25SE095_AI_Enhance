@@ -3,6 +3,7 @@
 
 import { CalendarDays, BookOpen, Users } from "lucide-react";
 import type { AssignmentItem } from "@/types/assignments/assignment.response";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 type Props = {
   assignment?: AssignmentItem;
@@ -22,11 +23,7 @@ function getDueDate(assignment?: AssignmentItem) {
   if (!assignment) return "";
   const raw = assignment.extendedDueDate || assignment.dueDate;
   if (!raw) return "";
-  try {
-    return new Date(raw).toLocaleString();
-  } catch {
-    return raw;
-  }
+  return formatDateTimeVN(raw);
 }
 
 export default function CrawlerAssignmentHeader({

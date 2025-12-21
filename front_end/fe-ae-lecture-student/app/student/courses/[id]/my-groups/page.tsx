@@ -15,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import { CourseMiniHeader } from "../components/CourseMiniHeader";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 export default function MyGroupsByCoursePage() {
   const params = useParams();
@@ -138,7 +139,7 @@ export default function MyGroupsByCoursePage() {
 
                   <span className="text-xs opacity-70">
                     Joined:{" "}
-                    {new Date(group.joinedAt).toLocaleString("en-GB")}
+                    {formatDateTimeVN(group.joinedAt)}
                   </span>
                 </div>
 

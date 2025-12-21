@@ -12,11 +12,10 @@ import { BookOpen, CalendarDays, Loader2, LogOut, MoreVertical, PlayCircle, User
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import MyCoursesFilterBar from "./components/FilterBar";
+import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
 
 /* ===== Utils & Constants ===== */
 const DEFAULT_IMG = "https://i.postimg.cc/VL3PwwpK/Gemini-Generated-Image-pu4lm6pu4lm6pu4l.png";
-
-const formatDate = (iso?: string | null) => iso ? new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "";
 
 /* ===== Sub-component: Course Card ===== */
 const CourseCard = ({
@@ -114,7 +113,7 @@ const CourseCard = ({
               <Users className="w-3.5 h-3.5" /> {course.enrollmentCount}
             </span>
             <span className="flex items-center gap-1">
-              <CalendarDays className="w-3.5 h-3.5" /> {formatDate(course.createdAt)}
+              <CalendarDays className="w-3.5 h-3.5" /> {formatDateOnlyVN(course.createdAt)}
             </span>
           </div>
 

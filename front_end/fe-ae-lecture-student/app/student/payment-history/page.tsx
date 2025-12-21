@@ -11,12 +11,12 @@ import {
   Search, 
   XCircle 
 } from "lucide-react";
-import { format } from "date-fns";
 
 // Services & Hooks
 import { useGetSubscriptionHistory } from "@/hooks/payments/useGetSubscriptionHistory";
 import type { SubscriptionHistoryData } from "@/types/payments/payments.response";
 import type { SubscriptionHistoryQuery } from "@/types/payments/payments.payload";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 // UI Components
 import {
@@ -250,7 +250,7 @@ export default function PaymentHistoryPage() {
                     <td className="px-6 py-4 text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 text-brand" />
-                        {format(new Date(item.createdAt), "dd MMM yyyy, HH:mm")}
+                        {formatDateTimeVN(item.createdAt)}
                       </div>
                     </td>
                     <td className="px-6 py-4 font-medium">

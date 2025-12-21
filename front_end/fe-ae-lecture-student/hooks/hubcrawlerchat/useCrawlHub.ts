@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 
 /** Tùy loại payload BE trả (job stats / metrics / updates) */
@@ -11,6 +11,9 @@ export type CrawlJobUpdate = any;
 type Options = {
   baseUrl?: string;
   getAccessToken: () => Promise<string> | string;
+  autoConnect?: boolean;
+  useAssignmentContext?: boolean;
+  includeHistory?: boolean;
 
   // ===== callbacks: server -> client =====
   onConnectedChange?: (connected: boolean) => void;
@@ -36,6 +39,9 @@ type Options = {
 export function useCrawlHub({
   baseUrl = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_HUB || "",
   getAccessToken,
+  autoConnect = true,
+  useAssignmentContext = true,
+  includeHistory,
   onConnectedChange,
   onJobStats,
   onJobStarted,
@@ -63,7 +69,19 @@ export function useCrawlHub({
     return () => {
       if (connectionRef.current) return connectionRef.current;
 
-      const hubUrl = `${baseUrl.replace(/\/+$/, "")}/hubs/crawl`;
+      const hubUrlBase = `${baseUrl.replace(/\/+$/, "")}/hubs/crawl`;
+      const queryParams = new URLSearchParams();
+      if (typeof useAssignmentContext === "boolean") {
+        queryParams.set(
+          "includeAssignmentContext",
+          String(useAssignmentContext)
+        );
+      }
+      if (typeof includeHistory === "boolean") {
+        queryParams.set("includeHistory", String(includeHistory));
+      }
+      const queryString = queryParams.toString();
+      const hubUrl = queryString ? `${hubUrlBase}?${queryString}` : hubUrlBase;
 
       const conn = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
@@ -177,6 +195,8 @@ export function useCrawlHub({
     onAssignmentJobUpdate,
     onConversationJobUpdate,
     onConnectedChange,
+    useAssignmentContext,
+    includeHistory,
   ]);
 
   // ===== public APIs =====
@@ -208,9 +228,10 @@ export function useCrawlHub({
       console.log("[CrawlHub] Connected");
     } catch (e: any) {
       const rawMsg: string = e?.message ?? "";
-      const isStrictModeStop = rawMsg.includes(
-        "Failed to start the HttpConnection before stop() was called"
-      );
+      const isStrictModeStop =
+        rawMsg.includes(
+          "Failed to start the HttpConnection before stop() was called"
+        ) || rawMsg.includes("The connection was stopped during negotiation.");
 
       if (!isStrictModeStop) {
         const friendlyMsg = rawMsg || "Failed to connect CrawlHub";
@@ -244,6 +265,26 @@ export function useCrawlHub({
       console.log("[CrawlHub] Disconnected");
     }
   }, [onConnectedChange]);
+
+  useEffect(() => {
+    if (!autoConnect) return;
+    let active = true;
+    void (async () => {
+      if (!active) return;
+      try {
+        await connect();
+      } catch (err) {
+        if (active) {
+          console.error("[CrawlHub] auto connect error:", err);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+      disconnect().catch(() => {});
+    };
+  }, [autoConnect, connect, disconnect]);
 
   // ===== wrapper methods (client -> server) =====
 

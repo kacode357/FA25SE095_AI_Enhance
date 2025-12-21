@@ -1,4 +1,5 @@
 import { BadgeCheck } from "lucide-react";
+import { formatDateOnlyVN, formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 export function StatLine({ label, value }: { label: string; value: React.ReactNode }) {
     return (
@@ -70,10 +71,5 @@ export function initials(first?: string, last?: string) {
 
 export function formatDateTime(iso?: string | null, dateOnly = false) {
     if (!iso) return <span className="text-slate-400 italic">Not updated yet</span>;
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return <span className="text-slate-400 italic">Not updated yet</span>;
-    const opts: Intl.DateTimeFormatOptions = dateOnly
-        ? { year: "numeric", month: "short", day: "2-digit" }
-        : { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" };
-    return new Intl.DateTimeFormat(undefined, opts).format(d);
+    return dateOnly ? formatDateOnlyVN(iso) : formatDateTimeVN(iso);
 }

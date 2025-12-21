@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 /** ====== Types (đồng bộ field từ BE) ====== */
 type MemberLike = {
@@ -251,14 +252,7 @@ export default function GroupMembersPage() {
                     <div className="flex items-center gap-4 text-xs text-foreground/70">
                       <div className="text-[var(--text-muted)]">
                         Joined:{" "}
-                        {new Date(m.joinedAt).toLocaleString("en-GB", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })}
+                        {formatDateTimeVN(m.joinedAt)}
                       </div>
                     </div>
                   </li>

@@ -10,24 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { useGetCourseById } from "@/hooks/course/useGetCourseById";
-import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+import { formatDateOnlyVN, formatDateTimeVN } from "@/utils/datetime/format-datetime";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
-
-/** Safe parse datetime */
-const toDate = (s?: string | null) => {
-  if (!s) return null;
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return null;
-  return d;
-};
 
 /** Ẩn mấy ngày sentinel 0001-01-01, chỉ format ngày hợp lệ */
 const formatTermDateVN = (value?: string | null): string | null => {
   if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  if (d.getFullYear() < 2000) return null; // 0001 or invalid -> bỏ
-  return formatDateTimeVN(value);
+  if (value.startsWith("0001")) return null;
+  return formatDateOnlyVN(value);
 };
 
 export default function CourseDetailPage() {

@@ -16,14 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import { CourseService } from "@/services/course.services";
+import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
 
 /** Common datetime formatter – hide invalid year 0001 */
 const dt = (s?: string | null) => {
   if (!s) return "";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s || "";
-  if (d.getFullYear() < 2000) return "";
-  return d.toLocaleDateString("en-GB");
+  if (s.startsWith("0001")) return "";
+  return formatDateOnlyVN(s);
 };
 
 const DEFAULT_IMAGE_URL =

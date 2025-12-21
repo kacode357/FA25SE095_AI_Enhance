@@ -16,10 +16,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import {
   parseServerDate,
-  timeHHmm,
   buildChatTimeline,
   ChatTimelineItem,
 } from "@/utils/chat/time";
+import { formatTimeOnlyVN } from "@/utils/datetime/format-datetime";
 
 import { useChatDeleteMessage } from "@/hooks/chat/useChatDeleteMessage";
 
@@ -456,7 +456,7 @@ export default function ChatWindow({
                         )}
                         title={
                           it.showTime
-                            ? timeHHmm(parseServerDate(it.m.sentAt))
+                            ? formatTimeOnlyVN(it.m.sentAt)
                             : undefined
                         }
                       >

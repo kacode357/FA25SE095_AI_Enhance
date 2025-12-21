@@ -20,15 +20,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAssignmentReports } from "@/hooks/reports/useAssignmentReports";
 import type { ReportListItem } from "@/types/reports/reports.response";
 import { ReportStatus } from "@/types/reports/reports.response";
+import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
 import ReportFileAttachment from "./components/ReportFileAttachment";
 import SubmitDraftButton from "./components/SubmitDraftButton";
-
-const dt = (s?: string | null) => {
-  if (!s) return "";
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? s : d.toLocaleString("en-GB");
-};
 
 const statusLabel = (s: number) => {
   switch (s) {
@@ -56,22 +51,23 @@ const statusLabel = (s: number) => {
 const statusBadgeClass = (s: number) => {
   switch (s) {
     case ReportStatus.Draft:
-      return "bg-slate-100 text-slate-700 border border-slate-200";
+      return "badge-report badge-report--draft";
     case ReportStatus.Submitted:
+      return "badge-report badge-report--submitted";
     case ReportStatus.UnderReview:
-      return "bg-blue-50 text-blue-700 border border-blue-200";
+      return "badge-report badge-report--under-review";
     case ReportStatus.RequiresRevision:
-      return "bg-amber-50 text-amber-700 border border-amber-200";
+      return "badge-report badge-report--requires-revision";
     case ReportStatus.Resubmitted:
-      return "bg-indigo-50 text-indigo-700 border border-indigo-200";
+      return "badge-report badge-report--resubmitted";
     case ReportStatus.Graded:
-      return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+      return "badge-report badge-report--graded";
     case ReportStatus.Late:
-      return "bg-rose-50 text-rose-700 border border-rose-200";
+      return "badge-report badge-report--late";
     case ReportStatus.Rejected:
-      return "bg-red-50 text-red-700 border border-red-200";
+      return "badge-report badge-report--rejected";
     default:
-      return "bg-slate-50 text-slate-700 border border-slate-200";
+      return "badge-report badge-report--draft";
   }
 };
 
@@ -249,10 +245,8 @@ export default function SubmitReportsPage() {
                     return (
                       <li
                         key={r.id}
-                        className={`border rounded-xl px-3 py-3 sm:px-4 sm:py-4 flex flex-col gap-3 ${
-                          isSubmittedFinal
-                            ? "bg-emerald-50/70 border-emerald-200/80"
-                            : "bg-white/70 border-[var(--border)]"
+                        className={`report-submit-card px-3 py-3 sm:px-4 sm:py-4 flex flex-col gap-3 ${
+                          isSubmittedFinal ? "report-submit-card--submitted" : ""
                         }`}
                       >
                         {/* Top: title + meta + status */}
@@ -276,11 +270,11 @@ export default function SubmitReportsPage() {
                             <div className="mt-2 text-[11px] text-foreground/70 flex flex-wrap gap-x-4 gap-y-1">
                               <span className="inline-flex items-center gap-1">
                                 <CalendarDays className="w-3 h-3" />
-                                Created: {dt(r.createdAt)}
+                                Created: {formatDateTimeVN(r.createdAt)}
                               </span>
                               <span className="inline-flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                Updated: {dt(r.updatedAt)}
+                                Updated: {formatDateTimeVN(r.updatedAt)}
                               </span>
                             </div>
                           </div>
@@ -299,7 +293,7 @@ export default function SubmitReportsPage() {
                               </span>
                             )}
                             {isSubmittedFinal && (
-                              <span className="text-[10px] text-emerald-700/80 mt-0.5">
+                              <span className="report-submit-note text-[10px] mt-0.5">
                                 You have submitted this report.
                               </span>
                             )}
@@ -323,7 +317,7 @@ export default function SubmitReportsPage() {
                         </div>
 
                         {/* Bottom: actions */}
-                        <div className="pt-2 border-t border-dashed border-slate-200/70">
+                        <div className="pt-2 report-submit-divider">
                           <div className="flex flex-wrap justify-end gap-2">
                             <Button
                               type="button"

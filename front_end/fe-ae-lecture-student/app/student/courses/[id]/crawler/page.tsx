@@ -1,6 +1,6 @@
 "use client";
 
-import React, {
+import {
   Suspense,
   useCallback,
   useEffect,
@@ -8,9 +8,10 @@ import React, {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 
 import {
   useCrawlerChatHub,
@@ -26,15 +27,15 @@ import { useCrawlerAssignmentConversations } from "@/hooks/crawler-chat/useCrawl
 import { useCrawlerConversationMessages } from "@/hooks/crawler-chat/useCrawlerConversationMessages";
 import { useSmartCrawlerJob } from "@/hooks/smart-crawler/useSmartCrawlerJob";
 import { useDecodedUser } from "@/utils/secure-user";
-import { useUploadConversationCsv } from "@/hooks/chat/useUploadConversationCsv";
 
 import type { UiMessage } from "./crawler-types";
 import CrawlerUrlPromptSection from "./components/CrawlerUrlPromptSection";
-import CrawlerResultsSection from "./components/CrawlerResultsSection";
+import CrawlerResultsTabs from "./components/CrawlerResultsTabs";
 import CrawlerChatSection from "./components/CrawlerChatSection";
 import CrawlerAssignmentHeader from "./components/CrawlerAssignmentHeader";
 import CrawlerAssignmentDescription from "./components/CrawlerAssignmentDescription";
 import CrawlerAssignmentConversationsSection from "./components/CrawlerAssignmentConversationsSection";
+import CrawlerUploadCsvController from "./components/CrawlerUploadCsvController";
 import { useCrawlerConversationState } from "./hooks/useCrawlerConversationState";
 import useEventCallback from "./hooks/useEventCallback";
 import {
@@ -62,15 +63,6 @@ type PendingMessage = {
   messageType?: MessageType;
 };
 
-const RESULT_FETCH_DELAY_MS = 10000;
-const FINALIZE_PROGRESS_START = 97;
-const FINALIZE_PROGRESS_TARGET = 100;
-
-const waitForResultSync = (delayMs: number = RESULT_FETCH_DELAY_MS) =>
-  new Promise<void>((resolve) => {
-    setTimeout(resolve, delayMs);
-  });
-
 const CrawlerInner = () => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -95,6 +87,11 @@ const CrawlerInner = () => {
     return "";
   }, [pathname]);
 
+  const backToAssignmentHref =
+    assignmentId && courseSlug
+      ? `/student/courses/${courseSlug}/assignments/${assignmentId}`
+      : undefined;
+
   const { user } = useAuth() as any;
   const decodedUser = useDecodedUser();
   const { userId, userName } = buildUserIdentity(decodedUser, user);
@@ -109,11 +106,11 @@ const CrawlerInner = () => {
     null
   );
   const pendingOutgoingRef = useRef<PendingMessage[]>([]);
-  const finalizeProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
 
   const [url, setUrl] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [includeAssignmentContext, setIncludeAssignmentContext] = useState(true);
+  const [includeHistory, setIncludeHistory] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const [isCrawling, setIsCrawling] = useState(false);
@@ -122,33 +119,8 @@ const CrawlerInner = () => {
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
 
-  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [showAssignmentDrawer, setShowAssignmentDrawer] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
-
-  // Disable body scroll khi results modal mở
-  useEffect(() => {
-    if (showResultsModal) {
-      document.documentElement.style.overflow = "hidden";
-      document.body.style.overflow = "hidden";
-    } else {
-      document.documentElement.style.overflow = "auto";
-      document.body.style.overflow = "auto";
-    }
-
-    return () => {
-      document.documentElement.style.overflow = "auto";
-      document.body.style.overflow = "auto";
-    };
-  }, [showResultsModal]);
-
-  useEffect(() => {
-    return () => {
-      if (finalizeProgressTimerRef.current) {
-        clearInterval(finalizeProgressTimerRef.current);
-      }
-    };
-  }, []);
 
   const {
     data: assignmentRes,
@@ -170,10 +142,7 @@ const CrawlerInner = () => {
     conversations,
   } = useCrawlerAssignmentConversations();
 
-  const {
-    fetchConversationMessages,
-    loading: conversationMessagesLoading,
-  } = useCrawlerConversationMessages();
+  const { fetchConversationMessages } = useCrawlerConversationMessages();
 
   const { fetchJob } = useSmartCrawlerJob();
   const {
@@ -196,6 +165,7 @@ const CrawlerInner = () => {
     setActiveJobId,
     handleSelectHistoryIndex,
     selectConversation,
+    startNewConversation,
   } = useCrawlerConversationState({
     fetchConversationMessages,
     fetchJobResults,
@@ -203,15 +173,17 @@ const CrawlerInner = () => {
     resultsLoading,
   });
 
-  const {
-    uploadConversationCsv,
-    loading: uploadingConversationCsv,
-  } = useUploadConversationCsv();
-
   const promptUsed = useMemo(() => {
     if (!results?.length) return "";
     return results[0]?.promptUsed || "";
   }, [results]);
+
+  const chatReady =
+    Boolean(selectedConversationId) ||
+    isCrawling ||
+    Boolean(activeJobId) ||
+    jobHistory.length > 0 ||
+    chatMessages.length > 0;
 
   const handleSelectConversation = useCallback(
     (convId: string) => {
@@ -219,7 +191,6 @@ const CrawlerInner = () => {
 
       setIsCrawling(false);
       setCrawlProgress(0);
-      setShowHistoryDrawer(false);
 
       void (async () => {
         const jobIdFromHistory = await selectConversation(convId);
@@ -231,6 +202,13 @@ const CrawlerInner = () => {
     [fetchJobResults, selectConversation]
   );
 
+  const handleNewConversation = useCallback(() => {
+    startNewConversation();
+    setIsCrawling(false);
+    setCrawlProgress(0);
+    setChatInput("");
+  }, [startNewConversation]);
+
   useEffect(() => {
     if (!assignmentId) return;
     fetchAssignmentConversations(assignmentId, { myOnly: true }).catch((err) =>
@@ -241,39 +219,11 @@ const CrawlerInner = () => {
   const handleOpenDataPage = useCallback(() => {
     if (!activeJobId) return;
     const courseSegment = courseSlug || assignmentId || "unknown";
-    const href = `/student/courses/${courseSegment}/crawler/data?jobId=${activeJobId}`;
+    const params = new URLSearchParams({ jobId: activeJobId });
+    if (conversationId) params.set("conversationId", conversationId);
+    const href = `/student/courses/${courseSegment}/crawler/data?${params.toString()}`;
     window.open(href, "_blank", "noopener,noreferrer");
-  }, [activeJobId, assignmentId, courseSlug]);
-
-  const finalizeResultPreparation = useCallback(() => {
-    if (finalizeProgressTimerRef.current) {
-      clearInterval(finalizeProgressTimerRef.current);
-      finalizeProgressTimerRef.current = null;
-    }
-
-    return new Promise<void>((resolve) => {
-      let current = FINALIZE_PROGRESS_START;
-      setCrawlProgress(current);
-      const steps = Math.max(
-        1,
-        FINALIZE_PROGRESS_TARGET - FINALIZE_PROGRESS_START
-      );
-      const stepDelay = RESULT_FETCH_DELAY_MS / steps;
-      finalizeProgressTimerRef.current = setInterval(() => {
-        current += 1;
-        setCrawlProgress((prev) =>
-          Math.min(Math.max(prev, current), FINALIZE_PROGRESS_TARGET)
-        );
-        if (current >= FINALIZE_PROGRESS_TARGET) {
-          if (finalizeProgressTimerRef.current) {
-            clearInterval(finalizeProgressTimerRef.current);
-            finalizeProgressTimerRef.current = null;
-          }
-          resolve();
-        }
-      }, stepDelay);
-    });
-  }, []);
+  }, [activeJobId, assignmentId, conversationId, courseSlug]);
 
   const pushUiMessageFromDto = useCallback(
     async (message: ChatMessageDto) => {
@@ -336,7 +286,6 @@ const CrawlerInner = () => {
       ) {
         setActiveJobId(jobId);
         try {
-          await waitForResultSync();
           await fetchJobResults(jobId);
         } catch (err) {
           console.error("[CrawlerPage] fetchJobResults realtime error:", err);
@@ -392,14 +341,13 @@ const CrawlerInner = () => {
       setActiveJobId(jid);
 
       try {
-        await finalizeResultPreparation();
         await fetchJobResults(jid);
         await fetchJob(jid);
         if (assignmentId) {
           await fetchAssignmentConversations(assignmentId, { myOnly: true });
         }
         await reloadConversation({ jobIdOverride: jid });
-        setCrawlProgress(FINALIZE_PROGRESS_TARGET);
+        setCrawlProgress(100);
         setShowResultsModal(true);
       } catch (err) {
         console.error("[CrawlerPage] handleJobCompleted error:", err);
@@ -413,7 +361,6 @@ const CrawlerInner = () => {
       fetchAssignmentConversations,
       fetchJob,
       fetchJobResults,
-      finalizeResultPreparation,
       reloadConversation,
     ]
   );
@@ -470,13 +417,12 @@ const CrawlerInner = () => {
   const {
     connected: crawlConnected,
     connecting: crawlConnecting,
-    connect: connectCrawl,
-    disconnect: disconnectCrawl,
     subscribeToJob,
     subscribeToAssignmentJobs,
     subscribeToGroupJobs,
   } = useCrawlHub({
     getAccessToken,
+    includeHistory,
     onJobStarted: jobStartedHandler,
     onJobProgress: jobProgressHandler,
     onJobCompleted: jobCompletedHandler,
@@ -488,8 +434,6 @@ const CrawlerInner = () => {
   const {
     connected: chatConnected,
     connecting: chatConnecting,
-    connect: connectChat,
-    disconnect: disconnectChat,
     subscribeToAssignment,
     joinGroupWorkspace,
     joinConversation,
@@ -502,27 +446,6 @@ const CrawlerInner = () => {
     onCrawlInitiated: crawlInitiatedHandler,
     onError: chatHubErrorHandler,
   });
-
-  useEffect(() => {
-    let mounted = true;
-    const init = async () => {
-      if (!mounted) return;
-      try {
-        await connectChat();
-        await connectCrawl();
-      } catch (err) {
-        if (mounted) {
-          console.error("[CrawlerPage] connect hubs error:", err);
-        }
-      }
-    };
-    void init();
-    return () => {
-      mounted = false;
-      disconnectChat().catch(() => {});
-      disconnectCrawl().catch(() => {});
-    };
-  }, [connectChat, connectCrawl, disconnectChat, disconnectCrawl]);
 
   useEffect(() => {
     if (!chatConnected || !conversationId) return;
@@ -613,11 +536,6 @@ const CrawlerInner = () => {
     if (!assignmentId) return toast.error("Missing assignmentId. Please reload from assignment context.");
     if (!userId) return toast.error("UserId not found. Please reload.");
 
-    if (finalizeProgressTimerRef.current) {
-      clearInterval(finalizeProgressTimerRef.current);
-      finalizeProgressTimerRef.current = null;
-    }
-
     setSubmitting(true);
     setIsCrawling(true);
     setCrawlStatusMsg("Initiating crawl request...");
@@ -636,6 +554,8 @@ const CrawlerInner = () => {
       timestamp: new Date().toISOString(),
       groupId,
       assignmentId,
+      includeAssignmentContext,
+      includeHistory,
     };
 
     try {
@@ -668,6 +588,8 @@ const CrawlerInner = () => {
     chatConnected,
     conversationId,
     groupId,
+    includeAssignmentContext,
+    includeHistory,
     prompt,
     sendCrawlerMessage,
     url,
@@ -679,14 +601,19 @@ const CrawlerInner = () => {
     async (contentOverride?: string) => {
       const content = (contentOverride ?? chatInput).trim();
       if (!content) return;
+      if (!chatReady) return;
       if (!chatConnected) return;
 
+      const isFirstConversationMessage = chatMessages.length === 0;
       const normalizedContent = content.toLowerCase();
-      const messageType = SUMMARY_KEYWORDS.some((keyword) =>
+      const derivedType = SUMMARY_KEYWORDS.some((keyword) =>
         normalizedContent.includes(keyword)
       )
         ? MessageType.FollowUpQuestion
         : MessageType.UserMessage;
+      const messageType = isFirstConversationMessage
+        ? MessageType.CrawlRequest
+        : derivedType;
 
       pendingOutgoingRef.current.push({
         content,
@@ -710,6 +637,8 @@ const CrawlerInner = () => {
         sentAt,
         groupId,
         assignmentId,
+        includeAssignmentContext,
+        includeHistory,
       };
 
       appendUiMessage({
@@ -742,8 +671,12 @@ const CrawlerInner = () => {
     [
       appendUiMessage,
       assignmentId,
+      includeAssignmentContext,
+      includeHistory,
       chatConnected,
       chatInput,
+      chatReady,
+      chatMessages.length,
       conversationId,
       groupId,
       sendCrawlerMessage,
@@ -752,48 +685,9 @@ const CrawlerInner = () => {
     ]
   );
 
-  const handleUploadConversationCsv = useCallback(
-    async (file: File) => {
-      if (!file) return;
-      if (!conversationId) {
-        toast.error("Conversation is not ready. Please try again.");
-        return;
-      }
-
-      try {
-        const res = await uploadConversationCsv(conversationId, { file });
-        if (!res) {
-          toast.error("Upload already in progress. Please wait.");
-          return;
-        }
-
-        const segments: string[] = [];
-        if (typeof res.rowCount === "number") {
-          segments.push(`${res.rowCount} rows`);
-        }
-        if (res.columnNames?.length) {
-          const columnPreview = res.columnNames.slice(0, 4).join(", ");
-          segments.push(
-            `Columns: ${columnPreview}${res.columnNames.length > 4 ? "..." : ""}`
-          );
-        }
-
-        toast.success(res.message || `Uploaded ${res.fileName || file.name}`, {
-          description: segments.length ? segments.join(" · ") : undefined,
-        });
-
-        await reloadConversation({ conversationOverride: conversationId });
-      } catch (err: any) {
-        console.error("[CrawlerPage] upload csv error:", err);
-        toast.error(err?.message || "Failed to upload CSV file");
-      }
-    },
-    [conversationId, reloadConversation, uploadConversationCsv]
-  );
-
   return (
     <div className="relative min-h-[calc(100vh-64px)] bg-slate-50">
-      <main className="mx-auto flex max-w-7xl flex-col gap-4 py-6" data-tour="crawler-layout">
+      <main className="mx-auto flex max-w-screen-2xl flex-col gap-4 py-6" data-tour="crawler-layout">
         <div className="flex items-start gap-3" data-tour="crawler-header">
           <div className="flex-1">
             <CrawlerAssignmentHeader
@@ -805,20 +699,22 @@ const CrawlerInner = () => {
               crawlConnecting={crawlConnecting}
             />
           </div>
-          <div className="flex flex-col gap-2 min-w-[230px]" data-tour="crawler-history">
+          <div className="flex flex-col gap-2 min-w-[230px]">
+            {backToAssignmentHref && (
+              <Link
+                href={backToAssignmentHref}
+                className="btn w-full bg-white border border-[var(--border)] text-xs font-semibold text-[var(--foreground)] hover:bg-slate-50"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to assignment
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => setShowAssignmentDrawer(true)}
               className="action-pill btn-blue-slow action-pill-solid action-pill-slide"
             >
               Assignment info
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowHistoryDrawer(true)}
-              className="action-pill btn-green-slow action-pill-solid action-pill-slide"
-            >
-              History
             </button>
           </div>
         </div>
@@ -830,6 +726,8 @@ const CrawlerInner = () => {
               prompt={prompt}
               onUrlChange={setUrl}
               onPromptChange={setPrompt}
+              includeAssignmentContext={includeAssignmentContext}
+              onIncludeAssignmentContextChange={setIncludeAssignmentContext}
               onStartCrawl={handleStartCrawl}
               submitting={submitting}
               chatConnected={chatConnected}
@@ -842,23 +740,42 @@ const CrawlerInner = () => {
             />
           </div>
 
-          <div className="grid gap-4 items-start">
-            <CrawlerChatSection
-              chatMessages={chatMessages}
-              chatInput={chatInput}
-              onChatInputChange={setChatInput}
-              onSendChat={handleSendChatMessage}
-              onUploadCsv={handleUploadConversationCsv}
-              uploadingCsv={uploadingConversationCsv}
-              chatSending={chatSending}
-              chatConnected={chatConnected}
-              onOpenResults={() => setShowResultsModal(true)}
-              resultsAvailable={
-                resultsLoading ||
-                results.length > 0 ||
-                jobHistory.length > 0
-              }
-            />
+          <div className="grid gap-4 items-start lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)]">
+            <div className="lg:sticky lg:top-4" data-tour="crawler-history">
+              <CrawlerAssignmentConversationsSection
+                conversations={conversations}
+                loading={conversationsLoading}
+                selectedConversationId={selectedConversationId}
+                onSelectConversation={handleSelectConversation}
+                onNewConversation={handleNewConversation}
+              />
+            </div>
+            <CrawlerUploadCsvController
+              conversationId={conversationId}
+              reloadConversation={reloadConversation}
+            >
+              {({ onUploadCsv, uploadingCsv }) => (
+                <CrawlerChatSection
+                  chatMessages={chatMessages}
+                  chatInput={chatInput}
+                  onChatInputChange={setChatInput}
+                  onSendChat={handleSendChatMessage}
+                  onUploadCsv={onUploadCsv}
+                  uploadingCsv={uploadingCsv}
+                  chatSending={chatSending}
+                  chatConnected={chatConnected}
+                  includeHistory={includeHistory}
+                  onIncludeHistoryChange={setIncludeHistory}
+                  chatReady={chatReady}
+                  onOpenResults={() => setShowResultsModal(true)}
+                  resultsAvailable={
+                    resultsLoading ||
+                    results.length > 0 ||
+                    jobHistory.length > 0
+                  }
+                />
+              )}
+            </CrawlerUploadCsvController>
           </div>
         </section>
       </main>
@@ -895,7 +812,8 @@ const CrawlerInner = () => {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto bg-slate-50/40 p-4">
-                <CrawlerResultsSection
+                <CrawlerResultsTabs
+                  conversationId={conversationId}
                   results={results}
                   resultsLoading={resultsLoading}
                   historyIndex={historyIndex}
@@ -905,37 +823,6 @@ const CrawlerInner = () => {
                   onSelectHistoryIndex={handleSelectHistoryIndex}
                 />
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showHistoryDrawer && (
-        <div className="fixed inset-0 z-[9998]">
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
-            onClick={() => setShowHistoryDrawer(false)}
-          />
-          <div className="absolute inset-y-0 left-0 w-full max-w-sm bg-white shadow-2xl border-r border-[var(--border)] flex flex-col z-10 slide-in-left">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-              <div className="text-sm font-semibold text-[var(--foreground)]">
-                History
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowHistoryDrawer(false)}
-                className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--text-muted)] hover:bg-slate-50"
-              >
-                Close
-              </button>
-            </div>
-            <div className="p-3 overflow-y-auto flex-1">
-              <CrawlerAssignmentConversationsSection
-                conversations={conversations}
-                loading={conversationsLoading || conversationMessagesLoading}
-                selectedConversationId={selectedConversationId}
-                onSelectConversation={handleSelectConversation}
-              />
             </div>
           </div>
         </div>
