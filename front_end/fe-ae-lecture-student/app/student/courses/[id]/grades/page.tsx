@@ -1,24 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Award,
-  Percent,
   BookOpenCheck,
   CalendarDays,
-  FileText,
   ChevronLeft,
   ChevronRight,
   CircleCheck,
+  FileText
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { useStudentCourseGrades } from "@/hooks/assignment/useStudentCourseGrades";
 import type {
-  StudentCourseGradeStatistics,
   StudentAssignmentGradeItem,
+  StudentCourseGradeStatistics,
 } from "@/types/assignments/assignment.response";
 import { CourseMiniHeader } from "../components/CourseMiniHeader";
 
@@ -108,14 +106,14 @@ export default function GradesPage() {
 
   // Summary numbers
   const completedCount = stats?.completedAssignmentsCount ?? 0;
-  const totalWeightCovered = stats?.totalWeightCovered ?? 0;
-  const totalWeightedScore = stats?.totalWeightedScore ?? 0;
+  // const totalWeightCovered = stats?.totalWeightCovered ?? 0;
+  // const totalWeightedScore = stats?.totalWeightedScore ?? 0;
 
   // Overall percentage based on current graded work
-  const overallPercent =
-    stats && totalWeightCovered > 0
-      ? Math.round((stats.totalWeightedScore / totalWeightCovered) * 100)
-      : 0;
+  // const overallPercent =
+  //   stats && totalWeightCovered > 0
+  //     ? Math.round((stats.totalWeightedScore / totalWeightCovered) * 100)
+  //     : 0;
 
   return (
     <motion.div
@@ -127,9 +125,9 @@ export default function GradesPage() {
       <CourseMiniHeader section="Grades" />
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-0">
         {/* Overall grade so far */}
-        <div className="card rounded-2xl p-4">
+        {/* <div className="card rounded-2xl p-4">
           <div className="text-sm font-semibold text-[var(--text-muted)] flex items-center gap-2">
             <Percent className="w-4 h-4 text-brand" />
             Current overall grade
@@ -149,24 +147,28 @@ export default function GradesPage() {
           <p className="mt-2 text-xs text-[var(--text-muted)]">
             Based on the assignments that have been graded so far.
           </p>
-        </div>
+        </div> */}
 
         {/* Number of graded assignments */}
         <div className="card rounded-2xl p-4">
-          <div className="text-sm font-semibold text-[var(--text-muted)] flex items-center gap-2">
-            <BookOpenCheck className="w-4 h-4 text-brand" />
-            Graded assignments
+          <div className="flex items-center justify-between gap-4 min-h-[64px]">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-[var(--text-muted)] flex items-center gap-2">
+                <BookOpenCheck className="w-4 h-4 text-brand" />
+                Graded assignments
+              </div>
+              <p className="mt-2 text-xs text-[var(--text-muted)]">
+                Total assignments in this course that have received a grade.
+              </p>
+            </div>
+            <div className="mr-4 flex-shrink-0 text-3xl font-bold text-foreground flex items-center">
+              {loading && !stats ? "…" : completedCount}
+            </div>
           </div>
-          <div className="mt-2 text-3xl font-bold text-foreground">
-            {loading && !stats ? "…" : completedCount}
-          </div>
-          <p className="mt-2 text-xs text-[var(--text-muted)]">
-            Total assignments in this course that have received a grade.
-          </p>
         </div>
 
         {/* Progress towards the final grade */}
-        <div className="card rounded-2xl p-4">
+        {/* <div className="card rounded-2xl p-4">
           <div className="text-sm font-semibold text-[var(--text-muted)] flex items-center gap-2">
             <Award className="w-4 h-4 text-brand" />
             Grade progress
@@ -181,7 +183,7 @@ export default function GradesPage() {
           <p className="mt-2 text-xs text-[var(--text-muted)]">
             Shows how much of your final grade has been revealed and counted.
           </p>
-        </div>
+        </div> */}
       </div>
 
       {/* Assignments list */}
@@ -192,11 +194,10 @@ export default function GradesPage() {
 
         {/* Table header (desktop) */}
         <div className="hidden md:grid grid-cols-12 px-4 py-2 text-xs font-semibold text-[var(--text-muted)] border-b border-[var(--border)]">
-          <div className="col-span-5">Title</div>
-          <div className="col-span-2">Due date</div>
-          <div className="col-span-1 text-right">Weight</div>
-          <div className="col-span-2 text-right">Score</div>
-          <div className="col-span-2 text-right pr-2">Status</div>
+          <div className="col-span-6">Title</div>
+          <div className="col-span-2 text-center">Score</div>
+          <div className="col-span-1" />
+          <div className="col-span-3 text-center">Status</div>
         </div>
 
         <ul className="divide-y divide-[var(--border)]">
@@ -222,7 +223,7 @@ export default function GradesPage() {
               >
                 {/* Desktop row */}
                 <div className="hidden md:grid grid-cols-12 items-center gap-3">
-                  <div className="col-span-5 min-w-0">
+                  <div className="col-span-6 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
                       <Link
                         href={`/student/courses/${courseId}/assignments/${r.assignmentId}`}
@@ -236,12 +237,7 @@ export default function GradesPage() {
                       Due: {due.toLocaleString("en-GB")}
                     </div>
                   </div>
-
-                  <div className="col-span-2 text-sm text-foreground/80" />
-
-                  <div className="col-span-1 text-right text-sm">{r.weight}%</div>
-
-                  <div className="col-span-2 text-right text-sm">
+                  <div className="col-span-2 text-center text-sm">
                     {r.score === null ? (
                       <span className="text-[var(--text-muted)]">—</span>
                     ) : (
@@ -257,7 +253,9 @@ export default function GradesPage() {
                     </span>
                   </div>
 
-                  <div className="col-span-2 text-right">
+                  <div className="col-span-1" />
+
+                  <div className="col-span-3 text-center">
                     <StatusPill status={r.status} />
                   </div>
                 </div>
@@ -285,9 +283,6 @@ export default function GradesPage() {
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <div className="text-foreground/70">
-                      Weight: <b>{r.weight}%</b>
-                    </div>
                     <div className="text-foreground/80">
                       {r.score === null ? (
                         <span className="text-[var(--text-muted)]">—</span>

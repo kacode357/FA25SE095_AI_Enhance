@@ -1,24 +1,24 @@
 // app/student/dashboard/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Sparkles, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-import { useTerms } from "@/hooks/term/useTerms";
 import { useStudentGradesOverview } from "@/hooks/dashboard/useStudentGradesOverview";
 import { useStudentPerformanceAnalytics } from "@/hooks/dashboard/useStudentPerformanceAnalytics";
+import { useTerms } from "@/hooks/term/useTerms";
 
-import DashboardOverviewCard from "./components/DashboardOverviewCard";
-import DashboardPerformanceCard from "./components/DashboardPerformanceCard";
-import DashboardGradeDistribution from "./components/DashboardGradeDistribution";
-import DashboardPendingAssignments from "./components/DashboardPendingAssignments";
 import DashboardCurrentCourses from "./components/DashboardCurrentCourses";
+import DashboardGradeDistribution from "./components/DashboardGradeDistribution";
+import DashboardOverviewCard from "./components/DashboardOverviewCard";
+import DashboardPendingAssignments from "./components/DashboardPendingAssignments";
+import DashboardPerformanceCard from "./components/DashboardPerformanceCard";
 
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 
@@ -78,12 +78,6 @@ export default function StudentDashboardPage() {
       {
         label: "Submissions",
         value: analytics?.data.totalSubmissions ?? "—",
-      },
-      {
-        label: "Weight",
-        value: overview
-          ? `${overview.data.totalWeightEarned}/${overview.data.totalWeightPossible}`
-          : "—",
       },
     ],
     [overview, analytics],

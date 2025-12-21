@@ -1,9 +1,9 @@
 // app/student/dashboard/components/DashboardOverviewCard.tsx
 "use client";
 
-import { TrendingUp } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp } from "lucide-react";
 
 import type { StudentGradesOverviewData } from "@/types/dashboard/dashboard.response";
 
@@ -39,12 +39,12 @@ export default function DashboardOverviewCard({ data, loading }: Props) {
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <StatPill
+              {/* <StatPill
                 label="Weight earned"
                 value={`${data?.totalWeightEarned ?? 0} / ${
                   data?.totalWeightPossible ?? 0
                 }`}
-              />
+              /> */}
               <StatPill label="Courses" value={data?.courses.length ?? 0} />
             </div>
           </>

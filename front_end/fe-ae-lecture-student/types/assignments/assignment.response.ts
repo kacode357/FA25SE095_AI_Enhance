@@ -39,7 +39,7 @@ export interface AssignmentItem {
   statusDisplay: string;
   isGroupAssignment: boolean;
   maxPoints: number;
-  weight: number;
+  // weight: number;
   attachments: Array<{
     id: string;
     fileName: string;
@@ -295,11 +295,11 @@ export interface StudentAssignmentGradeItem {
   assignmentId: string;
   assignmentName: string;
   dueDate: string;
-  weight: number;
+  // weight: number;
   score: number;
   maxPoints: number;
   percentage: number;
-  weightedScore: number;
+  // weightedScore: number;
   status: string;
 }
 

@@ -41,7 +41,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
         startDate: "",
         dueDate: "",
         maxPoints: "",
-        weight: "",
+        // weight: "",
         format: "",
         gradingCriteria: "",
     });
@@ -62,7 +62,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
             startDate: a.startDate ? new Date(a.startDate).toISOString().slice(0, 16) : "",
             dueDate: a.dueDate ? new Date(a.dueDate).toISOString().slice(0, 16) : "",
             maxPoints: a.maxPoints ? String(a.maxPoints) : "",
-            weight: a.weight !== undefined && a.weight !== null ? String(a.weight) : "",
+            // weight: a.weight !== undefined && a.weight !== null ? String(a.weight) : "",
             format: a.format ?? "",
             gradingCriteria: a.gradingCriteria ?? "",
         });
@@ -85,7 +85,7 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
             format: form.format !== undefined ? form.format.trim() : a.format ?? undefined,
             gradingCriteria: form.gradingCriteria !== undefined ? form.gradingCriteria.trim() : a.gradingCriteria ?? undefined,
             maxPoints: form.maxPoints !== undefined && form.maxPoints !== "" ? Number(form.maxPoints) : a.maxPoints ?? undefined,
-            weight: form.weight !== undefined && form.weight !== "" ? Number(form.weight) : a.weight ?? undefined,
+            // weight: form.weight !== undefined && form.weight !== "" ? Number(form.weight) : a.weight ?? undefined,
         };
 
         if (isDraft) {
@@ -132,43 +132,29 @@ export default function EditAssignmentForm({ id, onUpdated, onCancel }: Props) {
                             className="text-xs"
                         />
                     </div>
-                    <div>
-                        <Label className="text-sm mb-1">Max Points</Label>
-                        <div className="flex items-center">
-                            <Input
-                                type="number"
-                                inputMode="numeric"
-                                value={form.maxPoints}
-                                className="text-xs"
-                                onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))}
-                            />
-                            <span className="ml-2 text-sm text-slate-600">pts</span>
+                    <div className="flex w-full gap-4 md:col-span-2">
+                        <div className="flex-1">
+                            <Label className="text-sm mb-1">Max Points</Label>
+                            <div className="flex items-center">
+                                <Input
+                                    type="number"
+                                    inputMode="numeric"
+                                    value={form.maxPoints}
+                                    className="text-xs"
+                                    onChange={(e) => setForm((p) => ({ ...p, maxPoints: e.target.value.replace(/\D/g, "") }))}
+                                />
+                                <span className="ml-2 text-sm text-slate-600">pts</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <Label className="text-sm mb-1">Weight</Label>
-                        <div className="flex items-center">
+                        <div className="flex-1">
+                            <Label className="text-sm mb-1">Topic</Label>
                             <Input
-                                type="number"
-                                step="0.01"
-                                value={form.weight}
-                                className="text-xs"
-                                onChange={(e) => setForm((p) => ({ ...p, weight: e.target.value.replace(/[^0-9.]/g, "") }))}
-                                placeholder="e.g, 40"
+                                readOnly
+                                value={data.assignment.topicName}
+                                className="text-xs bg-slate-100"
                             />
-                            <span className="ml-2 text-base text-slate-600">%</span>
                         </div>
-                    </div>
-
-                    {/* Topic shown read-only since Update payload doesn't include topicId */}
-                    <div className="md:col-span-2">
-                        <Label className="text-sm mb-1">Topic</Label>
-                        <Input
-                            readOnly
-                            value={data.assignment.topicName}
-                            className="text-xs bg-slate-100"
-                        />
                     </div>
 
                     <div className="flex gap-3 w-full md:col-span-2">

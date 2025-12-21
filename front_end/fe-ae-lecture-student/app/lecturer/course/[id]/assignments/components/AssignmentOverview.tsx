@@ -55,11 +55,6 @@ export default function AssignmentOverview({ a, overviewEnter, overviewMounted, 
                     </div>
 
                     <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-500">Weight</span>
-                        <span className="font-medium">{a.weight ?? 0} %</span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
                         <span className="text-slate-500">Format</span>
                         <span className="font-medium">{a.format?.trim() || "—"}</span>
                     </div>

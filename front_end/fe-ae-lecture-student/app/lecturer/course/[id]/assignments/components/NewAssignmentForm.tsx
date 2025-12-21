@@ -1,7 +1,6 @@
 // app/lecturer/course/[id]/assignments/components/NewAssignmentForm.tsx
 "use client";
 
-import { CircleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Select from "@/components/ui/select/Select";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { courseAxiosInstance } from "@/config/axios.config";
 import { useAssignGroups } from "@/hooks/assignment/useAssignGroups";
 import { useCreateAssignment } from "@/hooks/assignment/useCreateAssignment";
@@ -65,7 +63,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
     isGroupAssignment: false,
     autoSchedule: true,
     maxPoints: "",
-    weight: "",
+    // weight: "",
     groupIds: [] as string[],
     format: "",
     gradingCriteria: "",
@@ -163,7 +161,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
       isGroupAssignment: false,
       autoSchedule: true,
       maxPoints: "",
-      weight: "",
+      // weight: "",
       groupIds: [],
       format: "",
       gradingCriteria: "",
@@ -219,7 +217,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
       dueDate: toVNLocalISOString(form.dueDate),
       isGroupAssignment: !!form.isGroupAssignment,
       maxPoints: form.maxPoints ? Number(form.maxPoints) : undefined,
-      weight: form.weight !== undefined && form.weight !== "" ? Number(form.weight) : 0,
+      // weight: form.weight !== undefined && form.weight !== "" ? Number(form.weight) : 0,
       format: form.format?.trim() || undefined,
       gradingCriteria: form.gradingCriteria?.trim() || undefined,
       groupIds: form.isGroupAssignment && form.groupIds.length > 0 ? form.groupIds : undefined,
@@ -328,36 +326,6 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                 }
               />
               <span className="ml-2 text-sm text-slate-600">pts</span>
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-sm mb-1">Weight
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Grading criteria help"
-                    className="inline-flex h-5 w-5 items-center justify-center rounded-full cursor-pointer bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    <CircleAlert className="size-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-lg text-center bg-black text-white">
-                  The weight of the assignment in the total grade of the course (%).
-                </TooltipContent>
-              </Tooltip>
-            </Label>
-            <div className="flex items-center">
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="e.g., 40"
-                value={form.weight}
-                className="text-xs !py-3"
-                onChange={(e) => setForm((p) => ({ ...p, weight: e.target.value.replace(/[^0-9.]/g, "") }))}
-              />
-              <span className="ml-2 text-base text-slate-600">%</span>
             </div>
           </div>
 

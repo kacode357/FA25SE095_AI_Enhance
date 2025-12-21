@@ -35,8 +35,8 @@ export interface StudentCourseOverviewItem {
 export interface StudentGradesOverviewData {
   currentTermGpa: number;
   overallGpa: number;
-  totalWeightEarned: number;
-  totalWeightPossible: number;
+  // totalWeightEarned: number;
+  // totalWeightPossible: number;
   courses: StudentCourseOverviewItem[];
   gradeDistribution: GradeDistributionDto;
 }
@@ -52,7 +52,7 @@ export interface StudentCourseGradeAssignmentItem {
   topicName: string;
   grade: number;
   maxPoints: number;
-  weight: number;
+  // weight: number;
   submittedAt: string | null;
   gradedAt: string | null;
   status: string;
@@ -63,7 +63,7 @@ export interface StudentCourseGradesDetailData {
   courseId: string;
   courseName: string;
   courseCode: string;
-  weightedGrade: number;
+  // weightedGrade: number;
   letterGrade: string;
   assignments: StudentCourseGradeAssignmentItem[];
   topicBreakdown: Record<string, number>;
