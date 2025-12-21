@@ -24,7 +24,6 @@ export type ChatMessageDto = {
   groupId?: string | null;
   assignmentId?: string | null;
   includeAssignmentContext?: boolean;
-  includeHistory?: boolean;
   messageType?: MessageType;
   crawlJobId?: string | null;
   timestamp?: string;
@@ -67,6 +66,8 @@ type Options = {
   // message
   onUserMessageReceived?: (message: ChatMessageDto) => void;
   onGroupMessageReceived?: (message: ChatMessageDto) => void;
+  onAgentResponseReceived?: (message: ChatMessageDto) => void;
+  onGroupAgentResponse?: (message: ChatMessageDto) => void;
 
   // crawl request result
   onCrawlInitiated?: (data: {
@@ -120,6 +121,8 @@ export function useCrawlerChatHub({
   onAssignmentUnsubscribed,
   onUserMessageReceived,
   onGroupMessageReceived,
+  onAgentResponseReceived,
+  onGroupAgentResponse,
   onCrawlInitiated,
   onCrawlFailed,
   onMessageSent,
@@ -169,41 +172,63 @@ export function useCrawlerChatHub({
         .configureLogging(signalR.LogLevel.None)
         .build();
 
+      const logEvent = (event: string, payload?: unknown) => {
+        console.log(`[CrawlerChatHub] ${event}`, payload);
+      };
+
+      const onWithLog = <T extends any[]>(
+        event: string,
+        handler: (...args: T) => void
+      ) => {
+        conn.on(event, (...args: T) => {
+          logEvent(event, args.length > 1 ? args : args[0]);
+          handler(...args);
+        });
+      };
+
       // ===== Đăng ký event từ Hub (server -> client) =====
 
-      conn.on("ConversationJoined", (conversationId: string) => {
+      onWithLog("ConversationJoined", (conversationId: string) => {
         onConversationJoined?.(conversationId);
       });
 
-      conn.on("ConversationLeft", (conversationId: string) => {
+      onWithLog("ConversationLeft", (conversationId: string) => {
         onConversationLeft?.(conversationId);
       });
 
-      conn.on("GroupWorkspaceJoined", (groupId: string) => {
+      onWithLog("GroupWorkspaceJoined", (groupId: string) => {
         onGroupWorkspaceJoined?.(groupId);
       });
 
-      conn.on("GroupWorkspaceLeft", (groupId: string) => {
+      onWithLog("GroupWorkspaceLeft", (groupId: string) => {
         onGroupWorkspaceLeft?.(groupId);
       });
 
-      conn.on("AssignmentSubscribed", (assignmentId: string) => {
+      onWithLog("AssignmentSubscribed", (assignmentId: string) => {
         onAssignmentSubscribed?.(assignmentId);
       });
 
-      conn.on("AssignmentUnsubscribed", (assignmentId: string) => {
+      onWithLog("AssignmentUnsubscribed", (assignmentId: string) => {
         onAssignmentUnsubscribed?.(assignmentId);
       });
 
-      conn.on("UserMessageReceived", (message: ChatMessageDto) => {
+      onWithLog("UserMessageReceived", (message: ChatMessageDto) => {
         onUserMessageReceived?.(message);
       });
 
-      conn.on("GroupMessageReceived", (message: ChatMessageDto) => {
+      onWithLog("GroupMessageReceived", (message: ChatMessageDto) => {
         onGroupMessageReceived?.(message);
       });
 
-      conn.on(
+      onWithLog("AgentResponseReceived", (message: ChatMessageDto) => {
+        onAgentResponseReceived?.(message);
+      });
+
+      onWithLog("GroupAgentResponse", (message: ChatMessageDto) => {
+        onGroupAgentResponse?.(message);
+      });
+
+      onWithLog(
         "CrawlInitiated",
         (data: {
           messageId: string;
@@ -215,67 +240,70 @@ export function useCrawlerChatHub({
         }
       );
 
-      conn.on(
+      onWithLog(
         "CrawlFailed",
         (data: { messageId?: string; error: string; success: boolean }) => {
           onCrawlFailed?.(data);
         }
       );
 
-      conn.on(
+      onWithLog(
         "MessageSent",
         (data: { messageId: string; timestamp: string; success: boolean }) => {
           onMessageSent?.(data);
         }
       );
 
-      conn.on("MessageError", (messageId?: string, error?: string) => {
+      onWithLog("MessageError", (messageId?: string, error?: string) => {
         setLastError(error ?? "Unknown message error");
         onMessageError?.(messageId, error);
         onError?.(error ?? "Unknown message error");
       });
 
-      conn.on("CrawlerResponseReceived", (response: CrawlerResponseDto) => {
+      onWithLog("CrawlerResponseReceived", (response: CrawlerResponseDto) => {
         onCrawlerResponseReceived?.(response);
       });
 
-      conn.on("GroupCrawlerResponse", (response: CrawlerResponseDto) => {
+      onWithLog("GroupCrawlerResponse", (response: CrawlerResponseDto) => {
         onGroupCrawlerResponse?.(response);
       });
 
-      conn.on("AssignmentCrawlerResponse", (response: CrawlerResponseDto) => {
+      onWithLog("AssignmentCrawlerResponse", (response: CrawlerResponseDto) => {
         onAssignmentCrawlerResponse?.(response);
       });
 
-      conn.on(
+      onWithLog(
         "UserTyping",
         (conversationId: string, userId: string, userName: string) => {
           onUserTyping?.(conversationId, userId, userName);
         }
       );
 
-      conn.on("UserStoppedTyping", (conversationId: string, userId: string) => {
+      onWithLog("UserStoppedTyping", (conversationId: string, userId: string) => {
         onUserStoppedTyping?.(conversationId, userId);
       });
 
-      conn.on("CrawlJobStatus", (status: CrawlJobStatusResponse) => {
+      onWithLog("CrawlJobStatus", (status: CrawlJobStatusResponse) => {
         onCrawlJobStatus?.(status);
       });
 
-      conn.on("CrawlJobProgressUpdate", (status: CrawlJobStatusResponse) => {
+      onWithLog("CrawlJobProgressUpdate", (status: CrawlJobStatusResponse) => {
         onCrawlJobProgressUpdate?.(status);
       });
 
       conn.onclose(() => {
+        logEvent("ConnectionClosed");
         setConnected(false);
         setConnectionId(null);
       });
 
       conn.onreconnecting(() => {
+        logEvent("Reconnecting");
         setConnected(false);
       });
 
       conn.onreconnected((newConnectionId) => {
+        logEvent("Reconnected", newConnectionId ?? conn.connectionId ?? null);
         setConnected(true);
         setConnectionId(newConnectionId ?? conn.connectionId ?? null);
       });
@@ -294,6 +322,8 @@ export function useCrawlerChatHub({
     onAssignmentUnsubscribed,
     onUserMessageReceived,
     onGroupMessageReceived,
+    onAgentResponseReceived,
+    onGroupAgentResponse,
     onCrawlInitiated,
     onCrawlFailed,
     onMessageSent,
@@ -317,6 +347,10 @@ export function useCrawlerChatHub({
       setConnected(true);
       setConnectionId(conn.connectionId ?? null);
       setLastError(null);
+      return;
+    }
+
+    if (conn.state !== signalR.HubConnectionState.Disconnected) {
       return;
     }
 
@@ -376,10 +410,8 @@ export function useCrawlerChatHub({
       if (!active) return;
       try {
         await connect();
-      } catch (err) {
-        if (active) {
-          console.error("[CrawlerChatHub] auto connect error:", err);
-        }
+      } catch {
+        // Intentionally ignore auto-connect errors; handled in connect.
       }
     })();
 
@@ -438,7 +470,6 @@ export function useCrawlerChatHub({
       ...message,
       messageType: message.messageType ?? MessageType.UserMessage,
       includeAssignmentContext: message.includeAssignmentContext ?? true,
-      includeHistory: message.includeHistory ?? true,
     };
 
     await conn.invoke("SendCrawlerMessage", payload);
@@ -504,3 +535,4 @@ export function useCrawlerChatHub({
     unsubscribeFromCrawlJob,
   };
 }
+

@@ -196,7 +196,7 @@ const CrawlerCsvUploadDialog = ({
       <DialogContent className="w-[98vw] max-w-[1200px] lg:max-w-[1400px] p-0 flex flex-col max-h-[90vh] overflow-hidden">
         {/* HEADER (shrink-0) */}
         <DialogHeader className="shrink-0 px-6 py-5">
-          <DialogTitle>Upload CSV</DialogTitle>
+          <DialogTitle>Upload file</DialogTitle>
           <DialogDescription>
             Choose a CSV file to preview the content before confirming the upload.
           </DialogDescription>
@@ -216,7 +216,7 @@ const CrawlerCsvUploadDialog = ({
               className="inline-flex items-center gap-2 rounded-lg border border-dashed border-[var(--border)] bg-slate-50 px-3 py-2 text-[11px] font-semibold text-[var(--brand)] transition hover:bg-[var(--brand)]/10"
             >
               <Upload className="h-4 w-4" />
-              Choose CSV file
+              Choose file
             </button>
 
             {fileMeta && (
@@ -276,7 +276,7 @@ const CrawlerCsvUploadDialog = ({
             </div>
           ) : (
             <div className="h-full rounded-lg border border-dashed border-[var(--border)] bg-slate-50/60 px-3 py-6 text-center text-[11px] text-slate-500 flex items-center justify-center">
-              Select a CSV file to preview.
+              Select a file to preview.
             </div>
           )}
         </div>

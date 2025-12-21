@@ -4,11 +4,12 @@
 import { MessageCircle, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CrawlerChatConversationItem } from "@/types/crawler-chat/crawler-chat.response";
-import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
+import { formatDateOnlyVN, formatTimeOnlyVN } from "@/utils/datetime/format-datetime";
 
 type Props = {
   conversations: CrawlerChatConversationItem[];
   loading: boolean;
+  refreshingConversationId?: string | null;
   selectedConversationId?: string | null;
   onSelectConversation?: (conversationId: string) => void;
   onNewConversation?: () => void;
@@ -17,14 +18,19 @@ type Props = {
 export default function CrawlerAssignmentConversationsSection({
   conversations,
   loading,
+  refreshingConversationId = null,
   selectedConversationId,
   onSelectConversation,
   onNewConversation,
 }: Props) {
   const hasConversations = conversations.length > 0;
-  const showLoading = loading && !hasConversations;
-  const formatTime = (value: string) =>
-    new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const showInitialLoading = loading && !hasConversations;
+  const hasRefreshingItem = Boolean(refreshingConversationId);
+  const shouldShowEmptyState = !hasConversations && !hasRefreshingItem;
+  const isRefreshingInList = hasRefreshingItem
+    ? conversations.some((item) => item.conversationId === refreshingConversationId)
+    : false;
+  const formatTime = (value: string) => formatTimeOnlyVN(value);
 
   return (
     <section className="rounded-3xl border border-[var(--border)] bg-white px-4 py-4">
@@ -58,18 +64,26 @@ export default function CrawlerAssignmentConversationsSection({
         )}
 
         <div className="space-y-3">
-          {showLoading ? (
+          {showInitialLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-5 w-full" />
               <Skeleton className="h-5 w-3/4" />
             </div>
-          ) : !hasConversations ? (
+          ) : shouldShowEmptyState ? (
             <p className="text-[11px] text-slate-500 text-center py-2">
               You have no previous AI conversations yet.
             </p>
           ) : (
             <div className="space-y-2">
               <ul className="space-y-2 max-h-[420px] overflow-y-auto">
+                {hasRefreshingItem && !isRefreshingInList && (
+                  <li className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-4 py-3">
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </li>
+                )}
                 {conversations
                   .slice()
                   .sort(
@@ -78,7 +92,10 @@ export default function CrawlerAssignmentConversationsSection({
                       new Date(a.lastMessageAt).getTime()
                   )
                 .map((c) => {
-                  const isActive = c.conversationId === selectedConversationId;
+                  const isRefreshing =
+                    c.conversationId === refreshingConversationId &&
+                    !(c.conversationName && c.conversationName.trim());
+                  const isActive = !isRefreshing && c.conversationId === selectedConversationId;
                   const title =
                     (c.conversationName && c.conversationName.trim()) ||
                     "Conversation";
@@ -100,22 +117,26 @@ export default function CrawlerAssignmentConversationsSection({
                             : "border-[var(--border)] bg-white hover:border-[var(--brand)]/50"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 group-hover:bg-[var(--brand)]/10 group-hover:text-[var(--brand)] transition">
-                            <MessageCircle className="h-4 w-4" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span
-                              className={`text-[13px] font-semibold ${
-                                isActive ? "text-[var(--brand)]" : "text-slate-800"
-                              }`}
-                            >
-                              {title}
-                            </span>
-                            <span className="text-[11px] text-slate-500">
-                              {formatDateOnlyVN(c.lastMessageAt)} · {formatTime(c.lastMessageAt)}
-                            </span>
-                          </div>
+                        <div className="flex flex-col">
+                          {isRefreshing ? (
+                            <div className="flex flex-col gap-1">
+                              <Skeleton className="h-4 w-40" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          ) : (
+                            <>
+                              <span
+                                className={`text-[13px] font-semibold ${
+                                  isActive ? "text-[var(--brand)]" : "text-slate-800"
+                                }`}
+                              >
+                                {title}
+                              </span>
+                              <span className="text-[11px] text-slate-500">
+                                {formatDateOnlyVN(c.lastMessageAt)} - {formatTime(c.lastMessageAt)}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </li>
                     );
@@ -128,3 +149,6 @@ export default function CrawlerAssignmentConversationsSection({
     </section>
   );
 }
+
+
+

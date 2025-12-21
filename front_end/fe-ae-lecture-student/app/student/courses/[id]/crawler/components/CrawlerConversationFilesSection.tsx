@@ -235,7 +235,7 @@ const CrawlerConversationFilesSection = ({ conversationId, active = true }: Prop
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
           <LinkIcon className="h-4 w-4 text-[var(--brand)]" />
-          Updated Links
+          Uploaded Files
         </div>
         <button
           type="button"
@@ -250,7 +250,7 @@ const CrawlerConversationFilesSection = ({ conversationId, active = true }: Prop
 
       {!conversationId ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-slate-50/60 px-3 py-6 text-center text-[11px] text-slate-500">
-          Select a conversation to load updated links.
+          Select a conversation to load uploaded files.
         </div>
       ) : loading ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-slate-50/60 px-3 py-6 text-center text-[11px] text-slate-500 flex items-center justify-center gap-2">
@@ -285,7 +285,7 @@ const CrawlerConversationFilesSection = ({ conversationId, active = true }: Prop
                       Rows: {file.rowCount ?? "-"} | Size: {formatBytes(file.fileSize)}
                     </div>
                     <div className="text-[10px] text-slate-500">
-                      Link:{" "}
+                      File URL:{" "}
                       {file.fileUrl ? (
                         <a
                           href={file.fileUrl}
@@ -322,7 +322,7 @@ const CrawlerConversationFilesSection = ({ conversationId, active = true }: Prop
                         rel="noreferrer"
                         className="rounded-lg border border-[var(--border)] bg-white px-3 py-1 text-[10px] font-semibold text-[var(--brand)] shadow-sm hover:bg-slate-50"
                       >
-                        Open link
+                        Open file
                       </a>
                     )}
                   </div>

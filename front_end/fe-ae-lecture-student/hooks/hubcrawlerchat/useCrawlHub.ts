@@ -13,7 +13,6 @@ type Options = {
   getAccessToken: () => Promise<string> | string;
   autoConnect?: boolean;
   useAssignmentContext?: boolean;
-  includeHistory?: boolean;
 
   // ===== callbacks: server -> client =====
   onConnectedChange?: (connected: boolean) => void;
@@ -41,7 +40,6 @@ export function useCrawlHub({
   getAccessToken,
   autoConnect = true,
   useAssignmentContext = true,
-  includeHistory,
   onConnectedChange,
   onJobStats,
   onJobStarted,
@@ -77,9 +75,6 @@ export function useCrawlHub({
           String(useAssignmentContext)
         );
       }
-      if (typeof includeHistory === "boolean") {
-        queryParams.set("includeHistory", String(includeHistory));
-      }
       const queryString = queryParams.toString();
       const hubUrl = queryString ? `${hubUrlBase}?${queryString}` : hubUrlBase;
 
@@ -103,60 +98,82 @@ export function useCrawlHub({
         .configureLogging(signalR.LogLevel.None)
         .build();
 
+      const getJobId = (payload: any) => {
+        return payload?.jobId || payload?.JobId || payload?.jobID || payload?.JobID || null;
+      };
+
+      const logEvent = (
+        label: string,
+        payload?: any,
+        extra?: Record<string, unknown>
+      ) => {
+        const jobId = getJobId(payload);
+        const details = {
+          ...(jobId ? { jobId } : {}),
+          ...(extra ?? {}),
+        };
+        if (Object.keys(details).length > 0) {
+          console.log(`[CrawlHub] ${label}`, details);
+        } else {
+          console.log(`[CrawlHub] ${label}`);
+        }
+      };
+
+
       // ===== đăng ký event từ CrawlHub (server -> client) =====
 
       conn.on("OnJobStats", (stats: CrawlJobStats) => {
-        console.log("[CrawlHub] OnJobStats:", stats);
+        logEvent("OnJobStats");
         onJobStats?.(stats);
       });
 
       conn.on("OnJobStarted", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnJobStarted:", payload);
+        logEvent("OnJobStarted", payload);
         onJobStarted?.(payload);
       });
 
       conn.on("OnJobProgress", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnJobProgress:", payload);
+        logEvent("OnJobProgress", payload);
         onJobProgress?.(payload);
       });
 
       conn.on("OnJobCompleted", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnJobCompleted:", payload);
+        logEvent("OnJobCompleted", payload);
         onJobCompleted?.(payload);
       });
 
       conn.on("OnJobNavigation", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnJobNavigation:", payload);
+        logEvent("OnJobNavigation", payload, { eventType: payload?.navigationEventType || payload?.NavigationEventType });
         onJobNavigation?.(payload);
       });
 
       conn.on("OnJobPagination", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnJobPagination:", payload);
+        logEvent("OnJobPagination", payload);
         onJobPagination?.(payload);
       });
 
       conn.on("OnJobExtraction", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnJobExtraction:", payload);
+        logEvent("OnJobExtraction", payload, { eventType: payload?.extractionEventType || payload?.ExtractionEventType });
         onJobExtraction?.(payload);
       });
 
       conn.on("OnSystemMetrics", (metrics: CrawlSystemMetrics) => {
-        console.log("[CrawlHub] OnSystemMetrics:", metrics);
+        logEvent("OnSystemMetrics");
         onSystemMetrics?.(metrics);
       });
 
       conn.on("OnGroupJobUpdate", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnGroupJobUpdate:", payload);
+        logEvent("OnGroupJobUpdate", payload);
         onGroupJobUpdate?.(payload);
       });
 
       conn.on("OnAssignmentJobUpdate", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnAssignmentJobUpdate:", payload);
+        logEvent("OnAssignmentJobUpdate", payload);
         onAssignmentJobUpdate?.(payload);
       });
 
       conn.on("OnConversationJobUpdate", (payload: CrawlJobUpdate) => {
-        console.log("[CrawlHub] OnConversationJobUpdate:", payload);
+        logEvent("OnConversationJobUpdate", payload);
         onConversationJobUpdate?.(payload);
       });
 
@@ -196,7 +213,6 @@ export function useCrawlHub({
     onConversationJobUpdate,
     onConnectedChange,
     useAssignmentContext,
-    includeHistory,
   ]);
 
   // ===== public APIs =====
@@ -434,3 +450,5 @@ export function useCrawlHub({
     unsubscribeFromConversation,
   };
 }
+
+

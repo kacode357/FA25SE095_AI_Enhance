@@ -27,6 +27,7 @@ export type CrawlerChatMessageListProps = {
   chatSending: boolean;
   thinking?: boolean;
   chatReady?: boolean;
+  disableAutoScroll?: boolean;
 };
 
 const fallbackColors = [
@@ -530,15 +531,17 @@ const CrawlerChatMessageList = React.memo(function CrawlerChatMessageList({
   chatMessages,
   chatSending,
   thinking,
+  disableAutoScroll = false,
   chatReady = true,
 }: CrawlerChatMessageListProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (disableAutoScroll) return;
     const el = listRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [chatMessages.length, thinking, chatSending]);
+  }, [chatMessages.length, thinking, chatSending, disableAutoScroll]);
 
   return (
     <div
@@ -558,58 +561,60 @@ const CrawlerChatMessageList = React.memo(function CrawlerChatMessageList({
           </div>
         </div>
       ) : (
-        chatMessages.map((m) => {
-          const rendered = renderMessageContent(m.content || "");
-          const isUserMessage = m.role === "user";
+        <>
+          {chatMessages.map((m) => {
+            const rendered = renderMessageContent(m.content || "");
+            const isUserMessage = m.role === "user";
 
-          const baseContentClass =
-            "text-[11px] leading-relaxed space-y-0.5 [&_ul]:ml-4 [&_ul]:list-disc [&_ul]:list-outside [&_ol]:ml-5 [&_ol]:list-decimal [&_ol]:list-outside [&_li]:mb-0.5 [&_a]:underline [&_a]:underline-offset-2 [&_a]:break-words [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[9px] [&_strong]:font-semibold [&_p]:last:mb-0 [&_.inline-image-block]:my-1.5 [&_figure.inline-image]:my-0 [&_figure.inline-image]:overflow-hidden [&_figure.inline-image]:rounded-md [&_figure.inline-image]:border [&_figure.inline-image]:border-[var(--border)] [&_figure.inline-image]:bg-white [&_figure.inline-image>img]:block [&_figure.inline-image>img]:w-full [&_figure.inline-image>img]:max-h-52 [&_figure.inline-image>img]:object-cover [&_figure.inline-image>figcaption]:px-2 [&_figure.inline-image>figcaption]:py-1 [&_figure.inline-image>figcaption]:text-[9px] [&_figure.inline-image>figcaption]:font-medium [&_figure.inline-image>figcaption]:text-slate-500";
+            const baseContentClass =
+              "text-[11px] leading-relaxed space-y-0.5 [&_ul]:ml-4 [&_ul]:list-disc [&_ul]:list-outside [&_ol]:ml-5 [&_ol]:list-decimal [&_ol]:list-outside [&_li]:mb-0.5 [&_a]:underline [&_a]:underline-offset-2 [&_a]:break-words [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[9px] [&_strong]:font-semibold [&_p]:last:mb-0 [&_.inline-image-block]:my-1.5 [&_figure.inline-image]:my-0 [&_figure.inline-image]:overflow-hidden [&_figure.inline-image]:rounded-md [&_figure.inline-image]:border [&_figure.inline-image]:border-[var(--border)] [&_figure.inline-image]:bg-white [&_figure.inline-image>img]:block [&_figure.inline-image>img]:w-full [&_figure.inline-image>img]:max-h-52 [&_figure.inline-image>img]:object-cover [&_figure.inline-image>figcaption]:px-2 [&_figure.inline-image>figcaption]:py-1 [&_figure.inline-image>figcaption]:text-[9px] [&_figure.inline-image>figcaption]:font-medium [&_figure.inline-image>figcaption]:text-slate-500";
 
-          const anchorToneClass = isUserMessage
-            ? "[&_a]:!text-amber-200 [&_a:visited]:!text-amber-200 [&_a]:decoration-amber-200/60 [&_a:hover]:!text-amber-50 [&_a:focus-visible]:!text-amber-50"
-            : "[&_a]:text-[#2563eb] [&_a:visited]:text-[#1d4ed8] [&_a]:decoration-[#2563eb]/50 [&_a:hover]:text-[#1d4ed8] [&_a:focus-visible]:text-[#1d4ed8]";
+            const anchorToneClass = isUserMessage
+              ? "[&_a]:!text-amber-200 [&_a:visited]:!text-amber-200 [&_a]:decoration-amber-200/60 [&_a:hover]:!text-amber-50 [&_a:focus-visible]:!text-amber-50"
+              : "[&_a]:text-[#2563eb] [&_a:visited]:text-[#1d4ed8] [&_a]:decoration-[#2563eb]/50 [&_a:hover]:text-[#1d4ed8] [&_a:focus-visible]:text-[#1d4ed8]";
 
-          const headingClass =
-            "[&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-[12px] [&_h1]:font-semibold [&_h1]:leading-snug [&_h1]:tracking-tight [&_h1]:text-current [&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-[11.5px] [&_h2]:font-semibold [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-current [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-[11px] [&_h3]:font-semibold [&_h3]:leading-snug [&_h3]:tracking-tight [&_h3]:text-current [&_h4]:mt-1.5 [&_h4]:mb-1 [&_h4]:text-[10.5px] [&_h4]:font-semibold [&_h4]:tracking-tight [&_h4]:text-current";
+            const headingClass =
+              "[&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-[12px] [&_h1]:font-semibold [&_h1]:leading-snug [&_h1]:tracking-tight [&_h1]:text-current [&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-[11.5px] [&_h2]:font-semibold [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-current [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-[11px] [&_h3]:font-semibold [&_h3]:leading-snug [&_h3]:tracking-tight [&_h3]:text-current [&_h4]:mt-1.5 [&_h4]:mb-1 [&_h4]:text-[10.5px] [&_h4]:font-semibold [&_h4]:tracking-tight [&_h4]:text-current";
 
-          const contentClass = `${baseContentClass} ${anchorToneClass} ${headingClass}`;
-          return (
-            <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`relative group max-w-[85%] rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm ${
-                  m.role === "user"
-                    ? "rounded-br-sm bg-[var(--brand)] text-white"
-                    : m.role === "system"
-                    ? "rounded-md border border-slate-200 bg-slate-100 text-[10px] text-slate-700"
-                    : "rounded-bl-sm border border-[var(--border)] bg-white text-slate-800"
-                }`}
-              >
-                {rendered.html && (
-                  <div className={contentClass} dangerouslySetInnerHTML={{ __html: rendered.html }} />
-                )}
-
-                {m.extractedData && (
-                  <div className="mt-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] text-slate-700">
-                    <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
-                      Extracted data
-                    </div>
-                    <div className="whitespace-pre-line">{m.extractedData}</div>
-                  </div>
-                )}
-
-                {m.visualizationData && <ChatVisualization rawJson={m.visualizationData} />}
-
+            const contentClass = `${baseContentClass} ${anchorToneClass} ${headingClass}`;
+            return (
+              <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`mt-0.5 flex items-center justify-end gap-1.5 text-[9px] opacity-70 ${
-                    m.role === "user" ? "text-indigo-100" : "text-slate-400"
+                  className={`relative group max-w-[85%] rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm ${
+                    m.role === "user"
+                      ? "rounded-br-sm bg-[var(--brand)] text-white"
+                      : m.role === "system"
+                      ? "rounded-md border border-slate-200 bg-slate-100 text-[10px] text-slate-700"
+                      : "rounded-bl-sm border border-[var(--border)] bg-white text-slate-800"
                   }`}
                 >
-                  <span>{formatDateTimeVN(m.createdAt)}</span>
+                  {rendered.html && (
+                    <div className={contentClass} dangerouslySetInnerHTML={{ __html: rendered.html }} />
+                  )}
+
+                  {m.extractedData && (
+                    <div className="mt-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] text-slate-700">
+                      <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                        Extracted data
+                      </div>
+                      <div className="whitespace-pre-line">{m.extractedData}</div>
+                    </div>
+                  )}
+
+                  {m.visualizationData && <ChatVisualization rawJson={m.visualizationData} />}
+
+                  <div
+                    className={`mt-0.5 flex items-center justify-end gap-1.5 text-[9px] opacity-70 ${
+                      m.role === "user" ? "text-indigo-100" : "text-slate-400"
+                    }`}
+                  >
+                    <span>{formatDateTimeVN(m.createdAt)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })
+            );
+          })}
+        </>
       )}
 
       {(chatSending || thinking) && (

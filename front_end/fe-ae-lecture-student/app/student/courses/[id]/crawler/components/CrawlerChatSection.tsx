@@ -17,10 +17,9 @@ type Props = {
   uploadingCsv?: boolean;
   chatSending: boolean;
   chatConnected: boolean;
-  includeHistory: boolean;
-  onIncludeHistoryChange: (value: boolean) => void;
   chatReady?: boolean;
   thinking?: boolean;
+  disableAutoScroll?: boolean;
   onOpenResults?: () => void;
   resultsAvailable?: boolean;
 };
@@ -37,10 +36,9 @@ function CrawlerChatSection({
   uploadingCsv = false,
   chatSending,
   chatConnected,
-  includeHistory,
-  onIncludeHistoryChange,
   chatReady = true,
   thinking = false,
+  disableAutoScroll = false,
   onOpenResults,
   resultsAvailable = false,
 }: Props) {
@@ -80,19 +78,6 @@ function CrawlerChatSection({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <label
-            htmlFor="crawler-include-history"
-            className="flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-white px-2 py-0.5 text-[9px] font-semibold text-[var(--foreground)]"
-          >
-            <input
-              id="crawler-include-history"
-              type="checkbox"
-              checked={includeHistory}
-              onChange={(e) => onIncludeHistoryChange(e.target.checked)}
-              className="h-3 w-3 rounded border-slate-300 text-[var(--brand)] focus:ring-[var(--focus-ring)]"
-            />
-            <span>Use chat history</span>
-          </label>
           {onOpenResults && (
             <button
               type="button"
@@ -101,7 +86,7 @@ function CrawlerChatSection({
               className="btn btn-blue-slow h-6 px-2.5 py-0.5 text-[9px] font-semibold shadow-sm disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
             >
               <Database className="h-3 w-3 text-white" />
-              View Crawled Data
+              View Data History
             </button>
           )}
         </div>
@@ -112,6 +97,7 @@ function CrawlerChatSection({
         chatSending={chatSending}
         thinking={thinking}
         chatReady={chatReady}
+        disableAutoScroll={disableAutoScroll}
       />
 
       {showSuggestions && (
@@ -140,10 +126,10 @@ function CrawlerChatSection({
           onClick={handleUploadButtonClick}
           disabled={uploadDisabled}
           className="flex h-[36px] items-center gap-1 rounded-lg border border-dashed border-[var(--border)] bg-slate-50/70 px-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--brand)] transition hover:bg-[var(--brand)]/10 disabled:cursor-not-allowed disabled:opacity-60"
-          title="Upload CSV file"
+          title="Upload file"
         >
           {uploadingCsv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          <span>Upload CSV</span>
+          <span>Upload file</span>
         </button>
 
         <textarea

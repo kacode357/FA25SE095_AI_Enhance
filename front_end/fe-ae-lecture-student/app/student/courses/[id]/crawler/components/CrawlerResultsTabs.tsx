@@ -41,7 +41,7 @@ export default function CrawlerResultsTabs({
         </TabsTrigger>
         <TabsTrigger value="files" className="text-[11px] font-semibold">
           <LinkIcon className="h-3.5 w-3.5 text-[var(--brand)]" />
-          Updated Links
+          Uploaded Files
         </TabsTrigger>
       </TabsList>
 

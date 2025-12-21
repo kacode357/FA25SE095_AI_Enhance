@@ -2,7 +2,7 @@
 "use client";
 
 import { Link, MessageSquare, Rocket, RotateCw, Cpu, Settings2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Progress } from "@/components/ui/progress";
 
 type Props = {
   url: string;
@@ -17,6 +17,7 @@ type Props = {
   crawlConnected: boolean;
   assignmentId?: string | null;
   promptUsed?: string;
+  activeTargetUrl?: string;
   
   // Props mới cho Overlay
   isCrawling?: boolean;
@@ -24,15 +25,6 @@ type Props = {
   statusMessage?: string;
 };
 
-// Component Progress chuẩn style Shadcn/Tailwind
-const Progress = ({ value = 0, className = "" }: { value?: number; className?: string }) => (
-  <div className={`relative h-2 w-full overflow-hidden rounded-full bg-slate-100 ${className}`}>
-    <div
-      className="h-full w-full flex-1 bg-[var(--brand)] transition-all duration-500 ease-in-out"
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
-    />
-  </div>
-);
 
 export default function CrawlerUrlPromptSection({
   url,
@@ -47,34 +39,15 @@ export default function CrawlerUrlPromptSection({
   crawlConnected,
   assignmentId,
   promptUsed: _promptUsed,
+  activeTargetUrl,
   // Default values cho overlay
   isCrawling = false,
   progress = 0,
   statusMessage = "Initializing crawler agent...",
 }: Props) {
   const disabled = submitting || !chatConnected || !crawlConnected || !assignmentId;
-
-  // Fake progress animation để trải nghiệm mượt hơn khi chờ server
-  const [fakeProgress, setFakeProgress] = useState(0);
-
-  useEffect(() => {
-    if (isCrawling && progress === 0) {
-      setFakeProgress(0);
-      const interval = setInterval(() => {
-        setFakeProgress((prev) => {
-          if (prev >= 90) return prev;
-          const step = Math.max(1, (90 - prev) / 20);
-          return prev + step;
-        });
-      }, 500);
-      return () => clearInterval(interval);
-    } else if (!isCrawling) {
-      setFakeProgress(0);
-    }
-  }, [isCrawling, progress]);
-
-  // Ưu tiên progress thật từ server, nếu server = 0 thì dùng fake
-  const displayProgress = progress > 0 ? progress : fakeProgress;
+  const displayProgress = progress;
+  const displayTarget = activeTargetUrl || url;
 
   return (
     <>
@@ -190,38 +163,43 @@ export default function CrawlerUrlPromptSection({
 
       {/* === OVERLAY MÀN HÌNH TỐI (HIỆN KHI CRAWLING) === */}
       {isCrawling && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-all duration-300 animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl mx-4 border border-slate-100">
-            {/* Overlay Header */}
-            <div className="mb-6 flex flex-col items-center text-center gap-3">
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[var(--brand)]/10">
-                <Cpu className="h-8 w-8 text-[var(--brand)] animate-pulse" />
-                <div className="absolute inset-0 rounded-full border-4 border-[var(--brand)]/20 border-t-[var(--brand)] animate-spin"></div>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm transition-all duration-300 animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-white/95 p-6 shadow-[0_24px_60px_rgba(15,23,42,0.2)] mx-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand)]/10">
+                <Cpu className="h-7 w-7 text-[var(--brand)] animate-pulse" />
+                <div className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-white bg-[var(--brand)] shadow-sm" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Smart Crawl Active</h3>
-                <p className="text-sm text-slate-500 mt-1 max-w-[280px] mx-auto truncate">
-                  Target: {url}
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-slate-900">Smart Crawl Active</h3>
+                <p className="mt-1 text-[11px] text-slate-500 truncate">
+                  Target: {displayTarget || "Waiting for target..."}
                 </p>
               </div>
             </div>
 
-            {/* Progress Bar Section */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-medium text-slate-600">
-                <span>{statusMessage}</span>
-                <span>{Math.round(displayProgress)}%</span>
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between text-[11px] text-slate-600">
+                <span className="truncate">{statusMessage}</span>
+                <span className="rounded-full bg-[var(--brand)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--brand)]">
+                  {Math.round(displayProgress)}%
+                </span>
               </div>
-              <Progress value={displayProgress} className="h-2.5" />
-              <p className="text-[10px] text-slate-400 text-center mt-2">
-                This process involves navigation, extraction, and AI analysis. Please wait.
+              <Progress
+                value={displayProgress}
+                className="h-2.5 bg-slate-200/70"
+                indicatorClassName="bg-[var(--brand)]"
+              />
+              <p className="text-[10px] text-slate-400">
+                The crawler is navigating, extracting, and analyzing data.
               </p>
             </div>
-
-            {/* ĐÃ XÓA PHẦN HIỂN THỊ JOB ID TẠI ĐÂY THEO YÊU CẦU */}
           </div>
         </div>
       )}
     </>
   );
 }
+
+
+

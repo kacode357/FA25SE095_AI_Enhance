@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import {
   useCrawlerChatHub,
@@ -30,14 +30,16 @@ import { useDecodedUser } from "@/utils/secure-user";
 
 import type { UiMessage } from "./crawler-types";
 import CrawlerUrlPromptSection from "./components/CrawlerUrlPromptSection";
-import CrawlerResultsTabs from "./components/CrawlerResultsTabs";
 import CrawlerChatSection from "./components/CrawlerChatSection";
 import CrawlerAssignmentHeader from "./components/CrawlerAssignmentHeader";
 import CrawlerAssignmentDescription from "./components/CrawlerAssignmentDescription";
 import CrawlerAssignmentConversationsSection from "./components/CrawlerAssignmentConversationsSection";
 import CrawlerUploadCsvController from "./components/CrawlerUploadCsvController";
+import CrawlerQuotaExceededDialog from "./components/CrawlerQuotaExceededDialog";
+import CrawlerResultsModal from "./components/CrawlerResultsModal";
 import { useCrawlerConversationState } from "./hooks/useCrawlerConversationState";
 import useEventCallback from "./hooks/useEventCallback";
+import { useCrawlJobHandlers } from "./hooks/useCrawlJobHandlers";
 import {
   SUMMARY_KEYWORDS,
   generateGuid,
@@ -46,8 +48,11 @@ import {
   buildUserIdentity,
   safeValidateUrl,
 } from "@/utils/crawler-helpers";
+import type { CrawlerChatConversationItem } from "@/types/crawler-chat/crawler-chat.response";
 
 const INVALID_SCOPE_VALUES = new Set(["", "null", "undefined", "demo"]);
+const HISTORY_REFRESH_DELAY_MS = 5000;
+const HISTORY_REFRESH_MAX_ATTEMPTS = 3;
 
 const sanitizeScopeValue = (value?: string | null): string | null => {
   if (!value) return null;
@@ -106,11 +111,17 @@ const CrawlerInner = () => {
     null
   );
   const pendingOutgoingRef = useRef<PendingMessage[]>([]);
+  const pendingCrawlRequestRef = useRef<{
+    messageId: string;
+    content: string;
+    conversationId: string;
+    timestamp: string;
+  } | null>(null);
 
   const [url, setUrl] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [crawlTargetUrl, setCrawlTargetUrl] = useState("");
   const [includeAssignmentContext, setIncludeAssignmentContext] = useState(true);
-  const [includeHistory, setIncludeHistory] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const [isCrawling, setIsCrawling] = useState(false);
@@ -118,9 +129,17 @@ const CrawlerInner = () => {
   const [crawlStatusMsg, setCrawlStatusMsg] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
+  const [historyRefreshLoading, setHistoryRefreshLoading] = useState(false);
+  const historyRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const historyRefreshRequestRef = useRef(0);
+  const historyRefreshTargetRef = useRef<string | null>(null);
+  const [historyRefreshTargetId, setHistoryRefreshTargetId] = useState<string | null>(null);
 
   const [showAssignmentDrawer, setShowAssignmentDrawer] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
+  const [quotaMessage, setQuotaMessage] = useState<string | null>(null);
 
   const {
     data: assignmentRes,
@@ -135,6 +154,31 @@ const CrawlerInner = () => {
       console.error("[CrawlerPage] fetchAssignment error:", err)
     );
   }, [assignmentId, fetchAssignment]);
+
+  useEffect(() => {
+    return () => {
+      if (historyRefreshTimeoutRef.current) {
+        clearTimeout(historyRefreshTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const isDialogOpen =
+    showResultsModal || quotaDialogOpen || showAssignmentDrawer || isCrawling;
+
+  useEffect(() => {
+    if (!isDialogOpen) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyPaddingRight = document.body.style.paddingRight;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.paddingRight = prevBodyPaddingRight;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [isDialogOpen]);
 
   const {
     fetchAssignmentConversations,
@@ -185,6 +229,138 @@ const CrawlerInner = () => {
     jobHistory.length > 0 ||
     chatMessages.length > 0;
 
+  const extractUrlFromContent = useCallback((content?: string | null) => {
+    if (!content) return null;
+    const segments = content.split("|");
+    const candidate = segments[segments.length - 1]?.trim();
+    if (!candidate) return null;
+    if (/^https?:\/\//i.test(candidate)) return candidate;
+    if (candidate.includes("://")) return candidate;
+    return null;
+  }, []);
+
+  const isConversationInHistory = useCallback(
+    (targetId: string) => conversations.some((item) => item.conversationId === targetId),
+    [conversations]
+  );
+
+  const isConversationHistoryReady = useCallback(
+    (items: CrawlerChatConversationItem[] | null, targetConversationId: string | null) => {
+      if (!targetConversationId) return true;
+      if (!items?.length) return false;
+      const match = items.find((item) => item.conversationId === targetConversationId);
+      if (!match) return false;
+      const name = match.conversationName?.trim();
+      return Boolean(name);
+    },
+    []
+  );
+
+  const refreshAssignmentHistory = useCallback(
+    async (targetAssignmentId: string, args: { myOnly: boolean }) => {
+      if (!targetAssignmentId) return null;
+
+      historyRefreshRequestRef.current += 1;
+      const requestId = historyRefreshRequestRef.current;
+
+      if (historyRefreshTimeoutRef.current) {
+        clearTimeout(historyRefreshTimeoutRef.current);
+        historyRefreshTimeoutRef.current = null;
+      }
+
+      const result = await fetchAssignmentConversations(targetAssignmentId, args);
+
+      if (requestId !== historyRefreshRequestRef.current) {
+        return result;
+      }
+
+      const targetConversationId = historyRefreshTargetRef.current;
+      if (!targetConversationId) {
+        setHistoryRefreshLoading(false);
+        setHistoryRefreshTargetId(null);
+        return result;
+      }
+
+      if (isConversationHistoryReady(result, targetConversationId)) {
+        setHistoryRefreshLoading(false);
+        historyRefreshTargetRef.current = null;
+        setHistoryRefreshTargetId(null);
+        return result;
+      }
+
+      setHistoryRefreshLoading(true);
+
+      const scheduleRetry = (attempt: number) => {
+        if (attempt > HISTORY_REFRESH_MAX_ATTEMPTS) {
+          setHistoryRefreshLoading(false);
+          historyRefreshTargetRef.current = null;
+          setHistoryRefreshTargetId(null);
+          return;
+        }
+
+        historyRefreshTimeoutRef.current = setTimeout(() => {
+          void (async () => {
+            try {
+              const retryResult = await fetchAssignmentConversations(targetAssignmentId, args);
+              if (requestId !== historyRefreshRequestRef.current) {
+                return;
+              }
+              if (historyRefreshTargetRef.current !== targetConversationId) {
+                return;
+              }
+              if (isConversationHistoryReady(retryResult, targetConversationId)) {
+                setHistoryRefreshLoading(false);
+                historyRefreshTargetRef.current = null;
+                setHistoryRefreshTargetId(null);
+                return;
+              }
+              if (attempt >= HISTORY_REFRESH_MAX_ATTEMPTS) {
+                setHistoryRefreshLoading(false);
+                historyRefreshTargetRef.current = null;
+                setHistoryRefreshTargetId(null);
+                return;
+              }
+              scheduleRetry(attempt + 1);
+            } catch (err) {
+              if (requestId !== historyRefreshRequestRef.current) {
+                return;
+              }
+              if (historyRefreshTargetRef.current !== targetConversationId) {
+                return;
+              }
+              if (attempt >= HISTORY_REFRESH_MAX_ATTEMPTS) {
+                setHistoryRefreshLoading(false);
+                historyRefreshTargetRef.current = null;
+                setHistoryRefreshTargetId(null);
+              } else {
+                scheduleRetry(attempt + 1);
+              }
+              console.error("[CrawlerPage] refresh history retry error:", err);
+            }
+          })();
+        }, HISTORY_REFRESH_DELAY_MS);
+      };
+
+      scheduleRetry(2);
+
+      return result;
+    },
+    [
+      fetchAssignmentConversations,
+      isConversationHistoryReady,
+    ]
+  );
+
+  const isQuotaExceededError = useCallback((error?: string) => {
+    if (!error) return false;
+    const normalized = error.toLowerCase();
+    return (
+      normalized.includes("quota") ||
+      normalized.includes("limit") ||
+      normalized.includes("upgrade your plan")
+    );
+  }, []);
+
   const handleSelectConversation = useCallback(
     (convId: string) => {
       if (!convId) return;
@@ -216,14 +392,22 @@ const CrawlerInner = () => {
     );
   }, [assignmentId, fetchAssignmentConversations]);
 
-  const handleOpenDataPage = useCallback(() => {
-    if (!activeJobId) return;
-    const courseSegment = courseSlug || assignmentId || "unknown";
-    const params = new URLSearchParams({ jobId: activeJobId });
-    if (conversationId) params.set("conversationId", conversationId);
-    const href = `/student/courses/${courseSegment}/crawler/data?${params.toString()}`;
-    window.open(href, "_blank", "noopener,noreferrer");
-  }, [activeJobId, assignmentId, conversationId, courseSlug]);
+  useEffect(() => {
+    if (!historyRefreshLoading) return;
+    const targetConversationId = historyRefreshTargetRef.current;
+    if (!targetConversationId) {
+      setHistoryRefreshLoading(false);
+      return;
+    }
+    if (!isConversationHistoryReady(conversations, targetConversationId)) return;
+    historyRefreshTargetRef.current = null;
+    setHistoryRefreshTargetId(null);
+    setHistoryRefreshLoading(false);
+    if (historyRefreshTimeoutRef.current) {
+      clearTimeout(historyRefreshTimeoutRef.current);
+      historyRefreshTimeoutRef.current = null;
+    }
+  }, [conversations, historyRefreshLoading, isConversationHistoryReady]);
 
   const pushUiMessageFromDto = useCallback(
     async (message: ChatMessageDto) => {
@@ -295,84 +479,92 @@ const CrawlerInner = () => {
     },
     [appendUiMessage, conversationId, fetchJobResults, reloadConversation, userId]
   );
+  const {
+    handleJobStarted,
+    handleJobProgress,
+    handleJobNavigation,
+    handleJobPagination,
+    handleJobExtraction,
+    handleJobCompleted,
+  } = useCrawlJobHandlers({
+    activeJobId,
+    assignmentId,
+    setActiveJobId,
+    setCrawlStatusMsg,
+    setCrawlProgress,
+    setIsCrawling,
+    setSubmitting,
+    setShowResultsModal,
+    fetchJobResults,
+    fetchJob,
+    fetchAssignmentConversations: refreshAssignmentHistory,
+    reloadConversation,
+  });
 
-  const handleJobStarted = useCallback(
-    (payload: any) => {
-      const jid = payload?.jobId || payload?.JobId;
-      if (jid && activeJobId && jid !== activeJobId) return;
-      setCrawlStatusMsg("Crawler started...");
-      setCrawlProgress(10);
-    },
-    [activeJobId]
-  );
+  const handleCrawlFailed = useCallback(
+    (data: { error?: string }) => {
+      const error = data?.error || "Crawl failed";
+      setCrawlStatusMsg(error);
+      setCrawlProgress(0);
+      setIsCrawling(false);
+      setSubmitting(false);
 
-  const handleJobProgress = useCallback(
-    (payload: any) => {
-      const jid = payload?.jobId || payload?.JobId;
-      if (jid && activeJobId && jid !== activeJobId) return;
-
-      if (typeof payload?.progress === "number") {
-        setCrawlProgress(payload.progress);
-      } else if (typeof payload?.progressPercentage === "number") {
-        setCrawlProgress(payload.progressPercentage);
+      const pending = pendingCrawlRequestRef.current;
+      if (pending) {
+        pendingOutgoingRef.current = pendingOutgoingRef.current.filter(
+          (item) =>
+            !(
+              item.content === pending.content &&
+              item.conversationId === pending.conversationId &&
+              item.messageType === MessageType.CrawlRequest
+            )
+        );
+        pendingCrawlRequestRef.current = null;
       }
 
-      if (payload?.message) {
-        setCrawlStatusMsg(payload.message);
-      }
-    },
-    [activeJobId]
-  );
-
-  const handleJobCompleted = useCallback(
-    async (payload: any) => {
-      const jid =
-        payload?.jobId || payload?.JobId || payload?.jobID || null;
-
-      setCrawlStatusMsg("Finalizing results...");
-
-      if (!jid) {
-        setIsCrawling(false);
-        setSubmitting(false);
-        return;
-      }
-
-      console.log("[CrawlerPage] Crawl job completed", { jobId: jid });
-      setActiveJobId(jid);
-
-      try {
-        await fetchJobResults(jid);
-        await fetchJob(jid);
-        if (assignmentId) {
-          await fetchAssignmentConversations(assignmentId, { myOnly: true });
+      if (isQuotaExceededError(error)) {
+        if (pending) {
+          setChatMessages((prev) => prev.filter((m) => m.id !== pending.messageId));
         }
-        await reloadConversation({ jobIdOverride: jid });
-        setCrawlProgress(100);
-        setShowResultsModal(true);
-      } catch (err) {
-        console.error("[CrawlerPage] handleJobCompleted error:", err);
-      } finally {
-        setIsCrawling(false);
-        setSubmitting(false);
+        setQuotaExceeded(true);
+        setQuotaMessage(error);
+        setQuotaDialogOpen(true);
+      } else {
+        toast.error(error);
       }
     },
-    [
-      assignmentId,
-      fetchAssignmentConversations,
-      fetchJob,
-      fetchJobResults,
-      reloadConversation,
-    ]
+    [isQuotaExceededError, setChatMessages]
   );
 
-  const handleCrawlInitiated = useCallback(async (data: { crawlJobId: string }) => {
+  const handleCrawlInitiated = useCallback(async (data: { crawlJobId: string; messageId?: string }) => {
     const jid = data.crawlJobId;
     if (!jid) return;
 
     console.log("[CrawlerPage] Crawl job queued", { jobId: jid });
     setActiveJobId(jid);
     setCrawlStatusMsg("Job queued successfully...");
-    setCrawlProgress(5);
+    setCrawlProgress(8);
+
+    const pending = pendingCrawlRequestRef.current;
+    if (pending && (!data.messageId || data.messageId === pending.messageId)) {
+      appendUiMessage({
+        id: pending.messageId,
+        role: "user",
+        content: pending.content,
+        createdAt: pending.timestamp,
+        messageType: MessageType.CrawlRequest,
+        crawlJobId: null,
+      });
+      pendingOutgoingRef.current = pendingOutgoingRef.current.filter(
+        (item) =>
+          !(
+            item.content === pending.content &&
+            item.conversationId === pending.conversationId &&
+            item.messageType === MessageType.CrawlRequest
+          )
+      );
+      pendingCrawlRequestRef.current = null;
+    }
 
     const subscribeFn = crawlJobSubscriptionRef.current;
     if (!subscribeFn) return;
@@ -384,7 +576,7 @@ const CrawlerInner = () => {
         console.error("[CrawlerPage] subscribeToJob error:", err);
       }
     }
-  }, []);
+  }, [appendUiMessage, setActiveJobId, setCrawlProgress, setCrawlStatusMsg]);
 
   const handleCrawlHubError = useCallback(
     (message: string) => {
@@ -408,9 +600,13 @@ const CrawlerInner = () => {
 
   const jobStartedHandler = useEventCallback(handleJobStarted);
   const jobProgressHandler = useEventCallback(handleJobProgress);
+  const jobNavigationHandler = useEventCallback(handleJobNavigation);
+  const jobPaginationHandler = useEventCallback(handleJobPagination);
+  const jobExtractionHandler = useEventCallback(handleJobExtraction);
   const jobCompletedHandler = useEventCallback(handleJobCompleted);
   const crawlHubErrorHandler = useEventCallback(handleCrawlHubError);
   const crawlInitiatedHandler = useEventCallback(handleCrawlInitiated);
+  const crawlFailedHandler = useEventCallback(handleCrawlFailed);
   const chatHubErrorHandler = useEventCallback(handleChatHubError);
   const pushUiMessageHandler = useEventCallback(pushUiMessageFromDto);
 
@@ -422,10 +618,12 @@ const CrawlerInner = () => {
     subscribeToGroupJobs,
   } = useCrawlHub({
     getAccessToken,
-    includeHistory,
     onJobStarted: jobStartedHandler,
     onJobProgress: jobProgressHandler,
     onJobCompleted: jobCompletedHandler,
+    onJobNavigation: jobNavigationHandler,
+    onJobPagination: jobPaginationHandler,
+    onJobExtraction: jobExtractionHandler,
     onError: crawlHubErrorHandler,
   });
 
@@ -443,7 +641,10 @@ const CrawlerInner = () => {
     getAccessToken,
     onUserMessageReceived: pushUiMessageHandler,
     onGroupMessageReceived: pushUiMessageHandler,
+    onAgentResponseReceived: pushUiMessageHandler,
+    onGroupAgentResponse: pushUiMessageHandler,
     onCrawlInitiated: crawlInitiatedHandler,
+    onCrawlFailed: crawlFailedHandler,
     onError: chatHubErrorHandler,
   });
 
@@ -529,6 +730,11 @@ const CrawlerInner = () => {
     const trimmedUrl = url.trim();
     const trimmedPrompt = prompt.trim();
 
+    if (quotaExceeded) {
+      setQuotaDialogOpen(true);
+      return;
+    }
+
     if (!trimmedUrl) return toast.error("Please enter a URL first.");
     if (!trimmedPrompt) return toast.error("Please describe what you want to extract.");
     if (!safeValidateUrl(trimmedUrl)) return toast.error("Invalid URL.");
@@ -539,10 +745,17 @@ const CrawlerInner = () => {
     setSubmitting(true);
     setIsCrawling(true);
     setCrawlStatusMsg("Initiating crawl request...");
-    setCrawlProgress(0);
+    setCrawlProgress(2);
+    setCrawlTargetUrl(trimmedUrl);
 
     const payloadConversationId = conversationId || generateGuid();
     const normalizedUserId = String(userId);
+    const shouldRefreshHistory = !isConversationInHistory(payloadConversationId);
+    historyRefreshTargetRef.current = shouldRefreshHistory ? payloadConversationId : null;
+    setHistoryRefreshTargetId(shouldRefreshHistory ? payloadConversationId : null);
+    if (!shouldRefreshHistory) {
+      setHistoryRefreshLoading(false);
+    }
 
     const rawPayload: ChatMessageDto = {
       messageId: generateGuid(),
@@ -555,7 +768,19 @@ const CrawlerInner = () => {
       groupId,
       assignmentId,
       includeAssignmentContext,
-      includeHistory,
+    };
+
+    pendingOutgoingRef.current.push({
+      content: rawPayload.content,
+      conversationId: payloadConversationId,
+      messageType: MessageType.CrawlRequest,
+    });
+
+    pendingCrawlRequestRef.current = {
+      messageId: rawPayload.messageId!,
+      content: rawPayload.content,
+      conversationId: payloadConversationId,
+      timestamp: rawPayload.timestamp!,
     };
 
     try {
@@ -566,32 +791,34 @@ const CrawlerInner = () => {
         groupId,
         url: trimmedUrl,
       });
-      appendUiMessage({
-        id: rawPayload.messageId!,
-        role: "user",
-        content: rawPayload.content,
-        createdAt: rawPayload.timestamp!,
-        messageType: MessageType.CrawlRequest,
-        crawlJobId: null,
-      });
       setUrl("");
       setPrompt("");
     } catch (err: any) {
       console.error("[CrawlerPage] sendCrawlerMessage error:", err);
+      pendingOutgoingRef.current = pendingOutgoingRef.current.filter(
+        (item) =>
+          !(
+            item.content === rawPayload.content &&
+            item.conversationId === payloadConversationId &&
+            item.messageType === MessageType.CrawlRequest
+          )
+      );
+      pendingCrawlRequestRef.current = null;
       toast.error(err?.message || "Failed to send crawl request");
       setIsCrawling(false);
       setSubmitting(false);
     }
   }, [
-    appendUiMessage,
     assignmentId,
     chatConnected,
     conversationId,
     groupId,
     includeAssignmentContext,
-    includeHistory,
+    isConversationInHistory,
     prompt,
+    quotaExceeded,
     sendCrawlerMessage,
+    setQuotaDialogOpen,
     url,
     userId,
     userName,
@@ -614,6 +841,11 @@ const CrawlerInner = () => {
       const messageType = isFirstConversationMessage
         ? MessageType.CrawlRequest
         : derivedType;
+
+      if (messageType === MessageType.CrawlRequest && quotaExceeded) {
+        setQuotaDialogOpen(true);
+        return;
+      }
 
       pendingOutgoingRef.current.push({
         content,
@@ -638,17 +870,35 @@ const CrawlerInner = () => {
         groupId,
         assignmentId,
         includeAssignmentContext,
-        includeHistory,
       };
 
-      appendUiMessage({
-        id: messageId,
-        role: "user",
-        content,
-        createdAt: sentAt,
-        messageType,
-        crawlJobId: null,
-      });
+      if (messageType === MessageType.CrawlRequest) {
+        const derivedUrl = extractUrlFromContent(content);
+        if (derivedUrl) {
+          setCrawlTargetUrl(derivedUrl);
+        }
+        const shouldRefreshHistory = !isConversationInHistory(rawPayload.conversationId);
+        historyRefreshTargetRef.current = shouldRefreshHistory ? rawPayload.conversationId : null;
+        setHistoryRefreshTargetId(shouldRefreshHistory ? rawPayload.conversationId : null);
+        if (!shouldRefreshHistory) {
+          setHistoryRefreshLoading(false);
+        }
+        pendingCrawlRequestRef.current = {
+          messageId,
+          content,
+          conversationId: rawPayload.conversationId,
+          timestamp: sentAt,
+        };
+      } else {
+        appendUiMessage({
+          id: messageId,
+          role: "user",
+          content,
+          createdAt: sentAt,
+          messageType,
+          crawlJobId: null,
+        });
+      }
 
       try {
         await sendCrawlerMessage(rawPayload);
@@ -662,7 +912,11 @@ const CrawlerInner = () => {
               pending.messageType === messageType
             )
         );
-        setChatMessages((prev) => prev.filter((m) => m.id !== messageId));
+        if (messageType === MessageType.CrawlRequest) {
+          pendingCrawlRequestRef.current = null;
+        } else {
+          setChatMessages((prev) => prev.filter((m) => m.id !== messageId));
+        }
         toast.error(err?.message || "Failed to send message");
       } finally {
         setChatSending(false);
@@ -672,16 +926,19 @@ const CrawlerInner = () => {
       appendUiMessage,
       assignmentId,
       includeAssignmentContext,
-      includeHistory,
       chatConnected,
       chatInput,
       chatReady,
       chatMessages.length,
       conversationId,
+      extractUrlFromContent,
       groupId,
       sendCrawlerMessage,
+      isConversationInHistory,
       userId,
       userName,
+      quotaExceeded,
+      setQuotaDialogOpen,
     ]
   );
 
@@ -734,6 +991,7 @@ const CrawlerInner = () => {
               crawlConnected={crawlConnected}
               assignmentId={assignmentId}
               promptUsed={promptUsed}
+              activeTargetUrl={crawlTargetUrl}
               isCrawling={isCrawling}
               progress={crawlProgress}
               statusMessage={crawlStatusMsg}
@@ -745,6 +1003,9 @@ const CrawlerInner = () => {
               <CrawlerAssignmentConversationsSection
                 conversations={conversations}
                 loading={conversationsLoading}
+                refreshingConversationId={
+                  historyRefreshLoading ? historyRefreshTargetId : null
+                }
                 selectedConversationId={selectedConversationId}
                 onSelectConversation={handleSelectConversation}
                 onNewConversation={handleNewConversation}
@@ -764,9 +1025,8 @@ const CrawlerInner = () => {
                   uploadingCsv={uploadingCsv}
                   chatSending={chatSending}
                   chatConnected={chatConnected}
-                  includeHistory={includeHistory}
-                  onIncludeHistoryChange={setIncludeHistory}
                   chatReady={chatReady}
+                  disableAutoScroll={isDialogOpen}
                   onOpenResults={() => setShowResultsModal(true)}
                   resultsAvailable={
                     resultsLoading ||
@@ -780,53 +1040,27 @@ const CrawlerInner = () => {
         </section>
       </main>
 
-      {showResultsModal && (
-        <div className="fixed inset-0 z-[9999]" data-tour="crawler-results">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowResultsModal(false)}
-          />
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="relative flex w-full max-w-6xl max-h-[90vh] flex-col rounded-2xl border border-[var(--border)] bg-white shadow-2xl">
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-3">
-                <div className="text-sm font-semibold text-[var(--foreground)]">
-                  Crawled Data
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleOpenDataPage}
-                    disabled={!activeJobId}
-                    className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[var(--foreground)] shadow-sm hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Open data in new page
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowResultsModal(false)}
-                    className="rounded-lg p-1.5 hover:bg-red-50 transition"
-                    title="Close"
-                  >
-                    <X className="h-5 w-5 text-red-500" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto bg-slate-50/40 p-4">
-                <CrawlerResultsTabs
-                  conversationId={conversationId}
-                  results={results}
-                  resultsLoading={resultsLoading}
-                  historyIndex={historyIndex}
-                  currentSummary={currentHistoryEntry?.summary || undefined}
-                  currentPrompt={currentHistoryEntry?.prompt || undefined}
-                  jobHistory={jobHistory}
-                  onSelectHistoryIndex={handleSelectHistoryIndex}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CrawlerResultsModal
+        open={showResultsModal}
+        onClose={() => setShowResultsModal(false)}
+        activeJobId={activeJobId}
+        conversationId={conversationId}
+        courseSlug={courseSlug}
+        assignmentId={assignmentId}
+        results={results}
+        resultsLoading={resultsLoading}
+        historyIndex={historyIndex}
+        currentSummary={currentHistoryEntry?.summary || undefined}
+        currentPrompt={currentHistoryEntry?.prompt || undefined}
+        jobHistory={jobHistory}
+        onSelectHistoryIndex={handleSelectHistoryIndex}
+      />
+
+      <CrawlerQuotaExceededDialog
+        open={quotaDialogOpen}
+        onOpenChange={setQuotaDialogOpen}
+        message={quotaMessage || undefined}
+      />
 
       {showAssignmentDrawer && (
         <div className="fixed inset-0 z-[9997]">
@@ -867,3 +1101,4 @@ const CrawlerPage = () => (
 );
 
 export default CrawlerPage;
+

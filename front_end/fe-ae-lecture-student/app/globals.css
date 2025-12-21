@@ -627,3 +627,36 @@ header.fixed, header {
     background-position: 200% 50%;
   }
 }
+
+/* Chat message tables */
+.message-table-wrap {
+  margin-top: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.message-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.message-table th,
+.message-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.message-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.message-table tr:last-child td {
+  border-bottom: none;
+}

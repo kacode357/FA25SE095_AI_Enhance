@@ -6,7 +6,6 @@ export type RenderedMessageContent = {
   html: string;
   images: string[];
 };
-
 const MARKDOWN_IMAGE_REGEX = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/gi;
 const IMAGE_URL_REGEX =
   /(https?:\/\/[^\s<>'"()]+\.(?:png|jpe?g|gif|webp|svg))(?:\?[^\s<>'"]*)?/gi;
@@ -85,12 +84,47 @@ function buildSanitizedHtml(content: string) {
   let pendingNestedItems: string[] | null = null;
   const imageOnlyRegex = /^(?:%%IMG\d+%%\s*)+$/;
 
+  const isTableSeparator = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(trimmed);
+  };
+
+  const splitTableRow = (line: string) => {
+    let row = line.trim();
+    if (row.startsWith("|")) row = row.slice(1);
+    if (row.endsWith("|")) row = row.slice(0, -1);
+    return row.split("|").map((cell) => cell.trim());
+  };
+
+  const formatTableCell = (cell: string) =>
+    applyInlineFormatting(replaceImagesWithPlaceholders(cell, images));
+
   const appendToLastOrderedItem = (html: string) => {
     if (!activeList || activeList.type !== "ol" || !activeList.items.length) {
       return false;
     }
 
     if (pendingNestedItems) {
+      const nestedHtml = `<ul>${pendingNestedItems
+        .map((item) => `<li>${item}</li>`)
+        .join("")}</ul>`;
+      const lastIdx = activeList.items.length - 1;
+      activeList.items[lastIdx] = `${activeList.items[lastIdx]}${nestedHtml}`;
+      pendingNestedItems = null;
+    }
+
+    const lastIdx = activeList.items.length - 1;
+    activeList.items[lastIdx] = `${activeList.items[lastIdx]}${html}`;
+    return true;
+  };
+
+  const appendToLastListItem = (html: string) => {
+    if (!activeList || !activeList.items.length) {
+      return false;
+    }
+
+    if (activeList.type === "ol" && pendingNestedItems) {
       const nestedHtml = `<ul>${pendingNestedItems
         .map((item) => `<li>${item}</li>`)
         .join("")}</ul>`;
@@ -126,13 +160,52 @@ function buildSanitizedHtml(content: string) {
     activeList = null;
   };
 
-  lines.forEach((line) => {
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
     const sanitizedLine = stripImagesLabel(line);
-    if (!sanitizedLine) return;
+    if (!sanitizedLine) continue;
+    const trimmed = sanitizedLine.trim();
+
+    const nextLine = lines[i + 1] ?? "";
+    if (trimmed.includes("|") && isTableSeparator(nextLine)) {
+      const headerCells = splitTableRow(trimmed);
+      const rows: string[][] = [];
+      let j = i + 2;
+
+      for (; j < lines.length; j += 1) {
+        const rowLine = lines[j];
+        if (!rowLine.trim()) break;
+        if (!rowLine.includes("|")) break;
+        if (isTableSeparator(rowLine)) continue;
+        rows.push(splitTableRow(rowLine));
+      }
+
+      const headerHtml = headerCells
+        .map((cell) => `<th>${formatTableCell(cell)}</th>`)
+        .join("");
+      const bodyHtml = rows
+        .map((row) => {
+          const cells = row.map((cell) => `<td>${formatTableCell(cell)}</td>`).join("");
+          return `<tr>${cells}</tr>`;
+        })
+        .join("");
+      const tableHtml =
+        `<div class="message-table-wrap"><table class="message-table">` +
+        `<thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table></div>`;
+
+      if (!appendToLastListItem(tableHtml)) {
+        flushList();
+        blocks.push(tableHtml);
+      }
+
+      i = j - 1;
+      continue;
+    }
+
     const withPlaceholders = replaceImagesWithPlaceholders(sanitizedLine, images);
-    const trimmed = withPlaceholders.trim();
-    const orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
-    const bulletMatch = trimmed.match(/^[-*+]\s+(.*)/);
+    const trimmedWithPlaceholders = withPlaceholders.trim();
+    const orderedMatch = trimmedWithPlaceholders.match(/^(\d+)\.\s+(.*)/);
+    const bulletMatch = trimmedWithPlaceholders.match(/^[-*+]\s+(.*)/);
 
     if (orderedMatch) {
       if (imageOnlyRegex.test(orderedMatch[2].trim())) {
@@ -143,7 +216,7 @@ function buildSanitizedHtml(content: string) {
           flushList();
           blocks.push(imageBlock);
         }
-        return;
+        continue;
       }
       if (activeList?.type === "ol") {
         if (pendingNestedItems) {
@@ -159,7 +232,7 @@ function buildSanitizedHtml(content: string) {
         activeList = { type: "ol", items: [] };
       }
       activeList.items.push(applyInlineFormatting(orderedMatch[2]));
-      return;
+      continue;
     }
 
     if (bulletMatch) {
@@ -173,48 +246,48 @@ function buildSanitizedHtml(content: string) {
           }
           blocks.push(imageBlock);
         }
-        return;
+        continue;
       }
       if (activeList?.type === "ol") {
         if (!pendingNestedItems) pendingNestedItems = [];
         pendingNestedItems.push(applyInlineFormatting(bulletMatch[1]));
-      return;
+        continue;
       }
       if (!activeList || activeList.type !== "ul") {
         flushList();
         activeList = { type: "ul", items: [] };
       }
       activeList.items.push(applyInlineFormatting(bulletMatch[1]));
-      return;
+      continue;
     }
 
-    const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)/);
+    const headingMatch = trimmedWithPlaceholders.match(/^(#{1,6})\s+(.*)/);
     if (headingMatch) {
       flushList();
       const level = Math.min(6, headingMatch[1].length);
       const headingContent = applyInlineFormatting(headingMatch[2]);
       blocks.push(`<h${level}>${headingContent}</h${level}>`);
-      return;
+      continue;
     }
 
-    if (trimmed === "") {
-      return;
+    if (trimmedWithPlaceholders === "") {
+      continue;
     }
 
     if (activeList) {
       // Append as continuation of current list item (preserve numbering)
       if (activeList.type === "ol") {
-        appendToLastOrderedItem(`<br/>${applyInlineFormatting(trimmed)}`);
+        appendToLastOrderedItem(`<br/>${applyInlineFormatting(trimmedWithPlaceholders)}`);
       } else if (activeList.items.length) {
         const lastIdx = activeList.items.length - 1;
-        activeList.items[lastIdx] = `${activeList.items[lastIdx]}<br/>${applyInlineFormatting(trimmed)}`;
+        activeList.items[lastIdx] = `${activeList.items[lastIdx]}<br/>${applyInlineFormatting(trimmedWithPlaceholders)}`;
       }
-      return;
+      continue;
     }
 
     flushList();
-    blocks.push(`<p>${applyInlineFormatting(trimmed)}</p>`);
-  });
+    blocks.push(`<p>${applyInlineFormatting(trimmedWithPlaceholders)}</p>`);
+  }
 
   flushList();
 
@@ -237,7 +310,7 @@ function buildSanitizedHtml(content: string) {
   });
 
   const sanitized = DOMPurify.sanitize(htmlWithImages, {
-    ADD_TAGS: ["img", "figure", "figcaption", "div"],
+    ADD_TAGS: ["img", "figure", "figcaption", "div", "table", "thead", "tbody", "tr", "th", "td"],
     ADD_ATTR: ["loading", "referrerpolicy", "data-inline-img", "class"],
   });
 
