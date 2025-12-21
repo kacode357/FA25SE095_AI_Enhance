@@ -150,9 +150,7 @@ const CrawlerInner = () => {
 
   useEffect(() => {
     if (!assignmentId) return;
-    fetchAssignment(assignmentId).catch((err) =>
-      console.error("[CrawlerPage] fetchAssignment error:", err)
-    );
+    fetchAssignment(assignmentId).catch(() => {});
   }, [assignmentId, fetchAssignment]);
 
   useEffect(() => {
@@ -321,7 +319,7 @@ const CrawlerInner = () => {
                 return;
               }
               scheduleRetry(attempt + 1);
-            } catch (err) {
+            } catch {
               if (requestId !== historyRefreshRequestRef.current) {
                 return;
               }
@@ -335,7 +333,6 @@ const CrawlerInner = () => {
               } else {
                 scheduleRetry(attempt + 1);
               }
-              console.error("[CrawlerPage] refresh history retry error:", err);
             }
           })();
         }, HISTORY_REFRESH_DELAY_MS);
@@ -387,9 +384,7 @@ const CrawlerInner = () => {
 
   useEffect(() => {
     if (!assignmentId) return;
-    fetchAssignmentConversations(assignmentId, { myOnly: true }).catch((err) =>
-      console.error("[CrawlerPage] fetchAssignmentConversations error:", err)
-    );
+    fetchAssignmentConversations(assignmentId, { myOnly: true }).catch(() => {});
   }, [assignmentId, fetchAssignmentConversations]);
 
   useEffect(() => {
@@ -471,9 +466,7 @@ const CrawlerInner = () => {
         setActiveJobId(jobId);
         try {
           await fetchJobResults(jobId);
-        } catch (err) {
-          console.error("[CrawlerPage] fetchJobResults realtime error:", err);
-        }
+        } catch {}
         await reloadConversation({ jobIdOverride: jobId });
       }
     },
@@ -540,7 +533,6 @@ const CrawlerInner = () => {
     const jid = data.crawlJobId;
     if (!jid) return;
 
-    console.log("[CrawlerPage] Crawl job queued", { jobId: jid });
     setActiveJobId(jid);
     setCrawlStatusMsg("Job queued successfully...");
     setCrawlProgress(8);
@@ -573,7 +565,6 @@ const CrawlerInner = () => {
       await subscribeFn(jid);
     } catch (err) {
       if (!isIgnorableSignalRError(err)) {
-        console.error("[CrawlerPage] subscribeToJob error:", err);
       }
     }
   }, [appendUiMessage, setActiveJobId, setCrawlProgress, setCrawlStatusMsg]);
@@ -581,7 +572,6 @@ const CrawlerInner = () => {
   const handleCrawlHubError = useCallback(
     (message: string) => {
       if (!isIgnorableSignalRError(message)) {
-        console.error("[CrawlerPage] CrawlHub error:", message);
         if (isCrawling) {
           setIsCrawling(false);
           setSubmitting(false);
@@ -594,7 +584,6 @@ const CrawlerInner = () => {
 
   const handleChatHubError = useCallback((message: string) => {
     if (!isIgnorableSignalRError(message)) {
-      console.error("[CrawlerPage] ChatHub error:", message);
     }
   }, []);
 
@@ -664,7 +653,6 @@ const CrawlerInner = () => {
         }
       } catch (err) {
         if (!cancelled && !isIgnorableSignalRError(err)) {
-          console.error("[CrawlerPage] joinConversation error:", err);
         }
       }
     })();
@@ -686,7 +674,6 @@ const CrawlerInner = () => {
         }
       } catch (err) {
         if (active && !isIgnorableSignalRError(err)) {
-          console.error("[CrawlerPage] subscribe assignment chat error:", err);
         }
       }
     })();
@@ -710,7 +697,6 @@ const CrawlerInner = () => {
         }
       } catch (err) {
         if (active && !isIgnorableSignalRError(err)) {
-          console.error("[CrawlerPage] subscribe crawl jobs error:", err);
         }
       }
     })();
@@ -785,16 +771,9 @@ const CrawlerInner = () => {
 
     try {
       await sendCrawlerMessage(rawPayload);
-      console.log("[CrawlerPage] Crawl request sent", {
-        conversationId: payloadConversationId,
-        assignmentId,
-        groupId,
-        url: trimmedUrl,
-      });
       setUrl("");
       setPrompt("");
     } catch (err: any) {
-      console.error("[CrawlerPage] sendCrawlerMessage error:", err);
       pendingOutgoingRef.current = pendingOutgoingRef.current.filter(
         (item) =>
           !(
@@ -903,7 +882,6 @@ const CrawlerInner = () => {
       try {
         await sendCrawlerMessage(rawPayload);
       } catch (err: any) {
-        console.error("[CrawlerPage] send chat error:", err);
         pendingOutgoingRef.current = pendingOutgoingRef.current.filter(
           (pending) =>
             !(

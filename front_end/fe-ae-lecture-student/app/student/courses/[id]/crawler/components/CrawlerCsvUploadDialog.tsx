@@ -165,9 +165,7 @@ const CrawlerCsvUploadDialog = ({
       }
       setSelectedFile(file);
       setPreview(nextPreview);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("[CrawlerCsvUploadDialog] read csv error:", err);
+    } catch {
       toast.error("Failed to read CSV file.");
       setSelectedFile(null);
       setPreview(null);

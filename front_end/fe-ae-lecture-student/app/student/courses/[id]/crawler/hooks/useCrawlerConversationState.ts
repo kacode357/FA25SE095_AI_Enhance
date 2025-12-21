@@ -159,8 +159,7 @@ export const useCrawlerConversationState = ({
         const resolvedJobId = jobIdOverride ?? jobMsg?.crawlJobId ?? null;
         setActiveJobId(resolvedJobId);
         return resolvedJobId;
-      } catch (err) {
-        console.error("[useCrawlerConversationState] reloadConversation error:", err);
+      } catch {
         return null;
       }
     },

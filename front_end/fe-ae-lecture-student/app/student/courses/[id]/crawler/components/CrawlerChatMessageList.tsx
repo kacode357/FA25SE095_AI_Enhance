@@ -273,8 +273,7 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
     };
 
     return { options, series, chartType, height, maxViewportHeight, highlights };
-  } catch (err) {
-    console.error("Failed to parse visualizationData:", err, rawJson);
+  } catch {
     return null;
   }
 }
@@ -432,8 +431,7 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
       if (!copiedUrl) downloadDataUrl(imgURI, "chart@2x.png");
 
       setCopyState("copied");
-    } catch (err) {
-      console.error("Copy high-res chart failed", err);
+    } catch {
       setCopyState("error");
     } finally {
       scheduleReset();

@@ -231,7 +231,6 @@ export const useCrawlJobHandlers = ({
         return;
       }
 
-      console.log("[CrawlerPage] Crawl job completed", { jobId: jid });
       setActiveJobId(jid);
 
       try {
@@ -243,8 +242,7 @@ export const useCrawlJobHandlers = ({
         await reloadConversation({ jobIdOverride: jid });
         updateCrawlProgress(100);
         setShowResultsModal(true);
-      } catch (err) {
-        console.error("[CrawlerPage] handleJobCompleted error:", err);
+      } catch {
       } finally {
         setIsCrawling(false);
         setSubmitting(false);

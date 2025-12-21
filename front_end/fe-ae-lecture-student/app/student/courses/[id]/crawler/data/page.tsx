@@ -14,9 +14,7 @@ const DataContent = () => {
 
   useEffect(() => {
     if (jobId) {
-      fetchJobResults(jobId).catch((err) =>
-        console.error("[CrawlerDataPage] fetchJobResults error:", err)
-      );
+      fetchJobResults(jobId).catch(() => {});
     }
   }, [jobId, fetchJobResults]);
 

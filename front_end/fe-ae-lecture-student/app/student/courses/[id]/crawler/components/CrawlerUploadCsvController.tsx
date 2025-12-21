@@ -62,7 +62,6 @@ const CrawlerUploadCsvController = ({
 
         await reloadConversation({ conversationOverride: conversationId });
       } catch (err: any) {
-        console.error("[CrawlerUploadCsv] upload csv error:", err);
         toast.error(err?.message || "Failed to upload CSV file");
       }
     },

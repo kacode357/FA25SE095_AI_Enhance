@@ -158,7 +158,7 @@ export function useCrawlerChatHub({
             try {
               const token = await getAccessToken();
               return typeof token === "string" ? token : "";
-            } catch (err) {
+            } catch {
               return "";
             }
           },
@@ -172,9 +172,7 @@ export function useCrawlerChatHub({
         .configureLogging(signalR.LogLevel.None)
         .build();
 
-      const logEvent = (event: string, payload?: unknown) => {
-        console.log(`[CrawlerChatHub] ${event}`, payload);
-      };
+      const logEvent = () => {};
 
       const onWithLog = <T extends any[]>(
         event: string,

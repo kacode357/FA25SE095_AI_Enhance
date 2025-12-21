@@ -98,26 +98,7 @@ export function useCrawlHub({
         .configureLogging(signalR.LogLevel.None)
         .build();
 
-      const getJobId = (payload: any) => {
-        return payload?.jobId || payload?.JobId || payload?.jobID || payload?.JobID || null;
-      };
-
-      const logEvent = (
-        label: string,
-        payload?: any,
-        extra?: Record<string, unknown>
-      ) => {
-        const jobId = getJobId(payload);
-        const details = {
-          ...(jobId ? { jobId } : {}),
-          ...(extra ?? {}),
-        };
-        if (Object.keys(details).length > 0) {
-          console.log(`[CrawlHub] ${label}`, details);
-        } else {
-          console.log(`[CrawlHub] ${label}`);
-        }
-      };
+      const logEvent = () => {};
 
 
       // ===== đăng ký event từ CrawlHub (server -> client) =====
@@ -241,7 +222,6 @@ export function useCrawlHub({
       setLastError(null);
       onConnectedChange?.(true);
 
-      console.log("[CrawlHub] Connected");
     } catch (e: any) {
       const rawMsg: string = e?.message ?? "";
       const isStrictModeStop =
@@ -255,7 +235,6 @@ export function useCrawlHub({
         setConnectionId(null);
         setLastError(friendlyMsg);
         onError?.(friendlyMsg);
-        console.error("[CrawlHub] connect error:", e);
       }
     } finally {
       setConnecting(false);
@@ -278,7 +257,6 @@ export function useCrawlHub({
       setConnected(false);
       setConnectionId(null);
       onConnectedChange?.(false);
-      console.log("[CrawlHub] Disconnected");
     }
   }, [onConnectedChange]);
 
@@ -289,10 +267,7 @@ export function useCrawlHub({
       if (!active) return;
       try {
         await connect();
-      } catch (err) {
-        if (active) {
-          console.error("[CrawlHub] auto connect error:", err);
-        }
+      } catch {
       }
     })();
 
@@ -310,7 +285,6 @@ export function useCrawlHub({
       if (conn.state !== signalR.HubConnectionState.Connected) {
         await connect();
       }
-      console.log("[CrawlHub] SubscribeToJob:", jobId);
       await conn.invoke("SubscribeToJob", jobId);
     },
     [ensureConnection, connect]
@@ -320,7 +294,6 @@ export function useCrawlHub({
     async (jobId: string) => {
       const conn = ensureConnection();
       if (conn.state !== signalR.HubConnectionState.Connected) return;
-      console.log("[CrawlHub] UnsubscribeFromJob:", jobId);
       await conn.invoke("UnsubscribeFromJob", jobId);
     },
     [ensureConnection]
@@ -331,14 +304,12 @@ export function useCrawlHub({
     if (conn.state !== signalR.HubConnectionState.Connected) {
       await connect();
     }
-    console.log("[CrawlHub] SubscribeToSystemMetrics");
     await conn.invoke("SubscribeToSystemMetrics");
   }, [ensureConnection, connect]);
 
   const unsubscribeFromSystemMetrics = useCallback(async () => {
     const conn = ensureConnection();
     if (conn.state !== signalR.HubConnectionState.Connected) return;
-    console.log("[CrawlHub] UnsubscribeFromSystemMetrics");
     await conn.invoke("UnsubscribeFromSystemMetrics");
   }, [ensureConnection]);
 
@@ -347,14 +318,12 @@ export function useCrawlHub({
     if (conn.state !== signalR.HubConnectionState.Connected) {
       await connect();
     }
-    console.log("[CrawlHub] SubscribeToAllJobs");
     await conn.invoke("SubscribeToAllJobs");
   }, [ensureConnection, connect]);
 
   const unsubscribeFromAllJobs = useCallback(async () => {
     const conn = ensureConnection();
     if (conn.state !== signalR.HubConnectionState.Connected) return;
-    console.log("[CrawlHub] UnsubscribeFromAllJobs");
     await conn.invoke("UnsubscribeFromAllJobs");
   }, [ensureConnection]);
 
@@ -364,7 +333,6 @@ export function useCrawlHub({
       if (conn.state !== signalR.HubConnectionState.Connected) {
         await connect();
       }
-      console.log("[CrawlHub] SubscribeToGroupJobs:", groupId);
       await conn.invoke("SubscribeToGroupJobs", groupId);
     },
     [ensureConnection, connect]
@@ -374,7 +342,6 @@ export function useCrawlHub({
     async (groupId: string) => {
       const conn = ensureConnection();
       if (conn.state !== signalR.HubConnectionState.Connected) return;
-      console.log("[CrawlHub] UnsubscribeFromGroupJobs:", groupId);
       await conn.invoke("UnsubscribeFromGroupJobs", groupId);
     },
     [ensureConnection]
@@ -386,7 +353,6 @@ export function useCrawlHub({
       if (conn.state !== signalR.HubConnectionState.Connected) {
         await connect();
       }
-      console.log("[CrawlHub] SubscribeToAssignmentJobs:", assignmentId);
       await conn.invoke("SubscribeToAssignmentJobs", assignmentId);
     },
     [ensureConnection, connect]
@@ -396,7 +362,6 @@ export function useCrawlHub({
     async (assignmentId: string) => {
       const conn = ensureConnection();
       if (conn.state !== signalR.HubConnectionState.Connected) return;
-      console.log("[CrawlHub] UnsubscribeFromAssignmentJobs:", assignmentId);
       await conn.invoke("UnsubscribeFromAssignmentJobs", assignmentId);
     },
     [ensureConnection]
@@ -408,7 +373,6 @@ export function useCrawlHub({
       if (conn.state !== signalR.HubConnectionState.Connected) {
         await connect();
       }
-      console.log("[CrawlHub] SubscribeToConversation:", conversationId);
       await conn.invoke("SubscribeToConversation", conversationId);
     },
     [ensureConnection, connect]
@@ -418,7 +382,6 @@ export function useCrawlHub({
     async (conversationId: string) => {
       const conn = ensureConnection();
       if (conn.state !== signalR.HubConnectionState.Connected) return;
-      console.log("[CrawlHub] UnsubscribeFromConversation:", conversationId);
       await conn.invoke("UnsubscribeFromConversation", conversationId);
     },
     [ensureConnection]

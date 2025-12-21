@@ -166,16 +166,12 @@ const CrawlerConversationFilesSection = ({ conversationId, active = true }: Prop
       clearFiles();
       return;
     }
-    getConversationFiles(conversationId).catch((err) =>
-      console.error("[CrawlerFiles] fetch files error:", err)
-    );
+    getConversationFiles(conversationId).catch(() => {});
   }, [active, clearFiles, conversationId, getConversationFiles]);
 
   const handleRefresh = useCallback(() => {
     if (!conversationId) return;
-    getConversationFiles(conversationId).catch((err) =>
-      console.error("[CrawlerFiles] refresh files error:", err)
-    );
+    getConversationFiles(conversationId).catch(() => {});
   }, [conversationId, getConversationFiles]);
 
   const handlePreview = useCallback(async (file: ConversationFileItemResponse) => {
@@ -213,7 +209,6 @@ const CrawlerConversationFilesSection = ({ conversationId, active = true }: Prop
         setPreview(nextPreview);
       }
     } catch (err: any) {
-      console.error("[CrawlerFiles] preview error:", err);
       setPreviewError(err?.message || "Failed to load file preview.");
     } finally {
       setPreviewLoading(false);
