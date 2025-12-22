@@ -51,12 +51,15 @@ export const useCrawlerConversationState = ({
     (res: any[]): UiMessage[] =>
       res.map((m) => {
         const mt = m.messageType as MessageType | undefined;
-        const role: UiMessage["role"] =
-          mt === MessageType.AiSummary
-            ? "assistant"
-            : m.userId === userId
-            ? "user"
-            : "assistant";
+        const normalizedUserId = userId != null ? String(userId) : null;
+        const isUserMessage =
+          normalizedUserId !== null &&
+          String(m.userId) === normalizedUserId;
+        const role: UiMessage["role"] = isUserMessage
+          ? "user"
+          : mt === MessageType.SystemNotification
+          ? "system"
+          : "assistant";
 
         return {
           id: m.messageId,

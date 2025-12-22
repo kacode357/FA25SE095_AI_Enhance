@@ -161,8 +161,7 @@ const CrawlerInner = () => {
     };
   }, []);
 
-  const isDialogOpen =
-    showResultsModal || quotaDialogOpen || showAssignmentDrawer || isCrawling;
+  const isDialogOpen = quotaDialogOpen || showAssignmentDrawer || isCrawling;
 
   useEffect(() => {
     if (!isDialogOpen) return;
@@ -429,14 +428,15 @@ const CrawlerInner = () => {
         }
       }
 
-      const role: UiMessage["role"] =
-        messageType === MessageType.SystemNotification
-          ? "system"
-          : messageType === MessageType.AiSummary
-          ? "assistant"
-          : message.userId === userId
-          ? "user"
-          : "assistant";
+      const normalizedUserId = userId != null ? String(userId) : null;
+      const isUserMessage =
+        normalizedUserId !== null &&
+        String(message.userId) === normalizedUserId;
+      const role: UiMessage["role"] = isUserMessage
+        ? "user"
+        : messageType === MessageType.SystemNotification
+        ? "system"
+        : "assistant";
 
       const uiMessage: UiMessage = {
         id: message.messageId || makeId(),
