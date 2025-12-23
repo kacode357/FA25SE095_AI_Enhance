@@ -131,7 +131,7 @@ export default function ReportDetailPage() {
     return (
       <div className="flex items-center justify-center h-[60vh] text-nav">
         <Loader2 className="w-6 h-6 mr-2 animate-spin text-nav-active" />
-        <span className="text-sm">Loading reportâ€¦</span>
+        <span className="text-sm">Loading report...</span>
       </div>
     );
   }
@@ -194,15 +194,15 @@ export default function ReportDetailPage() {
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
                 <CalendarDays className="w-3 h-3" />
-                Created: {formatDateTimeVN(report.createdAt) || "â€”"}
+                Created: {formatDateTimeVN(report.createdAt) || "-"}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
                 <CalendarDays className="w-3 h-3" />
-                Submitted: {formatDateTimeVN(report.submittedAt) || "â€”"}
+                Submitted: {formatDateTimeVN(report.submittedAt) || "-"}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
                 <Clock className="w-3 h-3" />
-                Graded At: {formatDateTimeVN(report.gradedAt) || "â€”"}
+                Graded At: {formatDateTimeVN(report.gradedAt) || "-"}
               </span>
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function ReportDetailPage() {
             <div className="flex items-center gap-2">
               <Tag className="w-4 h-4 text-nav-active" />
               <div>
-                <b>Course:</b> {report.courseName || "â€”"}
+                <b>Course:</b> {report.courseName || "-"}
               </div>
             </div>
             {report.assignmentDueDate && (
