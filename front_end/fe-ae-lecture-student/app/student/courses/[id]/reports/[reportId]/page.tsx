@@ -1,35 +1,25 @@
 ﻿// app/student/courses/[id]/reports/[reportId]/page.tsx
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   BookOpen,
   CalendarDays,
+  ChevronDown,
   Clock,
   FileText,
-  Loader2,
-  Tag,
-  ChevronDown,
   History,
+  Loader2,
   RotateCcw,
+  Tag,
   X,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useGetReportById } from "@/hooks/reports/useGetReportById";
-import { useUpdateReportStatus } from "@/hooks/reports/useUpdateReportStatus";
 import ReportTimeline from "@/app/student/courses/[id]/reports/components/ReportHistory";
 import LiteRichTextEditor from "@/components/common/TinyMCE";
-import type { ReportDetail } from "@/types/reports/reports.response";
-import { ReportStatus } from "@/types/reports/reports.response";
-import { getSavedAccessToken } from "@/utils/auth/access-token";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,10 +30,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { useGetReportById } from "@/hooks/reports/useGetReportById";
+import { useUpdateReportStatus } from "@/hooks/reports/useUpdateReportStatus";
+import type { ReportDetail } from "@/types/reports/reports.response";
+import { ReportStatus } from "@/types/reports/reports.response";
+import { getSavedAccessToken } from "@/utils/auth/access-token";
 
 import ReportSubmissionEditor from "@/app/student/courses/[id]/reports/components/ReportSubmissionEditor";
-import ReportFullHistory from "../components/ReportFullHistory";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
+import ReportFullHistory from "../components/ReportFullHistory";
 
 const getAccessToken = async (): Promise<string> =>
   getSavedAccessToken() || "";
@@ -187,7 +187,7 @@ export default function ReportDetailPage() {
             <h1 className="text-3xl font-bold text-nav flex items-center gap-2">
               <FileText className="w-7 h-7 text-nav-active shrink-0" />
               <span className="truncate" title={report.assignmentTitle}>
-                Report â€” {report.assignmentTitle}
+                Report: {report.assignmentTitle}
               </span>
             </h1>
 
