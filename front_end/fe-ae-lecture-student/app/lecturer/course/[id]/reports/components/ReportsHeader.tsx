@@ -10,9 +10,10 @@ interface Props {
     exporting: boolean;
     assignmentId: string;
     exportGrades: (assignmentId: string) => void;
+    showExport?: boolean;
 }
 
-export default function ReportsHeader({ assignmentTitle, count, hasGraded, exporting, assignmentId, exportGrades }: Props) {
+export default function penReportsHeader({ assignmentTitle, count, hasGraded, exporting, assignmentId, exportGrades, showExport = true }: Props) {
     return (
         <>
             <div>
@@ -21,7 +22,7 @@ export default function ReportsHeader({ assignmentTitle, count, hasGraded, expor
                     <div className="text-base text-slate-900 mt-1">{assignmentTitle}</div>
                 </div>
             </div>
-            {hasGraded && (
+            {hasGraded && showExport && (
                 <Button
                     className="bg-green-100 shadow-lg text-sm text-green-900"
                     onClick={() => exportGrades(assignmentId)}

@@ -197,10 +197,9 @@ export default function LecturerAssignmentReportsPage() {
                         exporting={exporting}
                         assignmentId={assignmentId}
                         exportGrades={exportGrades}
+                        showExport={activeTab !== 'requiring'}
                     />
                 </CardHeader>
-
-
 
                 <CardContent className="p-0">
                     <Separator />
@@ -218,7 +217,7 @@ export default function LecturerAssignmentReportsPage() {
                             )}
 
                             {!loadingList && !error && items.length === 0 && (
-                                <div className="p-6 text-slate-600">No reports were submitted yet for this assignment.</div>
+                                <div className="p-6 text-sm italic text-slate-600">No reports were submitted yet for this assignment.</div>
                             )}
 
                             {!loadingList && items.length > 0 && (

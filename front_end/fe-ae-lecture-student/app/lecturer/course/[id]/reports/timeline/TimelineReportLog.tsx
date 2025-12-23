@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCourseStudents } from '@/hooks/enrollments/useCourseStudents';
 import { useGetReportTimeline } from "@/hooks/reports/useGetReportTimeline";
 import { ReportTimelineItem } from "@/types/reports/reports.response";
+import { formatToVN } from '@/utils/datetime/time';
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -86,7 +87,7 @@ export default function TimelineReportLog({ reportId, courseId = '' }: Props) {
                                         <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                                             <div>
                                                 <div className="text-xs mb-1 text-slate-500">Timestamp</div>
-                                                <div className="font-mono text-sm">{it.timestamp ? new Date(it.timestamp).toLocaleString() : '—'}</div>
+                                                <div className="font-mono text-sm">{it.timestamp ? formatToVN(it.timestamp, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}</div>
                                                 {it.timestamp && (
                                                     <div className="text-xs text-slate-400">{formatDistanceToNow(parseISO(it.timestamp), { addSuffix: true })}</div>
                                                 )}

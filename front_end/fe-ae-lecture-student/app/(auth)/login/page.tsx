@@ -1,4 +1,3 @@
-// app/(auth)/login/page.tsx
 "use client";
 
 import AuthShell from "@/components/auth/AuthShell";
@@ -8,7 +7,6 @@ import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin";
 import { useLogin } from "@/hooks/auth/useLogin";
 import { executeTurnstile, loadTurnstileScript, renderTurnstileWidget } from "@/lib/turnstile";
 import { motion } from "framer-motion";
-// using an actual image for Google logo (place your logo at `/public/gg-logo2.webp`)
 import { useEffect, useRef, useState } from "react";
 
 declare global {
@@ -20,34 +18,30 @@ declare global {
 }
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-console.log("GOOGLE_CLIENT_ID::", GOOGLE_CLIENT_ID);
+
 export default function LoginPage() {
   const { login, loading } = useLogin();
   const { googleLogin, loading: googleAuthLoading } = useGoogleLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const gisReadyRef = useRef(false);
 
-  // Load GIS script 1 lần và initialize callback -> nhận ID token
+  // 1. XỬ LÝ ONE TAP KHI VÀO TRANG
   useEffect(() => {
     const SCRIPT_ID = "google-identity-services";
     const init = () => {
       try {
         window.google?.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
-          // callback nhận ID token -> call BE google-login
           callback: async (resp: { credential?: string }) => {
             const credential = resp?.credential;
             if (!credential) return;
-
             await googleLogin({
               googleIdToken: credential,
               rememberMe,
-              ipAddress: "", // optional
-              userAgent:
-                typeof navigator !== "undefined" ? navigator.userAgent : "",
+              ipAddress: "",
+              userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
             });
           },
           auto_select: false,
@@ -55,6 +49,12 @@ export default function LoginPage() {
           use_fedcm_for_prompt: true,
         });
         gisReadyRef.current = true;
+
+        // Tự động hiện One Tap khi load xong script
+        window.google.accounts.id.prompt((notification: any) => {
+          // Xử lý sự kiện hiển thị/tắt nếu cần
+        });
+
       } catch (e) {
         console.error("[auth] init google id error:", e);
       }
@@ -75,7 +75,30 @@ export default function LoginPage() {
     document.head.appendChild(s);
   }, [googleLogin, rememberMe]);
 
-  // Load Turnstile script (if configured) using helper
+  // 2. XỬ LÝ KHI GOOGLE REDIRECT VỀ (Sau khi chọn tài khoản)
+  useEffect(() => {
+    // Google sẽ trả về token trên URL dạng: /login#id_token=...&...
+    const hash = window.location.hash;
+    if (hash && hash.includes("id_token")) {
+      const params = new URLSearchParams(hash.substring(1)); // Bỏ dấu #
+      const token = params.get("id_token");
+
+      if (token) {
+        // Xóa hash trên URL để nhìn sạch sẽ hơn
+        window.history.replaceState(null, "", window.location.pathname);
+
+        // Gọi API login
+        googleLogin({
+          googleIdToken: token,
+          rememberMe, // Lưu ý: giá trị này có thể là default vì trang đã reload
+          ipAddress: "",
+          userAgent: navigator.userAgent,
+        });
+      }
+    }
+  }, [googleLogin, rememberMe]);
+
+  // Load Turnstile (Giữ nguyên)
   useEffect(() => {
     const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
     if (!SITE_KEY) return;
@@ -85,73 +108,63 @@ export default function LoginPage() {
   const turnstileWidgetIdRef = useRef<number | null>(null);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Try render widget into hidden container when turnstile becomes available
+  // Render Turnstile (Giữ nguyên)
   useEffect(() => {
+    // ... (Code cũ của bạn giữ nguyên)
     const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
     if (!SITE_KEY) return;
-
     const tryRender = () => {
       try {
         if (!turnstileContainerRef.current) return;
         if (turnstileWidgetIdRef.current !== null) return;
-
         const id = renderTurnstileWidget(turnstileContainerRef.current, SITE_KEY, (token: string) => {
           if (turnstileContainerRef.current) turnstileContainerRef.current.dataset.token = token;
         });
-
         if (id !== null) turnstileWidgetIdRef.current = id;
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) { }
     };
-
     tryRender();
     const handler = () => tryRender();
     window.addEventListener("turnstile:load", handler as EventListener);
     return () => window.removeEventListener("turnstile:load", handler as EventListener);
   }, []);
 
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-
-    if (SITE_KEY) {
+    if (SITE_KEY && turnstileWidgetIdRef.current !== null) {
       try {
         const token = await executeTurnstile(turnstileWidgetIdRef.current, turnstileContainerRef.current);
         if (token) {
           await login({ email: email.trim(), password: password.trim(), rememberMe, captchaToken: token });
           return;
         }
-      } catch (err) {
-        console.error("Turnstile error:", err);
-      }
+      } catch (e) { }
     }
-
-    // fallback
     await login({ email: email.trim(), password: password.trim(), rememberMe });
   };
 
-  // Nhấn nút Google -> bật One Tap/Popup của GIS, callback ở trên sẽ xử lý
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    try {
-      if (!gisReadyRef.current || !window.google?.accounts?.id) {
-        throw new Error("Google SDK not ready");
-      }
-      // Hiển thị One Tap / popup. Khi user chọn account, callback sẽ bắn về.
-      await new Promise<void>((resolve) => {
-        window.google.accounts.id.prompt((notification: any) => {
-          // Nếu không hiển thị được One Tap (bị chặn), vẫn resolve để tắt loading
-          // Callback sign-in thành công vẫn chạy riêng (không qua nhánh này)
-          resolve();
-        });
-      });
-    } catch (e) {
-      console.error("[auth] google prompt error:", e);
-    } finally {
-      setGoogleLoading(false);
-    }
+  // CHUYỂN HƯỚNG SANG TRANG CHỌN ACCOUNT
+  const handleGoogleLogin = () => {
+    const redirectUri = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+
+    // Tạo URL đăng nhập OAuth2
+    const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
+    const options = {
+      redirect_uri: redirectUri,
+      client_id: GOOGLE_CLIENT_ID || "",
+      access_type: "online",
+      response_type: "id_token", // Yêu cầu trả về ID Token (JWT) giống như One Tap
+      prompt: "select_account",  // QUAN TRỌNG: Ép buộc hiển thị màn hình chọn tài khoản
+      scope: "openid email profile",
+      nonce: "nonce_" + new Date().getTime(), // Random string để bảo mật
+    };
+
+    const qs = new URLSearchParams(options).toString();
+
+    // Chuyển hướng người dùng
+    window.location.href = `${rootUrl}?${qs}`;
   };
 
   return (
@@ -183,7 +196,6 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-
         <div className="mb-6 flex items-center justify-between text-sm text-slate-600">
           <label className="inline-flex select-none items-center gap-2">
             <input
@@ -219,15 +231,14 @@ export default function LoginPage() {
           variant="ghost"
           className="w-full border border-slate-200 hover:border-slate-300"
           onClick={handleGoogleLogin}
-          loading={googleLoading || googleAuthLoading}
+          disabled={googleAuthLoading} // Đổi loading state
           aria-label="Đăng nhập với Google"
         >
-          <img src="/gg-logo2.webp" alt="Google" className="w-10 h-10" />
+          {/* Nếu đang loading do redirect về thì hiện text loading, hoặc giữ nguyên logo */}
+          {googleAuthLoading ? "Verifying..." : <img src="/gg-logo2.webp" alt="Google" className="w-10 h-10" />}
         </Button>
 
-        {/* Container ẩn nếu sau này muốn render Google button gốc (không bắt buộc) */}
         <div id="g-btn-container" className="hidden" />
-        {/* Hidden container for Cloudflare Turnstile invisible widget */}
         <div ref={turnstileContainerRef} className="hidden" />
 
         <motion.div

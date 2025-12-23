@@ -10,7 +10,7 @@ import { useAiCheckReport } from "@/hooks/reports/useAiCheckReport";
 import { useGetAiChecksReport } from "@/hooks/reports/useGetAiChecksReport";
 import { useGetReportById } from "@/hooks/reports/useGetReportById";
 import type { ReportAiCheckResult } from "@/types/reports/reports.response";
-import { ArrowLeft, CheckCheck, ClipboardPenLine, Loader2, PencilOff, X } from "lucide-react";
+import { ArrowLeft, ClipboardPenLine, Info, Loader2, PencilOff, X } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import HistoryReportLog from "../history/HistoryReportLog";
@@ -114,17 +114,6 @@ export default function ReportDetailsPage() {
   // Auto-run AI check when there's submission text and status is Submitted/Resubmitted
   const { aiCheckReport, loading: aiLoading } = useAiCheckReport();
   const { getAiChecks, loading: getChecksLoading } = useGetAiChecksReport();
-  const [tooltipOpen, setTooltipOpen] = useState(false);
-
-  const formatCheckedAt = (iso?: string | null) => {
-    if (!iso) return "-";
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "-";
-    const datePart = d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-    const timePart = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
-    const timeFormatted = timePart.replace(":", "h");
-    return `${datePart}, ${timeFormatted}`;
-  };
 
   useEffect(() => {
     if (!detail) return;
@@ -185,6 +174,24 @@ export default function ReportDetailsPage() {
     router.push(target);
   };
 
+  const openSubmissionInNewTab = () => {
+    if (typeof window === 'undefined') return;
+    if (!detail?.submission) return;
+
+    try {
+      const win = window.open('', '_blank');
+      if (!win) return;
+      const title = detail?.assignmentTitle ?? 'Submission';
+      const student = detail ? getStudentName(detail?.submittedBy) : '';
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>${String(title)} - ${String(student)}</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;line-height:1.6;padding:24px;background:#f8fafc;color:#0f172a} .container{max-width:980px;margin:0 auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 6px 18px rgba(15,23,42,0.06);} h1{font-size:20px;margin:0 0 12px} .meta{color:#475569;font-size:13px;margin-bottom:18px}</style></head><body><div class="container"><h1>${String(title)}</h1><div class="meta">${String(student)}</div><div>${detail.submission}</div></div></body></html>`;
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    } catch (e) {
+      // ignore
+    }
+  };
+
   return (
     <div className="pb-4 px-3">
       <Card className="shadow-md py-0 gap-0 border-slate-200 max-h-[calc(100vh-140px)] overflow-hidden">
@@ -199,17 +206,30 @@ export default function ReportDetailsPage() {
 
             {activeTab !== 'history' && (
               <div className="flex items-center gap-2">
-                {!showRevisionForm && (
-                  <Button size="sm" className="cursor-pointer text-blue-500 shadow-lg mr-2" onClick={() => { setShowRevisionForm(true); setShowGradeForm(false); setShowRejectForm(false); }}><PencilOff className="size-4" />Request Revision</Button>
-                )}
+                {
+                  (() => {
+                    const statusNum = Number(detail?.status);
+                    const isGraded = statusNum === 6; // ReportStatus.Graded
+                    const isRejected = statusNum === 8; // ReportStatus.Rejected
+                    const isRevisionRequested = statusNum === 4; // ReportStatus.RequiresRevision
 
-                {!showRejectForm && (
-                  <Button size="sm" className="cursor-pointer text-red-500 shadow-lg mr-2" onClick={() => { setShowRejectForm(true); setShowRevisionForm(false); }}><X className="size-4" />Reject Report</Button>
-                )}
+                    return (
+                      <>
+                        {!showRevisionForm && !isGraded && !isRejected && (
+                          <Button size="sm" className="cursor-pointer text-blue-500 shadow-lg mr-2" onClick={() => { setShowRevisionForm(true); setShowGradeForm(false); setShowRejectForm(false); }}><PencilOff className="size-4" />Request Revision</Button>
+                        )}
 
-                {!showGradeForm && !(Number(detail?.status) === 8) && !(Number(detail?.status) === 6) && (
-                  <Button size="sm" className="cursor-pointer btn btn-gradient-slow" onClick={() => { setShowGradeForm(true); setShowRevisionForm(false); setShowRejectForm(false); }}><ClipboardPenLine className="size-4" />Grade</Button>
-                )}
+                        {!showRejectForm && !isGraded && !isRevisionRequested && (
+                          <Button size="sm" className="cursor-pointer text-red-500 shadow-lg mr-2" onClick={() => { setShowRejectForm(true); setShowRevisionForm(false); }}><X className="size-4" />Reject Report</Button>
+                        )}
+
+                        {!showGradeForm && !isGraded && !isRejected && !isRevisionRequested && (
+                          <Button size="sm" className="cursor-pointer btn btn-gradient-slow" onClick={() => { setShowGradeForm(true); setShowRevisionForm(false); setShowRejectForm(false); }}><ClipboardPenLine className="size-4" />Grade</Button>
+                        )}
+                      </>
+                    );
+                  })()
+                }
               </div>
             )}
           </div>
@@ -256,55 +276,57 @@ export default function ReportDetailsPage() {
 
           {/* ==================== TAB DETAILS - CHỈ SỬA PHẦN NÀY ==================== */}
           {!loading && activeTab === 'details' && detail && (
-            <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-5 p-6 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-5 px-6 pb-6 items-stretch">
               {/* LEFT: moved to component for clarity */}
-                <ReportInfoDetails
-                  detail={detail}
-                  course={course}
-                  enrolledStudents={enrolledStudents}
-                  getStudentName={getStudentName}
-                  statusBadgeElement={<StatusBadge status={detail.status} />}
-                  normalizeAssignmentDescription={detail.assignmentDescription ?? ''}
-                />
+              <ReportInfoDetails
+                detail={detail}
+                course={course}
+                enrolledStudents={enrolledStudents}
+                getStudentName={getStudentName}
+                statusBadgeElement={<StatusBadge status={detail.status} />}
+                normalizeAssignmentDescription={detail.assignmentDescription ?? ''}
+              />
 
               {/* === PHẢI: SUBMISSION + CÁC FORM === */}
-              <div
-                className="flex flex-col space-y-6 h-full"
-                onMouseEnter={() => setTooltipOpen(true)}
-                onMouseLeave={() => setTooltipOpen(false)}
-              >
+              <div className="flex flex-col space-y-6 h-full">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <div className="text-xs text-slate-500">Submission</div>
                     <div>
-                      <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="xs"
-                            onClick={async () => {
-                              if (!reportId) return;
-                              // open modal and fetch existing AI checks for this report
-                              setAiModalOpen(true);
-                              setAiResult(null);
-                              try {
-                                const res = await getAiChecks(reportId);
-                                // try several possible shapes for the response
-                                const candidate = (res as any)?.latestCheck ?? (res as any)?.checks?.[0] ?? (res as any)?.result ?? null;
-                                setAiResult(candidate ?? null);
-                              } catch (e) {
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="xs"
+                              onClick={async () => {
+                                if (!reportId) return;
+                                // open modal and fetch existing AI checks for this report
+                                setAiModalOpen(true);
                                 setAiResult(null);
-                              }
-                            }}
-                            className="text-emerald-700 hover:text-emerald-800"
-                          >
-                            <CheckCheck className="size-4" />AI-Asserted
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">Submissions have been evaluated by AI, review history now..</TooltipContent>
-                      </Tooltip>
+                                try {
+                                  const res = await getAiChecks(reportId);
+                                  // try several possible shapes for the response
+                                  const candidate = (res as any)?.latestCheck ?? (res as any)?.checks?.[0] ?? (res as any)?.result ?? null;
+                                  setAiResult(candidate ?? null);
+                                } catch (e) {
+                                  setAiResult(null);
+                                }
+                              }}
+                              className="text-emerald-700 hover:text-emerald-800"
+                            >
+                              <Info className="size-4" />AI-Asserted
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Submissions have been evaluated by AI, review history now..</TooltipContent>
+                        </Tooltip>
+
+                        <Button size="xs" variant="ghost" onClick={openSubmissionInNewTab} className="text-slate-600 bg-slate-50 hover:shadow-md hover:text-slate-800">
+                          Open in new tab
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="prose prose-sm text-xs max-w-none border border-slate-200 rounded-lg p-6 bg-slate-50 overflow-auto" style={{maxHeight: 'calc(100vh - 200px)'}}>
+                  <div className="prose prose-sm text-xs max-w-none border border-slate-200 rounded-lg p-6 bg-slate-50 overflow-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
                     {detail.submission ? (
                       <div dangerouslySetInnerHTML={{ __html: detail.submission }} />
                     ) : (

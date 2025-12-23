@@ -4,6 +4,7 @@ import { STATUS_MAP } from '@/app/lecturer/course/[id]/reports/utils/status';
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatToVN } from '@/utils/datetime/time';
 import { ArrowRightLeft, TimerReset } from "lucide-react";
 import React from 'react';
 
@@ -216,9 +217,9 @@ export default function HistoryVersions({
                                             <div className="text-xs text-slate-500 text-right whitespace-nowrap flex flex-col items-end gap-1 min-w-[72px]">
                                                 <div className="flex items-center gap-1">
                                                     <TimerReset className="size-3.5" />
-                                                    <div className="text-[11px] text-slate-400">{v.changedAt ? new Date(v.changedAt).toLocaleDateString('vi-VN') : ''}</div>
+                                                    <div className="text-[11px] text-slate-400">{v.changedAt ? formatToVN(v.changedAt, { year: 'numeric', month: '2-digit', day: '2-digit', hour: undefined, minute: undefined, second: undefined }) : ''}</div>
                                                 </div>
-                                                <div className="text-[11px]">{v.changedAt ? new Date(v.changedAt).toLocaleTimeString('vi-VN') : ''}</div>
+                                                <div className="text-[11px]">{v.changedAt ? formatToVN(v.changedAt, { hour: '2-digit', minute: '2-digit', second: '2-digit', year: undefined, month: undefined, day: undefined }) : ''}</div>
                                             </div>
                                         </div>
                                     </div>

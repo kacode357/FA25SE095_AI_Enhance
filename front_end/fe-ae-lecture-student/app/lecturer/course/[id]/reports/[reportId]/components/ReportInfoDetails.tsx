@@ -1,5 +1,6 @@
 "use client";
 
+import { formatToVN } from "@/utils/datetime/time";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import React from "react";
 
@@ -43,6 +44,10 @@ export default function ReportInfoDetails({ detail, course, enrolledStudents, ge
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5 border-t border-slate-200">
                 <div>
+                    <div className="text-xs text-slate-500">Course</div>
+                    <div className="font-medium text-xs">{detail.courseCode ? `${detail.courseCode} — ${detail.courseName ?? ''}` : (detail.courseName ?? '—')}</div>
+                </div>
+                <div>
                     <div className="text-xs text-slate-500">Due Date</div>
                     <div className="font-medium text-xs">{detail.assignmentDueDate ? new Date(detail.assignmentDueDate).toLocaleString() : '—'}</div>
                     {detail.assignmentDueDate && (
@@ -51,33 +56,28 @@ export default function ReportInfoDetails({ detail, course, enrolledStudents, ge
                 </div>
 
                 <div>
-                    <div className="text-xs text-slate-500">Course</div>
-                    <div className="font-medium text-xs">{detail.courseCode ? `${detail.courseCode} — ${detail.courseName ?? ''}` : (detail.courseName ?? '—')}</div>
+                    <div className="text-xs text-slate-500">Submitted By</div>
+                    <div className="font-medium text-xs">{getStudentName(detail.submittedBy)}</div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <div className="text-xs text-slate-500">Is Group Submission</div>
+                    <div className="font-medium text-xs">{detail.isGroupSubmission ? 'Yes' : 'No'}</div>
                 </div>
 
                 <div>
                     <div className="text-xs text-slate-500">Group Name</div>
                     <div className="font-mono text-xs text-slate-700 truncate">{detail.groupName ?? '—'}</div>
                 </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <div className="text-xs text-slate-500">Submitted By</div>
-                    <div className="font-medium text-xs">{getStudentName(detail.submittedBy)}</div>
-                </div>
 
                 <div>
                     <div className="text-xs text-slate-500">Submitted At</div>
-                    <div className="font-medium text-xs">{detail.submittedAt ? new Date(detail.submittedAt).toLocaleString() : '—'}</div>
+                    <div className="font-medium text-xs">{detail.submittedAt ? formatToVN(detail.submittedAt) : '—'}</div>
                     {detail.submittedAt && (
                         <div className="text-xs text-slate-400">{formatDistanceToNow(parseISO(detail.submittedAt), { addSuffix: true })}</div>
                     )}
-                </div>
-
-                <div>
-                    <div className="text-xs text-slate-500">Is Group Submission</div>
-                    <div className="font-medium text-xs">{detail.isGroupSubmission ? 'Yes' : 'No'}</div>
                 </div>
             </div>
 
@@ -91,19 +91,13 @@ export default function ReportInfoDetails({ detail, course, enrolledStudents, ge
                     <div className="text-xs text-slate-500">Version</div>
                     <div className="font-medium text-xs">{detail.fullVersion ? detail.fullVersion : (typeof detail.version === 'number' ? detail.version : '—')}</div>
                 </div>
+                <div>
+                    <div className="text-xs text-slate-500">Graded At</div>
+                    <div className="font-medium text-xs">{detail.gradedAt ? formatToVN(detail.gradedAt) : '—'}</div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <div className="text-xs text-slate-500">Graded By</div>
-                    <div className="font-medium text-xs">{detail.gradedBy ?? '—'}</div>
-                </div>
-
-                <div>
-                    <div className="text-xs text-slate-500">Graded At</div>
-                    <div className="font-medium text-xs">{detail.gradedAt ? new Date(detail.gradedAt).toLocaleString() : '—'}</div>
-                </div>
-
                 <div>
                     <div className="text-xs text-slate-500">File URL</div>
                     <div className="text-xs font-mono truncate">{detail.fileUrl ?? '—'}</div>

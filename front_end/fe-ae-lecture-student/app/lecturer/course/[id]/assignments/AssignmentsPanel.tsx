@@ -29,7 +29,7 @@ function formatToVNShort(input?: string | null) {
 import { useDeleteAssignment } from "@/hooks/assignment/useDeleteAssignment";
 import type { AssignmentItem } from "@/types/assignments/assignment.response";
 import { AssignmentStatus } from "@/types/assignments/assignment.response";
-import { ArrowLeft, ChevronDown, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ScanEye, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import AssignmentDetailView from "./components/AssignmentDetailView";
@@ -334,15 +334,11 @@ export default function AssignmentsPanel({
             <div className="text-sm text-slate-600">
               {loading ? "Loading..." : `${assignments.length} item(s) on this page`}
             </div>
-            <div className="flex items-center gap-2 sm:justify-end">
-              {/* <Button
-                size="sm"
-                variant="outline"
-                className="text-[#000D83] shadow-md"
-                onClick={() => setTopicSheetOpen(true)}
-              >
-                Manage Topics
-              </Button> */}
+            <div className="flex items-center gap-5 sm:justify-end">
+              <Button size="sm" className="text-violet-600 hover:text-violet-700" onClick={() => router.push(`/lecturer/course/${courseId}/assignments/template-report`)}>
+                <ScanEye className="size-4" />Template Report
+              </Button>
+
               <Button size="sm" className="text-[#000D83] shadow-md" onClick={openCreate}>
                 New Assignment
               </Button>
