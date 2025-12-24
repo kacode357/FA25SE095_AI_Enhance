@@ -172,7 +172,7 @@ export function useCrawlerChatHub({
         .configureLogging(signalR.LogLevel.None)
         .build();
 
-      const logEvent = () => {};
+      const logEvent = (_event: string, _payload?: unknown) => {};
 
       const onWithLog = <T extends any[]>(
         event: string,

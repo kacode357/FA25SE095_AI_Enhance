@@ -98,7 +98,7 @@ export function useCrawlHub({
         .configureLogging(signalR.LogLevel.None)
         .build();
 
-      const logEvent = () => {};
+      const logEvent = (_event: string, _payload?: unknown, _meta?: unknown) => {};
 
 
       // ===== đăng ký event từ CrawlHub (server -> client) =====
