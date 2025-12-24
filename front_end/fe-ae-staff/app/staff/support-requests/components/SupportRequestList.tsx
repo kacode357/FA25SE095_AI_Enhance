@@ -92,10 +92,10 @@ export default function SupportRequestList({
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
-          <p className="text-xs text-gray-500">{subtitle}</p>
+          <h2 className="text-sm font-semibold text-nav">{title}</h2>
+          <p className="text-xs text-[var(--text-muted)]">{subtitle}</p>
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-[var(--text-muted)]">
           Page {pagination.pageNumber} of {Math.max(pagination.totalPages, 1)} ·{" "}
           {pagination.totalCount} items
         </div>
@@ -105,12 +105,12 @@ export default function SupportRequestList({
       <Separator className="mb-3" />
 
       {/* Body */}
-      <div className="flex-1 min-h-0 rounded-xl border border-slate-100 bg-slate-50/60">
+      <div className="flex-1 min-h-0 rounded-xl border border-[var(--border)] bg-[var(--card)]">
         {loading ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-              <p className="text-xs text-gray-500">
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--brand)]" />
+              <p className="text-xs text-[var(--text-muted)]">
                 Loading support requests...
               </p>
             </div>
@@ -118,10 +118,10 @@ export default function SupportRequestList({
         ) : showEmpty ? (
           <div className="h-full flex items-center justify-center text-center px-4">
             <div>
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-slate-900">
                 No support requests found.
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-[var(--text-muted)] mt-1">
                 Once requests are created, they will appear here.
               </p>
             </div>
@@ -130,7 +130,7 @@ export default function SupportRequestList({
           <ScrollArea className="h-full rounded-xl">
             <Table>
               <TableHeader>
-                <TableRow className="text-xs">
+                <TableRow className="text-xs text-[var(--text-muted)]">
                   <TableHead className="w-[22%]">Subject</TableHead>
                   <TableHead className="w-[36%]">Requester</TableHead>
                   <TableHead className="w-[16%] text-center">Category &amp; Priority</TableHead>
@@ -150,12 +150,12 @@ export default function SupportRequestList({
                       {/* Subject */}
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <div className="text-xs font-medium text-gray-900 line-clamp-2">
+                          <div className="text-xs font-medium text-slate-900 line-clamp-2">
                             {item.subject}
                           </div>
                           {item.description && (
                             <p
-                              className="text-xs text-gray-500 whitespace-nowrap truncate max-w-[360px]"
+                              className="text-xs text-[var(--text-muted)] whitespace-nowrap truncate max-w-[360px]"
                               title={item.description}
                             >
                               {item.description}
@@ -167,19 +167,19 @@ export default function SupportRequestList({
                       {/* Requester + Course (Course shown under role) */}
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <p className="text-xs font-medium text-gray-900 line-clamp-1">
+                          <p className="text-xs font-medium text-slate-900 line-clamp-1">
                             {item.requesterName}
                           </p>
-                          <p className="text-[11px] text-gray-500">
+                          <p className="text-[11px] text-[var(--text-muted)]">
                             Role: {item.requesterRole}
                           </p>
                           {item.courseName && (
-                            <p className="text-[11px] text-gray-600">
+                            <p className="text-[11px] text-slate-600">
                               {item.courseName}
                             </p>
                           )}
                           {item.assignedStaffName && (
-                            <p className="text-[11px] text-blue-600 line-clamp-1">
+                            <p className="text-[11px] text-[var(--brand)] line-clamp-1">
                               Assigned to: {item.assignedStaffName}
                             </p>
                           )}
@@ -202,16 +202,16 @@ export default function SupportRequestList({
                       <TableCell>
                         <div className="flex flex-col items-center gap-1">
                           <SupportRequestStatusBadge status={item.status} />
-                          <p className="text-[11px] text-gray-500">
+                          <p className="text-[11px] text-[var(--text-muted)]">
                             Requested: {dt(item.requestedAt)}
                           </p>
                           {item.acceptedAt && (
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-[var(--text-muted)]">
                               Accepted: {dt(item.acceptedAt)}
                             </p>
                           )}
                           {item.resolvedAt && (
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-[var(--text-muted)]">
                               Resolved: {dt(item.resolvedAt)}
                             </p>
                           )}
@@ -227,7 +227,7 @@ export default function SupportRequestList({
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="mt-1 h-7 w-7 cursor-pointer"
+                              className="mt-1 h-7 w-7 cursor-pointer border border-[var(--border)] bg-white text-[var(--brand)] hover:bg-[rgba(127,113,244,0.08)]"
                               title="Open conversation (chat)"
                               onClick={() => {
                                 // navigate to chat page with query params
@@ -247,21 +247,21 @@ export default function SupportRequestList({
                                 router.push(`/staff/support-requests/chat?${q.toString()}`);
                               }}
                             >
-                              <MessageCircle className="w-4 h-4 text-blue-500" />
+                              <MessageCircle className="w-4 h-4" />
                             </Button>
                           )}
                           {/* Eye button - open detail modal */}
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="mt-1 h-7 w-7 !bg-green-50 !hover:text-green-400 cursor-pointer"
+                            className="mt-1 h-7 w-7 !bg-[rgba(127,113,244,0.08)] !hover:text-[var(--brand-700)] cursor-pointer"
                             title="View request details"
                             onClick={() => {
                               setSelected(item);
                               setViewOpen(true);
                             }}
                           >
-                            <Eye className="w-4 h-4 text-green-700" />
+                            <Eye className="w-4 h-4 text-[var(--brand)]" />
                           </Button>
                         </div>
                       </TableCell>

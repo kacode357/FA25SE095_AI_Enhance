@@ -38,7 +38,7 @@ export default function ChatPage() {
                     />
                 </div>
             ) : (
-                <div className="text-sm text-gray-600">Missing peerId in query.</div>
+                <div className="text-sm text-[var(--text-muted)]">Missing peerId in query.</div>
             )}
         </div>
     );

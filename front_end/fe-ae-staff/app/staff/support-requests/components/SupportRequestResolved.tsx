@@ -21,15 +21,15 @@ export default function SupportRequestResolved({
 
     return (
         <div className={className ?? "mr-2 ml-20 flex items-center justify-end gap-4"}>
-            <div className="flex items-start shadow-md p-2 rounded-md gap-3 cursor-default">
+            <div className="flex items-start shadow-sm p-3 rounded-md gap-3 cursor-default border border-[var(--border)] bg-[var(--card)]">
                 {/* Đã bỏ hoàn toàn phần Icon */}
                 
                 {/* Content Section - Chỉ hiện Text khi đã Resolved */}
                 <div>
-                    <div className="text-sm md:text-sm font-semibold text-gray-900 leading-tight">
+                    <div className="text-sm md:text-sm font-semibold text-slate-900 leading-tight">
                         <span>The support request for this user has been resolved.</span>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="text-xs text-[var(--text-muted)] mt-0.5">
                         <span>No further action is required.</span>
                     </div>
                 </div>

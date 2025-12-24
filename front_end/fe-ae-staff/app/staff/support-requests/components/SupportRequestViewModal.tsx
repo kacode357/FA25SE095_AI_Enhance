@@ -68,29 +68,29 @@ export default function SupportRequestViewModal({ open, onOpenChange, item, onAc
 
     return (
         <Dialog open={open} onOpenChange={(v) => onOpenChange(v)}>
-            <DialogContent className="max-w-2xl border-slate-200 overflow-hidden">
+            <DialogContent className="max-w-2xl border-[var(--border)] bg-[var(--card)] overflow-hidden">
                 <DialogHeader>
-                    <DialogTitle>Support request details</DialogTitle>
+                    <DialogTitle className="text-nav">Support request details</DialogTitle>
                     <DialogDescription>Full information for the selected support request.</DialogDescription>
                 </DialogHeader>
 
                 {item ? (
                     <div className="space-y-3 py-2 text-sm text-slate-700 max-h-[60vh] overflow-auto pr-2">
                         <div>
-                            <div className="text-xs font-medium text-gray-900">Subject</div>
+                            <div className="text-xs font-medium text-slate-900">Subject</div>
                             <div className="text-[13px]">{item.subject}</div>
                         </div>
 
                         {item.description && (
                             <div>
-                                <div className="text-xs font-medium text-gray-900">Description</div>
-                                <div className="text-[13px] text-gray-600 whitespace-pre-wrap">{item.description}</div>
+                                <div className="text-xs font-medium text-slate-900">Description</div>
+                                <div className="text-[13px] text-[var(--text-muted)] whitespace-pre-wrap">{item.description}</div>
                             </div>
                         )}
 
                         {images.length > 0 && (
                             <div>
-                                <div className="text-xs font-medium text-gray-900">Images</div>
+                                <div className="text-xs font-medium text-slate-900">Images</div>
                                 <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     {images.map((img, idx) => (
                                         <div key={idx} className="block overflow-hidden rounded border border-slate-200 bg-white">
@@ -144,8 +144,8 @@ export default function SupportRequestViewModal({ open, onOpenChange, item, onAc
 
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <div className="text-xs font-medium text-gray-900">Requested</div>
-                                <div className="text-[11px] text-gray-500">{dt(item.requestedAt)}</div>
+                                <div className="text-xs font-medium text-slate-900">Requested</div>
+                                <div className="text-[11px] text-[var(--text-muted)]">{dt(item.requestedAt)}</div>
                             </div>
                         </div>
                     </div>
@@ -158,7 +158,7 @@ export default function SupportRequestViewModal({ open, onOpenChange, item, onAc
                     {item && onAccept && (
                         <Button
                             type="button"
-                            className="h-9 px-3 text-xs btn btn-blue-slow"
+                            className="h-9 px-3 text-xs btn btn-gradient-slow"
                             onClick={async () => {
                                 await onAccept(item.id);
                                 onOpenChange(false);

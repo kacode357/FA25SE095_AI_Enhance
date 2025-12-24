@@ -40,6 +40,7 @@ export function useSupportRequestChat({
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
+    const sendingRef = useRef(false);
     const [started, setStarted] = useState(false);
 
     const messagesRef = useRef<HTMLDivElement | null>(null);
@@ -84,8 +85,21 @@ export function useSupportRequestChat({
             });
 
             const allMessages = [...prev, ...batch];
+            const signatureMap = new Map<string, ChatMessage>();
+            for (const msg of allMessages) {
+                const sig = `${msg.senderId}|${msg.receiverId}|${msg.message}|${msg.sentAt}`;
+                const existing = signatureMap.get(sig);
+                if (!existing) {
+                    signatureMap.set(sig, msg);
+                    continue;
+                }
+                if (existing.id.startsWith("temp-") && !msg.id.startsWith("temp-")) {
+                    signatureMap.set(sig, msg);
+                }
+            }
+
             const uniqueMap = new Map<string, ChatMessage>();
-            allMessages.forEach((m) => uniqueMap.set(m.id, m));
+            signatureMap.forEach((msg) => uniqueMap.set(msg.id, msg));
             for (const id of uniqueMap.keys()) {
                 if (id.startsWith("temp-") && !pendingRef.current.has(id)) {
                     uniqueMap.delete(id);
@@ -308,6 +322,7 @@ export function useSupportRequestChat({
         if (!peerId || !courseId || !currentUserId) return;
         const message = input.trim();
         if (!message) return;
+        if (sendingRef.current) return;
 
         const sig = `${courseId}|${peerId}|${message}`;
         const now = Date.now();
@@ -319,6 +334,7 @@ export function useSupportRequestChat({
         recentSendsRef.current.set(sig, now);
         setTimeout(() => recentSendsRef.current.delete(sig), 5000);
 
+        sendingRef.current = true;
         const tempId = uuid();
         const local: ChatMessage = {
             id: tempId,
@@ -347,6 +363,7 @@ export function useSupportRequestChat({
             throw e;
         } finally {
             setSending(false);
+            sendingRef.current = false;
         }
     }, [peerId, courseId, currentUserId, input, peerName, sendMessage, supportRequestId, querySupportRequestId]);
 

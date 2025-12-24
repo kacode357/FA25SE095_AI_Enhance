@@ -60,14 +60,14 @@ export default function SupportRequestsPage({
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-blue-50 p-2.5">
-            <ClipboardList className="w-6 h-6 text-blue-600" />
+          <div className="rounded-xl bg-[rgba(127,113,244,0.12)] p-2.5">
+            <ClipboardList className="w-6 h-6 text-[var(--brand)]" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <h1 className="text-xl font-semibold text-nav flex items-center gap-2">
               Support Requests
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[var(--text-muted)]">
               Review pending tickets and manage your assigned support requests.
             </p>
           </div>
@@ -77,7 +77,7 @@ export default function SupportRequestsPage({
           <Button
             type="button"
             variant="outline"
-            className="text-sm btn btn-green-slow border-gray-200"
+            className="text-sm btn btn-gradient-slow border-[var(--border)]"
             onClick={handleRefreshClick}
           >
             Refresh
@@ -88,7 +88,7 @@ export default function SupportRequestsPage({
       {/* Content */}
       <Card className="card rounded-2xl gap-0 flex-1 flex flex-col">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold text-gray-900">
+          <CardTitle className="text-base font-semibold text-nav">
             Support Center
           </CardTitle>
         </CardHeader>
@@ -98,7 +98,7 @@ export default function SupportRequestsPage({
             onValueChange={(v) => setTab(v as "pending" | "assigned")}
             className="flex flex-col h-full min-h-0"
           >
-            <TabsList className="mb-4 w-fit">
+            <TabsList className="mb-4 w-fit border border-[var(--border)] bg-white/70 shadow-sm">
               <TabsTrigger value="pending" className="px-4 py-1.5 cursor-pointer text-sm">
                 Pending requests
               </TabsTrigger>

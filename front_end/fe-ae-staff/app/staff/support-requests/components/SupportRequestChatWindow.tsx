@@ -130,7 +130,7 @@ export default function SupportRequestChatWindow({
         <div ref={rootRef} className="w-full h-full flex flex-col">
             <div
                 ref={headerRef}
-                className="flex-none bg-white z-30 flex flex-col justify-center px-4 py-3 shadow-lg"
+                className="flex-none bg-[var(--card)] border-b border-[var(--border)] z-30 flex flex-col justify-center px-4 py-3 shadow-sm"
                 style={
                     headerRect
                         ? {
@@ -177,7 +177,7 @@ export default function SupportRequestChatWindow({
                             senderName: "System",
                             receiverId: peerId,
                             receiverName: peerName,
-                            message: "Thanks — we've marked this request as resolved.",
+                            message: "Thanks - we've marked this request as resolved.",
                             sentAt: new Date().toISOString(),
                             isDeleted: false,
                         } as unknown as ChatMessage;
@@ -202,7 +202,7 @@ export default function SupportRequestChatWindow({
             {/* footer is visually inside the chat container but fixed to viewport bottom */}
             <div
                 ref={footerRef}
-                className="flex-none px-4 py-3 bg-white z-40 shadow-md"
+                className="flex-none px-4 py-3 bg-[var(--card)] border-t border-[var(--border)] z-40 shadow-sm"
                 style={
                     footerRect
                         ? {

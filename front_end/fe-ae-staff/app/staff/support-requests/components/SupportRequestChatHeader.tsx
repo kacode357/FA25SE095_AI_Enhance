@@ -25,17 +25,17 @@ export default function SupportRequestChatHeader({
     const router = useRouter();
     return (
         <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-                <Button
-                    variant="ghost"
-                    className="cursor-pointer"
-                    size="sm"
-                    onClick={() => router.back()}
-                >
-                    <ArrowLeft className="w-4 h-4 mr-1" /> Back
-                </Button>
-                <h3 className="text-lg font-semibold">{peerName || "User"}</h3>
-            </div>
+        <div className="flex items-center gap-3">
+            <Button
+                variant="ghost"
+                className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--brand)]"
+                size="sm"
+                onClick={() => router.back()}
+            >
+                <ArrowLeft className="w-4 h-4 mr-1" /> Back
+            </Button>
+            <h3 className="text-lg font-semibold text-nav">{peerName || "User"}</h3>
+        </div>
             <SupportRequestResolved
                 resolved={resolved}
                 resolving={resolving}
