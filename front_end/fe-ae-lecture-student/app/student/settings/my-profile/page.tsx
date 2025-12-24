@@ -249,48 +249,6 @@ export default function LecturerMyProfilePage() {
               />
             </div>
 
-            {/* Crawl quota */}
-            <div className="mt-10">
-              <h4 className="sr-only">Crawl quota</h4>
-              <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
-                <span>
-                  Crawl Quota used: {user.crawlQuotaUsed ?? 0} /{" "}
-                  {user.crawlQuotaLimit ?? 0}
-                </span>
-                {user.quotaResetDate && (
-                  <span>
-                    Reset: {formatDateTime(user.quotaResetDate, true)}
-                  </span>
-                )}
-              </div>
-              <svg
-                className="w-full h-2 rounded-full border border-[var(--border)] overflow-hidden"
-                viewBox="0 0 100 8"
-                preserveAspectRatio="none"
-                aria-label="Crawl quota usage"
-              >
-                <defs>
-                  <linearGradient
-                    id="quotaGrad"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="0%"
-                  >
-                    <stop offset="0%" stopColor="var(--brand)" />
-                    <stop offset="100%" stopColor="var(--brand-700)" />
-                  </linearGradient>
-                </defs>
-                <rect x="0" y="0" width="100" height="8" fill="#f1f5f9" />
-                <rect
-                  x="0"
-                  y="0"
-                  width={`${quotaPct}`}
-                  height="8"
-                  fill="url(#quotaGrad)"
-                />
-              </svg>
-            </div>
           </div>
         </div>
       </div>
