@@ -236,6 +236,8 @@ async function compressDataUrlsInHtml(html: string) {
         const src = img.getAttribute("src");
         if (!src) return;
         if (!src.startsWith("data:image")) return;
+        // Skip SVG placeholders to avoid canvas/base64 issues with non-Latin chars
+        if (src.startsWith("data:image/svg+xml")) return;
         if (src.length <= MAX_INLINE_IMG_LENGTH) return;
         const compressed = await shrinkDataUrlToLimit(src);
         if (compressed && compressed.length < src.length) {

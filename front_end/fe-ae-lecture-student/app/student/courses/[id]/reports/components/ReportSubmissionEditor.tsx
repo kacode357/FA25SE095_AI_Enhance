@@ -3,7 +3,8 @@
 
 import { Info } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import LiteRichTextEditor from "@/components/common/TinyMCE";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ReportStatus } from "@/config/classroom-service/report-status.enum";
+import { useImageUpload } from "@/hooks/image-upload/useImageUpload";
 import { useUpdateReport } from "@/hooks/reports/useUpdateReport";
 import type { UpdateReportPayload } from "@/types/reports/reports.payload";
 import type { ReportDetail } from "@/types/reports/reports.response";
@@ -29,6 +31,113 @@ type Props = {
 };
 
 const buildSavedKey = (reportId: string) => `report:${reportId}:saved-once`;
+const DATA_IMAGE_REGEX = /<img[^>]+src=["'](data:image\/[^"']+)["'][^>]*>/gi;
+const ALLOWED_EXTS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+
+function isAllowedImage(file: File) {
+  const ext = (file.name || "")
+    .toLowerCase()
+    .trim()
+    .match(/\.[^.]+$/)?.[0];
+  const mime = (file.type || "").toLowerCase();
+  const byExt = ext ? ALLOWED_EXTS.includes(ext) : false;
+  const byMime =
+    mime === "image/jpeg" ||
+    mime === "image/jpg" ||
+    mime === "image/png" ||
+    mime === "image/gif" ||
+    mime === "image/webp";
+  return byExt || byMime;
+}
+
+function hasDataImages(html?: string | null) {
+  if (!html) return false;
+  return /<img[^>]+src=["']data:image\//i.test(html);
+}
+
+function extractDataImageSrcs(html?: string | null): string[] {
+  if (!html) return [];
+  const regex = new RegExp(DATA_IMAGE_REGEX);
+  const results: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(html)) !== null) {
+    if (match[1]) results.push(match[1]);
+  }
+  return Array.from(new Set(results));
+}
+
+function replaceImageSrc(html: string, from: string, to: string) {
+  if (!from) return html;
+  return html.split(from).join(to);
+}
+
+function dataUrlToFile(dataUrl: string, filename: string): File | null {
+  try {
+    const arr = dataUrl.split(",");
+    if (arr.length < 2) return null;
+    const mimeMatch = arr[0]?.match(/data:(.*?);/);
+    const mime = mimeMatch?.[1] || "image/jpeg";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  } catch {
+    return null;
+  }
+}
+
+async function fileToCompressedDataUrl(
+  file: File,
+  opts: { maxWidth?: number; quality?: number; mimeType?: "image/jpeg" | "image/webp" } = {}
+) {
+  const { maxWidth = 1200, quality = 0.7, mimeType = "image/jpeg" } = opts;
+
+  return new Promise<string>((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      img.src = reader.result as string;
+    };
+    reader.onerror = () => reject(new Error("Failed to read image"));
+    img.onerror = () => reject(new Error("Failed to load image"));
+
+    img.onload = () => {
+      let { width, height } = img;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas not available"));
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return reject(new Error("Failed to create blob"));
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result as string);
+          fr.onerror = () => reject(new Error("Failed to read blob"));
+          fr.readAsDataURL(blob);
+        },
+        mimeType,
+        quality
+      );
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function ReportSubmissionEditor({
   report,
@@ -47,32 +156,27 @@ export default function ReportSubmissionEditor({
   const isSubmitted = report.status === ReportStatus.Submitted;
   const isResubmitted = report.status === ReportStatus.Resubmitted;
 
-  // 🔒 Những trạng thái không cho sửa nội dung:
-  // - Submitted
-  // - Resubmitted
+  // Locked when submitted/resubmitted
   const isLocked = isSubmitted || isResubmitted;
 
-  // Chỉ dùng hub khi: group submission + chưa locked
+  // Only enable collab hub for group + unlocked
   const useHubCollab = isGroupSubmission && !isLocked;
-  // Editor read-only khi locked
   const readOnly = isLocked;
 
-  // ====== SAVE (UPDATE REPORT) ======
   const { updateReport, loading: saving } = useUpdateReport();
+  const {
+    uploadImage,
+    uploading: uploadingImages,
+    uploadingCount: uploadingImagesCount,
+  } = useImageUpload();
 
-  // ref giữ html mới nhất, tránh closure bị cũ
   const htmlRef = useRef(html);
   useEffect(() => {
     htmlRef.current = html;
   }, [html]);
 
-  // ref giữ nội dung đã save lần gần nhất → tránh gọi API khi không đổi
   const lastSavedHtmlRef = useRef<string | null>(null);
-
-  // ref + localStorage: từng save ít nhất 1 lần chưa (chỉ meaningful cho individual)
   const hasSavedRef = useRef(false);
-
-  // Dialog báo cần save trước khi submit
   const [saveRequiredOpen, setSaveRequiredOpen] = useState(false);
 
   useEffect(() => {
@@ -99,47 +203,119 @@ export default function ReportSubmissionEditor({
     hasSavedRef.current = false;
   };
 
-  const internalSave = async (opts?: { isAuto?: boolean }) => {
-    if (!report.id) return;
+  const pushHtmlToEditor = useCallback(
+    (nextHtml: string) => {
+      onChange(nextHtml);
+      tinyEditorRef.current?.pushContentFromOutside?.(nextHtml);
+    },
+    [onChange]
+  );
 
-    const currentHtml = htmlRef.current ?? "";
-    // Không cần gọi API nếu nội dung không đổi
+  const replaceImageSrcInEditor = useCallback(
+    (from: string, to: string) => {
+      const currentHtml = htmlRef.current ?? "";
+      if (!from || !currentHtml.includes(from)) return;
+      const nextHtml = replaceImageSrc(currentHtml, from, to);
+      htmlRef.current = nextHtml;
+      pushHtmlToEditor(nextHtml);
+    },
+    [pushHtmlToEditor]
+  );
 
-    if (currentHtml === lastSavedHtmlRef.current) return;
+  const uploadInlineImagesBeforeSave = useCallback(
+    async (htmlInput: string) => {
+      const dataSrcs = extractDataImageSrcs(htmlInput);
+      if (!dataSrcs.length) return { html: htmlInput, changed: false };
 
-    const payload: UpdateReportPayload = {
-      submission: currentHtml,
-    };
+      let nextHtml = htmlInput;
+      let counter = 0;
 
-    const res = await updateReport(report.id, payload);
+      for (const src of dataSrcs) {
+        const file =
+          dataUrlToFile(src, `report-image-${Date.now()}-${counter++}.jpg`) ||
+          null;
+        if (!file) continue;
+        if (!isAllowedImage(file)) {
+          toast.error(
+            "Ảnh không được hỗ trợ. Chỉ nhận .jpg, .jpeg, .png, .gif, .webp."
+          );
+          continue;
+        }
 
-    if (res?.success) {
-      // lastSavedHtmlRef.current = htmlToSave;
-      markSaved();
-      // Không toast ở đây, hook / chỗ khác lo UI
-      router.refresh();
+        const res = await uploadImage(file);
+        if (res?.imageUrl) {
+          nextHtml = replaceImageSrc(nextHtml, src, res.imageUrl);
+        }
+      }
+
+      return { html: nextHtml, changed: nextHtml !== htmlInput };
+    },
+    [uploadImage]
+  );
+
+  const internalSave = useCallback(
+    async (opts?: {
+      isAuto?: boolean;
+      htmlOverride?: string;
+      skipIfDataImages?: boolean;
+    }) => {
+      if (!report.id) return;
+
+      const currentHtml =
+        typeof opts?.htmlOverride === "string"
+          ? opts.htmlOverride
+          : htmlRef.current ?? "";
+
+      if (opts?.skipIfDataImages && hasDataImages(currentHtml)) return;
+      if (currentHtml === lastSavedHtmlRef.current) return;
+
+      const payload: UpdateReportPayload = {
+        submission: currentHtml,
+      };
+
+      const res = await updateReport(report.id, payload);
+
+      if (res?.success) {
+        lastSavedHtmlRef.current = currentHtml;
+        markSaved();
+        router.refresh();
+      }
+    },
+    [report.id, router, updateReport]
+  );
+
+  const handleSave = useCallback(async () => {
+    let htmlToSave = htmlRef.current ?? "";
+
+    // Individual: only hit image API when Save is pressed
+    if (!isGroupSubmission) {
+      const { html: processedHtml, changed } =
+        await uploadInlineImagesBeforeSave(htmlToSave);
+      if (changed) {
+        htmlToSave = processedHtml;
+        htmlRef.current = htmlToSave;
+        pushHtmlToEditor(htmlToSave);
+      }
     }
-  };
 
-  const handleSave = async () => {
-    // Manual save
-    await internalSave({ isAuto: false });
-  };
+    await internalSave({ isAuto: false, htmlOverride: htmlToSave });
+  }, [internalSave, isGroupSubmission, pushHtmlToEditor, uploadInlineImagesBeforeSave]);
 
-  // ⏱ Auto save mỗi 1 phút (chỉ individual + chưa locked)
+  // Auto-save every minute for individual submissions without inline images waiting
   useEffect(() => {
     if (isLocked || isGroupSubmission || !report.id) return;
     if (typeof window === "undefined") return;
 
     const intervalId = window.setInterval(() => {
-      void internalSave({ isAuto: true });
-    }, 60_000); // 1 phút
+      if (!hasDataImages(htmlRef.current)) {
+        void internalSave({ isAuto: true, skipIfDataImages: true });
+      }
+    }, 60_000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLocked, isGroupSubmission, report.id]);
+  }, [internalSave, isLocked, isGroupSubmission, report.id]);
 
   const hasSavedOnce = () => {
     if (hasSavedRef.current) return true;
@@ -152,13 +328,11 @@ export default function ReportSubmissionEditor({
   const handleGoToSubmitPage = () => {
     if (!courseId || !assignmentId) return;
 
-    // ✅ Chỉ individual mới bị bắt buộc save
     if (!isGroupSubmission && !hasSavedOnce()) {
       setSaveRequiredOpen(true);
       return;
     }
 
-    // Đã được phép submit → xoá flag localStorage trước khi chuyển trang
     clearSavedFlag();
 
     router.push(
@@ -181,8 +355,8 @@ export default function ReportSubmissionEditor({
               {isLocked ? (
                 isResubmitted ? (
                   <>
-                    This report has been <b>resubmitted</b>. You can view
-                    the content but further edits are disabled.
+                    This report has been <b>resubmitted</b>. You can view the
+                    content but further edits are disabled.
                   </>
                 ) : (
                   <>
@@ -198,14 +372,14 @@ export default function ReportSubmissionEditor({
               ) : (
                 <>
                   This is an <b>individual</b> submission. Your report will{" "}
-                  <b>auto-save every 1 minute</b>. You can also use the{" "}
-                  <b>Save</b> button to save immediately before submitting.
+                  <b>auto-save every 1 minute</b>. Images are uploaded only when
+                  you press <b>Save</b>.
                 </>
               )}
             </div>
           </div>
 
-          {/* Chỉ render hub khi được phép → group + không locked */}
+          {/* Render hub when allowed */}
           {useHubCollab && (
             <div className="md:flex-shrink-0">
               <ReportCollabClient
@@ -213,8 +387,7 @@ export default function ReportSubmissionEditor({
                 getAccessToken={getAccessToken}
                 html={html}
                 onRemoteHtml={(newHtml) => {
-                  onChange(newHtml);
-                  tinyEditorRef.current?.pushContentFromOutside?.(newHtml);
+                  pushHtmlToEditor(newHtml);
                 }}
                 getEditorRoot={() =>
                   tinyEditorRef.current?.getRoot?.() ?? null
@@ -224,7 +397,7 @@ export default function ReportSubmissionEditor({
           )}
         </div>
 
-        {/* Editor phần submission */}
+        {/* Submission editor */}
         <LiteRichTextEditor
           value={html}
           onChange={readOnly ? () => {} : onChange}
@@ -241,27 +414,65 @@ export default function ReportSubmissionEditor({
               api.pushContentFromOutside?.(html);
             }
           }}
+          onUploadImage={
+            useHubCollab
+              ? async (file) => {
+                  if (!isAllowedImage(file)) {
+                    toast.error("?nh kh?ng ???c h? tr?. Ch? nh?n .jpg, .jpeg, .png, .gif, .webp.");
+                    return "";
+                  }
+                  // Collab: insert compressed preview, upload in background, then swap to URL
+                  const preview = await fileToCompressedDataUrl(file).catch(() => "");
+                  if (!preview) {
+                    toast.error("Cannot read image for preview.");
+                    return "";
+                  }
+
+                  void (async () => {
+                    const res = await uploadImage(file);
+                    if (res?.imageUrl) {
+                      replaceImageSrcInEditor(preview, res.imageUrl);
+                    } else {
+                      toast.error("Image upload failed. Please try again.");
+                    }
+                  })();
+
+                  return preview;
+                }
+              : async (file) => {
+                  if (!isAllowedImage(file)) {
+                    toast.error("?nh kh?ng ???c h? tr?. Ch? nh?n .jpg, .jpeg, .png, .gif, .webp.");
+                    return "";
+                  }
+                  // Individual: only upload on Save; here just return compressed preview
+                  const preview = await fileToCompressedDataUrl(file).catch(() => "");
+                  if (!preview) {
+                    toast.error("Cannot read image for preview.");
+                    return "";
+                  }
+                  return preview;
+                }
+          }
         />
 
-        {/* Save + Submit – chỉ hiện khi chưa locked */}
+        {/* Save + Submit */}
         {!isLocked && (
           <div className="mt-2 flex gap-2 justify-end">
-            {/* ❗ Individual submission mới có nút Save */}
             {!isGroupSubmission && (
               <Button
                 variant="outline"
                 className="h-9 px-3 text-xs rounded-xl"
-                disabled={saving}
+                disabled={saving || uploadingImages}
                 onClick={handleSave}
               >
-                {saving ? "Saving…" : "Save"}
+                {saving ? "Saving..." : "Save"}
               </Button>
             )}
 
             <Button
               onClick={handleGoToSubmitPage}
               className="btn-green-slow h-9 px-4 text-sm rounded-xl"
-              disabled={saving}
+              disabled={saving || uploadingImages}
             >
               Submit report
             </Button>
@@ -269,15 +480,15 @@ export default function ReportSubmissionEditor({
         )}
       </div>
 
-      {/* Dialog: yêu cầu user save trước khi submit */}
+      {/* Dialog: require save before submit */}
       <Dialog open={saveRequiredOpen} onOpenChange={setSaveRequiredOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Save required</DialogTitle>
             <DialogDescription>
-              Please save your report at least once (or wait for auto-save){" "}
-              before submitting. This helps ensure your latest content is
-              stored safely.
+              Please save your report at least once (or wait for auto-save)
+              before submitting. This helps ensure your latest content is stored
+              safely.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2">

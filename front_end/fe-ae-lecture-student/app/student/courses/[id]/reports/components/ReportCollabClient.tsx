@@ -8,7 +8,7 @@ import type {
   ReportChangeDto,
   CollaboratorPresenceDto,
 } from "@/hooks/hubcollab/useReportCollabHub";
-import { Users, Wifi, WifiOff, Activity } from "lucide-react";
+import { Users, Wifi, WifiOff, Activity, Loader2, Image as ImageIcon } from "lucide-react";
 
 /** ============ Utils ============ */
 
@@ -32,10 +32,18 @@ type Props = {
   onRemoteHtml?: (html: string) => void;
   hidePresenceBar?: boolean;
   getEditorRoot?: () => HTMLElement | null;
+  uploadingImagesCount?: number;
 };
 
 export default function ReportCollabClient(props: Props) {
-  const { reportId, getAccessToken, html, onRemoteHtml, hidePresenceBar } = props;
+  const {
+    reportId,
+    getAccessToken,
+    html,
+    onRemoteHtml,
+    hidePresenceBar,
+    uploadingImagesCount = 0,
+  } = props;
   const [collabs, setCollabs] = useState<CollaboratorPresenceDto[]>([]);
   const lastSentHtmlRef = useRef<string>("");
 
@@ -148,25 +156,34 @@ export default function ReportCollabClient(props: Props) {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex -space-x-2">
-            {collabs.slice(0, 5).map((u) => (
-              <div
-                key={u.userId}
-                className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[11px] font-semibold text-slate-700"
-                title={`${u.userName} - ${u.userEmail}`}
-              >
-                {initials(u.userName)}
-              </div>
-            ))}
-            {collabs.length > 5 && (
-              <div className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[11px] font-semibold text-slate-700">
-                +{collabs.length - 5}
+          <div className="flex items-center gap-2">
+            {uploadingImagesCount > 0 && (
+              <div className="flex items-center gap-1 rounded-full bg-white border border-amber-200 px-2 py-1 text-[11px] text-amber-700">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <ImageIcon className="w-3 h-3" />
+                <span>Uploading images...</span>
               </div>
             )}
-          </div>
-          <div className="ml-2 flex items-center text-slate-600 text-xs">
-            <Users className="w-4 h-4 mr-1" />
-            {collabs.length}
+            <div className="flex -space-x-2">
+              {collabs.slice(0, 5).map((u) => (
+                <div
+                  key={u.userId}
+                  className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[11px] font-semibold text-slate-700"
+                  title={`${u.userName} - ${u.userEmail}`}
+                >
+                  {initials(u.userName)}
+                </div>
+              ))}
+              {collabs.length > 5 && (
+                <div className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[11px] font-semibold text-slate-700">
+                  +{collabs.length - 5}
+                </div>
+              )}
+            </div>
+            <div className="ml-2 flex items-center text-slate-600 text-xs">
+              <Users className="w-4 h-4 mr-1" />
+              {collabs.length}
+            </div>
           </div>
         </div>
       </div>
