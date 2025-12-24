@@ -41,6 +41,7 @@ export function useSupportRequestChat({
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
     const [started, setStarted] = useState(false);
+    const sendingRef = useRef(false);
 
     const messagesRef = useRef<HTMLDivElement | null>(null);
     const messageElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -65,35 +66,52 @@ export function useSupportRequestChat({
         (search?.get("requestId") as string | null) ??
         undefined;
 
+    // Gộp & khử trùng lặp tin nhắn từ Hub; xóa bản tạm khi bản thật về
     const handleReceiveMessagesBatch = useCallback((batch: ChatMessage[] | undefined) => {
         if (!batch?.length) return;
 
         setMessages((prev) => {
+            const tempIdsToDelete = new Set<string>();
+
             batch.forEach((serverMsg) => {
-                for (const [tempId, tempPayload] of pendingRef.current.entries()) {
-                    const timeDiff = Math.abs(new Date(serverMsg.sentAt).getTime() - tempPayload.createdAt);
-                    if (
-                        serverMsg.message === tempPayload.message &&
-                        serverMsg.receiverId === tempPayload.receiverId &&
-                        timeDiff < 10000
-                    ) {
-                        pendingRef.current.delete(tempId);
+                // Bỏ qua system messages khi khử tạm
+                const isSystem = serverMsg.senderId === "system";
+                if (isSystem) return;
+
+                const serverText = (serverMsg.message || "").trim();
+                const serverTime = parseServerDate(serverMsg.sentAt).getTime();
+
+                // 1) Ưu tiên khớp theo pendingRef (độ chính xác cao hơn)
+                let matchedTempId: string | null = null;
+                for (const [tempId, meta] of pendingRef.current.entries()) {
+                    const sameText = (meta.message || "").trim() === serverText;
+                    // cửa sổ 30s kể từ khi tạo tin tạm
+                    const withinWindow = Math.abs((serverTime || Date.now()) - meta.createdAt) <= 30_000;
+                    if (sameText && withinWindow) {
+                        matchedTempId = tempId;
                         break;
                     }
                 }
+
+                // 2) Nếu chưa khớp bằng pendingRef, fallback tìm theo prev list
+                if (!matchedTempId) {
+                    const matchingPrev = prev.find((p) => p.id.startsWith("temp-") && (p.message || "").trim() === serverText);
+                    if (matchingPrev) matchedTempId = matchingPrev.id;
+                }
+
+                if (matchedTempId) {
+                    tempIdsToDelete.add(matchedTempId);
+                    pendingRef.current.delete(matchedTempId);
+                }
             });
 
-            const allMessages = [...prev, ...batch];
-            const uniqueMap = new Map<string, ChatMessage>();
-            allMessages.forEach((m) => uniqueMap.set(m.id, m));
-            for (const id of uniqueMap.keys()) {
-                if (id.startsWith("temp-") && !pendingRef.current.has(id)) {
-                    uniqueMap.delete(id);
-                }
-            }
-            const next = Array.from(uniqueMap.values()).sort(
-                (a, b) =>
-                    parseServerDate(a.sentAt).getTime() - parseServerDate(b.sentAt).getTime(),
+            const prevFiltered = prev.filter((m) => !tempIdsToDelete.has(m.id));
+            const all = [...prevFiltered, ...batch];
+            const unique = new Map<string, ChatMessage>();
+            for (const m of all) unique.set(m.id, m);
+
+            const next = Array.from(unique.values()).sort(
+                (a, b) => parseServerDate(a.sentAt).getTime() - parseServerDate(b.sentAt).getTime(),
             );
             return next.length > 500 ? next.slice(-500) : next;
         });
@@ -127,7 +145,8 @@ export function useSupportRequestChat({
         [peerId, clearTypingSignalTimer],
     );
 
-    const { connect, disconnect, sendMessage, startTyping, stopTyping } = useChatHub({
+    // --- Lấy thêm biến 'connected' từ hook ---
+    const { connect, disconnect, sendMessage, startTyping, stopTyping, connected } = useChatHub({
         getAccessToken: tokenProvider,
         onReceiveMessagesBatch: handleReceiveMessagesBatch,
         onTyping: handleTyping,
@@ -304,16 +323,36 @@ export function useSupportRequestChat({
         return () => clearTimeout(t);
     }, []);
 
+    // --- FIX 2: onSend AN TOÀN (Fix lỗi "Not connected") ---
     const onSend = useCallback(async () => {
         if (!peerId || !courseId || !currentUserId) return;
+        if (sendingRef.current) return;
         const message = input.trim();
         if (!message) return;
+
+        // Auto-reconnect nếu chưa kết nối
+        if (!connected) {
+            console.log("Chat not connected, attempting to reconnect...");
+            try {
+                sendingRef.current = true; // Block UI tạm thời
+                setSending(true);
+                await connect();
+            } catch (e) {
+                console.error("Failed to reconnect before sending", e);
+                setSending(false);
+                sendingRef.current = false;
+                return; // Dừng lại nếu không thể kết nối
+            }
+        }
 
         const sig = `${courseId}|${peerId}|${message}`;
         const now = Date.now();
         const last = recentSendsRef.current.get(sig) ?? 0;
         if (now - last < 5000) {
             console.warn("chat:onSend - duplicate blocked", { sig, last, now });
+            // Vẫn cho phép UI unlock
+            sendingRef.current = false;
+            setSending(false);
             return;
         }
         recentSendsRef.current.set(sig, now);
@@ -338,17 +377,24 @@ export function useSupportRequestChat({
         });
 
         try {
+            sendingRef.current = true;
             setSending(true);
             const effectiveSupportRequestId = supportRequestId ?? querySupportRequestId ?? undefined;
             const dto: SendMessagePayload = { courseId, receiverId: peerId, message, supportRequestId: effectiveSupportRequestId };
+            
+            // Giờ thì an toàn để gọi sendMessage
             await sendMessage(dto);
             setInput("");
         } catch (e) {
-            throw e;
+            // Xử lý lỗi nếu vẫn fail (ví dụ mất mạng ngay lúc gửi)
+            console.error(e);
+            // Có thể thêm logic xóa tin nhắn temp nếu muốn (optional)
         } finally {
+            sendingRef.current = false;
             setSending(false);
         }
-    }, [peerId, courseId, currentUserId, input, peerName, sendMessage, supportRequestId, querySupportRequestId]);
+    }, [peerId, courseId, currentUserId, input, peerName, sendMessage, supportRequestId, querySupportRequestId, connected, connect]); 
+    // ^ Nhớ thêm connected và connect vào dependency array
 
     const timeline = useMemo<ChatTimelineItem<ChatMessage>[]>(() => buildChatTimeline(messages, currentUserId), [messages, currentUserId]);
 

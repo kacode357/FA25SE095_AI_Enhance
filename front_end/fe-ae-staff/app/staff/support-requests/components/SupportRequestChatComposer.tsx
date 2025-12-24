@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
+import { useRef, useState } from "react";
 
 type Props = {
     input: string;
@@ -11,6 +12,30 @@ type Props = {
 };
 
 export default function SupportRequestChatComposer({ input, setInput, onSend, sending }: Props) {
+    const invokingRef = useRef(false);
+    const [locked, setLocked] = useState(false);
+
+    const attemptSend = async () => {
+        if (invokingRef.current) return;
+        if (locked) return;
+        if (sending) return;
+        if (!input.trim()) return;
+
+        try {
+            invokingRef.current = true;
+            setLocked(true);
+            await onSend();
+        } finally {
+            // keep locked for a short debounce window to avoid double-invokes
+            setTimeout(() => {
+                invokingRef.current = false;
+            }, 300);
+            setTimeout(() => {
+                setLocked(false);
+            }, 350);
+        }
+    };
+
     return (
         <div className="flex items-center gap-3">
             <textarea
@@ -23,7 +48,7 @@ export default function SupportRequestChatComposer({ input, setInput, onSend, se
                 onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        void onSend();
+                        void attemptSend();
                     }
                 }}
                 placeholder="Type a message..."
@@ -31,8 +56,11 @@ export default function SupportRequestChatComposer({ input, setInput, onSend, se
             <Button
                 size="lg"
                 className="rounded-md btn btn-green-slow"
-                onClick={onSend}
-                disabled={sending || !input.trim()}
+                onClick={() => {
+                    void attemptSend();
+                }}
+                disabled={sending || locked || !input.trim()}
+                type="button"
             >
                 {sending ? "Sending…" : "Send"} <Send className="size-5" />
             </Button>

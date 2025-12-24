@@ -198,6 +198,23 @@ export default function SupportRequestChatWindow({
                 }}
             />
 
+            {/* Fixed typing indicator positioned above the footer (bottom-left of input) */}
+            {peerTyping && footerRect && (
+                <div
+                    style={{
+                        position: "fixed",
+                        left: Math.max((footerRect?.left || 0) + 16, 8),
+                        bottom: (footerHeight || 0) + 8,
+                        pointerEvents: "none",
+                        zIndex: 45,
+                    }}
+                >
+                    <div className="px-3 py-1 bg-white rounded-full text-[11px] text-muted-foreground shadow-sm">
+                        {peerName || "User"} is typing…
+                    </div>
+                </div>
+            )}
+
             {ConfirmDialog}
             {/* footer is visually inside the chat container but fixed to viewport bottom */}
             <div

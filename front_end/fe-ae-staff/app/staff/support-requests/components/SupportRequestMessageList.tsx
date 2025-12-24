@@ -71,7 +71,7 @@ export default function SupportRequestMessageList({
             }}
         >
             {timeline.length === 0 || !hasMessages ? (
-                <div className="text-xs text-muted-foreground">No messages yet.</div>
+                <div className="text-xs ml-8 italic text-slate-500 mt-5 text-muted-foreground">No messages yet.</div>
             ) : (
                 timeline.map((it) => {
                     if (it.kind === "sep") {
@@ -107,7 +107,7 @@ export default function SupportRequestMessageList({
                                 onMouseMove={(e) => setHoverPos({ id: m.id, x: e.clientX, y: e.clientY })}
                                 onMouseLeave={() => setHoverPos({ id: null, x: 0, y: 0 })}
                             >
-                                {isMe && (
+                                {isMe && !m.isDeleted && (
                                     <div className="relative">
                                         <button
                                             title="Button"
@@ -158,7 +158,7 @@ export default function SupportRequestMessageList({
                                             isSystem
                                                 ? "rounded-full px-4 py-2 text-sm leading-relaxed inline-block whitespace-pre-wrap text-muted-foreground bg-slate-100 shadow-sm max-w-[70%] text-center"
                                                 : `rounded-2xl px-4 py-3 text-sm leading-relaxed inline-block whitespace-pre-wrap break-words ${isMe
-                                                    ? "bg-gradient-to-br from-green-300 to-green-500 text-white shadow-md max-w-[70vw] mr-6"
+                                                    ? "bg-gradient-to-br from-violet-400 to-violet-600 text-white shadow-md max-w-[70vw] mr-6"
                                                     : "bg-white max-w-[70vw] min-w-0 break-words shadow-sm ml-6"
                                                 }`
                                         }
@@ -184,9 +184,6 @@ export default function SupportRequestMessageList({
                 })
             )}
 
-            {peerTyping && (
-                <div className="px-6 pt-1 text-[11px] text-muted-foreground">{peerName || "User"} is typing…</div>
-            )}
         </div>
     );
 }

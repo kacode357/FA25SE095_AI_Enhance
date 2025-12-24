@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
-import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.response";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +10,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useDeleteMessage } from "@/hooks/chat/useDeleteMessage";
+import type { ChatMessageItemResponse as ChatMessage } from "@/types/chat/chat.response";
+import { useState } from "react";
 
 type Options = {
   currentUserId: string | null;
@@ -77,7 +77,7 @@ export function useChatDeleteMessage({
         if (!open) setConfirmId(null);
       }}
     >
-      <AlertDialogContent>
+      <AlertDialogContent className="bg-white border-white">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this message?</AlertDialogTitle>
           <AlertDialogDescription>
@@ -86,9 +86,9 @@ export function useChatDeleteMessage({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
           <AlertDialogAction
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className="bg-red-600 hover:bg-red-700 cursor-pointer text-white"
             onClick={handleConfirmDelete}
             disabled={deleting}
           >
