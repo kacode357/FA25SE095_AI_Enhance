@@ -178,7 +178,7 @@ export default function TemplateReportPage() {
                     <div className="h-10 bg-white border-b border-slate-200 flex items-center justify-between px-4 text-xs text-slate-400 select-none">
                         <span>Document Preview</span>
                         <span className="text-xs italic">
-                            &lt;&lt;{data?.description ?? ""}&gt;&gt;
+                            &lt;&lt;{data.description}&gt;&gt;
                         </span>
                     </div>
 

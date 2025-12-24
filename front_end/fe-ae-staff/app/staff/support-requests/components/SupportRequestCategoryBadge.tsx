@@ -16,24 +16,27 @@ const CATEGORY_LABEL: Record<number, string> = {
 };
 
 export default function SupportRequestCategoryBadge({ category }: Props) {
-  const classMap: Record<number, string> = {
-    [SupportRequestCategory.Technical]:
-      "badge-support-category badge-support-category--technical",
-    [SupportRequestCategory.Academic]:
-      "badge-support-category badge-support-category--academic",
-    [SupportRequestCategory.Administrative]:
-      "badge-support-category badge-support-category--administrative",
-    [SupportRequestCategory.Other]:
-      "badge-support-category badge-support-category--other",
-  };
+  let colorClass = "bg-gray-50 text-gray-700 border border-gray-100";
+
+  switch (category) {
+    case SupportRequestCategory.Technical:
+      colorClass = "bg-sky-50 text-sky-700 border border-sky-100";
+      break;
+    case SupportRequestCategory.Academic:
+      colorClass = "bg-indigo-50 text-indigo-700 border border-indigo-100";
+      break;
+    case SupportRequestCategory.Administrative:
+      colorClass = "bg-purple-50 text-purple-700 border border-purple-100";
+      break;
+    case SupportRequestCategory.Other:
+      colorClass = "bg-slate-50 text-slate-700 border border-slate-100";
+      break;
+  }
 
   return (
     <Badge
       variant="outline"
-      className={
-        classMap[category] ??
-        "badge-support-category px-2.5 py-0.5 text-xs rounded-full"
-      }
+      className={`px-2.5 py-0.5 text-xs rounded-full ${colorClass}`}
     >
       {CATEGORY_LABEL[category] ?? `Unknown (${category})`}
     </Badge>

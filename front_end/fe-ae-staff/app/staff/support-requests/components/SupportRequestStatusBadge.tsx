@@ -17,26 +17,30 @@ const STATUS_LABEL: Record<number, string> = {
 };
 
 export default function SupportRequestStatusBadge({ status }: Props) {
-  const classMap: Record<number, string> = {
-    [SupportRequestStatus.Pending]:
-      "badge-support-status badge-support-status--pending",
-    [SupportRequestStatus.InProgress]:
-      "badge-support-status badge-support-status--in-progress",
-    [SupportRequestStatus.Resolved]:
-      "badge-support-status badge-support-status--resolved",
-    [SupportRequestStatus.Cancelled]:
-      "badge-support-status badge-support-status--cancelled",
-    [SupportRequestStatus.Rejected]:
-      "badge-support-status badge-support-status--rejected",
-  };
+  let colorClass = "bg-gray-100 text-gray-700 border-none";
+
+  switch (status) {
+    case SupportRequestStatus.Pending:
+      colorClass = "bg-amber-50 text-amber-700 border border-amber-100";
+      break;
+    case SupportRequestStatus.InProgress:
+      colorClass = "bg-blue-50 text-blue-700 border border-blue-100";
+      break;
+    case SupportRequestStatus.Resolved:
+      colorClass = "bg-emerald-50 text-emerald-700 border border-emerald-100";
+      break;
+    case SupportRequestStatus.Cancelled:
+      colorClass = "bg-slate-50 text-slate-700 border border-slate-100";
+      break;
+    case SupportRequestStatus.Rejected:
+      colorClass = "bg-red-50 text-red-700 border border-red-100";
+      break;
+  }
 
   return (
     <Badge
       variant="outline"
-      className={
-        classMap[status] ??
-        "badge-support-status px-2.5 py-0.5 text-xs font-medium rounded-full"
-      }
+      className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${colorClass}`}
     >
       {STATUS_LABEL[status] ?? `Unknown (${status})`}
     </Badge>
