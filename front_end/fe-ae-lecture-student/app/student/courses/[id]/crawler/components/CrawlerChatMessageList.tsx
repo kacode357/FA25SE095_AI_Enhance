@@ -10,7 +10,6 @@ import type { UiMessage } from "../crawler-types";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 import { renderMessageContent } from "../utils/chatFormatting";
 
-// Avoid SSR issues for charts
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 type ApexAdapted = {
@@ -41,9 +40,6 @@ const fallbackColors = [
   "#6366f1",
 ];
 
-// -------------------------
-// Safe JSON parsing helpers
-// -------------------------
 function safeParse(input: unknown): any {
   if (typeof input === "string") {
     try {
@@ -63,7 +59,6 @@ function normalizeChartType(raw: unknown): NonNullable<ApexOptions["chart"]>["ty
     "line",
     "area",
     "pie",
-    "donut",
     "radar",
     "polararea",
     "scatter",
@@ -72,21 +67,18 @@ function normalizeChartType(raw: unknown): NonNullable<ApexOptions["chart"]>["ty
   ]);
 
   if (rawStr === "column") return "bar";
+  if (rawStr === "donut") return "pie";
   if (allowed.has(rawStr as any)) return rawStr as NonNullable<ApexOptions["chart"]>["type"];
   return "bar";
 }
 
-// Convert backend payload into ApexCharts config
 function buildApexConfig(rawJson: unknown): ApexAdapted | null {
   if (!rawJson) return null;
 
   try {
     const outer = safeParse(rawJson);
-
-    // payload can be { visualizationData: {...} } or already the object
     const chartConfig = outer?.visualizationData ?? outer?.VisualizationData ?? outer;
 
-    // Some backends double-encode `data`
     if (chartConfig?.data) {
       chartConfig.data = safeParse(chartConfig.data);
       if (chartConfig.data?.data) chartConfig.data.data = safeParse(chartConfig.data.data);
@@ -115,10 +107,7 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
 
     const highlights = (outer?.insightHighlights || outer?.InsightHighlights || []) as string[];
 
-    // -------------------------
-    // PIE / DONUT
-    // -------------------------
-    if (chartType === "pie" || chartType === "donut") {
+    if (chartType === "pie") {
       const series =
         Array.isArray(rawSeries) && rawSeries.length && typeof rawSeries[0] === "number"
           ? rawSeries
@@ -129,7 +118,6 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
       const finalSeries = (Array.isArray(series) ? series : []) as number[];
       const labels = Array.isArray(rawLabels) ? rawLabels : [];
 
-      // Height strategy for pie: base + legend rows
       const baseHeight = 320;
       const legendExtra = labels.length > 6 ? (labels.length - 6) * 18 : 0;
       const height = Math.max(300, Math.min(700, baseHeight + legendExtra));
@@ -164,9 +152,6 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
       };
     }
 
-    // -------------------------
-    // BAR / LINE / AREA / OTHERS
-    // -------------------------
     const categories = Array.isArray(dataNode?.categories)
       ? dataNode.categories
       : Array.isArray(rawLabels)
@@ -176,13 +161,9 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
     const categoriesCount = categories.length;
     const hasLongLabels = categories.some((c: any) => String(c).length > 24);
 
-    // With many categories, horizontal bar is the only readable form
     const horizontal = chartType === "bar" && (categoriesCount > 8 || hasLongLabels);
-
-    // Data labels become unreadable when many categories
     const showDataLabels = categoriesCount <= 12;
 
-    // Height strategy: 1 row per category for horizontal bars
     const MIN_H = 360;
     const MAX_H = 2200;
     const rowHeight = horizontal ? 28 : 22;
@@ -191,7 +172,6 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
     let height = Math.round(categoriesCount * rowHeight + basePadding);
     height = Math.max(MIN_H, Math.min(MAX_H, height));
 
-    // viewport height inside chat (scroll container)
     const maxViewportHeight =
       categoriesCount > 14 || hasLongLabels ? 520 : Math.min(520, height);
 
@@ -249,7 +229,7 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
           rotate: horizontal ? 0 : -25,
           formatter: (val: string | number) => {
             const str = String(val);
-            return str.length > 32 ? `${str.slice(0, 32)}ƒ?İ` : str;
+            return str.length > 32 ? `${str.slice(0, 32)}...` : str;
           },
         },
         axisBorder: { show: false },
@@ -278,9 +258,6 @@ function buildApexConfig(rawJson: unknown): ApexAdapted | null {
   }
 }
 
-// -------------------------
-// Clipboard / Download helpers
-// -------------------------
 async function tryCopyBlobImage(blob: Blob) {
   if (typeof window === "undefined") return false;
   if (!("ClipboardItem" in window)) return false;
@@ -316,13 +293,9 @@ function downloadDataUrl(dataUrl: string, filename: string) {
   document.body.removeChild(link);
 }
 
-// -------------------------
-// Visualization component
-// -------------------------
 const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
   const adapted = useMemo(() => buildApexConfig(rawJson), [rawJson]);
 
-  // Keep Apex instance from events (mounted/updated)
   const chartInstanceRef = useRef<any>(null);
   const chartIdRef = useRef<string>(`viz_${Math.random().toString(36).slice(2)}_${Date.now()}`);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -346,7 +319,6 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
     const inst = chartInstanceRef.current;
     setCopyState("loading");
 
-    // Increase export quality
     const SCALE = 4;
 
     try {
@@ -356,7 +328,6 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
         return;
       }
 
-      // 1) Try native scale (if Apex supports)
       let data: any = null;
       try {
         data = await inst.dataURI({ scale: SCALE });
@@ -367,7 +338,6 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
       let imgURI: string | undefined = data?.imgURI;
       const svgURI: string | undefined = data?.svgURI;
 
-      // 2) If imgURI missing -> render SVG to PNG (high-res)
       if ((!imgURI || !imgURI.startsWith("data:")) && svgURI && svgURI.startsWith("data:")) {
         const svgText = decodeURIComponent(svgURI.split(",")[1] || "");
         const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
@@ -393,11 +363,9 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
         const ctx = canvas.getContext("2d");
         if (!ctx) throw new Error("Canvas context not available");
 
-        // white background
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // scale for crispness
         ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
@@ -415,7 +383,6 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
         return;
       }
 
-      // 3) Copy PNG blob
       const res = await fetch(imgURI);
       const blob = await res.blob();
 
@@ -426,7 +393,6 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
         return;
       }
 
-      // Fallback: copy dataUrl / download
       const copiedUrl = await tryCopyText(imgURI);
       if (!copiedUrl) downloadDataUrl(imgURI, "chart@2x.png");
 
@@ -442,7 +408,6 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
 
   const { highlights, options, series, chartType, height, maxViewportHeight } = adapted;
 
-  // Capture chart instance via Apex events
   const optionsWithCapture: ApexOptions = useMemo(() => {
     const prevChart = options.chart || {};
     const prevEvents = (prevChart as any).events || {};
@@ -505,7 +470,6 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
           </div>
         )}
 
-        {/* Scroll container so tall charts don't break chat layout */}
         <div className="mt-0.5 w-full overflow-y-auto rounded-md" style={{ maxHeight: maxViewportHeight }}>
           <div style={{ height }}>
             <ReactApexChart
@@ -522,9 +486,6 @@ const ChatVisualization = ({ rawJson }: { rawJson: unknown }) => {
   );
 };
 
-// -------------------------
-// Message list
-// -------------------------
 const CrawlerChatMessageList = React.memo(function CrawlerChatMessageList({
   chatMessages,
   chatSending,
@@ -575,6 +536,7 @@ const CrawlerChatMessageList = React.memo(function CrawlerChatMessageList({
               "[&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-[12px] [&_h1]:font-semibold [&_h1]:leading-snug [&_h1]:tracking-tight [&_h1]:text-current [&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-[11.5px] [&_h2]:font-semibold [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-current [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-[11px] [&_h3]:font-semibold [&_h3]:leading-snug [&_h3]:tracking-tight [&_h3]:text-current [&_h4]:mt-1.5 [&_h4]:mb-1 [&_h4]:text-[10.5px] [&_h4]:font-semibold [&_h4]:tracking-tight [&_h4]:text-current";
 
             const contentClass = `${baseContentClass} ${anchorToneClass} ${headingClass}`;
+
             return (
               <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
@@ -586,9 +548,9 @@ const CrawlerChatMessageList = React.memo(function CrawlerChatMessageList({
                       : "rounded-bl-sm border border-[var(--border)] bg-white text-slate-800"
                   }`}
                 >
-                  {rendered.html && (
+                  {rendered.html ? (
                     <div className={contentClass} dangerouslySetInnerHTML={{ __html: rendered.html }} />
-                  )}
+                  ) : null}
 
                   {m.extractedData && (
                     <div className="mt-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] text-slate-700">

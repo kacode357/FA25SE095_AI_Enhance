@@ -53,6 +53,7 @@ import type { CrawlerChatConversationItem } from "@/types/crawler-chat/crawler-c
 const INVALID_SCOPE_VALUES = new Set(["", "null", "undefined", "demo"]);
 const HISTORY_REFRESH_DELAY_MS = 5000;
 const HISTORY_REFRESH_MAX_ATTEMPTS = 3;
+const RECENT_MESSAGE_WINDOW_MS = 4000;
 
 const sanitizeScopeValue = (value?: string | null): string | null => {
   if (!value) return null;
@@ -60,6 +61,12 @@ const sanitizeScopeValue = (value?: string | null): string | null => {
   if (!trimmed) return null;
   if (INVALID_SCOPE_VALUES.has(trimmed.toLowerCase())) return null;
   return trimmed;
+};
+
+const parseTimestampToMs = (value?: string | null) => {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? null : parsed;
 };
 
 type PendingMessage = {
@@ -117,6 +124,7 @@ const CrawlerInner = () => {
     conversationId: string;
     timestamp: string;
   } | null>(null);
+  const chatMessagesRef = useRef<UiMessage[]>([]);
 
   const [url, setUrl] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -213,6 +221,10 @@ const CrawlerInner = () => {
     userId,
     resultsLoading,
   });
+
+  useEffect(() => {
+    chatMessagesRef.current = chatMessages;
+  }, [chatMessages]);
 
   const promptUsed = useMemo(() => {
     if (!results?.length) return "";
@@ -403,11 +415,44 @@ const CrawlerInner = () => {
     }
   }, [conversations, historyRefreshLoading, isConversationHistoryReady]);
 
+  const findRecentMessageIndex = useCallback(
+    ({
+      role,
+      content,
+      messageType,
+      timestampMs,
+    }: {
+      role: UiMessage["role"];
+      content: string;
+      messageType?: MessageType;
+      timestampMs: number | null;
+    }) => {
+      if (!timestampMs) return -1;
+      const normalized = content.trim();
+      if (!normalized) return -1;
+      const items = chatMessagesRef.current;
+      for (let i = items.length - 1; i >= 0; i -= 1) {
+        const msg = items[i];
+        if (msg.role !== role) continue;
+        if (messageType !== undefined && msg.messageType !== messageType) continue;
+        if ((msg.content || "").trim() !== normalized) continue;
+        const existingMs = Date.parse(msg.createdAt);
+        if (Number.isNaN(existingMs)) continue;
+        if (Math.abs(existingMs - timestampMs) <= RECENT_MESSAGE_WINDOW_MS) {
+          return i;
+        }
+      }
+      return -1;
+    },
+    []
+  );
+
   const pushUiMessageFromDto = useCallback(
     async (message: ChatMessageDto) => {
       const normalizedContent = (message.content || "").trim();
       const messageType =
         message.messageType ?? MessageType.UserMessage;
+      const incomingTimestampMs = parseTimestampToMs(message.timestamp ?? message.sentAt);
 
       if (
         message.userId === userId &&
@@ -424,7 +469,6 @@ const CrawlerInner = () => {
         );
         if (pendingIdx !== -1) {
           pendingOutgoingRef.current.splice(pendingIdx, 1);
-          return;
         }
       }
 
@@ -437,6 +481,57 @@ const CrawlerInner = () => {
         : messageType === MessageType.SystemNotification
         ? "system"
         : "assistant";
+
+      const pendingCrawl = pendingCrawlRequestRef.current;
+      if (
+        role === "user" &&
+        messageType === MessageType.CrawlRequest &&
+        pendingCrawl &&
+        pendingCrawl.content.trim() === normalizedContent
+      ) {
+        return;
+      }
+
+      if (role === "user") {
+        const duplicateIdx = findRecentMessageIndex({
+          role,
+          content: normalizedContent,
+          messageType,
+          timestampMs: incomingTimestampMs,
+        });
+        if (duplicateIdx !== -1) {
+          setChatMessages((prev) => {
+            let updated = false;
+            const next = prev.map((msg) => {
+              if (updated) return msg;
+              if (msg.role !== role) return msg;
+              if ((msg.content || "").trim() !== normalizedContent) return msg;
+              if (messageType !== undefined && msg.messageType !== messageType) return msg;
+              if (incomingTimestampMs !== null) {
+                const existingMs = Date.parse(msg.createdAt);
+                if (
+                  Number.isNaN(existingMs) ||
+                  Math.abs(existingMs - incomingTimestampMs) > RECENT_MESSAGE_WINDOW_MS
+                ) {
+                  return msg;
+                }
+              }
+              updated = true;
+              return {
+                ...msg,
+                id: message.messageId || msg.id,
+                createdAt: message.timestamp || msg.createdAt,
+                messageType,
+                crawlJobId: message.crawlJobId ?? msg.crawlJobId,
+                visualizationData: (message as any).visualizationData ?? msg.visualizationData,
+                extractedData: (message as any).extractedData ?? msg.extractedData,
+              };
+            });
+            return updated ? next : prev;
+          });
+          return;
+        }
+      }
 
       const uiMessage: UiMessage = {
         id: message.messageId || makeId(),
@@ -466,11 +561,20 @@ const CrawlerInner = () => {
         setActiveJobId(jobId);
         try {
           await fetchJobResults(jobId);
-        } catch {}
+        } catch {
+        }
         await reloadConversation({ jobIdOverride: jobId });
       }
     },
-    [appendUiMessage, conversationId, fetchJobResults, reloadConversation, userId]
+    [
+      appendUiMessage,
+      conversationId,
+      fetchJobResults,
+      findRecentMessageIndex,
+      reloadConversation,
+      setChatMessages,
+      userId,
+    ]
   );
   const {
     handleJobStarted,
@@ -539,14 +643,23 @@ const CrawlerInner = () => {
 
     const pending = pendingCrawlRequestRef.current;
     if (pending && (!data.messageId || data.messageId === pending.messageId)) {
-      appendUiMessage({
-        id: pending.messageId,
+      const pendingTimestampMs = parseTimestampToMs(pending.timestamp);
+      const duplicateIdx = findRecentMessageIndex({
         role: "user",
         content: pending.content,
-        createdAt: pending.timestamp,
         messageType: MessageType.CrawlRequest,
-        crawlJobId: null,
+        timestampMs: pendingTimestampMs,
       });
+      if (duplicateIdx === -1) {
+        appendUiMessage({
+          id: pending.messageId,
+          role: "user",
+          content: pending.content,
+          createdAt: pending.timestamp,
+          messageType: MessageType.CrawlRequest,
+          crawlJobId: null,
+        });
+      }
       pendingOutgoingRef.current = pendingOutgoingRef.current.filter(
         (item) =>
           !(
@@ -563,11 +676,15 @@ const CrawlerInner = () => {
 
     try {
       await subscribeFn(jid);
-    } catch (err) {
-      if (!isIgnorableSignalRError(err)) {
-      }
+    } catch {
     }
-  }, [appendUiMessage, setActiveJobId, setCrawlProgress, setCrawlStatusMsg]);
+  }, [
+    appendUiMessage,
+    findRecentMessageIndex,
+    setActiveJobId,
+    setCrawlProgress,
+    setCrawlStatusMsg,
+  ]);
 
   const handleCrawlHubError = useCallback(
     (message: string) => {
@@ -1079,4 +1196,3 @@ const CrawlerPage = () => (
 );
 
 export default CrawlerPage;
-

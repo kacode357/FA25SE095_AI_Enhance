@@ -56,7 +56,6 @@ function CrawlerChatSection({
     ],
     []
   );
-
   const handleUploadButtonClick = useCallback(() => {
     if (!onUploadCsv || uploadingCsv || !canChat) return;
     setUploadDialogOpen(true);
