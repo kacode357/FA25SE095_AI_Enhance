@@ -10,6 +10,10 @@ export function useSmartCrawlerJobResults() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SmartCrawlJobResultItem[]>([]);
 
+  const clearResults = () => {
+    setResults([]);
+  };
+
   const fetchJobResults = async (
     jobId: string,
     args?: SmartCrawlJobResultsQuery
@@ -29,5 +33,6 @@ export function useSmartCrawlerJobResults() {
     fetchJobResults,
     loading,
     results,
+    clearResults,
   };
 }

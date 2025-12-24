@@ -198,6 +198,7 @@ const CrawlerInner = () => {
     fetchJobResults,
     loading: resultsLoading,
     results,
+    clearResults,
   } = useSmartCrawlerJobResults();
 
   const {
@@ -391,7 +392,8 @@ const CrawlerInner = () => {
     setIsCrawling(false);
     setCrawlProgress(0);
     setChatInput("");
-  }, [startNewConversation]);
+    clearResults();
+  }, [clearResults, startNewConversation]);
 
   useEffect(() => {
     if (!assignmentId) return;
