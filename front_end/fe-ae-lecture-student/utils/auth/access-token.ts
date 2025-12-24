@@ -7,7 +7,7 @@ export const ACCESS_TOKEN_KEY = "accessToken";
 export const REFRESH_TOKEN_KEY = "refreshToken";
 const REMEMBER_ME_KEY = "rememberMe";
 const REMEMBER_ME_EXPIRES_DAYS = 7;
-const SHORT_SESSION_MINUTES = 30;
+const SHORT_SESSION_MINUTES = 120;
 const SHORT_SESSION_EXPIRES_DAYS = SHORT_SESSION_MINUTES / (24 * 60);
 
 const BASE_COOKIE_OPTS = {
@@ -48,7 +48,7 @@ export function getRememberMeFlag(): boolean {
 /**
  * Persist tokens khi login.
  * - rememberMe = true  -> giữ cả access + refresh cookie (7 ngày)
- * - rememberMe = false -> chỉ giữ access token (30 phút), refresh bị xóa
+ * - rememberMe = false -> chỉ giữ access token (2 tiếng), refresh bị xóa
  */
 export function saveTokensFromLogin(
   accessToken: string,
@@ -77,7 +77,7 @@ export function saveTokensFromLogin(
 /**
  * Update access token khi refresh
  * - rememberMe = true  → cookie (7 ngày)
- * - rememberMe = false → cookie (30 phút)
+ * - rememberMe = false → cookie (2 tiếng)
  */
 export function updateAccessToken(accessToken: string) {
   if (typeof window === "undefined") return;
