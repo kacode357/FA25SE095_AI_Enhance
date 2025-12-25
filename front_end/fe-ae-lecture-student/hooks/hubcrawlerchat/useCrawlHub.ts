@@ -12,7 +12,6 @@ type Options = {
   baseUrl?: string;
   getAccessToken: () => Promise<string> | string;
   autoConnect?: boolean;
-  useAssignmentContext?: boolean;
 
   // ===== callbacks: server -> client =====
   onConnectedChange?: (connected: boolean) => void;
@@ -39,7 +38,6 @@ export function useCrawlHub({
   baseUrl = process.env.NEXT_PUBLIC_CRAWL_BASE_URL_HUB || "",
   getAccessToken,
   autoConnect = true,
-  useAssignmentContext = true,
   onConnectedChange,
   onJobStats,
   onJobStarted,
@@ -67,16 +65,7 @@ export function useCrawlHub({
     return () => {
       if (connectionRef.current) return connectionRef.current;
 
-      const hubUrlBase = `${baseUrl.replace(/\/+$/, "")}/hubs/crawl`;
-      const queryParams = new URLSearchParams();
-      if (typeof useAssignmentContext === "boolean") {
-        queryParams.set(
-          "includeAssignmentContext",
-          String(useAssignmentContext)
-        );
-      }
-      const queryString = queryParams.toString();
-      const hubUrl = queryString ? `${hubUrlBase}?${queryString}` : hubUrlBase;
+      const hubUrl = `${baseUrl.replace(/\/+$/, "")}/hubs/crawl`;
 
       const conn = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
@@ -193,7 +182,6 @@ export function useCrawlHub({
     onAssignmentJobUpdate,
     onConversationJobUpdate,
     onConnectedChange,
-    useAssignmentContext,
   ]);
 
   // ===== public APIs =====
@@ -413,5 +401,4 @@ export function useCrawlHub({
     unsubscribeFromConversation,
   };
 }
-
 

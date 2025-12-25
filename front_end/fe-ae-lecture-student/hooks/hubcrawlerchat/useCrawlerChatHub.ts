@@ -23,7 +23,6 @@ export type ChatMessageDto = {
   content: string;
   groupId?: string | null;
   assignmentId?: string | null;
-  includeAssignmentContext?: boolean;
   messageType?: MessageType;
   crawlJobId?: string | null;
   timestamp?: string;
@@ -467,7 +466,6 @@ export function useCrawlerChatHub({
     const payload: ChatMessageDto = {
       ...message,
       messageType: message.messageType ?? MessageType.UserMessage,
-      includeAssignmentContext: message.includeAssignmentContext ?? true,
     };
 
     await conn.invoke("SendCrawlerMessage", payload);
@@ -533,4 +531,3 @@ export function useCrawlerChatHub({
     unsubscribeFromCrawlJob,
   };
 }
-

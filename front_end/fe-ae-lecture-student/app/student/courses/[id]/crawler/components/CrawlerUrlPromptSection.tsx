@@ -9,8 +9,6 @@ type Props = {
   prompt: string;
   onUrlChange: (value: string) => void;
   onPromptChange: (value: string) => void;
-  includeAssignmentContext: boolean;
-  onIncludeAssignmentContextChange: (value: boolean) => void;
   onStartCrawl: () => void;
   submitting: boolean;
   chatConnected: boolean;
@@ -31,8 +29,6 @@ export default function CrawlerUrlPromptSection({
   prompt,
   onUrlChange,
   onPromptChange,
-  includeAssignmentContext,
-  onIncludeAssignmentContextChange,
   onStartCrawl,
   submitting,
   chatConnected,
@@ -97,23 +93,6 @@ export default function CrawlerUrlPromptSection({
                 placeholder="E.g., Extract all product details including name, price, brand, and categories..."
                 className="w-full resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-[13px] outline-none transition-all placeholder:text-slate-400 focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--focus-ring)] disabled:bg-slate-50 disabled:text-slate-500"
               />
-            </div>
-
-            <div className="flex items-start gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
-              <input
-                id="assignment-context-toggle"
-                type="checkbox"
-                checked={includeAssignmentContext}
-                onChange={(e) => onIncludeAssignmentContextChange(e.target.checked)}
-                disabled={isCrawling || submitting}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[var(--brand)] focus:ring-[var(--focus-ring)]"
-              />
-              <label htmlFor="assignment-context-toggle" className="text-[11px] text-[var(--foreground)] leading-5">
-                Use assignment context to enrich crawl prompts
-                <span className="block text-[11px] text-[var(--text-muted)]">
-                  When enabled, the agent will include assignment instructions while crawling. Turn off for a neutral crawl.
-                </span>
-              </label>
             </div>
 
             <button
@@ -200,6 +179,5 @@ export default function CrawlerUrlPromptSection({
     </>
   );
 }
-
 
 

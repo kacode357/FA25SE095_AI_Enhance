@@ -129,7 +129,6 @@ const CrawlerInner = () => {
   const [url, setUrl] = useState("");
   const [prompt, setPrompt] = useState("");
   const [crawlTargetUrl, setCrawlTargetUrl] = useState("");
-  const [includeAssignmentContext, setIncludeAssignmentContext] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const [isCrawling, setIsCrawling] = useState(false);
@@ -872,7 +871,6 @@ const CrawlerInner = () => {
       timestamp: new Date().toISOString(),
       groupId,
       assignmentId,
-      includeAssignmentContext,
     };
 
     pendingOutgoingRef.current.push({
@@ -911,7 +909,6 @@ const CrawlerInner = () => {
     chatConnected,
     conversationId,
     groupId,
-    includeAssignmentContext,
     isConversationInHistory,
     prompt,
     quotaExceeded,
@@ -967,7 +964,6 @@ const CrawlerInner = () => {
         sentAt,
         groupId,
         assignmentId,
-        includeAssignmentContext,
       };
 
       if (messageType === MessageType.CrawlRequest) {
@@ -1022,7 +1018,6 @@ const CrawlerInner = () => {
     [
       appendUiMessage,
       assignmentId,
-      includeAssignmentContext,
       chatConnected,
       chatInput,
       chatReady,
@@ -1080,8 +1075,6 @@ const CrawlerInner = () => {
               prompt={prompt}
               onUrlChange={setUrl}
               onPromptChange={setPrompt}
-              includeAssignmentContext={includeAssignmentContext}
-              onIncludeAssignmentContextChange={setIncludeAssignmentContext}
               onStartCrawl={handleStartCrawl}
               submitting={submitting}
               chatConnected={chatConnected}
