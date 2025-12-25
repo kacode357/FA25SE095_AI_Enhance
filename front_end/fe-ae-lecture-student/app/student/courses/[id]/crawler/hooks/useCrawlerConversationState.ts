@@ -123,17 +123,23 @@ export const useCrawlerConversationState = ({
         const jobMessagesMap = new Map<string, JobHistoryEntry>();
         res.forEach((m) => {
           if (!m.crawlJobId) return;
+          const messageType = m.messageType as MessageType | undefined;
           const summaryValue =
             typeof m.extractedData === "string"
               ? m.extractedData
               : m.extractedData
               ? JSON.stringify(m.extractedData)
               : null;
+          const fallbackSummary =
+            summaryValue ||
+            (messageType === MessageType.AiSummary && typeof m.content === "string"
+              ? m.content
+              : null);
           const promptValue =
             typeof m.content === "string" ? m.content : undefined;
           const existing = jobMessagesMap.get(m.crawlJobId);
           if (existing) {
-            existing.summary = existing.summary || summaryValue || null;
+            existing.summary = existing.summary || fallbackSummary || null;
             existing.prompt = existing.prompt || promptValue;
             existing.timestamp = existing.timestamp || m.timestamp;
             return;
@@ -144,7 +150,7 @@ export const useCrawlerConversationState = ({
             jobId: m.crawlJobId as string,
             timestamp: m.timestamp,
             prompt: promptValue,
-            summary: summaryValue,
+            summary: fallbackSummary,
           });
         });
         const jobMessages = Array.from(jobMessagesMap.values());

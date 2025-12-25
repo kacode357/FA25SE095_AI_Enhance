@@ -26,6 +26,8 @@ export type ChatMessageDto = {
   messageType?: MessageType;
   crawlJobId?: string | null;
   timestamp?: string;
+  visualizationData?: string | null;
+  extractedData?: string | null;
   sentAt?: string; // thêm dòng này
 };
 
@@ -65,8 +67,6 @@ type Options = {
   // message
   onUserMessageReceived?: (message: ChatMessageDto) => void;
   onGroupMessageReceived?: (message: ChatMessageDto) => void;
-  onAgentResponseReceived?: (message: ChatMessageDto) => void;
-  onGroupAgentResponse?: (message: ChatMessageDto) => void;
 
   // crawl request result
   onCrawlInitiated?: (data: {
@@ -120,8 +120,6 @@ export function useCrawlerChatHub({
   onAssignmentUnsubscribed,
   onUserMessageReceived,
   onGroupMessageReceived,
-  onAgentResponseReceived,
-  onGroupAgentResponse,
   onCrawlInitiated,
   onCrawlFailed,
   onMessageSent,
@@ -215,14 +213,6 @@ export function useCrawlerChatHub({
 
       onWithLog("GroupMessageReceived", (message: ChatMessageDto) => {
         onGroupMessageReceived?.(message);
-      });
-
-      onWithLog("AgentResponseReceived", (message: ChatMessageDto) => {
-        onAgentResponseReceived?.(message);
-      });
-
-      onWithLog("GroupAgentResponse", (message: ChatMessageDto) => {
-        onGroupAgentResponse?.(message);
       });
 
       onWithLog(
@@ -319,8 +309,6 @@ export function useCrawlerChatHub({
     onAssignmentUnsubscribed,
     onUserMessageReceived,
     onGroupMessageReceived,
-    onAgentResponseReceived,
-    onGroupAgentResponse,
     onCrawlInitiated,
     onCrawlFailed,
     onMessageSent,

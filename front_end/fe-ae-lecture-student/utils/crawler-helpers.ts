@@ -1,21 +1,3 @@
-export const SUMMARY_KEYWORDS = [
-  "summary",
-  "summaries",
-  "insights",
-  "overview",
-  "breakdown",
-  "highlights",
-  "khoảng giá",
-  "bao nhiêu",
-  "thống kê",
-  "biểu đồ",
-  "tổng hợp",
-  "phân tích",
-  "xu hướng",
-  "giá cả",
-  "so sánh",
-];
-
 export function makeId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
@@ -70,3 +52,4 @@ export function buildUserIdentity(
     "Student";
   return { userId, userName };
 }
+

@@ -13,7 +13,6 @@ type Props = {
   submitting: boolean;
   chatConnected: boolean;
   crawlConnected: boolean;
-  assignmentId?: string | null;
   promptUsed?: string;
   activeTargetUrl?: string;
   
@@ -33,7 +32,6 @@ export default function CrawlerUrlPromptSection({
   submitting,
   chatConnected,
   crawlConnected,
-  assignmentId,
   promptUsed: _promptUsed,
   activeTargetUrl,
   // Default values cho overlay
@@ -41,7 +39,7 @@ export default function CrawlerUrlPromptSection({
   progress = 0,
   statusMessage = "Initializing crawler agent...",
 }: Props) {
-  const disabled = submitting || !chatConnected || !crawlConnected || !assignmentId;
+  const disabled = submitting || !chatConnected || !crawlConnected;
   const displayProgress = progress;
   const displayTarget = activeTargetUrl || url;
 
@@ -179,5 +177,4 @@ export default function CrawlerUrlPromptSection({
     </>
   );
 }
-
 

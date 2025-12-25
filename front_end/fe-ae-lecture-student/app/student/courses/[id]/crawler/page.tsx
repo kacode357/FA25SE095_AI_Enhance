@@ -41,7 +41,6 @@ import { useCrawlerConversationState } from "./hooks/useCrawlerConversationState
 import useEventCallback from "./hooks/useEventCallback";
 import { useCrawlJobHandlers } from "./hooks/useCrawlJobHandlers";
 import {
-  SUMMARY_KEYWORDS,
   generateGuid,
   isIgnorableSignalRError,
   makeId,
@@ -524,8 +523,8 @@ const CrawlerInner = () => {
                 createdAt: message.timestamp || msg.createdAt,
                 messageType,
                 crawlJobId: message.crawlJobId ?? msg.crawlJobId,
-                visualizationData: (message as any).visualizationData ?? msg.visualizationData,
-                extractedData: (message as any).extractedData ?? msg.extractedData,
+                visualizationData: message.visualizationData ?? msg.visualizationData,
+                extractedData: message.extractedData ?? msg.extractedData,
               };
             });
             return updated ? next : prev;
@@ -541,8 +540,8 @@ const CrawlerInner = () => {
         createdAt: message.timestamp || new Date().toISOString(),
         messageType,
         crawlJobId: message.crawlJobId,
-        visualizationData: (message as any).visualizationData,
-        extractedData: (message as any).extractedData,
+        visualizationData: message.visualizationData,
+        extractedData: message.extractedData,
       };
 
       appendUiMessage(uiMessage);
@@ -748,8 +747,6 @@ const CrawlerInner = () => {
     getAccessToken,
     onUserMessageReceived: pushUiMessageHandler,
     onGroupMessageReceived: pushUiMessageHandler,
-    onAgentResponseReceived: pushUiMessageHandler,
-    onGroupAgentResponse: pushUiMessageHandler,
     onCrawlInitiated: crawlInitiatedHandler,
     onCrawlFailed: crawlFailedHandler,
     onError: chatHubErrorHandler,
@@ -843,7 +840,6 @@ const CrawlerInner = () => {
     if (!trimmedPrompt) return toast.error("Please describe what you want to extract.");
     if (!safeValidateUrl(trimmedUrl)) return toast.error("Invalid URL.");
     if (!chatConnected) return toast.error("Chat connection is establishing... Please wait.");
-    if (!assignmentId) return toast.error("Missing assignmentId. Please reload from assignment context.");
     if (!userId) return toast.error("UserId not found. Please reload.");
 
     setSubmitting(true);
@@ -927,15 +923,9 @@ const CrawlerInner = () => {
       if (!chatConnected) return;
 
       const isFirstConversationMessage = chatMessages.length === 0;
-      const normalizedContent = content.toLowerCase();
-      const derivedType = SUMMARY_KEYWORDS.some((keyword) =>
-        normalizedContent.includes(keyword)
-      )
-        ? MessageType.FollowUpQuestion
-        : MessageType.UserMessage;
       const messageType = isFirstConversationMessage
         ? MessageType.CrawlRequest
-        : derivedType;
+        : MessageType.UserMessage;
 
       if (messageType === MessageType.CrawlRequest && quotaExceeded) {
         setQuotaDialogOpen(true);
@@ -1058,13 +1048,15 @@ const CrawlerInner = () => {
                 Back to assignment
               </Link>
             )}
-            <button
-              type="button"
-              onClick={() => setShowAssignmentDrawer(true)}
-              className="action-pill btn-blue-slow action-pill-solid action-pill-slide"
-            >
-              Assignment info
-            </button>
+            {assignmentId && (
+              <button
+                type="button"
+                onClick={() => setShowAssignmentDrawer(true)}
+                className="action-pill btn-blue-slow action-pill-solid action-pill-slide"
+              >
+                Assignment info
+              </button>
+            )}
           </div>
         </div>
 
@@ -1079,7 +1071,6 @@ const CrawlerInner = () => {
               submitting={submitting}
               chatConnected={chatConnected}
               crawlConnected={crawlConnected}
-              assignmentId={assignmentId}
               promptUsed={promptUsed}
               activeTargetUrl={crawlTargetUrl}
               isCrawling={isCrawling}
@@ -1152,7 +1143,7 @@ const CrawlerInner = () => {
         message={quotaMessage || undefined}
       />
 
-      {showAssignmentDrawer && (
+      {showAssignmentDrawer && assignmentId && (
         <div className="fixed inset-0 z-[9997]">
           <div
             className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"

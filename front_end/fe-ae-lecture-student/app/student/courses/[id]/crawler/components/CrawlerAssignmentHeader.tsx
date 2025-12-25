@@ -36,6 +36,7 @@ export default function CrawlerAssignmentHeader({
 }: Props) {
   const statusLabel = getStatusLabel(assignment);
   const dueDateLabel = getDueDate(assignment);
+  const workspaceLabel = assignment ? "Assignment Workspace" : "Crawler Workspace";
 
   // Logic gộp trạng thái:
   // Chỉ khi cả 2 hub đều connected thì mới tính là "Ready"
@@ -50,7 +51,7 @@ export default function CrawlerAssignmentHeader({
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
             <BookOpen className="h-3.5 w-3.5" />
-            Assignment Workspace
+            {workspaceLabel}
           </span>
 
           {assignment?.isGroupAssignment && (
