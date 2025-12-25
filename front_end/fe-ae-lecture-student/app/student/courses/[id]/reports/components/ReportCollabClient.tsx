@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useReportCollabHub } from "@/hooks/hubcollab/useReportCollabHub";
 import type {
   Guid,
@@ -44,6 +45,8 @@ export default function ReportCollabClient(props: Props) {
     hidePresenceBar,
     uploadingImagesCount = 0,
   } = props;
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
   const [collabs, setCollabs] = useState<CollaboratorPresenceDto[]>([]);
   const lastSentHtmlRef = useRef<string>("");
 
@@ -75,10 +78,13 @@ export default function ReportCollabClient(props: Props) {
       setCollabs(list);
     },
     onReceiveChange: (change) => {
-      if (change.changeType === "content" && typeof change.content === "string") {
+      if (change.changeType !== "content" || typeof change.content !== "string") return;
+      if (currentUserId && change.userId === currentUserId) {
         lastSentHtmlRef.current = change.content;
-        onRemoteHtml?.(change.content);
+        return;
       }
+      lastSentHtmlRef.current = change.content;
+      onRemoteHtml?.(change.content);
     },
     onError: () => {},
     debounceMs: 700,

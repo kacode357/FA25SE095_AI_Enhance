@@ -1,7 +1,6 @@
-// app/student/courses/[id]/reports/components/ReportSubmissionEditor.tsx
 "use client";
 
-import { Info } from "lucide-react";
+import { FileText, Info } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -33,6 +32,7 @@ type Props = {
 const buildSavedKey = (reportId: string) => `report:${reportId}:saved-once`;
 const DATA_IMAGE_REGEX = /<img[^>]+src=["'](data:image\/[^"']+)["'][^>]*>/gi;
 const ALLOWED_EXTS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+const MAX_REMOTE_INLINE_IMAGES = 30;
 
 function isAllowedImage(file: File) {
   const ext = (file.name || "")
@@ -55,7 +55,7 @@ function hasDataImages(html?: string | null) {
   return /<img[^>]+src=["']data:image\//i.test(html);
 }
 
-function extractDataImageSrcs(html?: string | null): string[] {
+function extractDataImageSrcsWithDuplicates(html?: string | null): string[] {
   if (!html) return [];
   const regex = new RegExp(DATA_IMAGE_REGEX);
   const results: string[] = [];
@@ -63,7 +63,11 @@ function extractDataImageSrcs(html?: string | null): string[] {
   while ((match = regex.exec(html)) !== null) {
     if (match[1]) results.push(match[1]);
   }
-  return Array.from(new Set(results));
+  return results;
+}
+
+function extractDataImageSrcs(html?: string | null): string[] {
+  return Array.from(new Set(extractDataImageSrcsWithDuplicates(html)));
 }
 
 function replaceImageSrc(html: string, from: string, to: string) {
@@ -77,12 +81,11 @@ function dataUrlToFile(dataUrl: string, filename: string): File | null {
     if (arr.length < 2) return null;
     const mimeMatch = arr[0]?.match(/data:(.*?);/);
     const mime = mimeMatch?.[1] || "image/jpeg";
+
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
     return new File([u8arr], filename, { type: mime });
   } catch {
     return null;
@@ -91,7 +94,11 @@ function dataUrlToFile(dataUrl: string, filename: string): File | null {
 
 async function fileToCompressedDataUrl(
   file: File,
-  opts: { maxWidth?: number; quality?: number; mimeType?: "image/jpeg" | "image/webp" } = {}
+  opts: {
+    maxWidth?: number;
+    quality?: number;
+    mimeType?: "image/jpeg" | "image/webp";
+  } = {}
 ) {
   const { maxWidth = 1200, quality = 0.7, mimeType = "image/jpeg" } = opts;
 
@@ -155,20 +162,27 @@ export default function ReportSubmissionEditor({
   const isGroupSubmission = !!report.isGroupSubmission;
   const isSubmitted = report.status === ReportStatus.Submitted;
   const isResubmitted = report.status === ReportStatus.Resubmitted;
-
-  // Locked when submitted/resubmitted
   const isLocked = isSubmitted || isResubmitted;
 
-  // Only enable collab hub for group + unlocked
   const useHubCollab = isGroupSubmission && !isLocked;
   const readOnly = isLocked;
 
   const { updateReport, loading: saving } = useUpdateReport();
-  const {
-    uploadImage,
-    uploading: uploadingImages,
-    uploadingCount: uploadingImagesCount,
-  } = useImageUpload();
+  const { uploadImage, uploading: uploadingImages } = useImageUpload();
+
+  const fileName = report.fileUrl ? report.fileUrl.split("/").pop() || "" : "";
+
+  const remoteInlineImagesRef = useRef<Map<string, number>>(new Map());
+  const remoteInlineImagesOrderRef = useRef<string[]>([]);
+  const inlineUploadTasksRef = useRef(
+    new Map<
+      string,
+      {
+        previewPromise: Promise<string>;
+        uploadPromise: Promise<string | null>;
+      }
+    >()
+  );
 
   const htmlRef = useRef(html);
   useEffect(() => {
@@ -205,21 +219,86 @@ export default function ReportSubmissionEditor({
 
   const pushHtmlToEditor = useCallback(
     (nextHtml: string) => {
+      htmlRef.current = nextHtml;
       onChange(nextHtml);
-      tinyEditorRef.current?.pushContentFromOutside?.(nextHtml);
+      tinyEditorRef.current?.pushContentFromOutside?.(nextHtml, {
+        preserveSelection: true,
+      });
+      tinyEditorRef.current?.syncExternalContent?.(nextHtml);
     },
     [onChange]
   );
 
-  const replaceImageSrcInEditor = useCallback(
-    (from: string, to: string) => {
-      const currentHtml = htmlRef.current ?? "";
-      if (!from || !currentHtml.includes(from)) return;
-      const nextHtml = replaceImageSrc(currentHtml, from, to);
+  const handleEditorChange = useCallback(
+    (nextHtml: string) => {
       htmlRef.current = nextHtml;
+      onChange(nextHtml);
+    },
+    [onChange]
+  );
+
+  const applyRemoteHtml = useCallback(
+    (nextHtml: string) => {
+      const current = (htmlRef.current ?? "").trim();
+      if (nextHtml.trim() === current) return;
       pushHtmlToEditor(nextHtml);
     },
     [pushHtmlToEditor]
+  );
+
+  const trackRemoteInlineImages = useCallback((nextHtml: string) => {
+    const srcs = extractDataImageSrcsWithDuplicates(nextHtml);
+    if (!srcs.length) return;
+
+    const counts = remoteInlineImagesRef.current;
+    const order = remoteInlineImagesOrderRef.current;
+
+    for (const src of srcs) {
+      counts.set(src, (counts.get(src) ?? 0) + 1);
+      order.push(src);
+    }
+
+    while (order.length > MAX_REMOTE_INLINE_IMAGES) {
+      const oldest = order.shift();
+      if (!oldest) continue;
+      const remaining = (counts.get(oldest) ?? 0) - 1;
+      if (remaining <= 0) {
+        counts.delete(oldest);
+      } else {
+        counts.set(oldest, remaining);
+      }
+    }
+  }, []);
+
+  // Simple replacement: replace src in DOM and in html string (accept flick)
+  const replaceImageSrcInEditorSimple = useCallback(
+    (from: string, to: string) => {
+      if (!from || !to) return;
+
+      const editor = tinyEditorRef.current;
+      const root = (editor?.getRoot?.() as HTMLElement | null) ?? null;
+
+      if (root) {
+        const imgs = Array.from(root.querySelectorAll("img")) as HTMLImageElement[];
+        for (const img of imgs) {
+          if ((img.getAttribute("src") || "") === from) {
+            img.setAttribute("src", to);
+          }
+        }
+      }
+
+      let nextHtml = htmlRef.current ?? "";
+      if (editor?.getContent) {
+        nextHtml = editor.getContent({ format: "raw" }) as string;
+      } else if (nextHtml.includes(from)) {
+        nextHtml = replaceImageSrc(nextHtml, from, to);
+      }
+
+      htmlRef.current = nextHtml;
+      editor?.syncExternalContent?.(nextHtml);
+      onChange(nextHtml);
+    },
+    [onChange]
   );
 
   const uploadInlineImagesBeforeSave = useCallback(
@@ -235,10 +314,9 @@ export default function ReportSubmissionEditor({
           dataUrlToFile(src, `report-image-${Date.now()}-${counter++}.jpg`) ||
           null;
         if (!file) continue;
+
         if (!isAllowedImage(file)) {
-          toast.error(
-            "Ảnh không được hỗ trợ. Chỉ nhận .jpg, .jpeg, .png, .gif, .webp."
-          );
+          toast.error("Ảnh không được hỗ trợ. Chỉ nhận .jpg, .jpeg, .png, .gif, .webp.");
           continue;
         }
 
@@ -254,11 +332,7 @@ export default function ReportSubmissionEditor({
   );
 
   const internalSave = useCallback(
-    async (opts?: {
-      isAuto?: boolean;
-      htmlOverride?: string;
-      skipIfDataImages?: boolean;
-    }) => {
+    async (opts?: { htmlOverride?: string; skipIfDataImages?: boolean }) => {
       if (!report.id) return;
 
       const currentHtml =
@@ -269,10 +343,7 @@ export default function ReportSubmissionEditor({
       if (opts?.skipIfDataImages && hasDataImages(currentHtml)) return;
       if (currentHtml === lastSavedHtmlRef.current) return;
 
-      const payload: UpdateReportPayload = {
-        submission: currentHtml,
-      };
-
+      const payload: UpdateReportPayload = { submission: currentHtml };
       const res = await updateReport(report.id, payload);
 
       if (res?.success) {
@@ -287,10 +358,10 @@ export default function ReportSubmissionEditor({
   const handleSave = useCallback(async () => {
     let htmlToSave = htmlRef.current ?? "";
 
-    // Individual: only hit image API when Save is pressed
     if (!isGroupSubmission) {
       const { html: processedHtml, changed } =
         await uploadInlineImagesBeforeSave(htmlToSave);
+
       if (changed) {
         htmlToSave = processedHtml;
         htmlRef.current = htmlToSave;
@@ -298,29 +369,25 @@ export default function ReportSubmissionEditor({
       }
     }
 
-    await internalSave({ isAuto: false, htmlOverride: htmlToSave });
+    await internalSave({ htmlOverride: htmlToSave });
   }, [internalSave, isGroupSubmission, pushHtmlToEditor, uploadInlineImagesBeforeSave]);
 
-  // Auto-save every minute for individual submissions without inline images waiting
   useEffect(() => {
     if (isLocked || isGroupSubmission || !report.id) return;
     if (typeof window === "undefined") return;
 
     const intervalId = window.setInterval(() => {
       if (!hasDataImages(htmlRef.current)) {
-        void internalSave({ isAuto: true, skipIfDataImages: true });
+        void internalSave({ skipIfDataImages: true });
       }
     }, 60_000);
 
-    return () => {
-      window.clearInterval(intervalId);
-    };
+    return () => window.clearInterval(intervalId);
   }, [internalSave, isLocked, isGroupSubmission, report.id]);
 
   const hasSavedOnce = () => {
     if (hasSavedRef.current) return true;
     if (typeof window === "undefined" || !report.id) return false;
-
     const key = buildSavedKey(report.id);
     return window.localStorage.getItem(key) === "1";
   };
@@ -334,7 +401,6 @@ export default function ReportSubmissionEditor({
     }
 
     clearSavedFlag();
-
     router.push(
       `/student/courses/${courseId}/reports/submit?assignmentId=${assignmentId}`
     );
@@ -343,7 +409,6 @@ export default function ReportSubmissionEditor({
   return (
     <>
       <div className="flex flex-col gap-3">
-        {/* Info banner */}
         <div className="rounded-xl flex flex-col p-3 border border-slate-200 bg-slate-50 text-slate-700 gap-3 md:flex-row md:items-center md:justify-between">
           <div
             className={`flex items-start gap-2 ${
@@ -379,7 +444,6 @@ export default function ReportSubmissionEditor({
             </div>
           </div>
 
-          {/* Render hub when allowed */}
           {useHubCollab && (
             <div className="md:flex-shrink-0">
               <ReportCollabClient
@@ -387,64 +451,102 @@ export default function ReportSubmissionEditor({
                 getAccessToken={getAccessToken}
                 html={html}
                 onRemoteHtml={(newHtml) => {
-                  pushHtmlToEditor(newHtml);
+                  trackRemoteInlineImages(newHtml);
+                  applyRemoteHtml(newHtml);
                 }}
-                getEditorRoot={() =>
-                  tinyEditorRef.current?.getRoot?.() ?? null
-                }
+                getEditorRoot={() => tinyEditorRef.current?.getRoot?.() ?? null}
               />
             </div>
           )}
         </div>
 
-        {/* Submission editor */}
+        {report.fileUrl && (
+          <div className="rounded-xl flex items-center gap-2 p-3 border border-slate-200 bg-white text-slate-700 text-xs">
+            <FileText className="w-4 h-4 shrink-0 text-slate-500" />
+            <span className="font-medium">Attached file:</span>
+            <a
+              href={report.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 text-nav-active truncate"
+              title={fileName || "View file"}
+            >
+              {fileName || "View file"}
+            </a>
+          </div>
+        )}
+
         <LiteRichTextEditor
           value={html}
-          onChange={readOnly ? () => {} : onChange}
+          onChange={readOnly ? () => {} : handleEditorChange}
           readOnly={readOnly}
-          placeholder={
-            readOnly
-              ? "Report content (read only)"
-              : "Write your report here..."
-          }
+          placeholder={readOnly ? "Report content (read only)" : "Write your report here..."}
           className="w-full"
           onInit={(api: any) => {
             tinyEditorRef.current = api;
-            if (html) {
-              api.pushContentFromOutside?.(html);
-            }
+            if (html) api.pushContentFromOutside?.(html);
           }}
           onUploadImage={
             useHubCollab
-              ? async (file) => {
+              ? async (file, meta) => {
                   if (!isAllowedImage(file)) {
-                    toast.error("?nh kh?ng ???c h? tr?. Ch? nh?n .jpg, .jpeg, .png, .gif, .webp.");
+                    toast.error("Ảnh không được hỗ trợ. Chỉ nhận .jpg, .jpeg, .png, .gif, .webp.");
                     return "";
                   }
-                  // Collab: insert compressed preview, upload in background, then swap to URL
-                  const preview = await fileToCompressedDataUrl(file).catch(() => "");
+
+                  if (meta?.dataUrl) {
+                    const remaining =
+                      remoteInlineImagesRef.current.get(meta.dataUrl) ?? 0;
+                    if (remaining > 0) {
+                      if (remaining === 1) {
+                        remoteInlineImagesRef.current.delete(meta.dataUrl);
+                      } else {
+                        remoteInlineImagesRef.current.set(meta.dataUrl, remaining - 1);
+                      }
+                      return meta.dataUrl;
+                    }
+                  }
+
+                  const uploadKey =
+                    meta?.dataUrl || `${file.name || "image"}:${file.size}:${file.type}`;
+                  const existing = inlineUploadTasksRef.current.get(uploadKey);
+                  if (existing) {
+                    return await existing.previewPromise;
+                  }
+
+                  const previewPromise = fileToCompressedDataUrl(file).catch(() => "");
+                  const uploadPromise = (async () => {
+                    const inlinePreview = await previewPromise;
+                    if (!inlinePreview) return null;
+                    const res = await uploadImage(file);
+                    if (res?.imageUrl) {
+                      replaceImageSrcInEditorSimple(inlinePreview, res.imageUrl);
+                      return res.imageUrl;
+                    }
+                    toast.error("Image upload failed. Please try again.");
+                    return null;
+                  })().finally(() => {
+                    inlineUploadTasksRef.current.delete(uploadKey);
+                  });
+
+                  inlineUploadTasksRef.current.set(uploadKey, {
+                    previewPromise,
+                    uploadPromise,
+                  });
+
+                  const preview = await previewPromise;
                   if (!preview) {
                     toast.error("Cannot read image for preview.");
                     return "";
                   }
-
-                  void (async () => {
-                    const res = await uploadImage(file);
-                    if (res?.imageUrl) {
-                      replaceImageSrcInEditor(preview, res.imageUrl);
-                    } else {
-                      toast.error("Image upload failed. Please try again.");
-                    }
-                  })();
-
                   return preview;
                 }
               : async (file) => {
                   if (!isAllowedImage(file)) {
-                    toast.error("?nh kh?ng ???c h? tr?. Ch? nh?n .jpg, .jpeg, .png, .gif, .webp.");
+                    toast.error("Ảnh không được hỗ trợ. Chỉ nhận .jpg, .jpeg, .png, .gif, .webp.");
                     return "";
                   }
-                  // Individual: only upload on Save; here just return compressed preview
+                  // Individual: only preview; upload on Save
                   const preview = await fileToCompressedDataUrl(file).catch(() => "");
                   if (!preview) {
                     toast.error("Cannot read image for preview.");
@@ -455,7 +557,6 @@ export default function ReportSubmissionEditor({
           }
         />
 
-        {/* Save + Submit */}
         {!isLocked && (
           <div className="mt-2 flex gap-2 justify-end">
             {!isGroupSubmission && (
@@ -474,13 +575,12 @@ export default function ReportSubmissionEditor({
               className="btn-green-slow h-9 px-4 text-sm rounded-xl"
               disabled={saving || uploadingImages}
             >
-              Submit report
+              Go to submit page
             </Button>
           </div>
         )}
       </div>
 
-      {/* Dialog: require save before submit */}
       <Dialog open={saveRequiredOpen} onOpenChange={setSaveRequiredOpen}>
         <DialogContent>
           <DialogHeader>
@@ -492,10 +592,7 @@ export default function ReportSubmissionEditor({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2">
-            <Button
-              variant="outline"
-              onClick={() => setSaveRequiredOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setSaveRequiredOpen(false)}>
               Close
             </Button>
           </DialogFooter>

@@ -15,7 +15,7 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import ReportTimeline from "@/app/student/courses/[id]/reports/components/ReportHistory";
@@ -51,6 +51,7 @@ const getAccessToken = async (): Promise<string> =>
 export default function ReportDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
 
   const courseId = typeof params?.id === "string" ? params.id : "";
   const reportId = typeof params?.reportId === "string" ? params.reportId : "";
@@ -61,7 +62,7 @@ export default function ReportDetailPage() {
 
   const [html, setHtml] = useState<string>("");
   const [report, setReport] = useState<ReportDetail | null>(null);
-  const didFetchRef = useRef(false);
+  const lastFetchKeyRef = useRef<string>("");
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -76,13 +77,15 @@ export default function ReportDetailPage() {
     setHtml(r?.submission ?? "");
   }, [getReportById, reportId]);
 
-  useEffect(() => {
-    if (!reportId || didFetchRef.current) return;
-    didFetchRef.current = true;
+  const refreshKey = searchParams.get("refresh") || "";
 
+  useEffect(() => {
+    if (!reportId) return;
+    const fetchKey = `${reportId}:${refreshKey}`;
+    if (lastFetchKeyRef.current === fetchKey) return;
+    lastFetchKeyRef.current = fetchKey;
     refetchReport();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reportId, refetchReport]);
+  }, [reportId, refreshKey, refetchReport]);
 
   const handleRevertStatus = async () => {
     if (!report) return;
@@ -413,5 +416,4 @@ export default function ReportDetailPage() {
     </>
   );
 }
-
 

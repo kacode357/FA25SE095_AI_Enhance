@@ -326,7 +326,7 @@ export default function SubmitReportsPage() {
                               className="border-brand/60 text-nav hover:text-nav-active hover:border-brand px-3 py-1.5 rounded-xl text-xs sm:text-sm"
                               onClick={() =>
                                 router.push(
-                                  `/student/courses/${courseId}/reports/${r.id}`
+                                  `/student/courses/${courseId}/reports/${r.id}?refresh=${Date.now()}`
                                 )
                               }
                             >

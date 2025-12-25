@@ -1,12 +1,24 @@
 "use client";
 
 import { Editor } from "@tinymce/tinymce-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 type BlobInfo = {
   blob: () => Blob;
   base64: () => string;
   filename: () => string;
+};
+
+type FilePickerMeta = {
+  filetype?: string;
+  fieldname?: string;
+};
+
+type FilePickerCallback = (url: string, meta?: { alt?: string }) => void;
+
+type UploadImageMeta = {
+  source?: "picker" | "paste";
+  dataUrl?: string;
 };
 
 type Props = {
@@ -16,18 +28,12 @@ type Props = {
   className?: string;
   readOnly?: boolean;
   debounceMs?: number;
-  /** Nhận Tiny editor instance (cho collab/caret) */
   onInit?: (editor: any) => void;
-  onUploadImage?: (file: File) => Promise<string>;
+  onUploadImage?: (file: File, meta?: UploadImageMeta) => Promise<string>;
 };
 
-function normalize(html: string) {
-  return (html ?? "").trim();
-}
+const normalize = (html: string) => (html ?? "").trim();
 
-/** ===============================
- *  ADD: Resize + Compress Image (FE only)
- *  =============================== */
 function resizeAndCompressImage(
   file: Blob,
   options?: {
@@ -46,9 +52,8 @@ function resizeAndCompressImage(
     reader.onload = () => {
       img.src = reader.result as string;
     };
-
-    reader.onerror = reject;
-    img.onerror = reject;
+    reader.onerror = () => reject(new Error("Failed to read image"));
+    img.onerror = () => reject(new Error("Failed to load image"));
 
     img.onload = () => {
       let { width, height } = img;
@@ -63,15 +68,16 @@ function resizeAndCompressImage(
       canvas.height = height;
 
       const ctx = canvas.getContext("2d");
-      if (!ctx) return reject();
+      if (!ctx) return reject(new Error("Canvas not available"));
 
       ctx.drawImage(img, 0, 0, width, height);
 
       canvas.toBlob(
         (blob) => {
-          if (!blob) return reject();
+          if (!blob) return reject(new Error("Failed to create blob"));
           const fr = new FileReader();
           fr.onload = () => resolve(fr.result as string);
+          fr.onerror = () => reject(new Error("Failed to read blob"));
           fr.readAsDataURL(blob);
         },
         mimeType,
@@ -95,8 +101,30 @@ export default function LiteRichTextEditor({
 }: Props) {
   const editorRef = useRef<any>(null);
   const lastEmittedRef = useRef<string>(normalize(value || ""));
-  const initialValueRef = useRef<string>(normalize(value || ""));
+  const initialValue = useMemo(() => normalize(value || ""), []);
   const debounceTimer = useRef<number | null>(null);
+  const uploadTaskRef = useRef<Map<string, Promise<string>>>(new Map());
+
+  const apiKey = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key";
+  const cdnBase = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/6`;
+  const tinymceScriptSrc = `${cdnBase}/tinymce.min.js`;
+
+  useEffect(() => {
+    const ed = editorRef.current;
+    if (!ed) return;
+
+    const next = normalize(value || "");
+    if (next === lastEmittedRef.current) return;
+
+    const cur = normalize(ed.getContent({ format: "raw" }) || "");
+    if (cur === next) {
+      lastEmittedRef.current = next;
+      return;
+    }
+
+    ed.setContent(next, { format: "raw" });
+    lastEmittedRef.current = next;
+  }, [value]);
 
   const emit = (html: string) => {
     if (debounceTimer.current) window.clearTimeout(debounceTimer.current);
@@ -109,40 +137,42 @@ export default function LiteRichTextEditor({
     }, debounceMs) as unknown as number;
   };
 
-  const pushContentFromOutside = (newHtml: string) => {
-    const ed = editorRef.current;
-    if (!ed) return;
-
-    const v = normalize(newHtml);
-    if (v === lastEmittedRef.current) return;
-
-    const cur = normalize(ed.getContent({ format: "raw" }) || "");
-    if (v === cur) return;
-
-    ed.setContent(v, { format: "raw" });
-    lastEmittedRef.current = v;
-  };
-
-  useEffect(() => {
-    pushContentFromOutside(value || "");
-  }, [value]);
-
-  const apiKey = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "no-api-key";
-  const cdnBase = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/6`;
-  const tinymceScriptSrc = `${cdnBase}/tinymce.min.js`;
+  const allowNativePasteImages = Boolean(onUploadImage);
 
   return (
     <div className={className}>
       <Editor
-        initialValue={initialValueRef.current}
+        initialValue={initialValue}
         apiKey={apiKey}
         tinymceScriptSrc={tinymceScriptSrc}
         disabled={readOnly}
         onInit={(_evt, editor) => {
           const api: any = editor;
-          api.pushContentFromOutside = pushContentFromOutside;
-          api.getRoot = () =>
-            api.getBody?.() ?? api.getDoc?.()?.body ?? null;
+
+          api.getRoot = () => api.getBody?.() ?? api.getDoc?.()?.body ?? null;
+          api.pushContentFromOutside = (
+            html: string,
+            opts?: { preserveSelection?: boolean }
+          ) => {
+            const v = normalize(html || "");
+            if (opts?.preserveSelection && api.hasFocus?.() && api.selection?.getBookmark) {
+              const bookmark = api.selection.getBookmark(2, true);
+              api.setContent(v, { format: "raw" });
+              if (bookmark) {
+                try {
+                  api.selection.moveToBookmark(bookmark);
+                } catch {
+                  // ignore invalid bookmark after external content changes
+                }
+              }
+            } else {
+              api.setContent(v, { format: "raw" });
+            }
+            lastEmittedRef.current = v;
+          };
+          api.syncExternalContent = (html: string) => {
+            lastEmittedRef.current = normalize(html || "");
+          };
 
           editorRef.current = api;
           onInit?.(api);
@@ -164,11 +194,9 @@ export default function LiteRichTextEditor({
             "preview",
             "code",
           ],
-
           toolbar: readOnly
             ? false
             : "undo redo | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | link image table | code preview",
-
           branding: false,
           statusbar: false,
           placeholder,
@@ -177,25 +205,28 @@ export default function LiteRichTextEditor({
           rel_list: [{ title: "No Referrer", value: "noopener noreferrer" }],
           forced_root_block: "p",
 
-          /** ===============================
-           *  ADD: Enable paste image
-           *  =============================== */
-          paste_data_images: false,
+          paste_data_images: allowNativePasteImages,
           file_picker_types: "image",
 
-          file_picker_callback: async (
-            callback: (url: string, meta?: { alt?: string }) => void
+          // ✅ FIX TS7006: typed callback + meta
+          file_picker_callback: (
+            callback: FilePickerCallback,
+            _value: string,
+            _meta: FilePickerMeta
           ) => {
             if (readOnly) return;
+
             const input = document.createElement("input");
             input.type = "file";
             input.accept = "image/*";
+
             input.onchange = async () => {
               const file = input.files?.[0];
               if (!file) return;
+
               try {
                 if (onUploadImage) {
-                  const url = await onUploadImage(file);
+                  const url = await onUploadImage(file, { source: "picker" });
                   callback(url, { alt: file.name });
                 } else {
                   const compressed = await resizeAndCompressImage(file);
@@ -205,15 +236,14 @@ export default function LiteRichTextEditor({
                 console.error("Pick image failed", err);
               }
             };
+
             input.click();
           },
 
           images_upload_handler: async (blobInfo: BlobInfo): Promise<string> => {
             if (readOnly) {
-              // In read-only mode, still return a valid data URL so images render
               const type = blobInfo.blob().type || "image/png";
-              const base64 = blobInfo.base64();
-              return Promise.resolve(`data:${type};base64,${base64}`);
+              return `data:${type};base64,${blobInfo.base64()}`;
             }
 
             const blob = blobInfo.blob();
@@ -222,61 +252,20 @@ export default function LiteRichTextEditor({
             });
 
             if (onUploadImage) {
-              return await onUploadImage(file);
+              const type = blob.type || "image/png";
+              const dataUrl = `data:${type};base64,${blobInfo.base64()}`;
+              const cacheKey = dataUrl;
+              const existing = uploadTaskRef.current.get(cacheKey);
+              if (existing) return await existing;
+              const task = onUploadImage(file, { source: "paste", dataUrl }).finally(() => {
+                uploadTaskRef.current.delete(cacheKey);
+              });
+              uploadTaskRef.current.set(cacheKey, task);
+              return await task;
             }
 
             return await resizeAndCompressImage(blob);
           },
-
-          /** ===============================
-           *  ADD: Paste image → compress → insert
-           *  =============================== */
-          setup: (editor: any) => {
-            const handlePasteImage = (event: ClipboardEvent | any) => {
-              if (editor.mode.get() === "readonly") return;
-
-              const nativeEvent =
-                (event?.originalEvent as ClipboardEvent | undefined) ||
-                (event as ClipboardEvent | undefined);
-              const clipboardData =
-                nativeEvent?.clipboardData ?? (event as ClipboardEvent)?.clipboardData;
-
-              if (!clipboardData) return;
-              const items = clipboardData.items;
-              if (!items?.length) return;
-
-              const imageItem = Array.from(items).find((item) =>
-                item.type?.startsWith("image/")
-              );
-              if (!imageItem) return;
-
-              event?.preventDefault?.();
-              event?.stopPropagation?.();
-              event?.stopImmediatePropagation?.();
-              nativeEvent?.preventDefault?.();
-              nativeEvent?.stopPropagation?.();
-              nativeEvent?.stopImmediatePropagation?.();
-
-              const file = imageItem.getAsFile();
-              if (!file) return;
-
-              setTimeout(async () => {
-                const compressedBase64 = await resizeAndCompressImage(file, {
-                  maxWidth: 1200,
-                  quality: 0.7,
-                  mimeType: "image/jpeg",
-                });
-
-                editor.insertContent(`<img src="${compressedBase64}" />`);
-              }, 0);
-            };
-
-            editor.on("paste", handlePasteImage);
-            editor.on("remove", () => {
-              editor.off("paste", handlePasteImage);
-            });
-          },
-
 
           min_height: 300,
           autoresize_bottom_margin: 0,
@@ -285,9 +274,7 @@ export default function LiteRichTextEditor({
           skin: "oxide",
           content_css: "default",
           content_style: `
-            html, body {
-              min-height: 400px;
-            }
+            html, body { min-height: 400px; }
             body { 
               font-family: Inter, system-ui, sans-serif; 
               font-size:14px; 
