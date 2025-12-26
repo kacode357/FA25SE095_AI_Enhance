@@ -13,6 +13,12 @@ export type ConfirmSubscriptionPaymentPayload = {
   token: string;
 };
 
+// POST /api/Payments/subscription/cancel
+export type CancelSubscriptionPaymentPayload = {
+  orderCode: string;
+  reason: string;
+};
+
 // POST /api/Payments/payos/webhook – dùng cho server, FE thường không gọi
 export type PayOSWebhookData = {
   orderCode: number;

@@ -5,6 +5,7 @@ import { userAxiosInstance } from "@/config/axios.config";
 import type {
   CreateSubscriptionPaymentPayload,
   ConfirmSubscriptionPaymentPayload,
+  CancelSubscriptionPaymentPayload,
   PayOSWebhookPayload,
   PayOSReturnQuery,
   SubscriptionHistoryQuery,
@@ -13,6 +14,7 @@ import type {
 import type {
   CreateSubscriptionPaymentResponse,
   ConfirmSubscriptionPaymentResponse,
+  CancelSubscriptionPaymentResponse,
   PayOSWebhookResponse,
   PayOSReturnResponse,
   SubscriptionHistoryResponse,
@@ -38,6 +40,17 @@ export const PaymentsService = {
     const res =
       await userAxiosInstance.post<ConfirmSubscriptionPaymentResponse>(
         "/Payments/subscription/confirm",
+        payload
+      );
+    return res.data;
+  },
+
+  cancelSubscriptionPayment: async (
+    payload: CancelSubscriptionPaymentPayload
+  ): Promise<CancelSubscriptionPaymentResponse> => {
+    const res =
+      await userAxiosInstance.post<CancelSubscriptionPaymentResponse>(
+        "/Payments/subscription/cancel",
         payload
       );
     return res.data;

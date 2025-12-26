@@ -169,7 +169,9 @@ export default function SubscriptionCheckoutPage() {
     query.set("planId", selectedTier.id);
 
     const returnUrl = `${origin}/student/subscription/success?${query.toString()}`;
-    const cancelUrl = `${origin}/student/subscription`;
+    const cancelQuery = new URLSearchParams();
+    cancelQuery.set("cancel", "true");
+    const cancelUrl = `${origin}/student/subscription?${cancelQuery.toString()}`;
 
     // 👇 Gửi đúng payload mới: subscriptionPlanId + return/cancel
     const res = await createSubscriptionPayment({
@@ -179,6 +181,10 @@ export default function SubscriptionCheckoutPage() {
     });
 
     const checkoutUrl = res?.data?.checkoutUrl;
+    const orderCode = res?.data?.orderCode;
+    if (orderCode && typeof window !== "undefined") {
+      sessionStorage.setItem("subscription:pendingOrderCode", orderCode);
+    }
     if (checkoutUrl) {
       window.location.href = checkoutUrl;
     }

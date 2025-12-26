@@ -27,6 +27,10 @@ export type CreateSubscriptionPaymentResponse =
 export type ConfirmSubscriptionPaymentResponse =
   BasePaymentApiResponse<string>;
 
+// POST /api/Payments/subscription/cancel
+export type CancelSubscriptionPaymentResponse =
+  BasePaymentApiResponse<string>;
+
 // POST /api/Payments/payos/webhook
 export type PayOSWebhookResponse = BasePaymentApiResponse<string>;
 

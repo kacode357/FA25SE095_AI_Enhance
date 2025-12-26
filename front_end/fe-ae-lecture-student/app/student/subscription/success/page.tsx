@@ -8,6 +8,7 @@ import { CheckCircle2, Crown, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { useConfirmSubscriptionPayment } from "@/hooks/payments/useConfirmSubscriptionPayment";
+import { useCancelSubscriptionPayment } from "@/hooks/payments/useCancelSubscriptionPayment";
 import { getRememberMeFlag } from "@/utils/auth/access-token";
 import { loadDecodedUser, saveEncodedUser } from "@/utils/secure-user";
 import { getUserSubscriptionPlanName } from "@/config/user-service/plan";
@@ -20,6 +21,7 @@ export default function SubscriptionSuccessPage() {
 
   const { confirmSubscriptionPayment, loading: confirming } =
     useConfirmSubscriptionPayment();
+  const { cancelSubscriptionPayment } = useCancelSubscriptionPayment();
 
   const tier = searchParams.get("tier") || "";
   const planId = searchParams.get("planId") || "";
@@ -28,24 +30,73 @@ export default function SubscriptionSuccessPage() {
     searchParams.get("ConfirmationToken");
   const orderCode =
     searchParams.get("orderCode") || searchParams.get("OrderCode");
-  const status = searchParams.get("status");
-  const cancel = searchParams.get("cancel");
+  const status = searchParams.get("status") || searchParams.get("Status");
+  const cancel = searchParams.get("cancel") || searchParams.get("Cancel");
   const cameFromPayOsReturn = Boolean(confirmationToken && orderCode);
+  const hasReturnParams = Boolean(orderCode || confirmationToken || status || cancel);
   const [canUpdateUser, setCanUpdateUser] = useState(!cameFromPayOsReturn);
   const planName = getUserSubscriptionPlanName(tier);
 
   // Confirm payment directly when PayOS returns to this page
   useEffect(() => {
-    if (!cameFromPayOsReturn) return;
+    if (!hasReturnParams) return;
     if (hasHandledReturnRef.current) return;
 
-    if (cancel === "true") {
-      toast.error("Payment was cancelled.");
-      router.replace("/student/subscription");
+    const normalizedStatus = status?.toUpperCase() ?? "";
+    const isCancelled =
+      cancel?.toLowerCase() === "true" ||
+      normalizedStatus === "CANCELLED" ||
+      normalizedStatus === "CANCELED" ||
+      normalizedStatus === "CANCEL";
+
+    if (isCancelled) {
+      hasHandledReturnRef.current = true;
+      setCanUpdateUser(false);
+
+      const reasonParam =
+        searchParams.get("reason") ||
+        searchParams.get("Reason") ||
+        searchParams.get("message") ||
+        searchParams.get("Message") ||
+        searchParams.get("desc") ||
+        searchParams.get("Desc");
+      const reason = reasonParam?.trim() || "User cancelled payment.";
+
+      (async () => {
+        let orderCodeValue = orderCode;
+        if (!orderCodeValue && typeof window !== "undefined") {
+          orderCodeValue = sessionStorage.getItem(
+            "subscription:pendingOrderCode",
+          );
+        }
+
+        if (!orderCodeValue) {
+          toast.error("Payment was cancelled.");
+          router.replace("/student/subscription");
+          return;
+        }
+
+        const res = await cancelSubscriptionPayment({
+          orderCode: orderCodeValue,
+          reason,
+        });
+
+        if (!res || res.status !== 200) {
+          toast.error(res?.message || "Could not cancel your payment.");
+        }
+
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("subscription:pendingOrderCode");
+        }
+
+        router.replace("/student/payment-history");
+      })();
       return;
     }
 
-    if (status && status.toUpperCase() !== "PAID") {
+    if (!confirmationToken || !orderCode) return;
+
+    if (normalizedStatus && normalizedStatus !== "PAID") {
       toast.error("Payment not completed. Please try again.");
       const fallback = new URLSearchParams();
       if (tier) fallback.set("tier", tier);
@@ -85,6 +136,9 @@ export default function SubscriptionSuccessPage() {
       }
 
       setCanUpdateUser(true);
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("subscription:pendingOrderCode");
+      }
 
       // Clean sensitive query params but keep plan info for downstream logic
       const cleanQuery = new URLSearchParams();
@@ -100,9 +154,10 @@ export default function SubscriptionSuccessPage() {
     })();
   }, [
     cancel,
-    cameFromPayOsReturn,
+    cancelSubscriptionPayment,
     confirmationToken,
     confirmSubscriptionPayment,
+    hasReturnParams,
     orderCode,
     planId,
     router,

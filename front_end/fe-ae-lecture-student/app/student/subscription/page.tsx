@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import { Crown } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -13,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useCancelSubscriptionPayment } from "@/hooks/payments/useCancelSubscriptionPayment";
 import { useSubscriptionTiers } from "@/hooks/subscription/useSubscriptionTiers";
 import type { SubscriptionTier } from "@/types/subscription/subscription.response";
 import { loadDecodedUser } from "@/utils/secure-user";
@@ -52,10 +54,71 @@ function formatQuota(tier: SubscriptionTier) {
 
 export default function SubscriptionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { getSubscriptionTiers, loading } = useSubscriptionTiers();
+  const { cancelSubscriptionPayment } = useCancelSubscriptionPayment();
+  const cancelHandledRef = useRef(false);
 
   const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
   const [currentTierKey, setCurrentTierKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    const cancelParam =
+      searchParams.get("cancel") || searchParams.get("Cancel");
+    const statusParam =
+      searchParams.get("status") || searchParams.get("Status");
+    const normalizedStatus = statusParam?.toLowerCase() ?? "";
+    const isCancelled =
+      cancelParam?.toLowerCase() === "true" ||
+      normalizedStatus === "cancelled" ||
+      normalizedStatus === "canceled" ||
+      normalizedStatus === "cancel";
+
+    if (!isCancelled) return;
+    if (cancelHandledRef.current) return;
+    cancelHandledRef.current = true;
+
+    const reasonParam =
+      searchParams.get("reason") ||
+      searchParams.get("Reason") ||
+      searchParams.get("message") ||
+      searchParams.get("Message") ||
+      searchParams.get("desc") ||
+      searchParams.get("Desc");
+
+    let orderCodeValue =
+      searchParams.get("orderCode") || searchParams.get("OrderCode");
+    if (!orderCodeValue && typeof window !== "undefined") {
+      orderCodeValue = sessionStorage.getItem(
+        "subscription:pendingOrderCode",
+      );
+    }
+
+    const reason = reasonParam?.trim() || "User cancelled payment.";
+
+    (async () => {
+      if (!orderCodeValue) {
+        toast.error("Payment was cancelled.");
+        router.replace("/student/subscription");
+        return;
+      }
+
+      const res = await cancelSubscriptionPayment({
+        orderCode: orderCodeValue,
+        reason,
+      });
+
+      if (!res || res.status !== 200) {
+        toast.error(res?.message || "Could not cancel your payment.");
+      }
+
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("subscription:pendingOrderCode");
+      }
+
+      router.replace("/student/payment-history");
+    })();
+  }, [searchParams, cancelSubscriptionPayment, router]);
 
   // Load plans
   useEffect(() => {
