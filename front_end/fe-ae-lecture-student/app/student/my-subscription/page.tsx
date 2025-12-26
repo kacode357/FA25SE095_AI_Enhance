@@ -52,22 +52,35 @@ export default function MySubscriptionPage() {
 
   const planName = profile?.subscriptionTier || "Free plan";
 
+  const quotaUsed = profile?.crawlQuotaUsed ?? 0;
+  const quotaLimit = profile?.crawlQuotaLimit ?? 0;
+
   const quotaLabel =
     profile && profile.crawlQuotaLimit > 0
-      ? `${profile.crawlQuotaUsed} / ${profile.crawlQuotaLimit} tasks`
-      : `${profile?.crawlQuotaUsed ?? 0} tasks used`;
+      ? `${quotaUsed.toLocaleString()} / ${quotaLimit.toLocaleString()} tasks`
+      : `${quotaUsed.toLocaleString()} tasks used`;
+
+  const quotaLimitLabel =
+    profile && profile.crawlQuotaLimit > 0
+      ? `${quotaLimit.toLocaleString()} tasks limit`
+      : "No quota limit";
+
+  const quotaUsedLabel = `${quotaUsed.toLocaleString()} tasks used`;
 
   return (
-    <main className="px-4 py-4 md:px-10 md:py-8 lg:px-20">
-      <div className="mx-auto max-w-5xl space-y-5">
+    <main className="min-h-screen bg-slate-50 px-4 py-6 md:px-10 md:py-10 lg:px-20">
+      <div className="mx-auto max-w-6xl space-y-6">
         {/* Header */}
-        <header className="flex items-center justify-between gap-3">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1 text-left">
             <h1 className="text-2xl font-semibold text-nav">
               My Subscription
             </h1>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              Track your plan, quota usage, and key dates in one place.
+            </p>
           </div>
-        </header>
+        </div>
 
         {/* Loading state */}
         {loading && !initialized && (
@@ -90,42 +103,75 @@ export default function MySubscriptionPage() {
 
         {/* Content */}
         {!loading && initialized && !error && profile && (
-          <div className="space-y-5">
-            {/* Top: plan summary + action */}
-            <section className="card p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(127,113,244,0.08)]">
-                  <Crown className="w-5 h-5 text-accent" />
+          <section className="grid gap-5 lg:grid-cols-3">
+            <div className="card p-6 lg:col-span-2">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(127,113,244,0.08)]">
+                    <Crown className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <p
+                      className="text-xs uppercase tracking-wide"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Current plan
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-nav">
+                      {planName}
+                    </p>
+                  </div>
                 </div>
-                <div>
+
+                <button
+                  type="button"
+                  className="btn btn-blue-slow text-sm px-5 py-2"
+                  onClick={() => router.push("/student/subscription")}
+                >
+                  Change plan
+                </button>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl bg-slate-50 px-4 py-3">
                   <p
                     className="text-xs uppercase tracking-wide"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    Current plan
+                    Quota limit
                   </p>
-                  <p className="mt-1 text-lg font-semibold text-nav">
-                    {planName}
+                  <p className="mt-1 text-sm font-semibold text-nav">
+                    {quotaLimitLabel}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <p
+                    className="text-xs uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Used
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-nav">
+                    {quotaUsedLabel}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <p
+                    className="text-xs uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Reset date
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-nav">
+                    {formatDateOnlyVN(profile.quotaResetDate)}
                   </p>
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="btn btn-blue-slow text-sm px-5 py-2"
-                onClick={() => router.push("/student/subscription")}
-              >
-                Change plan
-              </button>
-            </section>
-
-            {/* Bottom: 2 columns */}
-            <section className="grid gap-5 md:grid-cols-2">
-              {/* Usage card */}
-              <div className="card p-5">
+              <div className="mt-6">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div className="flex items-center gap-2">
-                    <Gauge className="w-4 h-4 text-brand" />
+                    <Gauge className="h-4 w-4 text-brand" />
                     <h3 className="text-sm font-semibold">Quota usage</h3>
                   </div>
                   <span
@@ -146,9 +192,8 @@ export default function MySubscriptionPage() {
                   {quotaLabel}
                 </p>
 
-                {/* Progress bar */}
                 <div
-                  className="h-2 w-full rounded-full mb-2"
+                  className="h-2 w-full rounded-full"
                   style={{
                     background: "var(--border)",
                     overflow: "hidden",
@@ -163,55 +208,49 @@ export default function MySubscriptionPage() {
                     }}
                   />
                 </div>
+              </div>
+            </div>
 
-                <p
-                  className="text-xs flex items-center gap-1"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  <Zap className="w-3 h-3" />
-                  Quota resets on{" "}
+            <div className="card p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <CalendarDays className="h-4 w-4 text-brand" />
+                <h3 className="text-sm font-semibold">Subscription details</h3>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span style={{ color: "var(--text-muted)" }}>Start date</span>
                   <span className="font-medium">
-                    {formatDateOnlyVN(profile.quotaResetDate)}
+                    {formatDateOnlyVN(profile.subscriptionStartDate)}
                   </span>
-                </p>
-              </div>
-
-              {/* Details card */}
-              <div className="card p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <CalendarDays className="w-4 h-4 text-brand" />
-                  <h3 className="text-sm font-semibold">Subscription details</h3>
                 </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <span style={{ color: "var(--text-muted)" }}>
-                      Start date
-                    </span>
-                    <span className="font-medium">
-                      {formatDateOnlyVN(profile.subscriptionStartDate)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span style={{ color: "var(--text-muted)" }}>
-                      End date
-                    </span>
-                    <span className="font-medium">
-                      {formatDateOnlyVN(profile.subscriptionEndDate)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span style={{ color: "var(--text-muted)" }}>
-                      Last login
-                    </span>
-                    <span className="font-medium">
-                      {formatDateOnlyVN(profile.lastLoginAt)}
-                    </span>
-                  </div>
+                <div className="flex justify-between gap-4">
+                  <span style={{ color: "var(--text-muted)" }}>End date</span>
+                  <span className="font-medium">
+                    {formatDateOnlyVN(profile.subscriptionEndDate)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span style={{ color: "var(--text-muted)" }}>Last login</span>
+                  <span className="font-medium">
+                    {formatDateOnlyVN(profile.lastLoginAt)}
+                  </span>
                 </div>
               </div>
-            </section>
-          </div>
+
+              <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Zap className="h-3 w-3 text-brand" />
+                  <span>
+                    Next quota reset{" "}
+                    <span className="font-semibold text-nav">
+                      {formatDateOnlyVN(profile.quotaResetDate)}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
         )}
       </div>
     </main>

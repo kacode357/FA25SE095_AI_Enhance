@@ -3,7 +3,7 @@
 import type { ElementType } from "react";
 import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Layers, RefreshCcw, TrendingDown, Users } from "lucide-react";
+import { Layers, RefreshCcw, TrendingDown, Users } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -102,7 +102,7 @@ export default function AdminDashboardSubscriptionsPage() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <header className="mb-3 flex items-center justify-between">
             <div>
@@ -142,40 +142,6 @@ export default function AdminDashboardSubscriptionsPage() {
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </div>
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <header className="mb-3 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Upgrades & Downgrades
-              </h3>
-              <p className="text-sm text-slate-500">
-                Movement across tiers for the period
-              </p>
-            </div>
-            <BarChart3 className="h-5 w-5 text-slate-500" />
-          </header>
-          <div className="space-y-2 text-sm text-slate-700">
-            <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-              <span>Upgrades</span>
-              <span className="font-semibold">
-                {formatNumber(subscriptions?.upgradeDowngrade?.upgrades)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-              <span>Downgrades</span>
-              <span className="font-semibold">
-                {formatNumber(subscriptions?.upgradeDowngrade?.downgrades)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-              <span>Net Change</span>
-              <span className="font-semibold">
-                {formatNumber(subscriptions?.upgradeDowngrade?.netChange)}
-              </span>
-            </div>
           </div>
         </section>
       </div>

@@ -5,6 +5,14 @@ import { Crown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useSubscriptionTiers } from "@/hooks/subscription/useSubscriptionTiers";
 import type { SubscriptionTier } from "@/types/subscription/subscription.response";
 import { loadDecodedUser } from "@/utils/secure-user";
@@ -103,7 +111,7 @@ export default function SubscriptionPage() {
 
   return (
     <section className="relative bg-slate-50 pt-7 pb-15">
-      <div className="mx-auto max-w-7xl px-6 text-center">
+      <div className="mx-auto max-w-7xl px-6 text-center relative">
         <div className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-full shadow-md bg-gradient-to-r from-indigo-500 to-purple-500">
           <Crown className="h-4 w-4" />
           Pricing Plan
@@ -115,6 +123,39 @@ export default function SubscriptionPage() {
             Pricing Plan
           </span>
         </h2>
+        <Dialog>
+          <div className="mt-5 flex items-center justify-center sm:absolute sm:right-6 sm:top-6 sm:mt-0">
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                className="rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-semibold text-amber-900 shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-100"
+              >
+                Plan change rule
+              </button>
+            </DialogTrigger>
+          </div>
+          <DialogContent className="border-amber-200 bg-amber-50 text-amber-900">
+            <DialogHeader>
+              <DialogTitle>Plan change rule</DialogTitle>
+              <DialogDescription asChild>
+                <div className="text-amber-900/90">
+                  <ul className="list-disc space-y-1 pl-5">
+                    <li>
+                      Upgrading to a higher-priced plan replaces your current
+                      quota with the new plan&apos;s quota limit.
+                    </li>
+                    <li>The quota does not stack with your old plan.</li>
+                    <li>
+                      Any remaining quota from the old plan does not carry
+                      over.
+                    </li>
+                    <li>Only the latest plan&apos;s quota is active.</li>
+                  </ul>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
 
         {loading && activeSortedTiers.length === 0 && (
           <div
