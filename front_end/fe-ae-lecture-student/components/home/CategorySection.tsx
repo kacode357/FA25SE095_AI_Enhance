@@ -90,15 +90,11 @@ export default function CategorySection() {
               </div>
 
               <div className="w-full overflow-hidden bg-black shadow-xl aspect-video rounded-3xl">
-                <video
-                  src="/demo_crawler.mp4"
-                  controls
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
+                <img
+                  title="Crawler tool"
+                  src="/demo_crawler.jpg"
                   className="object-cover w-full h-full"
-                  // poster="/poster.jpg"
+                // poster="/poster.jpg"
                 />
               </div>
             </div>
