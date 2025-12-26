@@ -58,7 +58,13 @@ export default function MyAssignmentsPage() {
 
   // Assignments query (payload)
   const query: MyAssignmentsQuery = useMemo(
-    () => ({ pageNumber, pageSize }),
+    () => ({
+      pageNumber,
+      pageSize,
+      statuses: 3,
+      sortBy: "DueDate",
+      sortOrder: "asc",
+    }),
     [pageNumber, pageSize]
   );
 

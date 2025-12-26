@@ -45,7 +45,7 @@ export interface GetAssignmentsQuery {
 
 export interface MyAssignmentsQuery {
   courseId?: string;
-  statuses?: AssignmentStatusFilter[];
+  statuses?: AssignmentStatusFilter | AssignmentStatusFilter[];
   isUpcoming?: boolean;
   isOverdue?: boolean;
   pageNumber?: number;
