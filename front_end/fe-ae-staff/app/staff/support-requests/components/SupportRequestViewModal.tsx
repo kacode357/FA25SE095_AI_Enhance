@@ -21,6 +21,8 @@ type Props = {
     onAccept?: (id: string) => Promise<void>;
     onReload?: () => Promise<void> | void;
     actionLoading?: boolean;
+    /** When true, hide the Reject button (e.g. for assigned list view) */
+    hideReject?: boolean;
 };
 
 const dt = (s?: string | null) => {
@@ -33,7 +35,7 @@ const dt = (s?: string | null) => {
     }
 };
 
-export default function SupportRequestViewModal({ open, onOpenChange, item, onAccept, onReload, actionLoading }: Props) {
+export default function SupportRequestViewModal({ open, onOpenChange, item, onAccept, onReload, actionLoading, hideReject }: Props) {
     const images: { src: string; label: string }[] = (() => {
         if (!item || !item.images) return [];
 
@@ -169,7 +171,7 @@ export default function SupportRequestViewModal({ open, onOpenChange, item, onAc
                         </Button>
                     )}
 
-                    {item && item.status !== SupportRequestStatus.InProgress && (
+                    {item && !hideReject && item.status !== SupportRequestStatus.InProgress && (
                         <SupportRequestRejectButton
                             requestId={item.id}
                             disabled={actionLoading}

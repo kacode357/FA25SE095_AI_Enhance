@@ -284,6 +284,7 @@ export default function SupportRequestList({
         onAccept={onAccept}
         onReload={onReload}
         actionLoading={actionLoading}
+        hideReject={type === "assigned"}
       />
 
       {/* Pagination */}

@@ -262,7 +262,7 @@ export default function SupportRequestsList({ courseId }: Props) {
               className="border border-slate-200 rounded-lg p-4 bg-white shadow-sm"
             >
               <div className="flex items-start gap-10">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0 pr-4">
                   <span
                     className={`text-xs px-2 py-1 mb-2 rounded-full font-medium ${statusColor(
                       item.status
@@ -300,11 +300,9 @@ export default function SupportRequestsList({ courseId }: Props) {
                   </div>
 
                   {/* description */}
-                  <div className="mt-3 text-sm text-slate-700">
-                    <span className="text-sm text-slate-600-">
-                      Description:
-                    </span>{" "}
-                    {item.description || "-"}
+                  <div className="mt-3 text-sm text-slate-700 whitespace-normal break-words max-w-full">
+                    <span className="text-sm text-slate-600-">Description:</span>{" "}
+                    <span className="block max-w-full">{item.description || "-"}</span>
                   </div>
 
                   {/* details grid */}
@@ -351,16 +349,10 @@ export default function SupportRequestsList({ courseId }: Props) {
 
                 {/* Right side: buttons + timestamps */}
                 <div className="w-56 flex-shrink-0 flex flex-col items-end gap-3">
-                  <div className="text-right text-xs text-slate-400">
-                      <div>
-                        Requested: {item.requestedAt ? formatToVN(item.requestedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}
-                      </div>
-                      <div>
-                        Accepted: {item.acceptedAt ? formatToVN(item.acceptedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}
-                      </div>
-                      <div>
-                        Resolved: {item.resolvedAt ? formatToVN(item.resolvedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}
-                      </div>
+                  <div className="text-right text-[11px] text-slate-400 space-y-0.5">
+                    <p className="truncate">Requested: {item.requestedAt ? formatToVN(item.requestedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}</p>
+                    <p className="truncate">Accepted: {item.acceptedAt ? formatToVN(item.acceptedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}</p>
+                    <p className="truncate">Resolved: {item.resolvedAt ? formatToVN(item.resolvedAt, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}</p>
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
