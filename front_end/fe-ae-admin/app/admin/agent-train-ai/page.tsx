@@ -100,6 +100,7 @@ const AgentTrainingIndexPage: React.FC = () => {
     const statsAbortController = new AbortController();
     const totalSteps = 8;
     let completedSteps = 0;
+    let hasError = false;
 
     const resetInitialData = () => {
       setInitialQueueStatus(null);
@@ -111,10 +112,14 @@ const AgentTrainingIndexPage: React.FC = () => {
       setInitialInsights(null);
     };
 
-    const updateProgress = () => {
-      if (!isMounted) return;
+    const markStepComplete = (message?: string) => {
+      if (!isMounted || hasError) return;
+      completedSteps += 1;
       const pct = Math.round((completedSteps / totalSteps) * 100);
       setBootstrapProgress(pct);
+      if (message) {
+        setLoadingMessage(message);
+      }
     };
 
     const bootstrapData = async () => {
@@ -128,62 +133,71 @@ const AgentTrainingIndexPage: React.FC = () => {
       resetInitialData();
 
       try {
-        setLoadingMessage("Checking training API health...");
-        await trainingApi.healthCheck();
-        if (!isMounted) return;
-        completedSteps += 1;
-        updateProgress();
+        const runStep = async <T,>(
+          action: () => Promise<T>,
+          onSuccess: (value: T) => void,
+          message: string
+        ) => {
+          return action()
+            .then((value) => {
+              if (!isMounted || hasError) return;
+              onSuccess(value);
+              markStepComplete(message);
+            })
+            .catch((error) => {
+              if (!isMounted) return;
+              if (!hasError) {
+                hasError = true;
+                throw error;
+              }
+            });
+        };
 
-        setLoadingMessage("Syncing training statistics...");
-        const stats = await trainingApi.getStats(statsAbortController.signal);
-        if (!isMounted) return;
-        setInitialStats(stats);
-        completedSteps += 1;
-        updateProgress();
+        const steps = [
+          runStep(
+            () => trainingApi.healthCheck(),
+            () => undefined,
+            "Training API ready"
+          ),
+          runStep(
+            () => trainingApi.getStats(statsAbortController.signal),
+            setInitialStats,
+            "Training statistics synced"
+          ),
+          runStep(
+            () => trainingApi.getQueueStatus(),
+            setInitialQueueStatus,
+            "Queue status loaded"
+          ),
+          runStep(
+            () => trainingApi.getPendingCommitsStatus(),
+            setInitialPendingCommits,
+            "Commit progress loaded"
+          ),
+          runStep(
+            () => trainingApi.getPendingBuffers(),
+            setInitialPendingBuffers,
+            "Pending buffers loaded"
+          ),
+          runStep(
+            () => trainingApi.listBuffers(),
+            setInitialAllBuffers,
+            "Buffer catalog loaded"
+          ),
+          runStep(
+            () => trainingApi.getVersionHistory(),
+            setInitialVersionHistory,
+            "Version history loaded"
+          ),
+          runStep(
+            () => trainingApi.getLearningInsights(),
+            setInitialInsights,
+            "Learning insights loaded"
+          ),
+        ];
 
-        setLoadingMessage("Fetching queue status...");
-        const queue = await trainingApi.getQueueStatus();
-        if (!isMounted) return;
-        setInitialQueueStatus(queue);
-        completedSteps += 1;
-        updateProgress();
-
-        setLoadingMessage("Updating commit progress...");
-        const commits = await trainingApi.getPendingCommitsStatus();
-        if (!isMounted) return;
-        setInitialPendingCommits(commits);
-        completedSteps += 1;
-        updateProgress();
-
-        setLoadingMessage("Loading pending buffers...");
-        const pendingBuffers = await trainingApi.getPendingBuffers();
-        if (!isMounted) return;
-        setInitialPendingBuffers(pendingBuffers);
-        completedSteps += 1;
-        updateProgress();
-
-        setLoadingMessage("Collecting buffer catalog...");
-        const allBuffers = await trainingApi.listBuffers();
-        if (!isMounted) return;
-        setInitialAllBuffers(allBuffers);
-        completedSteps += 1;
-        updateProgress();
-
-        setLoadingMessage("Reading version history...");
-        const versionHistory = await trainingApi.getVersionHistory();
-        if (!isMounted) return;
-        setInitialVersionHistory(versionHistory);
-        completedSteps += 1;
-        updateProgress();
-
-        setLoadingMessage("Gathering learning insights...");
-        const insights = await trainingApi.getLearningInsights();
-        if (!isMounted) return;
-        setInitialInsights(insights);
-        completedSteps += 1;
-        updateProgress();
-
-        if (!isMounted) return;
+        await Promise.all(steps);
+        if (!isMounted || hasError) return;
         setLoadingMessage("Agent training workspace ready");
         setBootstrapping(false);
         setBootstrapProgress(100);

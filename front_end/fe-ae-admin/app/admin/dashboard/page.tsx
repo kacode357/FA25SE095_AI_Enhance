@@ -136,10 +136,6 @@ export default function AdminDashboardOverviewPage() {
     overview?.revenue.revenueByTier || {}
   ).map(([tier, value]) => ({ tier, value }));
 
-  const usersByRoleData = Object.entries(overview?.users.usersByRole || {}).map(
-    ([role, value]) => ({ role, value })
-  );
-
   const timelineLabel =
     overview?.period?.description ||
     `${overview?.period?.startDate || ""} to ${overview?.period?.endDate || ""}`;
@@ -303,8 +299,8 @@ export default function AdminDashboardOverviewPage() {
         </section>
       </div>
 
-      {/* Row 2: Revenue by Tier & Users by Role */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Row 2: Revenue by Tier */}
+      <div className="grid gap-4">
         {/* Revenue by Tier Pie Chart */}
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <header className="mb-3 flex items-center justify-between">
@@ -360,48 +356,6 @@ export default function AdminDashboardOverviewPage() {
                   />
                   <Legend />
                 </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </section>
-
-        {/* Users by Role Bar Chart */}
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <header className="mb-3 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Users by Role
-              </h3>
-              <p className="text-sm text-slate-500">
-                Current user base composition
-              </p>
-            </div>
-            <Users2 className="h-5 w-5 text-slate-500" />
-          </header>
-          <div className="h-72">
-            {usersByRoleData.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-sm text-slate-500">
-                No data.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={usersByRoleData} barSize={26}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e6e9f2" />
-                  <XAxis dataKey="role" tick={{ fontSize: 11 }} />
-                  <YAxis
-                    tickFormatter={(v) => formatNumber(v)}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip
-                    formatter={(value: any) => formatNumber(value as number)}
-                  />
-                  <Bar
-                    dataKey="value"
-                    name="Users"
-                    fill="#f4a23b"
-                    radius={6}
-                  />
-                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
