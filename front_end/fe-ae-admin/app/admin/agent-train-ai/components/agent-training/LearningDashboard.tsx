@@ -426,40 +426,7 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h4 className="text-xs font-medium text-slate-600">
-            Training Progress
-          </h4>
-          <div className="text-2xl font-semibold text-slate-900">
-            {currentCycle || update_cycle}
-          </div>
-          <p className="text-xs text-slate-500">Update Cycles</p>
-          <div className="mt-3 space-y-1">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full rounded-full bg-indigo-500"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-600">
-              Pending Rollouts: {pendingCount || pending_rollouts} /{" "}
-              {maxRollouts || 5}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h4 className="text-xs font-medium text-slate-600">
-            Jobs & Feedback
-          </h4>
-          <div className="text-2xl font-semibold text-slate-900">
-            {total_jobs}
-          </div>
-          <p className="text-xs text-slate-500">Total Jobs</p>
-          <p className="text-[11px] text-slate-600">
-            Awaiting Feedback: {pending_feedback}
-          </p>
-        </div>
+       
 
         <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h4 className="text-xs font-medium text-slate-600">Queue Summary</h4>
