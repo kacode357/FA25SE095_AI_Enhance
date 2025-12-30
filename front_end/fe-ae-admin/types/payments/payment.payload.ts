@@ -13,3 +13,15 @@ export interface AdminSubscriptionPaymentsQuery extends DateRangeFilter {
   tier?: SubscriptionTier;
   status?: SubscriptionPaymentStatus;
 }
+
+export interface AdminPaymentsQuery extends DateRangeFilter {
+  page?: number;
+  pageSize?: number;
+  userId?: string;
+  tierId?: string;
+  status?: SubscriptionPaymentStatus;
+}
+
+export interface AdminPaymentsStatisticsQuery extends DateRangeFilter {
+  tierId?: string;
+}

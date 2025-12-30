@@ -59,3 +59,43 @@ export type GetAdminSubscriptionPaymentsResponse =
   ResponseEnvelope<PaginatedSubscriptionPayments>;
 export type GetAdminSubscriptionPaymentsSummaryResponse =
   ResponseEnvelope<SubscriptionPaymentsSummary>;
+
+export interface AdminPaymentItem {
+  paymentId: string;
+  orderCode: string;
+  tierId: string;
+  tierName: string;
+  tierLevel: number;
+  status: SubscriptionPaymentStatus;
+  amount: number;
+  currency: string;
+  checkoutUrl: string;
+  paymentReference: string;
+  failureReason: string | null;
+  createdAt: string;
+  expiredAt: string;
+  paidAt: string | null;
+  cancelledAt: string | null;
+  userId: string;
+  userEmail: string;
+  userFullName: string;
+}
+
+export interface PaginatedAdminPayments {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  items: AdminPaymentItem[];
+}
+
+export interface AdminPaymentsStatistics {
+  totalPayments: number;
+  totalRevenue: number;
+  statusBreakdown: SubscriptionPaymentsStatusBreakdown;
+}
+
+export type GetAdminPaymentsResponse =
+  ResponseEnvelope<PaginatedAdminPayments>;
+export type GetAdminPaymentsStatisticsResponse =
+  ResponseEnvelope<AdminPaymentsStatistics>;

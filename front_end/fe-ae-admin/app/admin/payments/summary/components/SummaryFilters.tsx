@@ -1,85 +1,117 @@
 "use client";
 
-import { useState } from "react";
-import { Filter, X, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 export type SummaryFiltersState = {
-  searchTerm?: string; // Dùng để search UserId hoặc Email
+  tierId?: string;
   from?: string;
   to?: string;
+};
+
+export type TierOption = {
+  value: string;
+  label: string;
 };
 
 type Props = {
   loading?: boolean;
   filters: SummaryFiltersState;
+  tierOptions?: TierOption[];
   onChange: (filters: SummaryFiltersState) => void;
 };
 
-export default function SummaryFilters({ loading, filters, onChange }: Props) {
-  // State nội bộ để nhập liệu, chưa gọi API ngay
+export default function SummaryFilters({
+  loading,
+  filters,
+  tierOptions = [],
+  onChange,
+}: Props) {
   const [localFilters, setLocalFilters] = useState<SummaryFiltersState>(filters);
+
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
 
   const handleApply = () => {
     onChange(localFilters);
   };
 
   const handleReset = () => {
-    const empty = { searchTerm: "", from: undefined, to: undefined };
+    const empty = { tierId: undefined, from: undefined, to: undefined };
     setLocalFilters(empty);
     onChange(empty);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleApply();
   };
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-slate-50/60 p-5 shadow-sm">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-12 items-end">
-        
-        {/* 1. Search User (Chiếm 4 cột) */}
         <div className="sm:col-span-4 space-y-2">
-          <Label className="text-sm font-medium text-slate-700">Student (ID/Email)</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Enter user email or ID..."
-              className="pl-9 bg-white border-[var(--border)] h-10 focus-visible:ring-brand"
-              value={localFilters.searchTerm ?? ""}
-              onChange={(e) => setLocalFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
-              onKeyDown={handleKeyDown}
-              disabled={loading}
-            />
-          </div>
+          <Label className="text-sm font-medium text-slate-700">Tier</Label>
+          <Select
+            disabled={loading || tierOptions.length === 0}
+            value={localFilters.tierId}
+            onValueChange={(v) =>
+              setLocalFilters((prev) => ({
+                ...prev,
+                tierId: v === "all" ? undefined : v,
+              }))
+            }
+          >
+            <SelectTrigger className="w-full bg-white border-[var(--border)] h-10">
+              <SelectValue placeholder="All Tiers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tiers</SelectItem>
+              {tierOptions.length === 0 ? (
+                <SelectItem value="empty" disabled>
+                  No tiers available
+                </SelectItem>
+              ) : (
+                tierOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* 2. From Date (Chiếm 3 cột) */}
         <div className="sm:col-span-3 space-y-2">
           <Label className="text-sm font-medium text-slate-700">From Date</Label>
           <DateTimePicker
             value={localFilters.from}
-            onChange={(val) => setLocalFilters(prev => ({ ...prev, from: val }))}
+            onChange={(val) =>
+              setLocalFilters((prev) => ({ ...prev, from: val }))
+            }
             placeholder="Start date..."
             className="w-full bg-white border-[var(--border)] h-10"
           />
         </div>
 
-        {/* 3. To Date (Chiếm 3 cột) */}
         <div className="sm:col-span-3 space-y-2">
           <Label className="text-sm font-medium text-slate-700">To Date</Label>
           <DateTimePicker
             value={localFilters.to}
-            onChange={(val) => setLocalFilters(prev => ({ ...prev, to: val }))}
+            onChange={(val) =>
+              setLocalFilters((prev) => ({ ...prev, to: val }))
+            }
             placeholder="End date..."
             className="w-full bg-white border-[var(--border)] h-10"
           />
         </div>
 
-        {/* 4. Buttons (Chiếm 2 cột - Căn phải) */}
         <div className="sm:col-span-2 flex gap-2 justify-end">
           <Button
             variant="outline"
@@ -90,7 +122,7 @@ export default function SummaryFilters({ loading, filters, onChange }: Props) {
           >
             <X className="h-4 w-4" />
           </Button>
-          
+
           <Button
             onClick={handleApply}
             disabled={loading}

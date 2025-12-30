@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   BarChart3, 
@@ -16,25 +16,28 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Components
 import SummaryFilters, { SummaryFiltersState } from "./components/SummaryFilters";
 
 // Hooks & Types
-import { useAdminSubscriptionPaymentsSummary } from "@/hooks/payments/useAdminPaymentsSummary";
+import { useAdminPaymentsSummary } from "@/hooks/payments/useAdminPaymentsSummary";
+import { useSubscriptionTiers } from "@/hooks/subscription/useSubscriptionTiers";
 import { useAdminUsers } from "@/hooks/admin/useAdminUsers";
 import { AdminUserRoleFilter } from "@/types/admin/admin-user.payload";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
 
-export default function SubscriptionSummaryPage() {
+export default function PaymentsSummaryPage() {
   // --- HOOKS ---
-  const { 
-    loading: summaryLoading, 
-    summary, 
-    fetchAdminSubscriptionPaymentsSummary 
-  } = useAdminSubscriptionPaymentsSummary();
+  const {
+    loading: summaryLoading,
+    summary,
+    fetchAdminPaymentsSummary,
+  } = useAdminPaymentsSummary();
+
+  const { loading: tiersLoading, tiers, fetchSubscriptionTiers } =
+    useSubscriptionTiers();
 
   const { 
     loading: usersLoading, 
@@ -44,16 +47,27 @@ export default function SubscriptionSummaryPage() {
 
   const [filters, setFilters] = useState<SummaryFiltersState>({});
 
+  const tierOptions = useMemo(
+    () =>
+      tiers.map((tier) => ({
+        value: tier.id,
+        label: Number.isFinite(tier.level)
+          ? `${tier.name} (L${tier.level})`
+          : tier.name,
+      })),
+    [tiers]
+  );
+
   // --- EFFECT: FETCH DATA ---
   useEffect(() => {
-    // 1. Gọi API Summary (có filter user)
-    fetchAdminSubscriptionPaymentsSummary({
-      userId: filters.searchTerm, // Map searchTerm vào userId
+    // Summary stats
+    fetchAdminPaymentsSummary({
+      tierId: filters.tierId,
       from: filters.from,
       to: filters.to
     });
 
-    // 2. Gọi API Recent Students (Luôn lấy 5 em mới nhất)
+    // Recent students
     fetchAdminUsers({
       page: 1,
       pageSize: 5,
@@ -61,7 +75,11 @@ export default function SubscriptionSummaryPage() {
       sortBy: "CreatedAt",
       sortOrder: "Desc"
     });
-  }, [fetchAdminSubscriptionPaymentsSummary, fetchAdminUsers, filters]);
+  }, [fetchAdminPaymentsSummary, fetchAdminUsers, filters]);
+
+  useEffect(() => {
+    fetchSubscriptionTiers({ isActive: true });
+  }, [fetchSubscriptionTiers]);
 
   // Helper format VND
   const formatMoney = (amount: number) => {
@@ -86,10 +104,11 @@ export default function SubscriptionSummaryPage() {
       <div className="px-5 space-y-6">
         
         {/* --- 1. FILTERS --- */}
-        <SummaryFilters 
-          loading={summaryLoading} 
-          filters={filters} 
-          onChange={setFilters} 
+        <SummaryFilters
+          loading={summaryLoading || tiersLoading}
+          filters={filters}
+          tierOptions={tierOptions}
+          onChange={setFilters}
         />
 
         {/* --- 2. KEY METRICS (Overview Cards) --- */}

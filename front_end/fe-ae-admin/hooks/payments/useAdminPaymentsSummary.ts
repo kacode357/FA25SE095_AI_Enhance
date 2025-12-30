@@ -1,29 +1,26 @@
-// hooks/payments/useAdminSubscriptionPaymentsSummary.ts
+// hooks/payments/useAdminPaymentsSummary.ts
 "use client";
 
 import { useCallback, useState } from "react";
 
 import { PaymentService } from "@/services/payment.services";
 import type {
-  GetAdminSubscriptionPaymentsSummaryResponse,
-  SubscriptionPaymentsSummary,
+  AdminPaymentsStatistics,
+  GetAdminPaymentsStatisticsResponse,
 } from "@/types/payments/payment.response";
-import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/payment.payload";
+import type { AdminPaymentsStatisticsQuery } from "@/types/payments/payment.payload";
 
-export function useAdminSubscriptionPaymentsSummary() {
+export function useAdminPaymentsSummary() {
   const [loading, setLoading] = useState(false);
-  const [summary, setSummary] = useState<SubscriptionPaymentsSummary | null>(
-    null
-  );
+  const [summary, setSummary] = useState<AdminPaymentsStatistics | null>(null);
 
-  const fetchAdminSubscriptionPaymentsSummary = useCallback(
+  const fetchAdminPaymentsSummary = useCallback(
     async (
-      params?: AdminSubscriptionPaymentsQuery
-    ): Promise<GetAdminSubscriptionPaymentsSummaryResponse> => {
+      params?: AdminPaymentsStatisticsQuery
+    ): Promise<GetAdminPaymentsStatisticsResponse> => {
       setLoading(true);
       try {
-        const res =
-          await PaymentService.getAdminSubscriptionPaymentsSummary(params);
+        const res = await PaymentService.getAdminPaymentsStatistics(params);
 
         setSummary(res.data);
         return res;
@@ -37,6 +34,6 @@ export function useAdminSubscriptionPaymentsSummary() {
   return {
     loading,
     summary,
-    fetchAdminSubscriptionPaymentsSummary,
+    fetchAdminPaymentsSummary,
   };
 }

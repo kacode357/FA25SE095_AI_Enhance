@@ -3,12 +3,26 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
-import type { SubscriptionPaymentItem } from "@/types/payments/payment.response";
+import type { AdminPaymentItem } from "@/types/payments/payment.response";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
 
 type Props = {
   loading?: boolean;
-  items: SubscriptionPaymentItem[];
+  items: AdminPaymentItem[];
+};
+
+const formatMoney = (amount: number, currency: string) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency }).format(
+    amount
+  );
+
+const formatTierLabel = (item: AdminPaymentItem) => {
+  if (item.tierName) {
+    return Number.isFinite(item.tierLevel)
+      ? `${item.tierName} (L${item.tierLevel})`
+      : item.tierName;
+  }
+  return item.tierId;
 };
 
 export default function PaymentTable({ loading, items }: Props) {
@@ -21,11 +35,6 @@ export default function PaymentTable({ loading, items }: Props) {
       </div>
     );
   }
-
-  // Hàm format tiền tệ inline nếu mày chưa có utils
-  const formatMoney = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: currency }).format(amount);
-  };
 
   return (
     <div className="rounded-md border border-[var(--border)] bg-white overflow-hidden">
@@ -46,18 +55,30 @@ export default function PaymentTable({ loading, items }: Props) {
             {showSkeleton
               ? Array.from({ length: 5 }).map((_, idx) => (
                   <tr key={idx} className="border-b border-[var(--border)]">
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-4 py-3">
-                        <div className="space-y-1">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-24" />
-                        </div>
+                      <Skeleton className="h-4 w-24" />
                     </td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-4 w-20" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-5 w-20" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
                   </tr>
                 ))
               : items.map((item) => (
@@ -70,13 +91,20 @@ export default function PaymentTable({ loading, items }: Props) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="font-medium text-slate-900">{item.userFullName}</span>
-                        <span className="text-xs text-slate-500">{item.userEmail}</span>
+                        <span className="font-medium text-slate-900">
+                          {item.userFullName}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {item.userEmail}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700 font-normal">
-                        {item.tier}
+                      <Badge
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700 font-normal"
+                      >
+                        {formatTierLabel(item)}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900">

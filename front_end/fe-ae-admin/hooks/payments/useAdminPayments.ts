@@ -1,13 +1,13 @@
-// hooks/payments/useAdminSubscriptionPayments.ts
+// hooks/payments/useAdminPayments.ts
 "use client";
 
 import { useCallback, useState } from "react";
 
 import { PaymentService } from "@/services/payment.services";
-import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/payment.payload";
+import type { AdminPaymentsQuery } from "@/types/payments/payment.payload";
 import type {
-  GetAdminSubscriptionPaymentsResponse,
-  SubscriptionPaymentItem,
+  AdminPaymentItem,
+  GetAdminPaymentsResponse,
 } from "@/types/payments/payment.response";
 
 type PaginationState = {
@@ -28,19 +28,17 @@ const defaultPagination: PaginationState = {
   hasNextPage: false,
 };
 
-export function useAdminSubscriptionPayments() {
+export function useAdminPayments() {
   const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState<SubscriptionPaymentItem[]>([]);
+  const [items, setItems] = useState<AdminPaymentItem[]>([]);
   const [pagination, setPagination] =
     useState<PaginationState>(defaultPagination);
 
-  const fetchAdminSubscriptionPayments = useCallback(
-    async (
-      params?: AdminSubscriptionPaymentsQuery
-    ): Promise<GetAdminSubscriptionPaymentsResponse> => {
+  const fetchAdminPayments = useCallback(
+    async (params?: AdminPaymentsQuery): Promise<GetAdminPaymentsResponse> => {
       setLoading(true);
       try {
-        const res = await PaymentService.getAdminSubscriptionPayments(params);
+        const res = await PaymentService.getAdminPayments(params);
         const page = res.data;
 
         setItems(page.items || []);
@@ -65,6 +63,6 @@ export function useAdminSubscriptionPayments() {
     loading,
     items,
     pagination,
-    fetchAdminSubscriptionPayments,
+    fetchAdminPayments,
   };
 }

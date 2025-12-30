@@ -106,20 +106,24 @@ export const mainNav = [
         href: "/admin/subscriptions/create",
         label: "Create Plan",
       },
+      {
+        href: "/admin/subscription-tiers",
+        label: "Subscription Tiers",
+      },
     ],
   },
   {
-    href: "/admin/subscription-payments",
-    label: "Subscription Payments",
+    href: "/admin/payments",
+    label: "Payments",
     icon: CreditCard,
-    description: "Manage subscription payments",
+    description: "Manage payment activity",
     children: [
       {
-        href: "/admin/subscription-payments",
+        href: "/admin/payments",
         label: "Payments List",
       },
       {
-        href: "/admin/subscription-payments/summary",
+        href: "/admin/payments/summary",
         label: "Summary & Analytics",
       },
     ],

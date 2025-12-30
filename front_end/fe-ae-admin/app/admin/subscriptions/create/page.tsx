@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -24,8 +24,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 import { useCreateSubscriptionPlan } from "@/hooks/subscription/useCreateSubscriptionPlan";
+import { useSubscriptionTiers } from "@/hooks/subscription/useSubscriptionTiers";
 import type { CreateSubscriptionPlanPayload } from "@/types/subscription/subscription.payload";
-import { SubscriptionTier } from "@/types/subscription/subscription.response";
 
 const initialForm: CreateSubscriptionPlanPayload = {
   name: "",
@@ -36,22 +36,32 @@ const initialForm: CreateSubscriptionPlanPayload = {
   quotaLimit: 0,
   features: [],
   isActive: true,
-  tier: SubscriptionTier.Free,
+  subscriptionTierId: "",
 };
-
-const tierOptions = [
-  { value: SubscriptionTier.Free, label: "Free" },
-  { value: SubscriptionTier.Basic, label: "Basic" },
-  { value: SubscriptionTier.Premium, label: "Premium" },
-  { value: SubscriptionTier.Enterprise, label: "Enterprise" },
-];
 
 export default function CreateSubscriptionPlanPage() {
   const router = useRouter();
   const { loading, createSubscriptionPlan } = useCreateSubscriptionPlan();
+  const { loading: tiersLoading, tiers, fetchSubscriptionTiers } =
+    useSubscriptionTiers();
 
   const [form, setForm] = useState<CreateSubscriptionPlanPayload>(initialForm);
   const [featuresInput, setFeaturesInput] = useState("");
+
+  useEffect(() => {
+    fetchSubscriptionTiers({ isActive: true });
+  }, [fetchSubscriptionTiers]);
+
+  const tierOptions = useMemo(
+    () =>
+      tiers.map((tier) => ({
+        value: tier.id,
+        label: Number.isFinite(tier.level)
+          ? `${tier.name} (L${tier.level})`
+          : tier.name,
+      })),
+    [tiers]
+  );
 
   const handleChange =
     (field: keyof CreateSubscriptionPlanPayload) =>
@@ -75,7 +85,7 @@ export default function CreateSubscriptionPlanPage() {
   const handleTierChange = (value: string) => {
     setForm((prev) => ({
       ...prev,
-      tier: Number(value) as SubscriptionTier,
+      subscriptionTierId: value,
     }));
   };
 
@@ -96,6 +106,7 @@ export default function CreateSubscriptionPlanPage() {
     e.preventDefault();
 
     try {
+      if (!form.subscriptionTierId) return;
       const payload: CreateSubscriptionPlanPayload = {
         ...form,
         features: parseFeatures(),
@@ -104,8 +115,8 @@ export default function CreateSubscriptionPlanPage() {
       const create = await createSubscriptionPlan(payload);
       if (create.status === 200 || create.status === 201) {
         router.push("/admin/subscriptions");
-      } return;
-
+      }
+      return;
     } catch (err) {
     }
   };
@@ -254,18 +265,25 @@ export default function CreateSubscriptionPlanPage() {
                 <div className="space-y-2">
                   <Label className="text-xs font-medium">Tier</Label>
                   <Select
-                    value={String(form.tier)}
+                    value={form.subscriptionTierId}
                     onValueChange={handleTierChange}
+                    disabled={tiersLoading || tierOptions.length === 0}
                   >
                     <SelectTrigger className="input h-10">
                       <SelectValue placeholder="Select tier" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tierOptions.map((t) => (
-                        <SelectItem key={t.value} value={String(t.value)}>
-                          {t.label}
+                      {tierOptions.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          No tiers available
                         </SelectItem>
-                      ))}
+                      ) : (
+                        tierOptions.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            {t.label}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -320,7 +338,7 @@ export default function CreateSubscriptionPlanPage() {
                 <Button
                   type="submit"
                   className="btn btn-gradient-slow px-4 py-2 text-xs sm:text-sm"
-                  disabled={loading}
+                  disabled={loading || !form.subscriptionTierId}
                 >
                   {loading ? "Creating..." : "Create plan"}
                 </Button>

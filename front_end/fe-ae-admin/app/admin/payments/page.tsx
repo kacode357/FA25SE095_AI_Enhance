@@ -9,38 +9,55 @@ import PaymentFilters, { PaymentFiltersState } from "./components/PaymentFilters
 import PaymentTable from "./components/PaymentTable";
 
 // Hooks & Types
-import { useAdminSubscriptionPayments } from "@/hooks/payments/useAdminPayments";
-import type { AdminSubscriptionPaymentsQuery } from "@/types/payments/payment.payload";
-import type { SubscriptionTier } from "@/types/subscription/subscription.response";
+import { useAdminPayments } from "@/hooks/payments/useAdminPayments";
+import { useSubscriptionTiers } from "@/hooks/subscription/useSubscriptionTiers";
+import type { AdminPaymentsQuery } from "@/types/payments/payment.payload";
 
 const PAGE_SIZE = 20;
 
-export default function AdminSubscriptionPaymentsPage() {
+export default function AdminPaymentsPage() {
   // 1. Hook
-  const { loading, items, pagination, fetchAdminSubscriptionPayments } = useAdminSubscriptionPayments();
+  const { loading, items, pagination, fetchAdminPayments } = useAdminPayments();
+  const { loading: tiersLoading, tiers, fetchSubscriptionTiers } =
+    useSubscriptionTiers();
 
   // 2. Local State
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<PaymentFiltersState>({});
 
   // 3. Build Query Params
-  const queryParams: AdminSubscriptionPaymentsQuery = useMemo(
+  const queryParams: AdminPaymentsQuery = useMemo(
     () => ({
       page,
       pageSize: PAGE_SIZE,
-      userId: filters.searchTerm, // Backend của mày dùng userId để search? Nếu search cả orderCode thì cần check lại BE
-      status: filters.status ? Number(filters.status) : undefined, // Convert string -> enum number
-    tier: filters.tier as unknown as SubscriptionTier,
+      userId: filters.searchTerm,
+      status: filters.status ? Number(filters.status) : undefined,
+      tierId: filters.tierId,
       from: filters.from || undefined,
       to: filters.to || undefined,
     }),
     [page, filters]
   );
 
+  const tierOptions = useMemo(
+    () =>
+      tiers.map((tier) => ({
+        value: tier.id,
+        label: Number.isFinite(tier.level)
+          ? `${tier.name} (L${tier.level})`
+          : tier.name,
+      })),
+    [tiers]
+  );
+
   // 4. Fetch Data
   useEffect(() => {
-    fetchAdminSubscriptionPayments(queryParams);
-  }, [fetchAdminSubscriptionPayments, queryParams]);
+    fetchAdminPayments(queryParams);
+  }, [fetchAdminPayments, queryParams]);
+
+  useEffect(() => {
+    fetchSubscriptionTiers({ isActive: true });
+  }, [fetchSubscriptionTiers]);
 
   // 5. Handlers
   const handlePageChange = (nextPage: number) => {
@@ -49,7 +66,7 @@ export default function AdminSubscriptionPaymentsPage() {
 
   const handleFiltersChange = (patch: Partial<PaymentFiltersState>) => {
     setFilters((prev) => ({ ...prev, ...patch }));
-    setPage(1); // Reset về trang 1 khi filter
+    setPage(1); // Reset to page 1 when filters change.
   };
 
   return (
@@ -62,9 +79,9 @@ export default function AdminSubscriptionPaymentsPage() {
       {/* Header */}
       <div className="flex flex-col gap-2 px-4 pt-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Subscription Payments</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Payments</h1>
           <p className="text-sm text-slate-500">
-            View and manage all subscription transactions.
+            Track and manage all payment transactions.
           </p>
         </div>
       </div>
@@ -72,8 +89,9 @@ export default function AdminSubscriptionPaymentsPage() {
       {/* Main Content */}
       <div className="space-y-4 px-4 pb-10">
         <PaymentFilters
-          loading={loading}
+          loading={loading || tiersLoading}
           filters={filters}
+          tierOptions={tierOptions}
           onChange={handleFiltersChange}
         />
 

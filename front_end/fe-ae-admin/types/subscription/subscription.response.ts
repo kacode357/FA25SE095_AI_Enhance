@@ -23,7 +23,9 @@ export interface SubscriptionPlan {
   quotaLimit: number;
   features: string[];
   isActive: boolean;
-  tier: SubscriptionTier;
+  subscriptionTierId: string;
+  subscriptionTierName?: string | null;
+  subscriptionTierLevel?: number | null;
   createdAt: string;
   updatedAt: string | null;
 }

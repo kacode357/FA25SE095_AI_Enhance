@@ -1,12 +1,12 @@
 // app/admin/subscriptions/components/subscription-plan-form.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useUpdateSubscriptionPlan } from "@/hooks/subscription/useUpdateSubscriptionPlan";
+import { useSubscriptionTiers } from "@/hooks/subscription/useSubscriptionTiers";
 import type {
   SubscriptionPlan,
-  SubscriptionTier,
 } from "@/types/subscription/subscription.response";
 import type { UpdateSubscriptionPlanPayload } from "@/types/subscription/subscription.payload";
 
@@ -20,13 +20,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 
@@ -45,17 +38,9 @@ type LocalFormState = {
   quotaLimit: number;
   features: string[];
   isActive: boolean;
-  tier: SubscriptionTier;
 };
 
 const emptyLocalForm: LocalFormState | null = null;
-
-const tierOptions = [
-  { value: 0, label: "Free" },
-  { value: 1, label: "Basic" },
-  { value: 2, label: "Premium" },
-  { value: 3, label: "Enterprise" },
-];
 
 export function SubscriptionPlanForm({
   editingPlan,
@@ -63,9 +48,15 @@ export function SubscriptionPlanForm({
   onClearSelection,
 }: Props) {
   const { loading, updateSubscriptionPlan } = useUpdateSubscriptionPlan();
+  const { loading: tiersLoading, tiers, fetchSubscriptionTiers } =
+    useSubscriptionTiers();
 
   const [form, setForm] = useState<LocalFormState | null>(emptyLocalForm);
   const [featuresInput, setFeaturesInput] = useState("");
+
+  useEffect(() => {
+    fetchSubscriptionTiers({ isActive: true });
+  }, [fetchSubscriptionTiers]);
 
   useEffect(() => {
     if (!editingPlan) {
@@ -83,7 +74,6 @@ export function SubscriptionPlanForm({
       quotaLimit: editingPlan.quotaLimit,
       features: editingPlan.features ?? [],
       isActive: editingPlan.isActive,
-      tier: editingPlan.tier,
     });
 
     setFeaturesInput((editingPlan.features ?? []).join(", "));
@@ -109,6 +99,30 @@ export function SubscriptionPlanForm({
       </Card>
     );
   }
+
+  const tierLabel = useMemo(() => {
+    const match = tiers.find(
+      (tier) => tier.id === editingPlan.subscriptionTierId
+    );
+    if (match) {
+      return Number.isFinite(match.level)
+        ? `${match.name} (L${match.level})`
+        : match.name;
+    }
+    if (editingPlan.subscriptionTierName) {
+      return Number.isFinite(editingPlan.subscriptionTierLevel)
+        ? `${editingPlan.subscriptionTierName} (L${editingPlan.subscriptionTierLevel})`
+        : editingPlan.subscriptionTierName;
+    }
+    if (tiersLoading) return "Loading tiers...";
+    return editingPlan.subscriptionTierId;
+  }, [
+    editingPlan.subscriptionTierId,
+    editingPlan.subscriptionTierLevel,
+    editingPlan.subscriptionTierName,
+    tiers,
+    tiersLoading,
+  ]);
 
   const handleChange =
     (field: keyof LocalFormState) =>
@@ -136,17 +150,6 @@ export function SubscriptionPlanForm({
           : prev
       );
     };
-
-  const handleTierChange = (value: string) => {
-    setForm((prev) =>
-      prev
-        ? {
-            ...prev,
-            tier: Number(value) as SubscriptionTier,
-          }
-        : prev
-    );
-  };
 
   const handleActiveChange = (checked: boolean) => {
     setForm((prev) =>
@@ -199,7 +202,6 @@ export function SubscriptionPlanForm({
       quotaLimit: editingPlan.quotaLimit,
       features: editingPlan.features ?? [],
       isActive: editingPlan.isActive,
-      tier: editingPlan.tier,
     });
     setFeaturesInput((editingPlan.features ?? []).join(", "));
   };
@@ -327,21 +329,14 @@ export function SubscriptionPlanForm({
           <div className="grid gap-3 sm:grid-cols-[1.4fr,1fr] sm:items-center">
             <div className="space-y-2">
               <Label className="text-xs font-medium">Tier</Label>
-              <Select
-                value={String(form.tier)}
-                onValueChange={handleTierChange}
-              >
-                <SelectTrigger className="input h-9">
-                  <SelectValue placeholder="Select tier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tierOptions.map((t) => (
-                    <SelectItem key={t.value} value={String(t.value)}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={tierLabel}
+                className="input h-9 bg-slate-50"
+                readOnly
+              />
+              <p className="text-[11px] text-slate-500">
+                Tier changes are managed in subscription tiers.
+              </p>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-slate-50 px-3 py-2">

@@ -1,6 +1,4 @@
 // types/subscription/subscription.payload.ts
-import type { SubscriptionTier } from "@/types/subscription/subscription.response";
-
 export interface SubscriptionPlansQuery {
   isActive?: boolean;
 }
@@ -14,7 +12,7 @@ export interface CreateSubscriptionPlanPayload {
   quotaLimit: number;
   features: string[];
   isActive: boolean;
-  tier: SubscriptionTier;
+  subscriptionTierId: string;
 }
 
 export interface UpdateSubscriptionPlanPayload {
