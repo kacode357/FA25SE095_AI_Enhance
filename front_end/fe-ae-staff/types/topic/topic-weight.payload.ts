@@ -1,0 +1,33 @@
+export interface CreateTopicWeightPayload {
+  topicId: string;
+  courseCodeId: string;
+  specificCourseId: string;
+  weightPercentage: number;
+  description?: string | null;
+}
+
+export interface UpdateTopicWeightPayload {
+  id: string;
+  topicId?: string;
+  courseCodeId?: string | null;
+  specificCourseId?: string | null;
+  weightPercentage?: number;
+  description?: string | null;
+}
+
+export interface DeleteTopicWeightPayload {
+  id: string;
+}
+
+export interface BulkTopicWeightItem {
+  topicId: string;
+  weightPercentage: number;
+  description?: string | null;
+}
+
+export type BulkTopicWeightPayload = BulkTopicWeightItem[];
+
+export interface UpdateTopicWeightBody {
+  weightPercentage?: number;
+  description?: string | null;
+}

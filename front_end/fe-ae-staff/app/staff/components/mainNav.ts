@@ -41,7 +41,8 @@ export const mainNav = [
         children: [
           // First child: the actual courses list page
           { href: "/staff/courses", label: "Active Courses" },
-          { href: "/staff/courses/topics", label: "Topics" },
+              { href: "/staff/courses/topics", label: "Topics" },
+              { href: "/staff/courses/topic-weights", label: "Topic Weights" },
           { href: "/staff/courses/topics/create", label: "Create Topic" },
         ],
       },

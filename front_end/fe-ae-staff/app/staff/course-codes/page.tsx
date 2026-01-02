@@ -3,8 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
-import { PencilLine, Plus, Trash2 } from "lucide-react";
+import { Eye, PencilLine, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -170,6 +171,25 @@ export default function CourseCodesPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
+                        {/* View weights (navigate to page) */}
+                        <div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link href={`/staff/course-codes/${c.id}/weights`}>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 px-2 text-sky-600 cursor-pointer hover:bg-sky-50 hover:shadow-md"
+                                >
+                                  <Eye className="size-4" />
+                                </Button>
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="bg-slate-900">
+                              View weighting configuration by course code
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+
                         {/* Edit */}
                         <Dialog open={openEditId === c.id} onOpenChange={(o) => setOpenEditId(o ? c.id : null)}>
                           <DialogTrigger asChild>
