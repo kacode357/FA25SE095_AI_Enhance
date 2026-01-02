@@ -1,12 +1,21 @@
 // app/admin/subscriptions/components/subscription-plans-table.tsx
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { SubscriptionPlan } from "@/types/subscription/subscription.response";
 import { useToggleSubscriptionPlan } from "@/hooks/subscription/useToggleSubscriptionPlan";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Props = {
   plans: SubscriptionPlan[];
@@ -22,19 +31,19 @@ export function SubscriptionPlansTable({
   const { loading: toggling, toggleSubscriptionPlan } =
     useToggleSubscriptionPlan();
   const router = useRouter();
+  const [confirmPlan, setConfirmPlan] = useState<SubscriptionPlan | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleToggleActive = async (plan: SubscriptionPlan) => {
-    const confirmMsg = plan.isActive
-      ? `Deactivate plan "${plan.name}"?`
-      : `Activate plan "${plan.name}"?`;
-
-    if (!window.confirm(confirmMsg)) return;
-
+  const handleToggleActive = async () => {
+    if (!confirmPlan) return;
     try {
-      await toggleSubscriptionPlan(plan.id);
+      await toggleSubscriptionPlan(confirmPlan.id);
       onChanged();
     } catch (err) {
       console.error(err);
+    } finally {
+      setConfirmOpen(false);
+      setConfirmPlan(null);
     }
   };
 
@@ -134,7 +143,10 @@ export function SubscriptionPlansTable({
                       className={`btn-table ${
                         plan.isActive ? "btn-table-danger" : "btn-table-success"
                       }`}
-                      onClick={() => handleToggleActive(plan)}
+                      onClick={() => {
+                        setConfirmPlan(plan);
+                        setConfirmOpen(true);
+                      }}
                       disabled={toggling}
                     >
                       {plan.isActive ? "Deactivate" : "Activate"}
@@ -146,6 +158,47 @@ export function SubscriptionPlansTable({
           </tbody>
         </table>
       </CardContent>
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          setConfirmOpen(open);
+          if (!open) {
+            setConfirmPlan(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmPlan?.isActive ? "Deactivate plan?" : "Activate plan?"}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmPlan
+                ? `${
+                    confirmPlan.isActive ? "Deactivate" : "Activate"
+                  } "${confirmPlan.name}"?`
+                : "Confirm this change for the selected plan."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className={confirmPlan?.isActive ? "btn-table-danger" : undefined}
+              onClick={handleToggleActive}
+              disabled={toggling || !confirmPlan}
+            >
+              {confirmPlan?.isActive ? "Deactivate" : "Activate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

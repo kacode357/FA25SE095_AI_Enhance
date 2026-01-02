@@ -79,6 +79,26 @@ export function SubscriptionPlanForm({
     setFeaturesInput((editingPlan.features ?? []).join(", "));
   }, [editingPlan]);
 
+  const tierLabel = useMemo(() => {
+    if (!editingPlan) return "";
+
+    const match = tiers.find(
+      (tier) => tier.id === editingPlan.subscriptionTierId
+    );
+    if (match) {
+      return Number.isFinite(match.level)
+        ? `${match.name} (L${match.level})`
+        : match.name;
+    }
+    if (editingPlan.subscriptionTierName) {
+      return Number.isFinite(editingPlan.subscriptionTierLevel)
+        ? `${editingPlan.subscriptionTierName} (L${editingPlan.subscriptionTierLevel})`
+        : editingPlan.subscriptionTierName;
+    }
+    if (tiersLoading) return "Loading tiers...";
+    return editingPlan.subscriptionTierId;
+  }, [editingPlan, tiers, tiersLoading]);
+
   if (!editingPlan || !form) {
     return (
       <Card className="card border border-[var(--border)]">
@@ -99,30 +119,6 @@ export function SubscriptionPlanForm({
       </Card>
     );
   }
-
-  const tierLabel = useMemo(() => {
-    const match = tiers.find(
-      (tier) => tier.id === editingPlan.subscriptionTierId
-    );
-    if (match) {
-      return Number.isFinite(match.level)
-        ? `${match.name} (L${match.level})`
-        : match.name;
-    }
-    if (editingPlan.subscriptionTierName) {
-      return Number.isFinite(editingPlan.subscriptionTierLevel)
-        ? `${editingPlan.subscriptionTierName} (L${editingPlan.subscriptionTierLevel})`
-        : editingPlan.subscriptionTierName;
-    }
-    if (tiersLoading) return "Loading tiers...";
-    return editingPlan.subscriptionTierId;
-  }, [
-    editingPlan.subscriptionTierId,
-    editingPlan.subscriptionTierLevel,
-    editingPlan.subscriptionTierName,
-    tiers,
-    tiersLoading,
-  ]);
 
   const handleChange =
     (field: keyof LocalFormState) =>

@@ -162,7 +162,8 @@ export default function ReportSubmissionEditor({
   const isGroupSubmission = !!report.isGroupSubmission;
   const isSubmitted = report.status === ReportStatus.Submitted;
   const isResubmitted = report.status === ReportStatus.Resubmitted;
-  const isLocked = isSubmitted || isResubmitted;
+  const isGraded = report.status === ReportStatus.Graded;
+  const isLocked = isSubmitted || isResubmitted || isGraded;
 
   const useHubCollab = isGroupSubmission && !isLocked;
   const readOnly = isLocked;
@@ -418,7 +419,12 @@ export default function ReportSubmissionEditor({
             <Info className="w-4 h-4 mt-0.5 shrink-0" />
             <div className="text-xs">
               {isLocked ? (
-                isResubmitted ? (
+                isGraded ? (
+                  <>
+                    This report has been <b>graded</b>. You can view the
+                    content but further edits are disabled.
+                  </>
+                ) : isResubmitted ? (
                   <>
                     This report has been <b>resubmitted</b>. You can view the
                     content but further edits are disabled.

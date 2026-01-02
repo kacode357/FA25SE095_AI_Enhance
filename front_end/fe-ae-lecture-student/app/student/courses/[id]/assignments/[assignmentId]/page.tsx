@@ -13,6 +13,7 @@ import {
   ListTodo,
   Loader2,
   Mail,
+  Percent,
   Shield,
   Tag,
   Users,
@@ -426,6 +427,15 @@ export default function AssignmentDetailPage() {
                     {typeof a.maxPoints === "number"
                       ? a.maxPoints
                       : "—"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Percent className="w-4 h-4 text-nav-active" />
+                  <span className="font-semibold">Weight:</span>
+                  <span>
+                    {typeof a.weightPercentage === "number"
+                      ? `${a.weightPercentage}%`
+                      : "N/A"}
                   </span>
                 </div>
               </div>

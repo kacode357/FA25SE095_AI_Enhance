@@ -10,6 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,6 +49,9 @@ export default function SubscriptionTiersPage() {
   const [editingTier, setEditingTier] = useState<SubscriptionTierItem | null>(
     null
   );
+  const [deleteTarget, setDeleteTarget] =
+    useState<SubscriptionTierItem | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { loading, tiers, fetchSubscriptionTiers } = useSubscriptionTiers();
   const { loading: creating, createSubscriptionTier } =
@@ -71,15 +82,17 @@ export default function SubscriptionTiersPage() {
     });
   };
 
-  const handleDelete = async (tier: SubscriptionTierItem) => {
-    if (!window.confirm(`Delete tier "${tier.name}"?`)) return;
-
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteSubscriptionTier(tier.id);
-      if (editingTier?.id === tier.id) resetForm();
+      await deleteSubscriptionTier(deleteTarget.id);
+      if (editingTier?.id === deleteTarget.id) resetForm();
       await fetchSubscriptionTiers({ isActive: isActiveFilter });
     } catch (err) {
       console.error(err);
+    } finally {
+      setDeleteOpen(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -231,7 +244,10 @@ export default function SubscriptionTiersPage() {
                           type="button"
                           variant="outline"
                           className="btn-table btn-table-danger"
-                          onClick={() => handleDelete(tier)}
+                          onClick={() => {
+                            setDeleteTarget(tier);
+                            setDeleteOpen(true);
+                          }}
                           disabled={deleting}
                         >
                           Delete
@@ -346,6 +362,43 @@ export default function SubscriptionTiersPage() {
           </CardContent>
         </Card>
       </div>
+      <Dialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete tier?</DialogTitle>
+            <DialogDescription>
+              {deleteTarget
+                ? `Delete "${deleteTarget.name}"? This cannot be undone.`
+                : "Confirm deleting the selected tier."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="btn-table-danger"
+              onClick={handleDelete}
+              disabled={deleting || !deleteTarget}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
