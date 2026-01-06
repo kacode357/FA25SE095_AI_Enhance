@@ -20,7 +20,7 @@ import { useCreateAssignment } from "@/hooks/assignment/useCreateAssignment";
 import { useScheduleAssignment } from "@/hooks/assignment/useScheduleAssignment";
 import { useUnassignedGroups } from "@/hooks/assignment/useUnassignedGroups";
 import { useGroupsByCourseId } from "@/hooks/group/useGroupsByCourseId";
-import { useGetTopicsDropdown } from "@/hooks/topic/useGetTopicsDropdown";
+import { useAvailableTopicWeights } from "@/hooks/topic-weights/useAvailableTopicWeights";
 import { AssignmentService } from "@/services/assignment.services";
 import type { CreateAssignmentPayload } from "@/types/assignments/assignment.payload";
 import { toVNLocalISOString } from "@/utils/datetime/time";
@@ -47,7 +47,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
   const router = useRouter();
   const { scheduleAssignment, loading: scheduling } = useScheduleAssignment();
   const { assignGroups, loading: assigning } = useAssignGroups();
-  const { data: topics, loading: loadingTopics, fetchDropdown } = useGetTopicsDropdown();
+  const { data: topics, loading: loadingTopics, fetch: fetchTopics } = useAvailableTopicWeights();
   const { listData: courseGroups, loading: loadingGroups, fetchByCourseId } = useGroupsByCourseId();
   const { data: unassignedData, loading: loadingUnassigned, fetchUnassignedGroups } = useUnassignedGroups();
 
@@ -101,8 +101,9 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
   }, [courseId]);
 
   useEffect(() => {
-    fetchDropdown();
-  }, []);
+    if (courseId) fetchTopics(courseId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]);
 
   const selectedGroupSet = useMemo(() => new Set(form.groupIds), [form.groupIds]);
 
@@ -289,7 +290,10 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             ) : (
               <Select<string>
                 value={form.topicId ?? ""}
-                options={(topics ?? []).map((t: any) => ({ value: t.id, label: t.name }))}
+                options={(topics ?? []).map((t: any) => ({ 
+                  value: t.id, 
+                  label: `${t.name} - ${t.weight}%` 
+                }))}
                 placeholder="Select a topic"
                 onChange={(v) => setForm((p) => ({ ...p, topicId: v }))}
                 className="w-full"

@@ -13,13 +13,13 @@ import {
   ListTodo,
   Loader2,
   Mail,
+  Paperclip,
   Percent,
+  Radar,
+  Send,
   Shield,
   Tag,
   Users,
-  Radar,
-  Send,
-  Paperclip,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -39,16 +39,16 @@ import {
 import TinyMCEEditor from "@/components/common/TinyMCE";
 
 // shadcn
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
   CardFooter,
+  CardHeader,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // css status
 import "@/styles/assignment-status.css";

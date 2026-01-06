@@ -39,7 +39,7 @@ export interface AssignmentItem {
   statusDisplay: string;
   isGroupAssignment: boolean;
   maxPoints: number;
-  // weight: number;
+  weightPercentage: number;
   attachments: Array<{
     id: string;
     fileName: string;

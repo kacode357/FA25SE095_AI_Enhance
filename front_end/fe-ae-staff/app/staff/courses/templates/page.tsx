@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 
-import normalizeTemplate from "./components/normalizeTemplate";
 import Card from "./components/Card";
-import UploadSection from "./components/UploadSection";
 import DeleteDialog from "./components/DeleteDialog";
+import normalizeTemplate from "./components/normalizeTemplate";
 import TemplatesTable from "./components/TemplatesTable";
+import UploadSection from "./components/UploadSection";
 
 export default function Page() {
     // Hooks
@@ -110,7 +110,7 @@ export default function Page() {
                         className="bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
                     >
                         <RefreshCw className={`w-4 h-4 mr-2 ${loadingMeta ? "animate-spin" : ""}`} />
-                        Refresh Data
+                        Refresh
                     </Button>
                 </div>
 
