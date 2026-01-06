@@ -3,6 +3,7 @@
 import { TemplateService } from "@/services/template.services";
 import type { DeleteTemplateResponse } from "@/types/template/template.response";
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 
 export function useDeleteTemplate() {
     const [loading, setLoading] = useState(false);
@@ -15,9 +16,15 @@ export function useDeleteTemplate() {
         try {
             const res = await TemplateService.delete(id);
             setResult(res);
+            if (res?.success) {
+                toast.success(res.message || "Template deleted successfully");
+            } else {
+                toast.error(res?.message || "Failed to delete template");
+            }
             return res;
         } catch (err) {
             setError(err as Error);
+            toast.error((err as Error)?.message || "Failed to delete template");
             return null;
         } finally {
             setLoading(false);

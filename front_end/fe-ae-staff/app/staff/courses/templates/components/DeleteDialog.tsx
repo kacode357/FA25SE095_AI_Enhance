@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -9,8 +8,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { TriangleAlert } from "lucide-react";
 import { formatToVN } from "@/utils/datetime/time";
+import { TriangleAlert } from "lucide-react";
 
 type Props = {
     confirmId: string | null;
@@ -63,7 +62,7 @@ export default function DeleteDialog({ confirmId, setConfirmId, confirmingItem, 
 
                 <AlertDialogFooter>
                     <AlertDialogCancel className="cursor-pointer" onClick={() => setConfirmId(null)}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 cursor-pointer text-white">{deleting ? 'Deleting...' : 'Delete'}</AlertDialogAction>
+                    <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700 cursor-pointer text-white">{deleting ? 'Deleting...' : 'Delete'}</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

@@ -62,18 +62,34 @@ export const TemplateService = {
    */
   download: async (id: string): Promise<{ blob: Blob; filename: string } | null> => {
     try {
-      const res = await courseAxiosInstance.get<ArrayBuffer>(`/Template/${id}/download`, {
+      const res = await courseAxiosInstance.get<ArrayBuffer>(`/Template/download`, {
+        params: { id },
         responseType: "arraybuffer",
       });
 
       const contentDisposition = res.headers?.["content-disposition"] || res.headers?.["Content-Disposition"] || "";
       let filename = "download";
-      const match = /filename\*?=([^;]+)/i.exec(contentDisposition);
-      if (match) {
-        filename = match[1].trim().replace(/"/g, "");
+      if (contentDisposition) {
+        const fnStarMatch = /filename\*=([^;]+)/i.exec(contentDisposition);
+        if (fnStarMatch && fnStarMatch[1]) {
+          // filename*=UTF-8''TEMPLATE_REPORT.docx or percent-encoded
+          let val = fnStarMatch[1].trim().replace(/"/g, "");
+          val = val.replace(/^UTF-8''/i, '');
+          try {
+            filename = decodeURIComponent(val);
+          } catch (e) {
+            filename = val;
+          }
+        } else {
+          const fnMatch = /filename=([^;]+)/i.exec(contentDisposition);
+          if (fnMatch && fnMatch[1]) {
+            filename = fnMatch[1].trim().replace(/"/g, "");
+          }
+        }
       }
 
-      const blob = new Blob([res.data]);
+      const contentType = (res.headers && (res.headers["content-type"] || res.headers["Content-Type"])) || 'application/octet-stream';
+      const blob = new Blob([res.data], { type: contentType });
       return { blob, filename };
     } catch (err) {
       return null;

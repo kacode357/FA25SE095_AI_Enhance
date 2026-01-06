@@ -20,10 +20,11 @@ export const TemplateService = {
    * Downloads the active template file (for lecturers)
    * Returns file blob for download. Server should set `Content-Disposition` header with filename.
    */
-  download: async (): Promise<{ blob: Blob; filename: string } | null> => {
+  download: async (id?: string): Promise<{ blob: Blob; filename: string } | null> => {
     try {
       const res = await courseAxiosInstance.get<ArrayBuffer>("/Template/download", {
         responseType: "arraybuffer",
+        params: id ? { id } : undefined,
       });
 
       const contentDisposition = res.headers?.["content-disposition"] || res.headers?.["Content-Disposition"] || "";

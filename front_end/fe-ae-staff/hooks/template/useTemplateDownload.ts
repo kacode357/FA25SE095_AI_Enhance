@@ -10,6 +10,14 @@ export function useTemplateDownload() {
   const download = useCallback(async (id?: string) => {
     setLoading(true);
     setError(null);
+
+    if (!id) {
+      const e = new Error("Template id is required");
+      setError(e);
+      setLoading(false);
+      return null;
+    }
+
     try {
       const result = await TemplateService.download(id);
       return result;

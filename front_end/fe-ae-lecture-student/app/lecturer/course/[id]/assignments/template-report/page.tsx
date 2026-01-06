@@ -3,7 +3,6 @@
 import { useTemplateDownload } from "@/hooks/template/useTemplateDownload";
 import { useTemplateMetadata } from "@/hooks/template/useTemplateMetadata";
 import type { TemplateItem } from "@/types/template/template.response";
-import { formatToVN } from "@/utils/datetime/time";
 import {
     ArrowLeft,
     Calendar,
@@ -26,38 +25,23 @@ export default function TemplateReportPage() {
     const { loading: loadingMetadata, data: metadataResponse, error: metadataError, fetch: fetchMetadata } = useTemplateMetadata();
     const { loading: downloading, download } = useTemplateDownload();
 
-    const [template, setTemplate] = useState<TemplateItem | null>(null);
+    const [templates, setTemplates] = useState<TemplateItem[]>([]);
 
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
-        const res = await fetchMetadata(true); // Fetch active template
+        const res = await fetchMetadata(true); // Fetch active template(s)
         if (res) {
-            // Handle different response types
             if (Array.isArray(res)) {
-                setTemplate(res[0] || null);
+                setTemplates(res);
             } else if ('hasActiveTemplate' in res) {
-                setTemplate(res.template);
+                setTemplates(res.template ? [res.template] : []);
             } else {
-                setTemplate(res as TemplateItem);
+                setTemplates([res as TemplateItem]);
             }
         }
-    };
-
-    const handleDownload = async () => {
-        const result = await download();
-        if (!result) return;
-
-        const url = URL.createObjectURL(result.blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = result.filename || `${template?.name || template?.originalFileName || "template"}.docx`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
     };
 
     const formatFileSize = (bytes?: number): string => {
@@ -65,6 +49,33 @@ export default function TemplateReportPage() {
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
         return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    };
+
+    const handleDownloadItem = async (t: TemplateItem) => {
+        let result: { blob: Blob; filename?: string } | null = null;
+        try {
+            // try passing id if hook supports it
+            // cast to any in case hook signature doesn't accept params
+            result = await (download as any)(t.id);
+        } catch (e) {
+            try {
+                result = await download();
+            } catch (err) {
+                console.error('Download failed', err);
+                return;
+            }
+        }
+
+        if (!result) return;
+
+        const url = URL.createObjectURL(result.blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = result.filename || `${t.name || t.originalFileName || "template"}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -106,29 +117,14 @@ export default function TemplateReportPage() {
                             <RotateCcw className={`w-4 h-4 ${loadingMetadata ? 'animate-spin' : ''}`} />
                             <span className="font-medium text-sm">Refresh</span>
                         </button>
-
-                        {/* <button
-                            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
-                            onClick={handleDownload}
-                            disabled={downloading || !template}
-                        >
-                            {downloading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <CloudDownload className="w-4 h-4" />
-                            )}
-                            <span className="hidden sm:inline">
-                                {downloading ? "Downloading..." : "Download Template"}
-                            </span>
-                        </button> */}
                     </div>
                 </div>
             </header>
 
             {/* Main Content */}
             <main className="flex-1 overflow-auto pb-8 pt-6 px-4">
-                <div className="max-w-5xl mx-auto">
-                    {loadingMetadata && !template ? (
+                <div className="max-w-6xl mx-auto">
+                    {loadingMetadata && templates.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-96 text-slate-400 gap-3">
                             <Loader2 className="w-10 h-10 animate-spin text-violet-500" />
                             <p className="text-sm">Loading template information...</p>
@@ -145,126 +141,83 @@ export default function TemplateReportPage() {
                                 Try Again
                             </button>
                         </div>
-                    ) : template ? (
+                    ) : templates.length ? (
                         <div className="space-y-6">
-                            {/* Status Card */}
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-3 bg-violet-100 rounded-lg">
-                                            <File className="w-6 h-6 text-violet-600" />
+                            {templates.map((t) => (
+                                <div key={t.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-3 bg-violet-100 rounded-lg">
+                                                <File className="w-6 h-6 text-violet-600" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-lg font-semibold text-blue-800">{t.originalFileName}</h2>
+                                                <p className="text-xs text-slate-500">{t.fileSizeFormatted || formatFileSize(t.fileSize)}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h2 className="text-xl font-bold text-slate-800">
-                                                {template.name || template.originalFileName || "Untitled Template"}
-                                            </h2>
-                                            {template.filename && (
-                                                <p className="text-sm text-slate-500 mt-1 font-mono">
-                                                    {template.filename}
-                                                </p>
+                                        {t.isActive && (
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 border border-green-200 rounded-full">
+                                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                                <span className="text-xs font-medium text-green-700">Active</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {t.description && (
+                                        <div className="bg-slate-50 rounded-lg p-4 mb-4 border border-slate-100">
+                                            <div className="flex items-start gap-2">
+                                                <Info className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                                                <p className="text-sm text-slate-600">Description: {t.description}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <FileText className="w-4 h-4 text-slate-500" />
+                                                <span className="text-xs text-slate-500">FILE SIZE</span>
+                                            </div>
+                                            <p className="text-lg font-semibold text-slate-800">{t.fileSizeFormatted || formatFileSize(t.fileSize)}</p>
+                                        </div>
+
+                                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Calendar className="w-4 h-4 text-slate-500" />
+                                                <span className="text-xs text-slate-500">UPLOADED</span>
+                                            </div>
+                                            <p className="text-sm font-semibold text-slate-800">{t.uploadedAt ? new Date(t.uploadedAt).toLocaleDateString() : 'N/A'}</p>
+                                            {t.uploadedAt && (
+                                                <p className="text-xs text-slate-500 mt-1">{new Date(t.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                             )}
                                         </div>
                                     </div>
-                                    {template.isActive && (
-                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 border border-green-200 rounded-full">
-                                            <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                            <span className="text-xs font-medium text-green-700">Active</span>
+
+                                    {t.updatedAt && (
+                                        <div className="mt-4 pt-4 border-t border-slate-200">
+                                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                <Clock className="w-3.5 h-3.5" />
+                                                <span>Last updated: {new Date(t.updatedAt).toLocaleString()}</span>
+                                            </div>
                                         </div>
                                     )}
-                                </div>
 
-                                {template.description && (
-                                    <div className="bg-slate-50 rounded-lg p-4 mb-4 border border-slate-100">
-                                        <div className="flex items-start gap-2">
-                                            <Info className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
-                                            <p className="text-sm text-slate-700">Description: {template.description}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* File Size */}
-                                    <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <FileText className="w-4 h-4 text-slate-500" />
-                                            <span className="text-xs font-medium text-slate-500 uppercase">File Size</span>
-                                        </div>
-                                        <p className="text-lg font-semibold text-slate-800">
-                                            {template.fileSizeFormatted || formatFileSize(template.fileSize)}
-                                        </p>
-                                    </div>
-
-                                    {/* Uploaded Date */}
-                                    <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Calendar className="w-4 h-4 text-slate-500" />
-                                            <span className="text-xs font-medium text-slate-500 uppercase">Uploaded</span>
-                                        </div>
-                                        <p className="text-sm font-semibold text-slate-800">
-                                            {template.uploadedAt
-                                                ? formatToVN(template.uploadedAt, { dateStyle: "medium" })
-                                                : "N/A"}
-                                        </p>
-                                        {template.uploadedAt && (
-                                            <p className="text-xs text-slate-500 mt-1">
-                                                {formatToVN(template.uploadedAt, { timeStyle: "medium" })}
-                                            </p>
-                                        )}
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={() => handleDownloadItem(t)}
+                                            disabled={downloading}
+                                            className="flex text-sm items-center btn btn-gradient-slow gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg shadow-sm transition-all hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                                        >
+                                            {downloading ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <CloudDownload className="w-4 h-4" />
+                                            )}
+                                            <span className="hidden sm:inline">Download Now</span>
+                                        </button>
                                     </div>
                                 </div>
-
-                                {/* Updated Date */}
-                                {template.updatedAt && (
-                                    <div className="mt-4 pt-4 border-t border-slate-200">
-                                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                                            <Clock className="w-3.5 h-3.5" />
-                                            <span>Last updated: {formatToVN(template.updatedAt, { dateStyle: "medium", timeStyle: "short" })}</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Template ID Card */}
-                            {/* <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-200 p-6">
-                                <div className="flex items-center justify-between">
-                                    {template.type && (
-                                        <div className="px-3 py-1.5 bg-white/70 border border-violet-200 rounded-lg">
-                                            <span className="text-sm font-medium text-violet-700">{template.type}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div> */}
-
-                            {/* Download Action Card */}
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                                            Download Template
-                                        </h3>
-                                        <p className="text-sm text-slate-600">
-                                            Click the button to download this template.
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={handleDownload}
-                                        disabled={downloading}
-                                        className="flex items-center btn btn-gradient-slow gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg shadow-sm transition-all hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
-                                    >
-                                        {downloading ? (
-                                            <>
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                                <span>Downloading...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CloudDownload className="w-5 h-5" />
-                                                <span>Download Now</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     ) : (
                         <div className="bg-slate-50 border border-slate-200 rounded-xl p-12 text-center">

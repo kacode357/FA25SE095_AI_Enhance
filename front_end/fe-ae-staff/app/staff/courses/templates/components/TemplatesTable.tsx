@@ -1,7 +1,7 @@
 "use client";
-import React from "react";
-import { FileText, Power, CheckCircle2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import useTemplateDownload from "@/hooks/template/useTemplateDownload";
+import { CheckCircle2, FileText, Power, Trash2 } from "lucide-react";
 import Badge from "./Badge";
 
 type Props = {
@@ -15,6 +15,28 @@ type Props = {
 };
 
 export default function TemplatesTable({ templates, loadingMeta, toggling, deleting, handleToggle, handleDelete, formatToVN }: Props) {
+    const { download, loading: downloading } = useTemplateDownload();
+
+    const handleDownloadClick = async (id?: string, fallbackName?: string) => {
+        if (!id) return;
+        try {
+            const res = await download(id);
+            if (res?.blob) {
+                const url = URL.createObjectURL(res.blob);
+                const a = document.createElement("a");
+                a.href = url;
+                // prefer server-provided filename; otherwise use fallback from metadata (t.filename/name)
+                a.download = res.filename || fallbackName || "download";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            }
+        } catch (err) {
+            // swallow — hook sets error state
+            // console.error(err);
+        }
+    };
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -46,12 +68,25 @@ export default function TemplatesTable({ templates, loadingMeta, toggling, delet
                                         </div>
                                         <div>
                                             <div className="font-medium text-[12px] text-slate-900">
-                                                <span
-                                                    className="hover:text-blue-800 text-blue-500 text-left transition-colors"
-                                                    title={t.name || t.filename || 'file'}
-                                                >
-                                                    {t.name || t.filename || "Untitled"}
-                                                </span>
+                                                <div className="relative inline-block">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDownloadClick(t.id, t.name || t.filename)}
+                                                        disabled={downloading}
+                                                        className="hover:text-blue-800 cursor-pointer text-blue-500 text-left transition-colors"
+                                                        title={t.name || t.filename || 'file'}
+                                                    >
+                                                        {t.name || t.filename || "Untitled"}
+                                                    </button>
+
+                                                    <span className="absolute -top-9 left-0 whitespace-nowrap px-2 py-1 text-xs bg-slate-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                        Download Template
+                                                        <span
+                                                            className="absolute left-1/2 -bottom-1 transform -translate-x-1/2"
+                                                            style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #0f172a' }}
+                                                        />
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div className="text-xs text-slate-500 mt-2 mb-1">
                                                 {t.sizeFormatted ?? (t.size ? `${(t.size / 1024).toFixed(1)} KB` : "Unknown Size")}
@@ -82,7 +117,7 @@ export default function TemplatesTable({ templates, loadingMeta, toggling, delet
                                                 `
                                                             h-8 px-3 text-[11px] font-medium border transition-all
                                                                     ${t.isActive
-                                                            ? "!text-red-600 cursor-pointer !bg-red-50 !border-red-200"
+                                                            ? "!text-amber-700 cursor-pointer !bg-amber-50 !border-amber-200"
                                                             : "!text-emerald-600 cursor-pointer !bg-emerald-50 !border-emerald-200"
                                                         }
                                                         `}
@@ -94,16 +129,18 @@ export default function TemplatesTable({ templates, loadingMeta, toggling, delet
                                             )}
                                         </Button>
 
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            disabled={deleting}
-                                            onClick={() => handleDelete(t.id, t.name || t.filename)}
-                                            className="h-5 w-5 !text-red-600 cursor-pointer !bg-red-50 !border-red-200 flex items-center justify-center"
-                                            title="Delete Template"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5 text-current" />
-                                        </Button>
+                                        {!t.isActive && (
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                disabled={deleting}
+                                                onClick={() => handleDelete(t.id, t.name || t.filename)}
+                                                className="h-5 w-5 !text-red-600 cursor-pointer !bg-red-50 !border-red-200 flex items-center justify-center"
+                                                title="Delete Template"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5 text-current" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
