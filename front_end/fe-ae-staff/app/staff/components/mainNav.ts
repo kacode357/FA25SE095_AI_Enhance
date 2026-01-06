@@ -43,6 +43,7 @@ export const mainNav = [
           { href: "/staff/courses", label: "Active Courses" },
               { href: "/staff/courses/topics", label: "Topics" },
               { href: "/staff/courses/topic-weights", label: "Topic Weights" },
+              { href: "/staff/courses/templates", label: "Templates" },
           { href: "/staff/courses/topics/create", label: "Create Topic" },
         ],
       },

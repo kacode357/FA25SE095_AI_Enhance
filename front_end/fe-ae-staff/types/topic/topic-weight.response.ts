@@ -15,7 +15,10 @@ export interface TopicWeight {
 
 export type CreateTopicWeightResponse = TopicWeight;
 
-export type DeleteTopicWeightResponse = void;
+export interface DeleteTopicWeightResponse {
+  success: boolean;
+  message?: string;
+}
 
 export interface AvailableTopicForCourse {
   id: string;

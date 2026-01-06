@@ -4,7 +4,8 @@ import {
   CreateTopicWeightPayload,
   UpdateTopicWeightBody
 } from "@/types/topic/topic-weight.payload";
-import { AvailableTopicForCourse, CreateTopicWeightResponse, GetTopicWeightsQueryParams, GetTopicWeightsResponse, TopicWeight } from "@/types/topic/topic-weight.response";
+import { AvailableTopicForCourse, CreateTopicWeightResponse, DeleteTopicWeightResponse, GetTopicWeightsQueryParams, GetTopicWeightsResponse, TopicWeight } from "@/types/topic/topic-weight.response";
+import { AxiosResponse } from "axios";
 
 export const TopicWeightsService = {
   create: async (data: CreateTopicWeightPayload): Promise<CreateTopicWeightResponse> => {
@@ -27,9 +28,9 @@ export const TopicWeightsService = {
     const response = await courseAxiosInstance.put<TopicWeight>(`/TopicWeights/${id}`, data);
     return response.data as TopicWeight;
   },
-  delete: async (id: string): Promise<void> => {
-    // DELETE may return 204 No Content — caller should treat success by resolving without body
-    await courseAxiosInstance.delete(`/TopicWeights/${id}`);
+  delete: async (id: string): Promise<AxiosResponse<DeleteTopicWeightResponse>> => {
+    const response = await courseAxiosInstance.delete<DeleteTopicWeightResponse>(`/TopicWeights/${id}`);
+    return response;
   },
   getById: async (id: string): Promise<TopicWeight> => {
     const response = await courseAxiosInstance.get<TopicWeight>(`/TopicWeights/${id}`);

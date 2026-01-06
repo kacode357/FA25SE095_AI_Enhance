@@ -17,7 +17,7 @@ import { useDeleteTopicWeight } from "@/hooks/topic/useDeleteTopicWeight";
 import { useGetTopicWeights } from "@/hooks/topic/useGetTopicWeights";
 import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
-import { CalendarClock, Layers, PencilLine, Settings2, Trash2, TriangleAlert } from "lucide-react"; // Đã thêm icon Settings2
+import { CalendarClock, Layers, PencilLine, Settings2, Trash2, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
