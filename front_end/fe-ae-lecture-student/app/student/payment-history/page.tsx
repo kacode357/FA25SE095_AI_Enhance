@@ -41,16 +41,6 @@ const getStatusBadge = (status: number) => {
   }
 };
 
-const getTierName = (tier: number) => {
-  switch (tier) {
-    case 0: return "Free";
-    case 1: return "Basic";
-    case 2: return "Premium";
-    case 3: return "Enterprise";
-    default: return `Tier ${tier}`;
-  }
-};
-
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -254,7 +244,7 @@ export default function PaymentHistoryPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 font-medium">
-                      {getTierName(item.tier)}
+                      {item.tierName}
                     </td>
                     <td className="px-6 py-4 font-semibold text-nav">
                       {formatCurrency(item.amount)}

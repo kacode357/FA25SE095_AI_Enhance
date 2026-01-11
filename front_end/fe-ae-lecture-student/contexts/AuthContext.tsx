@@ -103,6 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const remember = getRememberMeFlag();
         await saveEncodedUser(res.data, remember);
         setUser(res.data);
+        
+        // Dispatch event để các component khác (như UserMenu) cũng cập nhật
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("app:user-updated"));
+        }
         return;
       }
     } catch (err) {

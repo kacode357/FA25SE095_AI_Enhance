@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { useConfirmSubscriptionPayment } from "@/hooks/payments/useConfirmSubscriptionPayment";
 import { useCancelSubscriptionPayment } from "@/hooks/payments/useCancelSubscriptionPayment";
+import { useAuth } from "@/contexts/AuthContext";
 import { getRememberMeFlag } from "@/utils/auth/access-token";
 import { loadDecodedUser, saveEncodedUser } from "@/utils/secure-user";
 import { getUserSubscriptionPlanName } from "@/config/user-service/plan";
@@ -16,6 +17,7 @@ import { getUserSubscriptionPlanName } from "@/config/user-service/plan";
 export default function SubscriptionSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshProfile } = useAuth();
   const updatedRef = useRef(false);
   const hasHandledReturnRef = useRef(false);
 
@@ -172,12 +174,24 @@ export default function SubscriptionSuccessPage() {
     updatedRef.current = true;
 
     (async () => {
+      // Ưu tiên gọi refreshProfile để lấy dữ liệu mới nhất từ server
+      // Nếu server có subscription tier mới, sẽ được cập nhật và dispatch event
+      try {
+        await refreshProfile();
+        return; // refreshProfile đã xử lý cập nhật + dispatch event
+      } catch {
+        // Fallback: cập nhật local nếu refreshProfile thất bại
+      }
+
       const user = await loadDecodedUser();
       if (!user) return;
 
+      // Chuyển đổi tier (có thể là số "0","1","2","3" hoặc tên "Free","Basic",...) sang tên tier chuẩn
+      const tierName = getUserSubscriptionPlanName(tier) || tier;
+
       if (
         user.subscriptionTier &&
-        user.subscriptionTier.toLowerCase() === tier.toLowerCase()
+        user.subscriptionTier.toLowerCase() === tierName.toLowerCase()
       ) {
         return;
       }
@@ -186,7 +200,7 @@ export default function SubscriptionSuccessPage() {
 
       const updatedUser = {
         ...user,
-        subscriptionTier: tier,
+        subscriptionTier: tierName,
       };
 
       await saveEncodedUser(updatedUser, remember);
@@ -195,7 +209,7 @@ export default function SubscriptionSuccessPage() {
         window.dispatchEvent(new Event("app:user-updated"));
       }
     })();
-  }, [tier, canUpdateUser]);
+  }, [tier, canUpdateUser, refreshProfile]);
 
   const handleGoToPlans = () => {
     router.push("/student/subscription");

@@ -40,7 +40,9 @@ export type PayOSReturnResponse = BasePaymentApiResponse<string>;
 export type SubscriptionPaymentHistoryItem = {
   paymentId: string;
   orderCode: string;
-  tier: number;
+  tierId: string;
+  tierName: string;
+  tierLevel: number;
   status: number;
   amount: number;
   currency: string;
