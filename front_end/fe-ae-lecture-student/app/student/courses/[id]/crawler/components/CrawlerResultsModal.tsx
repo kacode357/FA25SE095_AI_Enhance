@@ -21,6 +21,14 @@ type Props = {
   currentPrompt?: string;
   jobHistory?: JobHistoryEntry[];
   onSelectHistoryIndex?: (index: number) => void;
+  // Pagination props
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  pageSize?: number;
+  onNextPage?: () => void;
+  onPrevPage?: () => void;
+  onGoToPage?: (page: number) => void;
 };
 
 export default function CrawlerResultsModal({
@@ -37,6 +45,13 @@ export default function CrawlerResultsModal({
   currentPrompt,
   jobHistory,
   onSelectHistoryIndex,
+  currentPage = 1,
+  totalPages = 1,
+  totalCount = 0,
+  pageSize = 50,
+  onNextPage,
+  onPrevPage,
+  onGoToPage,
 }: Props) {
   const handleOpenDataPage = useCallback(() => {
     if (!activeJobId) return;
@@ -83,6 +98,13 @@ export default function CrawlerResultsModal({
           <div className="flex-1 overflow-y-auto bg-slate-50/40 p-4">
             <CrawlerResultsTabs
               conversationId={conversationId}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onNextPage={onNextPage}
+              onPrevPage={onPrevPage}
+              onGoToPage={onGoToPage}
               results={results}
               resultsLoading={resultsLoading}
               historyIndex={historyIndex}

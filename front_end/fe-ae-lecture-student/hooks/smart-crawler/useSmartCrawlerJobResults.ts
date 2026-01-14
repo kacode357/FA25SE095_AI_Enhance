@@ -9,22 +9,39 @@ import type { SmartCrawlJobResultItem } from "@/types/smart-crawler/smart-crawle
 export function useSmartCrawlerJobResults() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SmartCrawlJobResultItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 50;
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const clearResults = () => {
     setResults([]);
+    setCurrentPage(1);
+    setTotalCount(0);
   };
 
   const fetchJobResults = async (
     jobId: string,
-    args?: SmartCrawlJobResultsQuery
+    page: number = 1
   ): Promise<SmartCrawlJobResultItem[] | null> => {
     if (loading) return null;
     setLoading(true);
     try {
-      console.log("[CrawlerResults] Fetching job results for jobId:", jobId, "with args:", args);
-      const res = await SmartCrawlerService.getJobResults(jobId, args);
-      console.log("[CrawlerResults] Fetched", res?.length || 0, "results");
+      console.log("[CrawlerResults] Fetching job results - jobId:", jobId, "page:", page, "pageSize:", pageSize);
+      
+      // Fetch job info để lấy tổng số results
+      const jobInfo = await SmartCrawlerService.getJob(jobId);
+      const total = jobInfo?.resultCount || 0;
+      setTotalCount(total);
+      console.log("[CrawlerResults] Total result count:", total);
+      
+      // Fetch results cho page hiện tại
+      const res = await SmartCrawlerService.getJobResults(jobId, { page, pageSize });
+      console.log("[CrawlerResults] Fetched", res?.length || 0, "results for page", page);
+      
       setResults(res);
+      setCurrentPage(page);
       return res;
     } catch (error) {
       console.error("[CrawlerResults] Error fetching results:", error);
@@ -34,67 +51,35 @@ export function useSmartCrawlerJobResults() {
     }
   };
 
-  /**
-   * Fetch ALL results with automatic pagination
-   * Sử dụng pageSize lớn (200) để giảm số lần gọi API
-   */
-  const fetchAllJobResults = async (jobId: string): Promise<SmartCrawlJobResultItem[] | null> => {
-    if (loading) return null;
-    setLoading(true);
-    try {
-      console.log("[CrawlerResults] Fetching ALL job results for jobId:", jobId);
-      
-      // Lấy trang đầu với pageSize lớn
-      const pageSize = 200;
-      const firstPage = await SmartCrawlerService.getJobResults(jobId, { page: 1, pageSize });
-      
-      console.log("[CrawlerResults] First page fetched:", firstPage?.length || 0, "results");
-      
-      // Nếu kết quả < pageSize, tức là đã lấy hết
-      if (!firstPage || firstPage.length < pageSize) {
-        console.log("[CrawlerResults] All results fetched in first page:", firstPage?.length || 0);
-        setResults(firstPage || []);
-        return firstPage || [];
-      }
-      
-      // Nếu có nhiều hơn, tiếp tục lấy các trang sau
-      const allResults = [...firstPage];
-      let currentPage = 2;
-      
-      while (true) {
-        console.log("[CrawlerResults] Fetching page", currentPage);
-        const nextPage = await SmartCrawlerService.getJobResults(jobId, { page: currentPage, pageSize });
-        
-        if (!nextPage || nextPage.length === 0) {
-          break;
-        }
-        
-        allResults.push(...nextPage);
-        console.log("[CrawlerResults] Page", currentPage, "fetched:", nextPage.length, "results. Total:", allResults.length);
-        
-        if (nextPage.length < pageSize) {
-          break;
-        }
-        
-        currentPage++;
-      }
-      
-      console.log("[CrawlerResults] ALL results fetched:", allResults.length, "total");
-      setResults(allResults);
-      return allResults;
-    } catch (error) {
-      console.error("[CrawlerResults] Error fetching all results:", error);
-      throw error;
-    } finally {
-      setLoading(false);
+  const goToPage = async (jobId: string, page: number) => {
+    if (page < 1 || page > totalPages || loading) return;
+    await fetchJobResults(jobId, page);
+  };
+
+  const nextPage = async (jobId: string) => {
+    if (currentPage < totalPages) {
+      await goToPage(jobId, currentPage + 1);
+    }
+  };
+
+  const prevPage = async (jobId: string) => {
+    if (currentPage > 1) {
+      await goToPage(jobId, currentPage - 1);
     }
   };
 
   return {
     fetchJobResults,
-    fetchAllJobResults,
+    goToPage,
+    nextPage,
+    prevPage,
     loading,
     results,
+    currentPage,
+    totalPages,
+    totalCount,
+    pageSize,
     clearResults,
   };
 }
+

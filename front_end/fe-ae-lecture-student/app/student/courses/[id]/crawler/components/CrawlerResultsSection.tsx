@@ -111,6 +111,15 @@ type Props = {
 
   jobHistory?: JobHistoryEntry[];
   onSelectHistoryIndex?: (index: number) => void;
+  
+  // Pagination props
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  pageSize?: number;
+  onNextPage?: () => void;
+  onPrevPage?: () => void;
+  onGoToPage?: (page: number) => void;
 };
 
 const truncateUrl = (url?: string | null) => {
@@ -137,6 +146,13 @@ export default function CrawlerResultsSection({
   currentPrompt,
   jobHistory = [],
   onSelectHistoryIndex,
+  currentPage = 1,
+  totalPages = 1,
+  totalCount = 0,
+  pageSize = 50,
+  onNextPage,
+  onPrevPage,
+  onGoToPage,
 }: Props) {
   const showEmpty = results.length === 0 && !resultsLoading;
 
@@ -302,8 +318,60 @@ export default function CrawlerResultsSection({
                 </table>
               </div>
 
-              <div className="border-t border-[var(--border)] bg-slate-50 px-2 py-1 text-[9px] text-slate-500">
-                {results.length} result{results.length === 1 ? "" : "s"} | {dynamicColumns.length} field{dynamicColumns.length === 1 ? "" : "s"}
+              <div className="border-t border-[var(--border)] bg-slate-50 px-3 py-2 flex items-center justify-between">
+                <div className="text-[9px] text-slate-500">
+                  Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount} results
+                </div>
+                
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={onPrevPage}
+                      disabled={currentPage === 1 || resultsLoading}
+                      className="px-2 py-1 text-[9px] font-semibold rounded border border-[var(--border)] bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                      Previous
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => onGoToPage?.(pageNum)}
+                            disabled={resultsLoading}
+                            className={`w-6 h-6 text-[9px] font-semibold rounded transition ${
+                              currentPage === pageNum
+                                ? 'bg-[var(--brand)] text-white'
+                                : 'border border-[var(--border)] bg-white hover:bg-slate-50'
+                            } disabled:opacity-40 disabled:cursor-not-allowed`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={onNextPage}
+                      disabled={currentPage === totalPages || resultsLoading}
+                      className="px-2 py-1 text-[9px] font-semibold rounded border border-[var(--border)] bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -251,7 +251,7 @@ export const useCrawlJobHandlers = ({
       setActiveJobId(jid);
 
       try {
-        await fetchJobResults(jid);
+        await fetchJobResults(jid, 1); // Load trang đầu tiên
         await fetchJob(jid);
         if (assignmentId) {
           await fetchAssignmentConversations(assignmentId, { myOnly: true });

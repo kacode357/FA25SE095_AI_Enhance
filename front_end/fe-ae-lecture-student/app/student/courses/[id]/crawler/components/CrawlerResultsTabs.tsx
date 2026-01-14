@@ -18,6 +18,14 @@ type Props = {
   currentPrompt?: string;
   jobHistory?: JobHistoryEntry[];
   onSelectHistoryIndex?: (index: number) => void;
+  // Pagination props
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  pageSize?: number;
+  onNextPage?: () => void;
+  onPrevPage?: () => void;
+  onGoToPage?: (page: number) => void;
 };
 
 export default function CrawlerResultsTabs({
@@ -29,6 +37,13 @@ export default function CrawlerResultsTabs({
   currentPrompt,
   jobHistory,
   onSelectHistoryIndex,
+  currentPage = 1,
+  totalPages = 1,
+  totalCount = 0,
+  pageSize = 50,
+  onNextPage,
+  onPrevPage,
+  onGoToPage,
 }: Props) {
   const [activeTab, setActiveTab] = useState("data");
 
@@ -54,6 +69,13 @@ export default function CrawlerResultsTabs({
           currentPrompt={currentPrompt}
           jobHistory={jobHistory}
           onSelectHistoryIndex={onSelectHistoryIndex}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
+          onNextPage={onNextPage}
+          onPrevPage={onPrevPage}
+          onGoToPage={onGoToPage}
         />
       </TabsContent>
 

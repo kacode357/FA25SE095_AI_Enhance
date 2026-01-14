@@ -188,7 +188,7 @@ export const useCrawlerConversationState = ({
       if (!target?.jobId) return;
       setHistoryIndex(targetIndex);
       setActiveJobId(target.jobId);
-      await fetchJobResults(target.jobId);
+      await fetchJobResults(target.jobId, 1); // Load trang đầu khi switch history
     },
     [fetchJobResults, jobHistory, resultsLoading]
   );

@@ -194,9 +194,15 @@ const CrawlerInner = () => {
   const { fetchJob } = useSmartCrawlerJob();
   const {
     fetchJobResults,
-    fetchAllJobResults,
+    goToPage,
+    nextPage,
+    prevPage,
     loading: resultsLoading,
     results,
+    currentPage,
+    totalPages,
+    totalCount,
+    pageSize,
     clearResults,
   } = useSmartCrawlerJobResults();
 
@@ -217,7 +223,7 @@ const CrawlerInner = () => {
     startNewConversation,
   } = useCrawlerConversationState({
     fetchConversationMessages,
-    fetchJobResults: fetchAllJobResults, // Sử dụng fetchAllJobResults để lấy tất cả kết quả
+    fetchJobResults, // Phân trang: mỗi trang 50 items
     userId,
     resultsLoading,
   });
@@ -379,11 +385,11 @@ const CrawlerInner = () => {
       void (async () => {
         const jobIdFromHistory = await selectConversation(convId);
         if (jobIdFromHistory) {
-          await fetchAllJobResults(jobIdFromHistory);
+          await fetchJobResults(jobIdFromHistory, 1);
         }
       })();
     },
-    [fetchAllJobResults, selectConversation]
+    [fetchJobResults, selectConversation]
   );
 
   const handleNewConversation = useCallback(() => {
@@ -561,7 +567,7 @@ const CrawlerInner = () => {
       ) {
         setActiveJobId(jobId);
         try {
-          await fetchAllJobResults(jobId); // Lấy tất cả kết quả với pagination
+          await fetchJobResults(jobId, 1); // Phân trang: load trang đầu
         } catch {
         }
         await reloadConversation({ jobIdOverride: jobId });
@@ -570,7 +576,7 @@ const CrawlerInner = () => {
     [
       appendUiMessage,
       conversationId,
-      fetchAllJobResults,
+      fetchJobResults,
       findRecentMessageIndex,
       reloadConversation,
       setChatMessages,
@@ -593,7 +599,7 @@ const CrawlerInner = () => {
     setIsCrawling,
     setSubmitting,
     setShowResultsModal,
-    fetchJobResults: fetchAllJobResults, // Lấy tất cả kết quả với pagination
+    fetchJobResults, // Phân trang: load trang đầu khi job complete
     fetchJob,
     fetchAssignmentConversations: refreshAssignmentHistory,
     reloadConversation,
@@ -1136,6 +1142,13 @@ const CrawlerInner = () => {
         currentPrompt={currentHistoryEntry?.prompt || undefined}
         jobHistory={jobHistory}
         onSelectHistoryIndex={handleSelectHistoryIndex}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        onNextPage={() => activeJobId && nextPage(activeJobId)}
+        onPrevPage={() => activeJobId && prevPage(activeJobId)}
+        onGoToPage={(page) => activeJobId && goToPage(activeJobId, page)}
       />
 
       <CrawlerQuotaExceededDialog
