@@ -120,22 +120,27 @@ export function useCrawlHub({
 
     // ===== Hub events =====
     conn.on("OnJobStats", (stats: JobStatsDto) => {
+      console.log("[HubCrawl] OnJobStats:", stats);
       onJobStatsRef.current?.(stats);
     });
 
     conn.on("OnSystemMetrics", (metrics: SystemMetricsDto) => {
+      console.log("[HubCrawl] OnSystemMetrics:", metrics);
       onSystemMetricsRef.current?.(metrics);
     });
 
     conn.on("OnGroupJobUpdate", (update: JobUpdateDto) => {
+      console.log("[HubCrawl] OnGroupJobUpdate:", update);
       onGroupJobUpdateRef.current?.(update);
     });
 
     conn.on("OnAssignmentJobUpdate", (update: JobUpdateDto) => {
+      console.log("[HubCrawl] OnAssignmentJobUpdate:", update);
       onAssignmentJobUpdateRef.current?.(update);
     });
 
     conn.on("OnConversationJobUpdate", (update: JobUpdateDto) => {
+      console.log("[HubCrawl] OnConversationJobUpdate:", update);
       onConversationJobUpdateRef.current?.(update);
     });
 
@@ -186,6 +191,7 @@ export function useCrawlHub({
       setConnected(true);
       setConnectionId(conn.connectionId ?? null);
       setLastError(null);
+      console.log("[HubCrawl] Connected successfully, connectionId:", conn.connectionId);
     } catch (e: any) {
       const rawMsg: string = e?.message ?? "";
       const isStrictModeRace =
@@ -201,6 +207,7 @@ export function useCrawlHub({
         setConnected(false);
         setConnectionId(null);
         setLastError(friendlyMsg);
+        console.error("[HubCrawl] Connection failed:", friendlyMsg);
         onErrorRef.current?.(friendlyMsg);
       }
     } finally {

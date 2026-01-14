@@ -194,6 +194,7 @@ const CrawlerInner = () => {
   const { fetchJob } = useSmartCrawlerJob();
   const {
     fetchJobResults,
+    fetchAllJobResults,
     loading: resultsLoading,
     results,
     clearResults,
@@ -216,7 +217,7 @@ const CrawlerInner = () => {
     startNewConversation,
   } = useCrawlerConversationState({
     fetchConversationMessages,
-    fetchJobResults,
+    fetchJobResults: fetchAllJobResults, // Sử dụng fetchAllJobResults để lấy tất cả kết quả
     userId,
     resultsLoading,
   });
@@ -378,11 +379,11 @@ const CrawlerInner = () => {
       void (async () => {
         const jobIdFromHistory = await selectConversation(convId);
         if (jobIdFromHistory) {
-          await fetchJobResults(jobIdFromHistory);
+          await fetchAllJobResults(jobIdFromHistory);
         }
       })();
     },
-    [fetchJobResults, selectConversation]
+    [fetchAllJobResults, selectConversation]
   );
 
   const handleNewConversation = useCallback(() => {
@@ -560,7 +561,7 @@ const CrawlerInner = () => {
       ) {
         setActiveJobId(jobId);
         try {
-          await fetchJobResults(jobId);
+          await fetchAllJobResults(jobId); // Lấy tất cả kết quả với pagination
         } catch {
         }
         await reloadConversation({ jobIdOverride: jobId });
@@ -569,7 +570,7 @@ const CrawlerInner = () => {
     [
       appendUiMessage,
       conversationId,
-      fetchJobResults,
+      fetchAllJobResults,
       findRecentMessageIndex,
       reloadConversation,
       setChatMessages,
@@ -592,7 +593,7 @@ const CrawlerInner = () => {
     setIsCrawling,
     setSubmitting,
     setShowResultsModal,
-    fetchJobResults,
+    fetchJobResults: fetchAllJobResults, // Lấy tất cả kết quả với pagination
     fetchJob,
     fetchAssignmentConversations: refreshAssignmentHistory,
     reloadConversation,

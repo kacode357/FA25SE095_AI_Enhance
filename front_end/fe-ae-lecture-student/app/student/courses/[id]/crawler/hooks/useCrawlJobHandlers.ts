@@ -57,27 +57,33 @@ export const useCrawlJobHandlers = ({
 
   const handleJobStarted = useCallback(
     (payload: any) => {
+      console.log("[CrawlJob] handleJobStarted - payload:", payload);
       const jid = getPayloadJobId(payload);
       if (jid && activeJobId && jid !== activeJobId) return;
       setCrawlStatusMsg(payload?.message || "Crawler started...");
       updateCrawlProgress(12);
+      console.log("[CrawlJob] Job started - progress: 12%, message:", payload?.message || "Crawler started...");
     },
     [activeJobId, getPayloadJobId, setCrawlStatusMsg, updateCrawlProgress]
   );
 
   const handleJobProgress = useCallback(
     (payload: any) => {
+      console.log("[CrawlJob] handleJobProgress - payload:", payload);
       const jid = getPayloadJobId(payload);
       if (jid && activeJobId && jid !== activeJobId) return;
 
       if (typeof payload?.progress === "number") {
         updateCrawlProgress(payload.progress);
+        console.log("[CrawlJob] Progress updated:", payload.progress, "%");
       } else if (typeof payload?.progressPercentage === "number") {
         updateCrawlProgress(payload.progressPercentage);
+        console.log("[CrawlJob] Progress updated:", payload.progressPercentage, "%");
       }
 
       if (payload?.message) {
         setCrawlStatusMsg(payload.message);
+        console.log("[CrawlJob] Status message:", payload.message);
       }
     },
     [activeJobId, getPayloadJobId, setCrawlStatusMsg, updateCrawlProgress]
@@ -85,12 +91,15 @@ export const useCrawlJobHandlers = ({
 
   const handleJobNavigation = useCallback(
     (payload: any) => {
+      console.log("[CrawlJob] handleJobNavigation - payload:", payload);
       const jid = getPayloadJobId(payload);
       if (jid && activeJobId && jid !== activeJobId) return;
 
       const eventType =
         payload?.navigationEventType || payload?.NavigationEventType;
       const message = payload?.message;
+
+      console.log("[CrawlJob] Navigation event type:", eventType, "- message:", message);
 
       if (message) {
         setCrawlStatusMsg(message);
@@ -149,6 +158,7 @@ export const useCrawlJobHandlers = ({
 
   const handleJobPagination = useCallback(
     (payload: any) => {
+      console.log("[CrawlJob] handleJobPagination - payload:", payload);
       const jid = getPayloadJobId(payload);
       if (jid && activeJobId && jid !== activeJobId) return;
 
@@ -158,6 +168,7 @@ export const useCrawlJobHandlers = ({
         payload?.totalPagesCollected ??
         payload?.TotalPagesCollected;
       const maxPages = payload?.maxPages ?? payload?.MaxPages;
+      console.log("[CrawlJob] Pagination - page:", pageNumber, ", maxPages:", maxPages);
       const base = 30;
       const range = 30;
       let next = base + range / 2;
@@ -182,12 +193,15 @@ export const useCrawlJobHandlers = ({
 
   const handleJobExtraction = useCallback(
     (payload: any) => {
+      console.log("[CrawlJob] handleJobExtraction - payload:", payload);
       const jid = getPayloadJobId(payload);
       if (jid && activeJobId && jid !== activeJobId) return;
 
       const eventType =
         payload?.extractionEventType || payload?.ExtractionEventType;
       const message = payload?.message;
+
+      console.log("[CrawlJob] Extraction event type:", eventType, "- message:", message);
 
       if (message) {
         setCrawlStatusMsg(message);
@@ -221,16 +235,19 @@ export const useCrawlJobHandlers = ({
 
   const handleJobCompleted = useCallback(
     async (payload: any) => {
+      console.log("[CrawlJob] handleJobCompleted - payload:", payload);
       const jid = getPayloadJobId(payload);
 
       setCrawlStatusMsg("Finalizing results...");
 
       if (!jid) {
+        console.log("[CrawlJob] No jobId found in completed payload");
         setIsCrawling(false);
         setSubmitting(false);
         return;
       }
 
+      console.log("[CrawlJob] Job completed with ID:", jid);
       setActiveJobId(jid);
 
       try {
@@ -241,8 +258,10 @@ export const useCrawlJobHandlers = ({
         }
         await reloadConversation({ jobIdOverride: jid });
         updateCrawlProgress(100);
+        console.log("[CrawlJob] All post-completion tasks done, showing results modal");
         setShowResultsModal(true);
-      } catch {
+      } catch (error) {
+        console.error("[CrawlJob] Error in post-completion tasks:", error);
       } finally {
         setIsCrawling(false);
         setSubmitting(false);

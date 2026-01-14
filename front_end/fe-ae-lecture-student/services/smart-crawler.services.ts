@@ -47,6 +47,7 @@ export const SmartCrawlerService = {
     jobId: string,
     params?: SmartCrawlJobResultsQuery
   ): Promise<SmartCrawlJobResultItem[]> => {
+    console.log("[SmartCrawlerService] getJobResults - jobId:", jobId, "params:", params);
     const { data } = await crawlAxiosInstance.get<SmartCrawlJobResultItem[]>(
       `${BASE}/job/${jobId}/results`,
       {
@@ -56,6 +57,7 @@ export const SmartCrawlerService = {
         },
       }
     );
+    console.log("[SmartCrawlerService] getJobResults response - count:", data?.length || 0);
     return data;
   },
 
