@@ -417,10 +417,10 @@ export const BufferReview: React.FC<BufferReviewProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">
-            Training Buffers ({buffers.length})
+            Pattern Buffers ({buffers.length})
           </h2>
           <p className="text-xs text-slate-500">
-            Review pending training results before promoting.
+            Review pending crawl results before promoting.
           </p>
         </div>
       </div>
@@ -472,7 +472,7 @@ export const BufferReview: React.FC<BufferReviewProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">
-                      Pending training buffer
+                      Pending pattern buffer
                     </p>
                     <p className="text-xs text-slate-500">
                       {buffer.patterns_count} learned patterns

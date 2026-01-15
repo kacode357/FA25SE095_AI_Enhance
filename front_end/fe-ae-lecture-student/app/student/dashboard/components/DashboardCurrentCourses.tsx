@@ -85,7 +85,7 @@ export default function DashboardCurrentCourses() {
                 <div className="flex items-center justify-between text-[11px] text-slate-600">
                   <span>Progress</span>
                   <span className="font-semibold text-nav">
-                    {c.progressPercentage ?? 0}%
+                    {(c.progressPercentage ?? 0).toFixed(2)}%
                   </span>
                 </div>
                 <Progress value={c.progressPercentage ?? 0} />

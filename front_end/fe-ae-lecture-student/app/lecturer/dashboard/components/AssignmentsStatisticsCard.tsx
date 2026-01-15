@@ -66,7 +66,7 @@ export default function AssignmentsStatisticsCard({ data, loading, courseId }: P
                       </Badge>
                     </div>
                     <span className="text-[11px] text-slate-600">
-                      {assignment.submissionRate ?? 0}%
+                      {(assignment.submissionRate ?? 0).toFixed(2)}%
                     </span>
                   </div>
                   <div className="mt-2 space-y-1">
@@ -108,7 +108,7 @@ function SummaryPill({ label, value }: { label: string; value: string }) {
 
 function formatNumber(value: number | null | undefined) {
   if (value === null || value === undefined) return "N/A";
-  return Number.isFinite(value) ? value.toFixed(1) : "N/A";
+  return Number.isFinite(value) ? value.toFixed(2) : "N/A";
 }
 
 function StatsSkeleton() {

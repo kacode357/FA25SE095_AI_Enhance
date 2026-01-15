@@ -434,7 +434,7 @@ export default function AssignmentDetailPage() {
                   <span className="font-semibold">Weight:</span>
                   <span>
                     {typeof a.weightPercentage === "number"
-                      ? `${a.weightPercentage}%`
+                      ? `${a.weightPercentage.toFixed(2)}%`
                       : "N/A"}
                   </span>
                 </div>

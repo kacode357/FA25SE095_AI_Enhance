@@ -17,7 +17,7 @@ import type {
 const BASE = "/smart-crawler";
 
 export const SmartCrawlerService = {
-  /** POST /api/smart-crawler/crawl — Execute intelligent crawl with prompt */
+  /** POST /api/smart-crawler/crawl — Execute Pattern collection with prompt */
   crawl: async (payload: SmartCrawlRequestPayload): Promise<SmartCrawlJobResponse> => {
     const { data } = await crawlAxiosInstance.post<SmartCrawlJobResponse>(
       `${BASE}/crawl`,

@@ -207,6 +207,11 @@ export default function ReportDetailPage() {
                 <Clock className="w-3 h-3" />
                 Graded At: {formatDateTimeVN(report.gradedAt) || "-"}
               </span>
+              {report.grade !== null && report.grade !== undefined && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
+                  Grade: {report.grade}{report.assignmentMaxPoints ? ` / ${report.assignmentMaxPoints}` : ""}
+                </span>
+              )}
             </div>
           </div>
 

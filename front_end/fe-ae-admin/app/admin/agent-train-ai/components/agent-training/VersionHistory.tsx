@@ -204,10 +204,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">
-            AI Version History
+            Pattern Version History
           </h2>
           <p className="text-xs text-slate-500">
-            Review each release created after training buffers are committed.
+            Review each release created after pattern buffers are committed.
           </p>
         </div>
         <button

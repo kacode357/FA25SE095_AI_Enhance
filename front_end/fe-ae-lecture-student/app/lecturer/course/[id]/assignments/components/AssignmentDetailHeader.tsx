@@ -105,7 +105,7 @@ export default function AssignmentDetailHeader({
                         Max: {a.maxPoints ?? 0} pts
                     </span>
                     <span className="rounded-full border px-2 py-1">
-                        Weight: {a.weightPercentage ?? 0} %
+                        Weight: {(a.weightPercentage ?? 0).toFixed(2)} %
                     </span>
                     <span className="rounded-full border px-2 py-1">
                         Start: {fmt(a.startDate)}

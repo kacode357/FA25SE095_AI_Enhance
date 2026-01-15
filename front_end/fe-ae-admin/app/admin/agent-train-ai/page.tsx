@@ -35,7 +35,7 @@ interface TabConfig {
 const TAB_CONFIG: TabConfig[] = [
   {
     id: "submit",
-    label: "Submit Training",
+    label: "Submit Crawl",
     description: "Launch new crawl jobs and capture feedback.",
   },
   {
@@ -45,18 +45,18 @@ const TAB_CONFIG: TabConfig[] = [
   },
   {
     id: "buffer",
-    label: "Buffer Review",
-    description: "Promote or discard completed training buffers.",
+    label: "Pattern Review",
+    description: "Review and manage collected patterns.",
   },
   {
     id: "versions",
-    label: "Version History",
-    description: "Inspect agent releases and pattern counts.",
+    label: "Pattern History",
+    description: "Inspect pattern versions and counts.",
   },
   {
     id: "dashboard",
     label: "Dashboard",
-    description: "Visualize learning insights and usage trends.",
+    description: "Visualize crawl insights and usage trends.",
   },
 ];
 
@@ -129,7 +129,7 @@ const AgentTrainingIndexPage: React.FC = () => {
       setBootstrapping(true);
       setBootstrapError(null);
       setBootstrapProgress(0);
-      setLoadingMessage("Preparing training workspace...");
+      setLoadingMessage("Preparing crawl workspace...");
       resetInitialData();
 
       try {
@@ -198,7 +198,7 @@ const AgentTrainingIndexPage: React.FC = () => {
 
         await Promise.all(steps);
         if (!isMounted || hasError) return;
-        setLoadingMessage("Agent training workspace ready");
+        setLoadingMessage("Pattern collection workspace ready");
         setBootstrapping(false);
         setBootstrapProgress(100);
       } catch (error) {
@@ -206,7 +206,7 @@ const AgentTrainingIndexPage: React.FC = () => {
         const message =
           error instanceof Error
             ? error.message
-            : "Failed to prepare agent training workspace";
+            : "Failed to prepare crawl workspace";
         setBootstrapError(message);
         setBootstrapping(false);
       }
@@ -310,7 +310,7 @@ const AgentTrainingIndexPage: React.FC = () => {
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-indigo-100 border-t-indigo-500" />
           <div>
             <p className="text-sm font-semibold text-slate-900">
-              Initializing agent training studio
+              Initializing intelligent crawl studio
             </p>
             <p className="mt-1 text-xs text-slate-500">{loadingMessage}</p>
           </div>
@@ -328,7 +328,7 @@ const AgentTrainingIndexPage: React.FC = () => {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="w-full max-w-lg space-y-4 rounded-3xl border border-rose-200 bg-white p-6 text-center shadow-xl">
           <p className="text-base font-semibold text-rose-700">
-            Unable to load training workspace
+            Unable to load crawl workspace
           </p>
           <p className="text-sm text-rose-600">{bootstrapError}</p>
           <div className="flex items-center justify-center gap-2 text-xs">
@@ -361,7 +361,7 @@ const AgentTrainingIndexPage: React.FC = () => {
               Workspace Tabs
             </h2>
             <p className="text-sm text-[var(--text-muted)]">
-              Switch between training tools without leaving the page.
+              Switch between crawl tools without leaving the page.
             </p>
           </div>
           <span

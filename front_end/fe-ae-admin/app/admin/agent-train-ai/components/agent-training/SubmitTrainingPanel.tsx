@@ -245,7 +245,7 @@ export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
               disabled={!isFormValid || crawling}
               className="w-full"
             >
-              {crawling ? "Crawling..." : "Start Training Crawl"}
+              {crawling ? "Crawling..." : "Start Crawl"}
             </Button>
           </form>
         </section>

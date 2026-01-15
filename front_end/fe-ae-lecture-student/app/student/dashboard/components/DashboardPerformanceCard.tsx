@@ -72,7 +72,7 @@ export default function DashboardPerformanceCard({ data, loading }: Props) {
                         {course.courseName}
                       </span>
                       <span className="font-semibold text-nav">
-                        {course.completionRate ?? 0}%
+                        {(course.completionRate ?? 0).toFixed(2)}%
                       </span>
                     </div>
                     <Progress value={course.completionRate ?? 0} />

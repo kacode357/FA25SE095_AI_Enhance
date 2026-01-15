@@ -27,8 +27,8 @@ export const BufferConfirmationDialog: React.FC<
         <DialogHeader>
           <DialogTitle>
             {type === "discard"
-              ? "Discard training buffer"
-              : "Commit training buffer"}
+              ? "Discard pattern buffer"
+              : "Commit pattern buffer"}
           </DialogTitle>
           <DialogDescription>
             {type === "discard"

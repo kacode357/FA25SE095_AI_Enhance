@@ -71,9 +71,9 @@ export const mainNav = [
   },
   {
     href: "/admin/agent-train-ai",
-    label: "Agent Training",
+    label: "Pattern Collection",
     icon: Users2,
-    description: "Agent training control center",
+    description: "Crawl orchestrator control center",
   },
 
   {

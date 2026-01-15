@@ -177,7 +177,7 @@ function EmptyRow({ label }: { label: string }) {
 
 function formatNumber(value: number | null | undefined) {
   if (value === null || value === undefined) return "N/A";
-  return Number.isFinite(value) ? value.toFixed(1) : "N/A";
+  return Number.isFinite(value) ? value.toFixed(2) : "N/A";
 }
 
 function PerformanceSkeleton() {
