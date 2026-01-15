@@ -185,7 +185,7 @@ export default function TopicWeightsPage() {
                                             <p className="text-sm font-medium">No topic weights found.</p>
                                             {searchCourseCode && (
                                                 <Button 
-                                                    variant="link" 
+                                                    // variant="link" 
                                                     onClick={handleClearSearch} 
                                                     className="text-indigo-600 h-auto p-0 font-normal"
                                                 >
