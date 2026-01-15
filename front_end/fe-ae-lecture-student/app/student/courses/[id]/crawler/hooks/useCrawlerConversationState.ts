@@ -12,7 +12,7 @@ type ConversationFetcher = (
   params: { limit?: number; offset?: number }
 ) => Promise<any[] | null>;
 
-type JobResultFetcher = (jobId: string) => Promise<any>;
+type JobResultFetcher = (jobId: string, page?: number) => Promise<any>;
 
 type UseCrawlerConversationStateArgs = {
   fetchConversationMessages: ConversationFetcher;

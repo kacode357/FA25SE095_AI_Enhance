@@ -18,7 +18,7 @@ type Options = {
   setIsCrawling: Dispatch<SetStateAction<boolean>>;
   setSubmitting: Dispatch<SetStateAction<boolean>>;
   setShowResultsModal: Dispatch<SetStateAction<boolean>>;
-  fetchJobResults: (jobId: string) => Promise<unknown>;
+  fetchJobResults: (jobId: string, page?: number) => Promise<unknown>;
   fetchJob: (jobId: string) => Promise<unknown>;
   fetchAssignmentConversations: FetchAssignmentConversations;
   reloadConversation: ReloadConversation;
