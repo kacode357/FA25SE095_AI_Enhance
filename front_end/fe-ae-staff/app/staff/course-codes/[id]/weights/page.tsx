@@ -9,16 +9,29 @@ import { useGetCourseCodeById } from "@/hooks/course-code/useGetCourseCodeById";
 import { useGetTopicWeightsByCourseCode } from "@/hooks/topic/useGetTopicWeightsByCourseCode";
 import { formatToVN } from "@/utils/datetime/time";
 // TopicWeight type no longer needed in this file
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import Button from "@/components/ui/button";
+import { useDeleteTopicWeight } from "@/hooks/topic/useDeleteTopicWeight";
+import { useUpdateTopicWeight } from "@/hooks/topic/useUpdateTopicWeight";
 import {
     ArrowLeft,
     BookOpen,
     CalendarDays,
     FileText,
-    PieChart
+    PencilLine,
+    PieChart,
+    TriangleAlert
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ConfigureTopicWeightsButton from "./components/ConfigureTopicWeightsButton";
 
 export default function WeightsPage() {
@@ -38,6 +51,26 @@ export default function WeightsPage() {
         if (courseCodeId) fetchCourseCodeById(courseCodeId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseCodeId]);
+
+    // Delete / Update hooks and confirmation state
+    const { loading: deleting, deleteTopicWeight } = useDeleteTopicWeight();
+    const { updateTopicWeight } = useUpdateTopicWeight();
+    const [confirmId, setConfirmId] = useState<string | null>(null);
+    const deletingItem = data ? data.find((it) => String(it.id) === String(confirmId)) : undefined;
+
+    const handleRequestDelete = (id: string) => {
+        setConfirmId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        const id = confirmId;
+        if (!id) return;
+        const ok = await deleteTopicWeight(id);
+        if (ok) {
+            if (courseCodeId) fetchByCourseCode(courseCodeId);
+        }
+        setConfirmId(null);
+    };
 
     const courseCodeName = courseCodeData?.code || (data && data.length > 0 ? data[0].courseCodeName : "Course Code");
 
@@ -91,7 +124,16 @@ export default function WeightsPage() {
                             Last updated: {data && data.length > 0 && data[0].updatedAt ? formatToVN(data[0].updatedAt) : 'N/A'}
                         </div>
                     </div>
-                    <ConfigureTopicWeightsButton courseCodeId={courseCodeId} data={data} fetchByCourseCode={fetchByCourseCode} />
+                    {data && data.length > 0 ? (
+                        <Button
+                            className="btn btn-green-slow bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            <PencilLine className="w-4 h-4 mr-2" />
+                            Edit Configuration
+                        </Button>
+                    ) : (
+                        <ConfigureTopicWeightsButton courseCodeId={courseCodeId} data={data} fetchByCourseCode={fetchByCourseCode} />
+                    )}
 
                 </CardHeader>
 
@@ -105,6 +147,7 @@ export default function WeightsPage() {
                                     <TableHead className="py-5 font-semibold">Description</TableHead>
                                     <TableHead className="py-5 font-semibold text-center w-[180px]">Configured At</TableHead>
                                     <TableHead className="py-5 font-semibold text-center w-[180px]">Updated At</TableHead>
+                                    {/* <TableHead className="py-5 font-semibold text-center w-[180px]">Action</TableHead> */}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -126,7 +169,7 @@ export default function WeightsPage() {
                                         <TableCell colSpan={5} className="h-32 text-center">
                                             <div className="flex flex-col items-center justify-center text-muted-foreground gap-2">
                                                 <FileText className="h-8 w-8 text-slate-300" />
-                                                <p>No configuration found for this course.</p>
+                                                <p className="italic text-slate-400">No configuration found for this course.</p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -141,32 +184,100 @@ export default function WeightsPage() {
                                         <TableCell className="text-center py-3">
                                             <Badge
                                                 variant="secondary"
-                                                className="font-bold text-slate-700 bg-slate-100 group-hover:bg-white group-hover:border-slate-300 border border-transparent transition-all"
+                                                className="font-bold text-xs text-slate-700 bg-slate-100 group-hover:bg-white group-hover:border-slate-300 border border-transparent transition-all"
                                             >
                                                 {row.weightPercentage}%
                                             </Badge>
                                         </TableCell>
 
-                                        <TableCell className="text-slate-600 py-3 max-w-[400px] truncate" title={row.description ?? undefined}>
-                                            {row.description || <span className="text-slate-300 italic">No description</span>}
+                                        <TableCell className="text-slate-600 py-3 max-w-[400px] truncate text-xs" title={row.description ?? undefined}>
+                                            {row.description || <span className="text-slate-400 italic">No description</span>}
                                         </TableCell>
 
-                                        <TableCell className="text-slate-500 py-3 text-sm">
+                                        <TableCell className="text-slate-500 py-3 text-xs">
                                             <div className="flex justify-around py-3 text-center items-center">
-                                                <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+                                                <CalendarDays className="h-3.5 w-3.5 text-slate-500" />
                                                 {row.configuredAt ? formatToVN(row.configuredAt) : "-"}
                                             </div>
                                         </TableCell>
 
-                                        <TableCell className="text-slate-500 py-3 text-center text-sm">
+                                        <TableCell className="text-slate-500 py-3 text-center text-xs">
                                             {row.updatedAt ? formatToVN(row.updatedAt) : "-"}
                                         </TableCell>
+{/* 
+                                        <TableCell className="text-center py-3">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-8 border-slate-200 btn btn-green-slow text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all"
+                                                    onClick={() => router.push(`/staff/courses/topic-weights/${row.id}`)}
+                                                >
+                                                    <PencilLine className="w-3.5 h-3.5 mr-1" />Edit
+                                                </Button>
+                                            </div>
+                                        </TableCell> */}
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
                     </div>
                 </CardContent>
+                {/* Confirm Delete Dialog */}
+                <AlertDialog
+                    open={!!confirmId}
+                    onOpenChange={(open) => {
+                        if (!open) setConfirmId(null);
+                    }}
+                >
+                    <AlertDialogContent className="bg-white border-white">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this topic weight?</AlertDialogTitle>
+                            <div className="mt-3">
+                                <div className="bg-slate-50 p-4 rounded-md space-y-4 text-sm text-slate-700">
+                                    <div>
+                                        <span className="text-slate-900 font-semibold">Topic:</span>
+                                        <span className="ml-2">{deletingItem?.topicName || "-"}</span>
+                                    </div>
+                                    {deletingItem?.courseCodeName && (
+                                        <div>
+                                            <span className="text-slate-900 font-semibold">Course Code:</span>
+                                            <span className="ml-2">{deletingItem.courseCodeName}</span>
+                                        </div>
+                                    )}
+                                    {deletingItem?.specificCourseName && (
+                                        <div>
+                                            <span className="text-slate-900 font-semibold">Specific Course:</span>
+                                            <span className="ml-2">{deletingItem.specificCourseName}</span>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <span className="text-slate-900 font-semibold">Weight:</span>
+                                        <span className="ml-2">{deletingItem ? `${deletingItem.weightPercentage}%` : "-"}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-900 font-semibold">Description:</span>
+                                        <span className="ml-2">{deletingItem ? `${deletingItem.description}` : "-"}</span>
+                                    </div>
+                                </div>
+
+                                <p className="mt-3 mb-6 text-xs text-yellow-600">
+                                    <em className="flex items-start gap-1"><TriangleAlert className="size-3.5" />This action can’t be undone. The topic weight will be permanently removed.</em>
+                                </p>
+                            </div>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                className="bg-red-600 hover:bg-red-700 cursor-pointer text-white"
+                                onClick={handleConfirmDelete}
+                                disabled={deleting}
+                            >
+                                {deleting ? "Deleting…" : "Delete"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </Card>
         </div>
     );

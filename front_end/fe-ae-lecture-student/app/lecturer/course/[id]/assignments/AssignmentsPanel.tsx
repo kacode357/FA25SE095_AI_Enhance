@@ -157,7 +157,13 @@ export default function AssignmentsPanel({
       if (!m.has(t)) m.set(t, []);
       m.get(t)!.push(a as AssignmentItem);
     });
-    return Array.from(m.entries()).map(([name, items]) => ({ name, items }));
+    return Array.from(m.entries()).map(([name, items]) => {
+      const weight = items.reduce((sum, it) => {
+        const w = (it as any).weightPercentage;
+        return sum + (typeof w === "number" ? w : 0);
+      }, 0);
+      return { name, items, weightPercentage: weight };
+    });
   }, [assignments]);
 
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
@@ -365,9 +371,14 @@ export default function AssignmentsPanel({
                     onClick={() => toggleTopic(t.name)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`font-medium ${expandedTopics[t.name] ? 'text-violet-800' : 'text-slate-800'}`}>{t.name}</div>
-                      <div className="text-sm text-slate-500">{t.items.length} item(s)</div>
+                      <div className="flex items-center gap-2">
+                        <div className={`font-medium ${expandedTopics[t.name] ? 'text-violet-800' : 'text-slate-800'}`}>{t.name}</div>
+                        <div className="text-sm text-slate-500">{typeof (t as any).weightPercentage === 'number' ? `${(t as any).weightPercentage}%` : '-'}</div>
+                      </div>
+                      {/* <div className="text-sm text-slate-500">{t.items.length} exercise(s)</div> */}
                     </div>
+                      <div className="text-sm text-slate-500">{t.items.length} exercise(s)</div>
+
                     <ChevronDown className={`h-4 w-4 transform transition-transform ${expandedTopics[t.name] ? 'rotate-180' : ''}`} />
                   </div>
 

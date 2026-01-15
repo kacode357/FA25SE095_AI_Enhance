@@ -6,72 +6,115 @@ import Select from "@/components/ui/select/Select";
 import { Separator } from "@/components/ui/separator";
 import { useCourseCodes } from "@/hooks/course-code/useCourseCodes";
 import { useCourses } from "@/hooks/course/useCourses";
+import { useCreateTopicWeight } from "@/hooks/topic/useCreateTopicWeight";
+import { useGetTopicWeights } from "@/hooks/topic/useGetTopicWeights";
 import { useGetTopics } from "@/hooks/topic/useGetTopics";
 import { useGetTopicsDropdown } from "@/hooks/topic/useGetTopicsDropdown";
-import { TopicWeightsService } from "@/services/topic-weights.services";
-import { ArrowLeft, BookOpen, Info, Layers, Library, Percent, Save } from "lucide-react";
+import { ArrowLeft, BookOpen, Info, Layers, Percent, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 export default function ConfigureTopicWeightPage() {
     const router = useRouter();
+    
+    // Hooks lấy dữ liệu
     const { data: topicsData, fetchTopics } = useGetTopics();
-    const { listData: courseCodes, fetchCourseCodes } = useCourseCodes();
+    const { fetchCourseCodes } = useCourseCodes(); // Vẫn giữ hook này để không lỗi logic cũ, dù không render UI
     const { listData: coursesData, fetchCourses } = useCourses();
 
+    // State quản lý form
     const [topicId, setTopicId] = useState<string>("");
-    const [courseCodeId, setCourseCodeId] = useState<string>("");
+    // Giữ state courseCodeId để payload không bị lỗi cấu trúc, mặc định rỗng vì đã ẩn UI
+    const [courseCodeId] = useState<string>(""); 
     const [specificCourseId, setSpecificCourseId] = useState<string>("");
     const [weightPercentage, setWeightPercentage] = useState<number | "">("");
     const [description, setDescription] = useState<string>("");
     const [submitting, setSubmitting] = useState(false);
 
     const { data: dropdownTopics, fetchDropdown: fetchDropdownTopics } = useGetTopicsDropdown();
-    const courseCodeWrapperRef = useRef<HTMLDivElement | null>(null);
-    const specificCourseWrapperRef = useRef<HTMLDivElement | null>(null);
+    const { data: topicWeightsData, fetchTopicWeights } = useGetTopicWeights();
+    const { createTopicWeight } = useCreateTopicWeight();
+
+    // Logic kiểm tra điều kiện để enable nút Save
+    // Phải có Topic, Specific Course và Weight thì mới hợp lệ
+    const isFormValid = topicId && specificCourseId && (weightPercentage !== "" && weightPercentage !== null);
 
     useEffect(() => {
         fetchTopics({ page: 1, pageSize: 1000, isActive: true });
         fetchCourseCodes({ page: 1, pageSize: 1000, isActive: true });
         fetchCourses({ page: 1, pageSize: 1000, status: 2 });
         fetchDropdownTopics();
+        fetchTopicWeights({ pageNumber: 1, pageSize: 1000 });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // When topic changes, refetch topic weights filtered by that topic
+    useEffect(() => {
+        if (!topicId) {
+            fetchTopicWeights({ pageNumber: 1, pageSize: 1000 });
+            setSpecificCourseId("");
+            return;
+        }
+
+        // Clear any previously selected specific course to prevent showing a value
+        // that's already configured for this topic, then fetch weights for the topic.
+        setSpecificCourseId("");
+        fetchTopicWeights({ pageNumber: 1, pageSize: 1000, topicId });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [topicId]);
+
     const handleSubmit = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!topicId) { toast.error("Please select a Topic."); return; }
-        if (!courseCodeId && !specificCourseId) { toast.error("Please select a Course Code or a Specific Course."); return; }
-        if (weightPercentage === "" || weightPercentage === null) { toast.error("Please enter Weight Percentage."); return; }
-        if (typeof weightPercentage === "number" && (weightPercentage < 0 || weightPercentage > 100)) { toast.error("Weight must be between 0 and 100."); return; }
+        
+        // Validation logic bổ sung
+        if (!topicId) return;
+        if (!specificCourseId) return;
+        if (weightPercentage === "" || weightPercentage === null) return;
+        if (typeof weightPercentage === "number" && (weightPercentage < 0 || weightPercentage > 100)) return;
 
-        // Only include IDs that the user explicitly selected.
+        // Payload giữ nguyên cấu trúc cũ
         const payload = {
             topicId,
-            courseCodeId: courseCodeId ? courseCodeId : null,
-            specificCourseId: specificCourseId ? specificCourseId : null,
+            courseCodeId: courseCodeId || null, // Field này sẽ là null
+            specificCourseId: specificCourseId || null,
             weightPercentage: Number(weightPercentage),
             description: description || null,
         } as any;
 
-        try {
-            setSubmitting(true);
-            await TopicWeightsService.create(payload);
-            router.push("/staff/courses/topic-weights");
-        } catch (err: any) {
-            toast.error(err?.message || "Failed to create configuration. Please check your inputs.");
-        } finally {
-            setSubmitting(false);
-        }
+            try {
+                setSubmitting(true);
+                const res = await createTopicWeight(payload);
+
+                if (!res) {
+                    setSubmitting(false);
+                    return;
+                }
+
+                router.push("/staff/courses/topic-weights");
+            } catch (err: any) {
+                console.error(err);
+            } finally {
+                setSubmitting(false);
+            }
     };
 
     const topics = topicsData?.topics || [];
-    const codes = courseCodes || [];
     const courses = coursesData?.courses || [];
 
     const topicOptions = (topics.length ? topics : dropdownTopics || []).map((t: any) => ({ value: String(t.id), label: t.name || t.topicName || t.title }));
 
+    // Build a set of specificCourseIds already configured for the currently selected topic
+    const configuredSpecificCourseIds = new Set<string>();
+    if (topicWeightsData && topicWeightsData.data && topicId) {
+        topicWeightsData.data
+            .filter((tw: any) => String(tw.topicId) === String(topicId) && tw.specificCourseId)
+            .forEach((tw: any) => configuredSpecificCourseIds.add(String(tw.specificCourseId)));
+    }
+
+    // Filter courses to hide those already configured for the selected topic
+    const availableCourses = courses.filter((c: any) => !configuredSpecificCourseIds.has(String(c.id)));
+
+    // Helper component để wrap Select với Icon
     const SelectWrapper = ({ children, icon: Icon }: { children: React.ReactNode, icon?: any }) => (
         <div className="relative">
             {Icon && (
@@ -86,6 +129,7 @@ export default function ConfigureTopicWeightPage() {
     return (
         <div className="min-h-screen bg-slate-50/50 p-6 font-sans">
             <div className="max-w-5xl mx-auto space-y-6">
+                {/* Header Page */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <button
@@ -96,7 +140,7 @@ export default function ConfigureTopicWeightPage() {
                             <ArrowLeft className="w-4 h-4 text-slate-700" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Configure New Topic Weight</h1>
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Configure Topic Weight With Specific Course</h1>
                             <p className="text-sm text-slate-500">Define how topics are weighted for specific courses.</p>
                         </div>
                     </div>
@@ -108,7 +152,7 @@ export default function ConfigureTopicWeightPage() {
                             <div className="bg-indigo-100 p-1.5 rounded text-indigo-600">
                                 <Layers className="w-4 h-4" />
                             </div>
-                            <CardTitle className="text-base font-semibold text-slate-800">New Configuration Details</CardTitle>
+                            <CardTitle className="text-base font-semibold text-slate-800">Configuration Details</CardTitle>
                         </div>
                         <CardDescription>Fill in the details below. All fields marked with * are required.</CardDescription>
                     </CardHeader>
@@ -132,90 +176,40 @@ export default function ConfigureTopicWeightPage() {
                                     </SelectWrapper>
                                 </div>
 
-                                {/* Course Code Select */}
+                                {/* Specific Course Select (Đã di chuyển lên đây thay cho Course Code) */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                                        Course Code <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="relative" ref={courseCodeWrapperRef}>
-                                        <SelectWrapper icon={Library}>
-                                            <Select<string>
-                                                value={courseCodeId}
-                                                options={codes.map((c: any) => ({ value: String(c.id), label: c.code || c.title }))}
-                                                placeholder="Select Course Code..."
-                                                onChange={(v) => setCourseCodeId(String(v))}
-                                                className="w-full pl-10"
-                                                disabled={!!specificCourseId}
-                                            />
-                                        </SelectWrapper>
-
-                                        {specificCourseId && (
-                                            <button
-                                                title="Course"
-                                                type="button"
-                                                className="absolute inset-0 bg-transparent"
-                                                onClick={() => {
-                                                    setSpecificCourseId("");
-                                                    setTimeout(() => {
-                                                        courseCodeWrapperRef.current?.querySelector("button")?.click();
-                                                    }, 60);
-                                                }}
-                                                aria-hidden
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Specific Course Select */}
-                                <div className="md:col-span-2 space-y-2">
                                     <div className="flex justify-between">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                                            Specific Course Context <span className="text-red-500">*</span>
+                                            Specific Course <span className="text-red-500">*</span>
                                         </label>
-                                        <span className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 px-2 rounded-full">Optional</span>
                                     </div>
-                                    <div className="relative" ref={specificCourseWrapperRef}>
-                                        <SelectWrapper icon={BookOpen}>
-                                            <Select<string>
-                                                value={specificCourseId}
-                                                options={[{ value: "", label: "-- Apply Globally to Course Code --" },
-                                                ...courses.map((c: any) => ({ value: String(c.id), label: `${c.name || c.title} (${c.code})` }))
-                                                ]}
-                                                placeholder="-- Apply Globally to Course Code --"
-                                                onChange={(v) => setSpecificCourseId(String(v))}
-                                                className="w-full pl-10"
-                                                disabled={!!courseCodeId}
-                                            />
-                                        </SelectWrapper>
-
-                                        {courseCodeId && (
-                                            <button
-                                                title="Course Course"
-                                                type="button"
-                                                className="absolute inset-0 bg-transparent"
-                                                onClick={() => {
-                                                    setCourseCodeId("");
-                                                    setTimeout(() => {
-                                                        specificCourseWrapperRef.current?.querySelector("button")?.click();
-                                                    }, 60);
-                                                }}
-                                                aria-hidden
-                                            />
-                                        )}
-                                    </div>
-                                    <p className="text-[11px] mt-4 text-slate-400">Configuration is only allowed for specific Course Codes or specific Courses. Leave blank to apply this weight to all courses under the selected code.</p>
+                                    <SelectWrapper icon={BookOpen}>
+                                        <Select<string>
+                                            value={specificCourseId}
+                                            options={courses.map((c: any) => ({
+                                                value: String(c.id),
+                                                label: `${c.name || c.title} (${c.code})`,
+                                                disabled: configuredSpecificCourseIds.has(String(c.id)),
+                                            }))}
+                                            placeholder="Select Specific Course..."
+                                            onChange={(v) => setSpecificCourseId(String(v))}
+                                            className="w-full pl-10"
+                                        />
+                                    </SelectWrapper>
+                                    <p className="text-[11px] mt-1 text-slate-400">
+                                        Configuration applies only to the selected course.
+                                    </p>
                                 </div>
                             </div>
 
                             <Separator className="bg-slate-100" />
 
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                                {/* Weight Input - FIX: Đã sửa ở đây */}
+                                {/* Weight Input */}
                                 <div className="md:col-span-4 space-y-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
                                         Weight Percentage <span className="text-red-500">*</span>
                                     </label>
-                                    {/* Chỉ thẻ input và icon nằm trong relative */}
                                     <div className="relative">
                                         <input
                                             type="number"
@@ -230,12 +224,10 @@ export default function ConfigureTopicWeightPage() {
                                             className="block w-full pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-0 focus:border-slate-300 transition-shadow shadow-sm"
                                             placeholder="0"
                                         />
-                                        {/* Icon giờ sẽ căn giữa hoàn hảo theo input */}
                                         <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                                             <Percent className="h-4 w-4 text-slate-400" />
                                         </div>
                                     </div>
-                                    {/* Thẻ P được đưa ra ngoài để không ảnh hưởng chiều cao của div relative */}
                                     <p className="text-[11px] flex items-center gap-2 mt-2 text-slate-400 leading-tight">
                                         <Info className="size-4" />Set the percentage weight for this topic (0-100).
                                     </p>
@@ -267,8 +259,14 @@ export default function ConfigureTopicWeightPage() {
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={submitting}
-                                    className="bg-indigo-600 btn btn-green-slow hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 min-w-[140px]"
+                                    disabled={submitting || !isFormValid}
+                                    className={`
+                                        min-w-[140px] shadow-md transition-all btn btn-green-slow
+                                        ${!isFormValid 
+                                            ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none" 
+                                            : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 btn btn-green-slow"
+                                        }
+                                    `}
                                 >
                                     {submitting ? (
                                         <span className="flex items-center gap-2">

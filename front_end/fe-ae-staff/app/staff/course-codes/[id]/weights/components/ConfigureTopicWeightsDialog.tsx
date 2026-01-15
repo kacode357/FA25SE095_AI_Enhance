@@ -225,10 +225,11 @@ export default function ConfigureTopicWeightsDialog({
                     <div className="w-full flex justify-end items-center">
                         <Button
                             onClick={handleSubmit}
-                            disabled={loading}
+                            disabled={loading || !isValidTotal}
                             className={cn(
                                 "min-w-[120px] btn btn-green-slow",
-                                isValidTotal ? "bg-emerald-600 hover:bg-emerald-700" : ""
+                                isValidTotal ? "bg-emerald-600 hover:bg-emerald-700" : "",
+                                !isValidTotal ? "opacity-50 cursor-not-allowed" : ""
                             )}
                         >
                             {loading ? "Saving..." : "Save Configuration"}

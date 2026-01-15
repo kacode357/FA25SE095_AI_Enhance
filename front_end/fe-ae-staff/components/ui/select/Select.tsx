@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-type Option<T extends string | number> = { value: T; label: ReactNode };
+type Option<T extends string | number> = { value: T; label: ReactNode; disabled?: boolean };
 
 export type SelectProps<T extends string | number> = {
   value: T | "" | undefined;
@@ -130,12 +130,16 @@ export default function Select<T extends string | number>({
                   key={String(opt.value)}
                   type="button"
                   role="option"
-                  onClick={(e) => handleOptionClick(opt.value, e)}
-                  className={`w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between gap-2 ${
-                    opt.value === value ? "bg-slate-50" : ""
-                  }`}
+                  aria-disabled={opt.disabled ? true : undefined}
+                  onClick={(e) => {
+                    if (opt.disabled) return;
+                    handleOptionClick(opt.value, e);
+                  }}
+                  className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 ${
+                    opt.disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-slate-50"
+                  } ${opt.value === value ? "bg-slate-50" : ""}`}
                 >
-                  <div className="text-sm text-gray-900 leading-tight whitespace-normal break-words flex-1 pr-2">
+                  <div className={`text-sm leading-tight whitespace-normal break-words flex-1 pr-2 ${opt.disabled ? 'text-slate-400' : 'text-gray-900'}`}>
                     {opt.label}
                   </div>
                   {opt.value === value && (

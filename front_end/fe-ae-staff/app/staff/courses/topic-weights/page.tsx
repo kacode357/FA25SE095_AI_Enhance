@@ -12,32 +12,64 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useDeleteTopicWeight } from "@/hooks/topic/useDeleteTopicWeight";
 import { useGetTopicWeights } from "@/hooks/topic/useGetTopicWeights";
 import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
-import { CalendarClock, Layers, PencilLine, Settings2, Trash2, TriangleAlert } from "lucide-react";
+import { CalendarClock, Layers, PencilLine, Search, Settings2, TriangleAlert, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 export default function TopicWeightsPage() {
+    // --- Hooks & State ---
     const { data, loading, fetchTopicWeights } = useGetTopicWeights();
     const router = useRouter();
 
     const [items, setItems] = useState<any[]>([]);
     const [page, setPage] = useState(1);
     const pageSize = 10;
+    
+    // State cho filter Course Code
+    const [searchCourseCode, setSearchCourseCode] = useState("");
 
+    // Hook Delete
     const { loading: deleting, deleteTopicWeight } = useDeleteTopicWeight();
     const [confirmId, setConfirmId] = useState<string | null>(null);
     const deletingItem = items.find((it) => String(it.id) === String(confirmId));
 
-    const fetchAll = async (pageNum = 1) => {
-        await fetchTopicWeights({ pageNumber: pageNum, pageSize });
+    // --- Logic Fetch Data ---
+    // searchParam là tùy chọn, dùng để clear search ngay lập tức mà không đợi state update
+    const fetchAll = async (pageNum = 1, searchParam?: string) => {
+        // Nếu searchParam được truyền (kể cả rỗng), dùng nó. Nếu không thì dùng state hiện tại.
+        const codeToSearch = searchParam !== undefined ? searchParam : searchCourseCode;
+
+        await fetchTopicWeights({ 
+            pageNumber: pageNum, 
+            pageSize,
+            courseCode: codeToSearch // Truyền tham số filter vào API
+        });
         setPage(pageNum);
     };
 
+    // --- Handlers Search ---
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchCourseCode(e.target.value);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            fetchAll(1); // Enter thì về trang 1 và search
+        }
+    };
+
+    const handleClearSearch = () => {
+        setSearchCourseCode("");
+        fetchAll(1, ""); // Gọi fetch với chuỗi rỗng ngay lập tức
+    };
+
+    // --- Handlers Delete ---
     const handleRequestDelete = (id: string) => {
         setConfirmId(id);
     };
@@ -47,12 +79,13 @@ export default function TopicWeightsPage() {
         if (!id) return;
         const ok = await deleteTopicWeight(id);
         if (ok) {
-            // refresh current page
+            // Refresh lại trang hiện tại, giữ nguyên filter nếu có
             fetchAll(page);
         }
         setConfirmId(null);
     };
 
+    // --- Effects ---
     useEffect(() => {
         fetchAll(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,7 +100,7 @@ export default function TopicWeightsPage() {
 
     return (
         <div className="flex flex-col h-full space-y-6 p-6 bg-slate-50/50 min-h-screen text-slate-900">
-            {/* --- Page Header (Đã sửa lại bố cục) --- */}
+            {/* --- Page Header --- */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex flex-col gap-1">
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Topic Weights Configuration</h1>
@@ -76,7 +109,6 @@ export default function TopicWeightsPage() {
                     </p>
                 </div>
 
-                {/* --- FIX: Nút hiển thị rõ ràng --- */}
                 <div className="flex items-center gap-2">
                     <Button
                         onClick={() => router.push(`/staff/courses/topic-weights/configure`)}
@@ -90,8 +122,8 @@ export default function TopicWeightsPage() {
 
             {/* --- Main Content Card --- */}
             <Card className="border-slate-200 shadow-sm flex flex-col overflow-hidden bg-white">
-                <CardHeader className="border-b border-slate-100 py-4 px-6 bg-white">
-                    <div className="flex items-center justify-between">
+                <CardHeader className="border-b border-slate-100 py-4 px-6 bg-white space-y-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800">
                             <Layers className="w-4 h-4 text-indigo-600" />
                             All Records
@@ -99,6 +131,28 @@ export default function TopicWeightsPage() {
                                 {data?.totalCount ?? 0}
                             </span>
                         </CardTitle>
+
+                        {/* --- Filter Search Bar --- */}
+                        <div className="relative w-full md:w-72">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-4 w-4 text-slate-400" />
+                            </div>
+                            <Input
+                                placeholder="Filter by Course Code..."
+                                className="pl-9 pr-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all text-sm"
+                                value={searchCourseCode}
+                                onChange={handleSearchChange}
+                                onKeyDown={handleKeyDown}
+                            />
+                            {searchCourseCode && (
+                                <button
+                                    onClick={handleClearSearch}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </CardHeader>
 
@@ -127,8 +181,17 @@ export default function TopicWeightsPage() {
                                 <TableRow>
                                     <TableCell colSpan={5} className="h-[400px] text-center">
                                         <div className="flex flex-col items-center justify-center gap-3 text-slate-400">
-                                            <Layers className="w-12 h-12 opacity-20" />
+                                            <Search className="w-12 h-12 opacity-20" />
                                             <p className="text-sm font-medium">No topic weights found.</p>
+                                            {searchCourseCode && (
+                                                <Button 
+                                                    variant="link" 
+                                                    onClick={handleClearSearch} 
+                                                    className="text-indigo-600 h-auto p-0 font-normal"
+                                                >
+                                                    Clear filter
+                                                </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -193,20 +256,19 @@ export default function TopicWeightsPage() {
                                                     size="sm"
                                                     variant="outline"
                                                     className="h-8 border-slate-200 btn btn-green-slow text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all"
-                                                    onClick={() => router.push(`/staff/courses/topic-weights/${t.id}`)}
+                                                    onClick={() => {
+                                                        // Logic điều hướng edit
+                                                        if (t.courseCodeId && !t.specificCourseId) {
+                                                            router.push(`/staff/course-codes/${t.courseCodeId}/weights`);
+                                                        }
+                                                        else {
+                                                            router.push(`/staff/courses/topic-weights/${t.id}`);
+                                                        }
+                                                    }}
                                                 >
                                                     <PencilLine className="size-3" />Edit
                                                 </Button>
-
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    disabled={deleting}
-                                                    onClick={() => handleRequestDelete(t.id)}
-                                                    className="h-8 border-red-200 text-red-600 cursor-pointer hover:bg-red-100"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
+                                                {/* Nếu cần nút Delete ở đây thì thêm vào */}
                                             </div>
                                         </TableCell>
                                     </motion.tr>
@@ -216,7 +278,7 @@ export default function TopicWeightsPage() {
                     </Table>
                 </CardContent>
 
-                {/* Confirm Delete Dialog */}
+                {/* --- Confirm Delete Dialog --- */}
                 <AlertDialog
                     open={!!confirmId}
                     onOpenChange={(open) => {
@@ -248,14 +310,10 @@ export default function TopicWeightsPage() {
                                         <span className="text-slate-900 font-semibold">Weight:</span>
                                         <span className="ml-2">{deletingItem ? `${deletingItem.weightPercentage}%` : "-"}</span>
                                     </div>
-                                    <div>
-                                        <span className="text-slate-900 font-semibold">Description:</span>
-                                        <span className="ml-2">{deletingItem ? `${deletingItem.description}%` : "-"}</span>
-                                    </div>
                                 </div>
 
                                 <p className="mt-3 mb-6 text-xs text-yellow-600">
-                                    <em className="flex items-start gap-1"><TriangleAlert className="size-3.5" />This action can’t be undone. The topic weight will be permanently removed.</em>
+                                    <em className="flex items-start gap-1"><TriangleAlert className="size-3.5" />This action can’t be undone.</em>
                                 </p>
                             </div>
                         </AlertDialogHeader>
