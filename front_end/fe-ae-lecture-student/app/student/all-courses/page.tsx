@@ -65,7 +65,7 @@ const mapTermCourseToAvailable = (
   lecturerImage: c.lecturerImage ?? null,
   termStartDate: c.termStartDate,
   termEndDate: c.termEndDate,
-  enrollmentStatus: null,
+  enrollmentStatus: c.isEnrolled ? { isEnrolled: true, joinedAt: null, status: "active" } : null,
   canJoin: c.canEnroll,
   joinUrl: null,
   announcement: null,

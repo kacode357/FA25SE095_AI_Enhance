@@ -262,6 +262,7 @@ export interface CoursesByTermYearItem {
   isAccessCodeExpired: boolean;
   img: string | null;
   department: string | null;
+  isEnrolled: boolean;
 }
 
 export interface GetCoursesByTermYearResponse {
