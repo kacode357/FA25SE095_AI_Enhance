@@ -131,14 +131,14 @@ export default function SubscriptionCheckoutPage() {
     }
 
     if (tierParam) {
-      const byTierNumber = tiers.find(
-        (t) => String(t.tier) === tierParam,
+      const byTierLevel = tiers.find(
+        (t) => String(t.tierLevel) === tierParam,
       );
-      if (byTierNumber) return byTierNumber;
+      if (byTierLevel) return byTierLevel;
 
       const lower = tierParam.toLowerCase();
       const byName = tiers.find(
-        (t) => t.name.toLowerCase() === lower || String(t.tier) === lower,
+        (t) => t.name.toLowerCase() === lower || t.tierName.toLowerCase() === lower || String(t.tierLevel) === lower,
       );
       if (byName) return byName;
     }
@@ -165,7 +165,7 @@ export default function SubscriptionCheckoutPage() {
 
     // returnUrl về lại đúng trang checkout (giữ tier + planId)
     const query = new URLSearchParams();
-    query.set("tier", String(selectedTier.tier)); // số: 0/1/2/3
+    query.set("tier", selectedTier.tierName); // tierName: Free/Basic/Premium/Enterprise
     query.set("planId", selectedTier.id);
 
     const returnUrl = `${origin}/student/subscription/success?${query.toString()}`;

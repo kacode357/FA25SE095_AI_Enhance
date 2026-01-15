@@ -58,7 +58,7 @@ export default function PricingPlanSection() {
 
     const activeSortedTiers = tiers
         .filter((t) => (typeof t.isActive === "boolean" ? t.isActive : true))
-        .sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0));
+        .sort((a, b) => (a.tierLevel ?? 0) - (b.tierLevel ?? 0));
 
     return (
         <section className="relative py-10 bg-center bg-no-repeat bg-cover bg-slate-50">

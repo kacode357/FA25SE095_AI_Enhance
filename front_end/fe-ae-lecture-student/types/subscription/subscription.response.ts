@@ -50,7 +50,9 @@ export type SubscriptionTier = {
   quotaLimit: number;
   features: string[];
   isActive: boolean;
-  tier: number;
+  subscriptionTierId: string;
+  tierName: string;
+  tierLevel: number;
   createdAt: string;
   updatedAt: string | null;
 };

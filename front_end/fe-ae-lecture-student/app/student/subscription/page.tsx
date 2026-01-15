@@ -162,15 +162,15 @@ export default function SubscriptionPage() {
 
     const params = new URLSearchParams();
     params.set("planId", tier.id); // dùng id để checkout
-    params.set("tier", String(tier.tier)); // gửi thêm tier number nếu cần
+    params.set("tier", tier.tierName); // gửi thêm tier name nếu cần
 
     router.push(`/student/subscription/checkout?${params.toString()}`);
   };
 
-  // Chỉ lấy plan active + sort theo tier number
+  // Chỉ lấy plan active + sort theo tier level
   const activeSortedTiers = tiers
     .filter((t) => t.isActive)
-    .sort((a, b) => a.tier - b.tier);
+    .sort((a, b) => a.tierLevel - b.tierLevel);
 
   return (
     <section className="relative bg-slate-50 pt-7 pb-15">
@@ -253,7 +253,8 @@ export default function SubscriptionPage() {
                   (
                     tier.id.toLowerCase() === keyLower || // user.subscriptionTier = id
                     tierName.toLowerCase() === keyLower || // user.subscriptionTier = "Free"/"Basic"/...
-                    String(tier.tier) === keyLower // user.subscriptionTier = "0"/"1"/...
+                    tier.tierName.toLowerCase() === keyLower || // user.subscriptionTier = tierName
+                    String(tier.tierLevel) === keyLower // user.subscriptionTier = "0"/"1"/...
                   );
 
                 const lowerName = tierName.toLowerCase();
