@@ -174,21 +174,34 @@ export default function SubscriptionSuccessPage() {
     updatedRef.current = true;
 
     (async () => {
+      // Chuyển đổi tier (có thể là số "0","1","2","3" hoặc tên "Free","Basic",...) sang tên tier chuẩn
+      const tierName = getUserSubscriptionPlanName(tier) || tier;
+
       // Ưu tiên gọi refreshProfile để lấy dữ liệu mới nhất từ server
-      // Nếu server có subscription tier mới, sẽ được cập nhật và dispatch event
       try {
         await refreshProfile();
-        return; // refreshProfile đã xử lý cập nhật + dispatch event
+        
+        // Kiểm tra xem server đã cập nhật tier mới chưa
+        const serverUser = await loadDecodedUser();
+        if (
+          serverUser?.subscriptionTier &&
+          serverUser.subscriptionTier.toLowerCase() === tierName.toLowerCase()
+        ) {
+          // Server đã cập nhật đúng tier, dispatch event để UI update
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("app:user-updated"));
+          }
+          return;
+        }
       } catch {
         // Fallback: cập nhật local nếu refreshProfile thất bại
       }
 
+      // Server chưa cập nhật kịp hoặc lỗi -> cập nhật local
       const user = await loadDecodedUser();
       if (!user) return;
 
-      // Chuyển đổi tier (có thể là số "0","1","2","3" hoặc tên "Free","Basic",...) sang tên tier chuẩn
-      const tierName = getUserSubscriptionPlanName(tier) || tier;
-
+      // Nếu đã khớp thì không cần cập nhật
       if (
         user.subscriptionTier &&
         user.subscriptionTier.toLowerCase() === tierName.toLowerCase()

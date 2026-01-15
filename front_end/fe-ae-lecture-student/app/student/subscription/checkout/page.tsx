@@ -165,7 +165,9 @@ export default function SubscriptionCheckoutPage() {
 
     // returnUrl về lại đúng trang checkout (giữ tier + planId)
     const query = new URLSearchParams();
-    query.set("tier", selectedTier.tierName); // tierName: Free/Basic/Premium/Enterprise
+    // Sử dụng tierName hoặc tierLevel hoặc name làm fallback
+    const tierValue = selectedTier.tierName || String(selectedTier.tierLevel) || selectedTier.name || "Unknown";
+    query.set("tier", tierValue);
     query.set("planId", selectedTier.id);
 
     const returnUrl = `${origin}/student/subscription/success?${query.toString()}`;
