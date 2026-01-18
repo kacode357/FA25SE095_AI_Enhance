@@ -41,11 +41,14 @@ export interface ReportBase {
   id: string;
   assignmentId: string;
   assignmentTitle: string;
+  courseId: string;
+  courseName: string;
 
   groupId: string | null;
   groupName: string | null;
 
   submittedBy: string | null;
+  submittedByName: string | null;
   /** ISO datetime or null if never submitted */
   submittedAt: string | null;
 
@@ -55,6 +58,7 @@ export interface ReportBase {
   grade: number | null;
   feedback: string | null;
   gradedBy: string | null;
+  gradedByName: string | null;
   /** ISO datetime or null */
   gradedAt: string | null;
 

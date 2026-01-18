@@ -28,6 +28,8 @@ export interface MyReportsQuery {
   assignmentId?: string;
   /** Backend dùng number cho status; để string cho linh hoạt nếu BE nhận "Draft"... */
   status?: string;           // e.g. "Draft" | "Submitted" | ...
+  courseName?: string;
+  assignmentName?: string;
   pageNumber?: number;       // default 1
   pageSize?: number;         // default 20
 }
