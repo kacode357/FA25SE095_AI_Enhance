@@ -14,25 +14,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDeleteTopicWeight } from "@/hooks/topic/useDeleteTopicWeight";
 import { useGetTopicWeights } from "@/hooks/topic/useGetTopicWeights";
 import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
-import { CalendarClock, Layers, PencilLine, Search, Settings2, TriangleAlert, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { CalendarClock, Eye, History, Layers, Search, Settings2, TriangleAlert, X } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 export default function TopicWeightsPage() {
     // --- Hooks & State ---
     const { data, loading, fetchTopicWeights } = useGetTopicWeights();
     const router = useRouter();
-
+    const params = useParams();
+    const courseCodeId = (params as any)?.id as string | undefined;
     const [items, setItems] = useState<any[]>([]);
     const [page, setPage] = useState(1);
     const pageSize = 10;
-    
+
     // State cho filter Course Code
     const [searchCourseCode, setSearchCourseCode] = useState("");
+    // State cho filter Specific Course
+    const [searchSpecificCourseId, setSearchSpecificCourseId] = useState("");
+    // Filter: only show editable weights
+    const [onlyEditable, setOnlyEditable] = useState<boolean>(false);
 
     // Hook Delete
     const { loading: deleting, deleteTopicWeight } = useDeleteTopicWeight();
@@ -41,15 +47,38 @@ export default function TopicWeightsPage() {
 
     // --- Logic Fetch Data ---
     // searchParam là tùy chọn, dùng để clear search ngay lập tức mà không đợi state update
-    const fetchAll = async (pageNum = 1, searchParam?: string) => {
-        // Nếu searchParam được truyền (kể cả rỗng), dùng nó. Nếu không thì dùng state hiện tại.
+    // canEditParam: true = filter editable only; null = explicitly clear filter; undefined = use current `onlyEditable` state
+    const fetchAll = async (
+        pageNum = 1,
+        searchParam?: string,
+        canEditParam?: boolean | null,
+        specificCourseParam?: string,
+    ) => {
         const codeToSearch = searchParam !== undefined ? searchParam : searchCourseCode;
+        const specificToSearch = specificCourseParam !== undefined ? specificCourseParam : searchSpecificCourseId;
+        let canEditToSend: boolean | undefined;
+        if (canEditParam === null) {
+            // explicit clear
+            canEditToSend = undefined;
+        } else if (canEditParam !== undefined) {
+            canEditToSend = canEditParam;
+        } else {
+            canEditToSend = onlyEditable ? true : undefined;
+        }
 
-        await fetchTopicWeights({ 
-            pageNumber: pageNum, 
+        // Only send specificCourseId to API when it's a valid UUID to avoid server validation errors
+        const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i;
+        const params: any = {
+            pageNumber: pageNum,
             pageSize,
-            courseCode: codeToSearch // Truyền tham số filter vào API
-        });
+            courseCode: codeToSearch, // Truyền tham số filter vào API
+            canEdit: canEditToSend,
+        };
+        if (specificToSearch && uuidRegex.test(specificToSearch)) {
+            params.specificCourseId = specificToSearch;
+        }
+
+        await fetchTopicWeights(params);
         setPage(pageNum);
     };
 
@@ -64,9 +93,22 @@ export default function TopicWeightsPage() {
         }
     };
 
+    // For specific course input we filter client-side in realtime, so don't call API on keydown
+    const handleSpecificKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            // prevent submitting or triggering server search
+            e.preventDefault();
+        }
+    };
+
     const handleClearSearch = () => {
         setSearchCourseCode("");
         fetchAll(1, ""); // Gọi fetch với chuỗi rỗng ngay lập tức
+    };
+
+    const handleClearSpecific = () => {
+        setSearchSpecificCourseId("");
+        fetchAll(1, undefined, undefined, "");
     };
 
     // --- Handlers Delete ---
@@ -96,7 +138,36 @@ export default function TopicWeightsPage() {
     }, [data]);
 
     const totalPages = data?.totalPages ?? Math.max(1, Math.ceil((data?.totalCount ?? 0) / pageSize));
-    const filtered = useMemo(() => items, [items]);
+
+    // Client-side realtime filtering for table display. Server search still available via Enter on Course Code input.
+    const filtered = useMemo(() => {
+        let arr = items ?? [];
+        const courseQuery = (searchCourseCode || "").trim().toLowerCase();
+        const specificQuery = (searchSpecificCourseId || "").trim().toLowerCase();
+
+        if (onlyEditable) {
+            arr = arr.filter((it) => !!it.canUpdate || !!it.canDelete);
+        }
+
+        if (courseQuery) {
+            arr = arr.filter((it) => {
+                const codeName = (it.courseCodeName || "").toString().toLowerCase();
+                const codeId = (it.courseCodeId || "").toString().toLowerCase();
+                const topicName = (it.topicName || "").toString().toLowerCase();
+                return codeName.includes(courseQuery) || codeId.includes(courseQuery) || topicName.includes(courseQuery);
+            });
+        }
+
+        if (specificQuery) {
+            arr = arr.filter((it) => {
+                const specificName = (it.specificCourseName || "").toString().toLowerCase();
+                const specificId = (it.specificCourseId || "").toString().toLowerCase();
+                return specificName.includes(specificQuery) || specificId.includes(specificQuery);
+            });
+        }
+
+        return arr;
+    }, [items, searchCourseCode, searchSpecificCourseId, onlyEditable]);
 
     return (
         <div className="flex flex-col h-full space-y-6 p-6 bg-slate-50/50 min-h-screen text-slate-900">
@@ -122,7 +193,7 @@ export default function TopicWeightsPage() {
 
             {/* --- Main Content Card --- */}
             <Card className="border-slate-200 shadow-sm flex flex-col overflow-hidden bg-white">
-                <CardHeader className="border-b border-slate-100 py-4 px-6 bg-white space-y-4">
+                <CardHeader className="border-b border-slate-100 px-6 bg-white space-y-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800">
                             <Layers className="w-4 h-4 text-indigo-600" />
@@ -133,25 +204,72 @@ export default function TopicWeightsPage() {
                         </CardTitle>
 
                         {/* --- Filter Search Bar --- */}
-                        <div className="relative w-full md:w-72">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-slate-400" />
+                        <div className="flex items-center justify-end gap-8">
+                            <div className="relative w-64 flex-1">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Search className="h-4 w-4 text-slate-400" />
+                                </div>
+                                <Input
+                                    placeholder="Filter by Course Code..."
+                                    className="pl-9 pr-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all text-sm w-full"
+                                    value={searchCourseCode}
+                                    onChange={handleSearchChange}
+                                    onKeyDown={handleKeyDown}
+                                />
+                                {searchCourseCode && (
+                                    <button
+                                        title="Clear"
+                                        onClick={handleClearSearch}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
                             </div>
-                            <Input
-                                placeholder="Filter by Course Code..."
-                                className="pl-9 pr-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all text-sm"
-                                value={searchCourseCode}
-                                onChange={handleSearchChange}
-                                onKeyDown={handleKeyDown}
-                            />
-                            {searchCourseCode && (
-                                <button
-                                    onClick={handleClearSearch}
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
-                                >
-                                    <X className="h-4 w-4" />
-                                </button>
-                            )}
+
+                            {/* Specific Course filter input */}
+                            <div className="relative w-64">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Layers className="h-4 w-4 text-slate-400" />
+                                </div>
+                                <Input
+                                    placeholder="Filter by Specific Course ..."
+                                    className="pl-9 pr-9 h-9 bg-slate-50 border-slate-200 focus:bg-white transition-all text-sm w-44"
+                                    value={searchSpecificCourseId}
+                                    onChange={(e) => setSearchSpecificCourseId(e.target.value)}
+                                    onKeyDown={handleSpecificKeyDown}
+                                />
+                                {searchSpecificCourseId && (
+                                    <button
+                                        title="Clear"
+                                        onClick={handleClearSpecific}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+
+                            <label className="relative inline-flex items-center cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={onlyEditable}
+                                    onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setOnlyEditable(checked);
+                                        if (checked) fetchAll(1, undefined, true);
+                                        else fetchAll(1, undefined, null);
+                                    }}
+                                />
+                                {/* Switch Track */}
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+
+                                {/* Label Text */}
+                                <span className="ml-3 text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors select-none">
+                                    Only editable
+                                </span>
+                            </label>
                         </div>
                     </div>
                 </CardHeader>
@@ -184,9 +302,9 @@ export default function TopicWeightsPage() {
                                             <Search className="w-12 h-12 opacity-20" />
                                             <p className="text-sm font-medium">No topic weights found.</p>
                                             {searchCourseCode && (
-                                                <Button 
+                                                <Button
                                                     // variant="link" 
-                                                    onClick={handleClearSearch} 
+                                                    onClick={handleClearSearch}
                                                     className="text-indigo-600 h-auto p-0 font-normal"
                                                 >
                                                     Clear filter
@@ -250,8 +368,8 @@ export default function TopicWeightsPage() {
                                             </div>
                                         </TableCell>
 
-                                        <TableCell className="px-6 py-4 text-center align-top">
-                                            <div className="flex items-center justify-center gap-2">
+                                        <TableCell className="px-6 py-4 flex gap-2 items-center text-center align-top">
+                                            {/* <div className="flex items-center justify-center gap-2">
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -268,7 +386,42 @@ export default function TopicWeightsPage() {
                                                 >
                                                     <PencilLine className="size-3" />Edit
                                                 </Button>
-                                                {/* Nếu cần nút Delete ở đây thì thêm vào */}
+                                            </div> */}
+
+                                            <div className="flex items-center justify-center">
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
+                                                            onClick={() => router.push(`/staff/courses/topic-weights/${t.id}`)}
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>View details</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+
+                                            <div className="flex items-center justify-center">
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
+                                                            onClick={() => router.push(`/staff/course-codes/${t.courseCodeId}/weights/${t.id}/history`)}
+                                                        >
+                                                            <History className="w-4 h-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>View Configuration History</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
                                             </div>
                                         </TableCell>
                                     </motion.tr>

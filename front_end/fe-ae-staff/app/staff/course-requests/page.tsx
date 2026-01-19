@@ -1,21 +1,37 @@
 "use client";
 
 import PaginationBar from "@/components/common/pagination-all";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCourseRequests } from "@/hooks/course-request/useCourseRequests";
+import { cn } from "@/lib/utils";
 import { CourseRequest } from "@/types/course-requests/course-requests.response";
 import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
+import { Check, GraduationCap, Plus, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FilterRow from "./components/FilterRow";
 
 export default function CourseRequestsPage() {
   const router = useRouter();
   const { listData, loading, fetchCourseRequests } = useCourseRequests();
   const [requests, setRequests] = useState<CourseRequest[]>([]);
+  // --- CONFIG DIALOG STATE (Configure Topic Weight) ---
+  const [showConfigureDialog, setShowConfigureDialog] = useState(false);
+  const [selectedCourseForConfigure, setSelectedCourseForConfigure] = useState<string | null>(null);
+  const [dialogSearchTerm, setDialogSearchTerm] = useState("");
+
+  const dialogFilteredCourses = useMemo(() => {
+    if (!dialogSearchTerm) return requests;
+    const lowerTerm = dialogSearchTerm.toLowerCase();
+    return requests.filter(
+      (c) => c.courseCodeTitle.toLowerCase().includes(lowerTerm) || c.courseCode.toLowerCase().includes(lowerTerm) || c.lecturerName.toLowerCase().includes(lowerTerm)
+    );
+  }, [requests, dialogSearchTerm]);
   const [page, setPage] = useState(1);
 
   // ✅ Filters
@@ -64,11 +80,22 @@ export default function CourseRequestsPage() {
       </header>
 
       <Card className="bg-white border border-slate-200 flex-1 flex flex-col">
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-base text-slate-800">
             Course Requests{" "}
             <span className="text-slate-500">({totalCount})</span>
           </CardTitle>
+          <Button
+            className="shadow-sm bg-emerald-600 btn btn-green-slow hover:bg-emerald-700 text-white transition-all"
+            onClick={() => {
+              setDialogSearchTerm("");
+              setSelectedCourseForConfigure(null);
+              setShowConfigureDialog(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Configure Topic Weight
+          </Button>
         </CardHeader>
 
         <CardContent className="px-0 flex-1 overflow-hidden">
@@ -78,8 +105,7 @@ export default function CourseRequestsPage() {
               <TableHeader className="sticky top-0 z-10 bg-slate-50">
                 <TableRow className="text-slate-700 border-b border-slate-200">
                   <TableHead className="text-xs pl-5 font-semibold">Lecturer</TableHead>
-                  <TableHead className="text-xs font-semibold">Course Code</TableHead>
-                  <TableHead className="text-xs font-semibold">Title</TableHead>
+                  <TableHead className="text-xs font-semibold">Course</TableHead>
                   <TableHead className="text-xs text-center font-semibold">Term</TableHead>
                   <TableHead className="text-xs text-center font-semibold">Status</TableHead>
                   <TableHead className="text-xs text-center font-semibold">Created At</TableHead>
@@ -126,8 +152,16 @@ export default function CourseRequestsPage() {
                       className="border-b text-xs border-slate-100 hover:bg-blue-50/30"
                     >
                       <TableCell className="pl-5">{r.lecturerName}</TableCell>
-                      <TableCell>{r.courseCode}</TableCell>
-                      <TableCell>{r.courseCodeTitle}</TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex flex-col">
+                          <div>
+                            <Badge variant="outline" className="font-mono text-xs bg-violet-50 text-violet-500">
+                              {r.courseCode}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-slate-700 mt-2 font-medium">{r.courseCodeTitle}</div>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-center">{r.term}</TableCell>
                       <TableCell className="text-center">
                         <span
@@ -135,10 +169,10 @@ export default function CourseRequestsPage() {
                             r.status === 1
                               ? "text-yellow-600"
                               : r.status === 2
-                              ? "text-green-600"
-                              : r.status === 3
-                              ? "text-red-600"
-                              : "text-gray-500"
+                                ? "text-green-600"
+                                : r.status === 3
+                                  ? "text-red-600"
+                                  : "text-gray-500"
                           }
                         >
                           {["Pending", "Approved", "Rejected", "Cancelled"][r.status - 1] ||
@@ -163,7 +197,7 @@ export default function CourseRequestsPage() {
                 {/* Empty */}
                 {!loading && requests.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-10 text-center text-slate-500">
+                    <td colSpan={6} className="py-10 text-center text-slate-500">
                       No course requests found.
                     </td>
                   </tr>
@@ -172,7 +206,7 @@ export default function CourseRequestsPage() {
                 {/* Loading */}
                 {loading && (
                   <tr>
-                    <td colSpan={8} className="py-10 text-center text-slate-500">
+                    <td colSpan={6} className="py-10 text-center text-slate-500">
                       Loading...
                     </td>
                   </tr>
@@ -191,6 +225,123 @@ export default function CourseRequestsPage() {
           />
         </CardContent>
       </Card>
+      {/* --- CONFIGURE TOPIC WEIGHT DIALOG (CUSTOM MODAL) --- */}
+      {showConfigureDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowConfigureDialog(false)}
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="relative bg-white w-full max-w-xl rounded-xl shadow-2xl ring-1 ring-slate-200 overflow-hidden flex flex-col max-h-[85vh]"
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Configure Topic Weights</h3>
+                <p className="text-sm text-slate-500 mt-0.5">Select a course request to proceed with configuration.</p>
+              </div>
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-slate-600 rounded-full" onClick={() => setShowConfigureDialog(false)}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Modal Search */}
+            <div className="px-6 py-3 bg-slate-50/50 border-b border-slate-100">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search by course title, code or lecturer..."
+                  className="pl-9 bg-white border-slate-200 focus-visible:ring-emerald-500"
+                  value={dialogSearchTerm}
+                  onChange={(e) => setDialogSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Modal List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/30">
+              {dialogFilteredCourses.length > 0 ? (
+                dialogFilteredCourses.map((c) => {
+                  const isSelected = selectedCourseForConfigure === c.id;
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => setSelectedCourseForConfigure(c.id)}
+                      className={cn(
+                        "group flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                        isSelected
+                          ? "bg-emerald-50 border-emerald-500 shadow-sm ring-1 ring-emerald-500"
+                          : "bg-white border-slate-200 hover:border-emerald-300 hover:shadow-sm"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center border",
+                          isSelected ? "bg-emerald-100 border-emerald-200 text-emerald-700" : "bg-slate-50 border-slate-100 text-slate-400"
+                        )}>
+                          <GraduationCap className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className={cn("font-semibold text-sm", isSelected ? "text-emerald-900" : "text-slate-700")}>
+                            {c.courseCodeTitle}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
+                            <span className="font-mono bg-violet-100 px-1.5 py-0.5 rounded text-violet-500">{c.courseCode}</span>
+                            <span>•</span>
+                            <span>{c.lecturerName}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isSelected && (
+                        <div className="text-emerald-600 animate-in zoom-in duration-200">
+                          <Check className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                  <p className="text-sm">No course requests match your search.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3 sticky bottom-0 z-10">
+              <Button
+                disabled={!selectedCourseForConfigure}
+                onClick={() => {
+                  if (selectedCourseForConfigure) {
+                    setShowConfigureDialog(false);
+                    const selected = requests.find((r) => r.id === selectedCourseForConfigure);
+                    if (selected?.createdCourseId) {
+                      router.push(`/staff/courses/${selected.createdCourseId}/weights`);
+                    } else if (selected?.courseCodeId) {
+                      router.push(`/staff/course-codes/${selected.courseCodeId}/weights`);
+                    } else {
+                      router.push(`/staff/course-requests/${selectedCourseForConfigure}`);
+                    }
+                  }
+                }}
+                className={cn(
+                  "transition-all",
+                  selectedCourseForConfigure ? "bg-emerald-600 btn btn-green-slow hover:bg-emerald-700 text-white" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                )}
+              >
+                Go to Configuration
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -19,6 +19,7 @@ export type SelectProps<T extends string | number> = {
   placeholder?: string;
   onChange: (v: T) => void;
   className?: string;
+  noShadow?: boolean;
   disabled?: boolean;
 };
 
@@ -35,6 +36,7 @@ export default function Select<T extends string | number>({
   placeholder,
   onChange,
   className,
+  noShadow = false,
   disabled,
 }: SelectProps<T>) {
   const [open, setOpen] = useState(false);
@@ -156,7 +158,7 @@ export default function Select<T extends string | number>({
         type="button"
         onClick={() => !disabled && setOpen((s) => !s)}
         disabled={disabled}
-        className="w-full text-left rounded-md cursor-pointer border border-slate-300 bg-white px-3 py-2 flex items-center justify-between gap-2 shadow-sm hover:shadow-md transition-shadow disabled:opacity-60"
+        className={`w-full text-left rounded-md cursor-pointer border border-slate-200 bg-white px-3 py-2 flex items-center justify-between gap-2 ${noShadow ? 'shadow-none hover:shadow-none' : 'shadow-sm hover:shadow-md'} transition-shadow disabled:opacity-60`}
       >
         <div
           className={`flex-1 mr-2 text-left text-sm leading-tight whitespace-normal break-words ${

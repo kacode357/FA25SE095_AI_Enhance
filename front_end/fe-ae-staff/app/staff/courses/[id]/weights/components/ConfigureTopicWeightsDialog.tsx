@@ -19,9 +19,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { useBulkCreateTopicWeights } from "@/hooks/topic/useBulkCreateTopicWeights";
+import { useBulkUpdateTopicWeightsByCourse } from "@/hooks/topic/useBulkUpdateTopicWeightsByCourse";
 import { allowNumericKey, preventInvalidPaste } from "@/lib/inputValidators";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 type Row = {
     topicId?: string | null;
@@ -41,9 +45,12 @@ type Props = {
     selectedTopicIds: string[];
     totalWeight: number;
     isValidTotal: boolean;
-    loading: boolean;
-    handleSubmit: () => Promise<void>;
+    loading?: boolean;
+    handleSubmit?: () => Promise<void>;
+    courseId?: string | undefined;
+    existingTopicWeights?: any[] | undefined; // array of existing configured items ({ id, topicId, ... })
     hideTrigger?: boolean;
+    onSuccess?: () => void;
 };
 
 export default function ConfigureTopicWeightsDialog({
@@ -60,15 +67,107 @@ export default function ConfigureTopicWeightsDialog({
     loading,
     handleSubmit,
     hideTrigger = false,
+    courseId,
+    existingTopicWeights,
+    onSuccess,
 }: Props) {
-    // Note: keyboard and paste validators live in /lib/inputValidators.ts
+    const { bulkCreate, loading: creating } = useBulkCreateTopicWeights();
+    const { bulkUpdate, loading: updating } = useBulkUpdateTopicWeightsByCourse();
+    const apiLoading = creating || updating || loading;
 
+    const isUpdateMode = Boolean(existingTopicWeights && existingTopicWeights.length > 0);
+
+    const { user } = useAuth();
+
+    const internalHandleSubmit = async () => {
+        // If parent provided a handler, prefer it (keeps backward compatibility)
+        if (handleSubmit) return handleSubmit();
+
+        if (!courseId) {
+            toast.error("Missing course id");
+            return;
+        }
+
+        if (!user?.id) {
+            toast.error("Missing user id");
+            return;
+        }
+
+        if (!isValidTotal) {
+            toast.error("Total weight must equal 100%");
+            return;
+        }
+
+        if (isUpdateMode) {
+            // Build updates: find existing id for each selected topic
+            const updates: { id: string; weightPercentage: number; description?: string | null }[] = [];
+            for (const r of rows) {
+                if (!r.topicId) continue;
+                const found = existingTopicWeights?.find((it: any) => String(it.topicId) === String(r.topicId));
+                if (!found) {
+                    toast.error("All edited rows must correspond to existing configured topics");
+                    return;
+                }
+                updates.push({ id: found.id, weightPercentage: r.weightPercentage ?? 0, description: r.description ?? null });
+            }
+
+            if (updates.length === 0) {
+                toast.error("Please select at least one topic");
+                return;
+            }
+
+            const payload = {
+                courseId: courseId,
+                configuredBy: user.id,
+                changeReason: "Updated via UI",
+                updates,
+            };
+
+            // Send flat payload object (backend expects root-level fields)
+            const res = await bulkUpdate(courseId, payload as any);
+            if (res && (res as any).success !== false) {
+                toast.success((res as any).message || "Topic weights updated");
+                setOpen(false);
+                onSuccess?.();
+            } else {
+                toast.error((res as any)?.errors?.join?.(", ") || "Failed to update topic weights");
+            }
+
+        } else {
+            // Create mode
+            const weights = rows
+                .filter((r) => r.topicId)
+                .map((r) => ({ topicId: r.topicId!, weightPercentage: r.weightPercentage ?? 0, description: r.description ?? null }));
+
+            if (weights.length === 0) {
+                toast.error("Please select at least one topic");
+                return;
+            }
+
+            const payload = {
+                courseId: courseId,
+                weights,
+                configuredBy: user.id,
+                changeReason: "Configured via UI",
+            };
+
+            // Send flat payload object (backend expects root-level fields)
+            const res = await bulkCreate(courseId, payload as any);
+            if (res && (res as any).success !== false) {
+                toast.success((res as any).message || "Topic weights configured successfully");
+                setOpen(false);
+                onSuccess?.();
+            } else {
+                toast.error((res as any)?.errors?.join?.(", ") || "Failed to configure topic weights");
+            }
+        }
+    };
+    
     const handleWeightChange = (idx: number, raw: string) => {
         if (raw === "") {
             updateRow(idx, { weightPercentage: null });
             return;
         }
-        // remove leading zeros except single 0 and keep dot if present
         const normalized = raw.replace(/^0+(\d)/, '$1');
         const num = Number(normalized);
         if (Number.isNaN(num)) return;
@@ -165,18 +264,15 @@ export default function ConfigureTopicWeightsDialog({
                                         pattern="[0-9]*"
                                         onBeforeInput={(e: any) => {
                                             const data = e.data ?? '';
-                                            // block non-digit / non-dot
                                             if (!/^\d|\.$/.test(data)) {
                                                 e.preventDefault();
                                                 return;
                                             }
-                                            // prevent second dot
                                             const current = (e.target as HTMLInputElement).value || '';
                                             if (data === '.' && current.includes('.')) e.preventDefault();
                                         }}
                                         onChange={(e) => handleWeightChange(idx, e.target.value)}
                                         onBlur={(e) => {
-                                            // ensure final clamped value on blur
                                             const v = e.target.value;
                                             if (v === "") return;
                                             const num = Number(v);
@@ -229,15 +325,15 @@ export default function ConfigureTopicWeightsDialog({
                 <DialogFooter className="p-6 pt-2">
                     <div className="w-full flex justify-end items-center">
                         <Button
-                            onClick={handleSubmit}
-                            disabled={loading || !isValidTotal}
+                            onClick={internalHandleSubmit}
+                            disabled={apiLoading || !isValidTotal}
                             className={cn(
                                 "min-w-[120px] btn btn-green-slow",
                                 isValidTotal ? "bg-emerald-600 hover:bg-emerald-700" : "",
                                 !isValidTotal ? "opacity-50 cursor-not-allowed" : ""
                             )}
                         >
-                            {loading ? "Saving..." : "Save Configuration"}
+                            {apiLoading ? "Saving..." : "Save Configuration"}
                         </Button>
                     </div>
                 </DialogFooter>

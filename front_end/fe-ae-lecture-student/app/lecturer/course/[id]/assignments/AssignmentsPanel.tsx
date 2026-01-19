@@ -158,16 +158,28 @@ export default function AssignmentsPanel({
       m.get(t)!.push(a as AssignmentItem);
     });
     return Array.from(m.entries()).map(([name, items]) => {
-      const weight = items.reduce((sum, it) => {
-        const w = (it as any).weightPercentage;
-        return sum + (typeof w === "number" ? w : 0);
-      }, 0);
+      // Show the topic weightPercentage as the value defined on the assignment items
+      // (do not sum across items). Use the first item's `weightPercentage` if present.
+      const first = items[0] as any | undefined;
+      const weight = first && typeof first.weightPercentage === "number" ? first.weightPercentage : undefined;
       return { name, items, weightPercentage: weight };
     });
   }, [assignments]);
 
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
   const topicRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+
+  // Auto-expand all topics on initial load (keeps user toggles afterward)
+  useEffect(() => {
+    if (!topics || topics.length === 0) return;
+    if (Object.keys(expandedTopics).length > 0) return; // already initialized
+    const all: Record<string, boolean> = {};
+    topics.forEach((t) => {
+      all[t.name] = true;
+    });
+    setExpandedTopics(all);
+    // only run when topics change or expandedTopics is still empty
+  }, [topics, expandedTopics]);
 
   const toggleTopic = (name: string) => {
     setExpandedTopics((prev) => {
@@ -272,7 +284,7 @@ export default function AssignmentsPanel({
       <div className="flex flex-col max-h-[calc(100vh-180px)] min-h-0">
         <div className="flex items-center justify-between py-0 border-b pb-2 border-slate-200 bg-white sticky  top-0 z-10">
           <h2 className="text-sm text-[#000D83] font-semibold">Create Assignment</h2>
-          <Button className="text-[#000D83] bg-slate-100 hover:bg-slate-200" variant="outline" onClick={backToList}>
+          <Button className="text-[#000D83] bg-slate-100 text-sm hover:bg-slate-200" variant="outline" onClick={backToList}>
             <ArrowLeft className="size-4" />
             Back to Assignments
           </Button>
@@ -363,7 +375,7 @@ export default function AssignmentsPanel({
               {topics.map((t) => (
                 <div key={t.name} className={`px-0 ${expandedTopics[t.name] ? 'mb-4' : 'mb-1'}`}>
                   <div
-                    className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 ${
+                    className={`relative px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 ${
                       expandedTopics[t.name]
                         ? 'bg-slate-50 rounded-t-sm'
                         : 'bg-white border border-slate-50 rounded-sm shadow-sm'
@@ -377,7 +389,9 @@ export default function AssignmentsPanel({
                       </div>
                       {/* <div className="text-sm text-slate-500">{t.items.length} exercise(s)</div> */}
                     </div>
-                      <div className="text-sm text-slate-500">{t.items.length} exercise(s)</div>
+                      
+                    {/* count: fixed centered regardless of topic name width */}
+                    <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none">{t.items.length} exercise(s)</div>
 
                     <ChevronDown className={`h-4 w-4 transform transition-transform ${expandedTopics[t.name] ? 'rotate-180' : ''}`} />
                   </div>

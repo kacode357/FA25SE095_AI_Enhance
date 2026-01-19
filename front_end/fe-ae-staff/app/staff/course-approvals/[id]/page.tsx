@@ -85,9 +85,9 @@ export default function CourseApprovalDetailPage() {
 
           <h2 className="mt-4 text-xl font-semibold text-slate-800">
             {course.courseCodeTitle}{" "}
-            <span className="text-slate-400 font-normal text-base">
-              ({course.courseCode})
-            </span>
+            <Badge variant="outline" className="font-mono text-xs ml-4 bg-violet-50 text-violet-500">
+              {course.courseCode}
+            </Badge>
           </h2>
         </CardHeader>
 
@@ -160,7 +160,7 @@ export default function CourseApprovalDetailPage() {
               <div className="mt-1 rounded-md overflow-hidden">
                 <LiteRichTextEditor
                   value={course.announcement}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   readOnly={true}
                   placeholder="No announcement content"
                 />
@@ -214,9 +214,8 @@ function Field({
         {label}
       </div>
       <div
-        className={`mt-1 text-slate-900 break-words ${
-          multiline ? "whitespace-pre-wrap" : ""
-        }`}
+        className={`mt-1 text-slate-900 break-words ${multiline ? "whitespace-pre-wrap" : ""
+          }`}
       >
         {value}
       </div>

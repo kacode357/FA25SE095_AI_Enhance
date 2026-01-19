@@ -3,6 +3,7 @@
 import PaginationBar from "@/components/common/pagination-all";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -12,11 +13,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCourses } from "@/hooks/course/useCourses";
+import { cn } from "@/lib/utils";
 import { Course } from "@/types/course/course.response";
 import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
+import { Check, GraduationCap, Plus, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FilterRow from "./components/FilterRow";
 
 export default function CourseApprovalsPage() {
@@ -25,6 +28,19 @@ export default function CourseApprovalsPage() {
 
   const [page, setPage] = useState(1);
   const [pendingCourses, setPendingCourses] = useState<Course[]>([]);
+
+  // --- CONFIG DIALOG STATE (moved from courses page) ---
+  const [showConfigureDialog, setShowConfigureDialog] = useState(false);
+  const [selectedCourseForConfigure, setSelectedCourseForConfigure] = useState<string | null>(null);
+  const [dialogSearchTerm, setDialogSearchTerm] = useState("");
+
+  const dialogFilteredCourses = useMemo(() => {
+    if (!dialogSearchTerm) return pendingCourses;
+    const lowerTerm = dialogSearchTerm.toLowerCase();
+    return pendingCourses.filter(
+      (c) => c.name.toLowerCase().includes(lowerTerm) || c.courseCode.toLowerCase().includes(lowerTerm)
+    );
+  }, [pendingCourses, dialogSearchTerm]);
 
   // Filters
   const [name, setName] = useState("");
@@ -65,11 +81,22 @@ export default function CourseApprovalsPage() {
 
       {/* Table card */}
       <Card className="flex-1 border border-slate-200">
-        <CardHeader>
+          <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold text-slate-800">
             Pending Course Approvals{" "}
             <span className="text-slate-500 text-sm">({totalCount})</span>
           </CardTitle>
+          <Button
+            className="shadow-sm bg-emerald-600 btn btn-green-slow hover:bg-emerald-700 text-white transition-all"
+            onClick={() => {
+              setDialogSearchTerm("");
+              setSelectedCourseForConfigure(null);
+              setShowConfigureDialog(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Configure Topic Weight
+          </Button>
         </CardHeader>
 
         <CardContent className="px-0">
@@ -111,7 +138,7 @@ export default function CourseApprovalsPage() {
                       transition={{ duration: 0.2 }}
                       className="border-b text-xs border-slate-100 hover:bg-blue-50/40"
                     >
-                      <TableCell className="pl-4 text-left">{c.courseCodeTitle}</TableCell>
+                      <TableCell className="pl-4 py-5 font-medium text-sm text-left">{c.courseCodeTitle}</TableCell>
                       <TableCell className="text-left">{c.lecturerName}</TableCell>
                       <TableCell className="text-center">{c.term}</TableCell>
                       {/* <TableCell className="text-center">{c.year}</TableCell> */}
@@ -142,6 +169,118 @@ export default function CourseApprovalsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* --- CONFIGURE TOPIC WEIGHT DIALOG (CUSTOM MODAL) --- */}
+      {showConfigureDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowConfigureDialog(false)}
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="relative bg-white w-full max-w-xl rounded-xl shadow-2xl ring-1 ring-slate-200 overflow-hidden flex flex-col max-h-[85vh]"
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Configure Topic Weights</h3>
+                <p className="text-sm text-slate-500 mt-0.5">Select a course to proceed with configuration.</p>
+              </div>
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-slate-600 rounded-full" onClick={() => setShowConfigureDialog(false)}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Modal Search */}
+            <div className="px-6 py-3 bg-slate-50/50 border-b border-slate-100">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search by course name or code..."
+                  className="pl-9 bg-white border-slate-200 focus-visible:ring-emerald-500"
+                  value={dialogSearchTerm}
+                  onChange={(e) => setDialogSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Modal List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/30">
+              {dialogFilteredCourses.length > 0 ? (
+                dialogFilteredCourses.map((c) => {
+                  const isSelected = selectedCourseForConfigure === c.id;
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => setSelectedCourseForConfigure(c.id)}
+                      className={cn(
+                        "group flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                        isSelected
+                          ? "bg-emerald-50 border-emerald-500 shadow-sm ring-1 ring-emerald-500"
+                          : "bg-white border-slate-200 hover:border-emerald-300 hover:shadow-sm"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center border",
+                          isSelected ? "bg-emerald-100 border-emerald-200 text-emerald-700" : "bg-slate-50 border-slate-100 text-slate-400"
+                        )}>
+                          <GraduationCap className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className={cn("font-semibold text-sm", isSelected ? "text-emerald-900" : "text-slate-700")}>
+                            {c.name}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
+                            <span className="font-mono bg-violet-100 px-1.5 py-0.5 rounded text-violet-500">{c.courseCode}</span>
+                            <span>•</span>
+                            <span>{c.lecturerName}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isSelected && (
+                        <div className="text-emerald-600 animate-in zoom-in duration-200">
+                          <Check className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                  <p className="text-sm">No courses match your search.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3 sticky bottom-0 z-10">
+              <Button
+                disabled={!selectedCourseForConfigure}
+                onClick={() => {
+                  if (selectedCourseForConfigure) {
+                    setShowConfigureDialog(false);
+                    // Navigate to weights config for selected course
+                    router.push(`/staff/courses/${selectedCourseForConfigure}/weights`);
+                  }
+                }}
+                className={cn(
+                  "transition-all",
+                  selectedCourseForConfigure ? "bg-emerald-600 btn btn-green-slow hover:bg-emerald-700 text-white" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                )}
+              >
+                Go to Configuration
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Pagination */}
       <PaginationBar

@@ -109,7 +109,7 @@ export default function EditDialog({
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <input
               title="checkbox"
               type="checkbox"
@@ -119,7 +119,7 @@ export default function EditDialog({
               onChange={(e) => setTerm({ ...term, isActive: e.target.checked })}
             />
             <Label className="text-blue-600" htmlFor="isActive">Is Active</Label>
-          </div>
+          </div> */}
         </div>
       )}
       <DialogFooter>

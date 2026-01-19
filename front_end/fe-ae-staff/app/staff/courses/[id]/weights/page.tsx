@@ -1,21 +1,20 @@
 "use client";
 
+import ConfigureTopicWeightsButton from "@/app/staff/courses/[id]/weights/components/ConfigureTopicWeightsButton";
+import ConfigureTopicWeightsDialog from "@/app/staff/courses/[id]/weights/components/ConfigureTopicWeightsDialog";
 import { Badge } from "@/components/ui/badge";
+import Button from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useGetCourseCodeById } from "@/hooks/course-code/useGetCourseCodeById";
-import { useGetTopicWeightsByCourseCode } from "@/hooks/topic/useGetTopicWeightsByCourseCode";
-import { formatToVN } from "@/utils/datetime/time";
-// TopicWeight type no longer needed in this file
-import Button from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAuth } from "@/contexts/AuthContext";
+import { useCourses } from "@/hooks/course/useCourses";
 import { useBulkUpdateTopicWeights } from "@/hooks/topic/useBulkUpdateTopicWeights";
 import { useDeleteTopicWeight } from "@/hooks/topic/useDeleteTopicWeight";
 import { useGetTopics } from "@/hooks/topic/useGetTopics";
+import { useGetTopicWeightsByCourse } from "@/hooks/topic/useGetTopicWeightsByCourse";
 import { useUpdateTopicWeight } from "@/hooks/topic/useUpdateTopicWeight";
+import { formatToVN } from "@/utils/datetime/time";
 import {
     ArrowLeft,
     BookOpen,
@@ -28,40 +27,55 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import ConfigureTopicWeightsButton from "./components/ConfigureTopicWeightsButton";
-import ConfigureTopicWeightsDialog from "./components/ConfigureTopicWeightsDialog";
 
 export default function WeightsPage() {
     const params = useParams();
-    const courseCodeId = (params as any)?.id as string | undefined;
-    const topicWeightId = (params as any)?.id as string | undefined;
+    const courseId = (params as any)?.id as string | undefined;
     const router = useRouter();
-    const { data, loading, fetchByCourseCode } = useGetTopicWeightsByCourseCode();
+    const { data, loading, fetchByCourse } = useGetTopicWeightsByCourse();
+    const { listData: coursesListData, fetchCourses: fetchCoursesList } = useCourses();
+
+    const [fetchedCourseName, setFetchedCourseName] = useState<string | null>(null);
 
     useEffect(() => {
-        if (courseCodeId) fetchByCourseCode(courseCodeId);
+        if (courseId) fetchByCourse(courseId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseCodeId]);
+    }, [courseId]);
 
-    const { data: courseCodeData, fetchCourseCodeById } = useGetCourseCodeById();
+    // If no topic weights are returned, try to fetch the specific course info
+    useEffect(() => {
+        if (!courseId) return;
+        // FIX: Check Array.isArray to avoid crash
+        if (Array.isArray(data) && data.length > 0) return; // already have data-based name
+
+        (async () => {
+            try {
+                // fetch all courses (no status filter) so we can find the specific course regardless of its state
+                await fetchCoursesList({ page: 1, pageSize: 1000 });
+            } catch (e) { }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId, data]);
 
     useEffect(() => {
-        if (courseCodeId) fetchCourseCodeById(courseCodeId);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseCodeId]);
+        if (!coursesListData?.courses || !courseId) return;
+        const found = coursesListData.courses.find((c: any) => String(c.id) === String(courseId));
+        if (found) setFetchedCourseName(found.name || 'Course');
+    }, [coursesListData, courseId]);
 
     // Delete / Update hooks and confirmation state
     const { loading: deleting, deleteTopicWeight } = useDeleteTopicWeight();
     const { updateTopicWeight } = useUpdateTopicWeight();
     const [confirmId, setConfirmId] = useState<string | null>(null);
-    const deletingItem = data ? data.find((it) => String(it.id) === String(confirmId)) : undefined;
+    
+    // --- FIX HERE: Check Array.isArray(data) before using .find() ---
+    const deletingItem = Array.isArray(data) ? data.find((it) => String(it.id) === String(confirmId)) : undefined;
 
     // Edit (bulk update) dialog state and helpers
     const { data: topicsResp, fetchTopics } = useGetTopics();
     const topics = topicsResp?.topics || [];
 
     const { bulkUpdate, loading: bulkUpdating } = useBulkUpdateTopicWeights();
-    const { user } = useAuth();
 
     type EditRow = {
         topicId?: string | null;
@@ -76,7 +90,8 @@ export default function WeightsPage() {
     useEffect(() => {
         if (editOpen) {
             fetchTopics();
-            if (data && data.length > 0) {
+            // FIX: Check Array.isArray
+            if (Array.isArray(data) && data.length > 0) {
                 setEditRows(
                     data.map((d) => ({
                         topicId: d.topicId,
@@ -110,8 +125,8 @@ export default function WeightsPage() {
     const selectedEditTopicIds = useMemo(() => editRows.map((r) => r.topicId).filter(Boolean) as string[], [editRows]);
 
     const handleEditSubmit = async () => {
-        if (!courseCodeId) {
-            toast.error("Missing course code id");
+        if (!courseId) {
+            toast.error("Missing course id");
             return;
         }
 
@@ -119,7 +134,8 @@ export default function WeightsPage() {
         const updates = [] as { id: string; weightPercentage: number; description?: string | null }[];
         for (const r of editRows) {
             if (!r.topicId) continue;
-            const found = data?.find((d) => d.topicId === r.topicId);
+            // FIX: Check Array.isArray
+            const found = Array.isArray(data) ? data.find((d) => d.topicId === r.topicId) : undefined;
             if (!found) {
                 toast.error("All edited rows must correspond to existing configured topics");
                 return;
@@ -132,19 +148,28 @@ export default function WeightsPage() {
             return;
         }
 
+        // Determine specificCourseId for UI and courseCodeId for API if available
+        // FIX: Check Array.isArray
+        const specificCourseIdFromData = Array.isArray(data) && data.length > 0 ? data[0].specificCourseId : undefined;
+        const courseIdForApi = Array.isArray(data) && data.length > 0 ? data[0].specificCourseId : undefined;
+        if (!courseIdForApi) {
+            toast.error("Cannot determine course code id for bulk update");
+            return;
+        }
+
         const payload = {
-            courseCodeId,
-            configuredBy: user?.id ?? "",
+            specificCourseId: courseIdForApi,
+            configuredBy: "",
             changeReason: "Updated via UI",
             updates,
         };
 
-        const res = await bulkUpdate(courseCodeId, payload as any);
+        const res = await bulkUpdate(courseIdForApi, payload as any);
         if (res && res.success) {
             toast.success(res.message || "Topic weights updated");
             setEditOpen(false);
             try {
-                await fetchByCourseCode(courseCodeId);
+                await fetchByCourse(courseId);
             } catch (e) { }
         } else {
             if (res && res.errors && res.errors.length > 0) {
@@ -164,17 +189,21 @@ export default function WeightsPage() {
         if (!id) return;
         const ok = await deleteTopicWeight(id);
         if (ok) {
-            if (courseCodeId) fetchByCourseCode(courseCodeId);
+            if (courseId) fetchByCourse(courseId);
         }
         setConfirmId(null);
     };
 
-    const courseCodeName = courseCodeData?.code || (data && data.length > 0 ? data[0].courseCodeName : "Course Code");
+    // FIX: Check Array.isArray
+    const courseName = fetchedCourseName ?? (Array.isArray(data) && data.length > 0 ? (data[0].specificCourseName || data[0].courseCodeName || "Course") : "Course");
 
-    // Tính tổng % để hiển thị (Optional UX improvement)
+    // FIX: Check Array.isArray
     const totalWeight = useMemo(() => {
-        return data ? data.reduce((acc, curr) => acc + (curr.weightPercentage || 0), 0) : 0;
+        return Array.isArray(data) ? data.reduce((acc, curr) => acc + (curr.weightPercentage || 0), 0) : 0;
     }, [data]);
+
+    // FIX: Helper to safely get first element
+    const firstDataItem = Array.isArray(data) && data.length > 0 ? data[0] : null;
 
     return (
         <div className="flex flex-col gap-4 p-6 max-w-7xl mx-auto">
@@ -191,9 +220,9 @@ export default function WeightsPage() {
                         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                             Weighting Configuration
                         </h1>
-                        <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                        <p className="text-muted-foreground mt-1 text-sm flex items-center gap-2">
                             <BookOpen className="h-4 w-4" />
-                            Configuration for Course Code: <span className="font-semibold text-violet-500 text-primary">{courseCodeName}</span>
+                            Configuration for Course: <span className="font-semibold text-violet-500 text-primary">{courseName}</span>
                         </p>
                     </div>
                 </div>
@@ -218,11 +247,11 @@ export default function WeightsPage() {
                         </div>
 
                         <div className="mt-2 text-sm text-muted-foreground">
-                            Last updated: {data && data.length > 0 && data[0].updatedAt ? formatToVN(data[0].updatedAt) : 'N/A'}
+                            Last updated: {firstDataItem && firstDataItem.updatedAt ? formatToVN(firstDataItem.updatedAt) : 'N/A'}
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        {data && data.length > 0 ? (
+                        {Array.isArray(data) && data.length > 0 ? (
                             <>
                                 <Button
                                     onClick={() => setEditOpen(true)}
@@ -243,13 +272,20 @@ export default function WeightsPage() {
                                     selectedTopicIds={selectedEditTopicIds}
                                     totalWeight={editTotalWeight}
                                     isValidTotal={editIsValidTotal}
-                                    loading={bulkUpdating}
-                                    handleSubmit={handleEditSubmit}
+                                    courseId={courseId}
+                                    existingTopicWeights={data ?? undefined}
                                     hideTrigger
+                                    onSuccess={() => {
+                                        if (courseId) fetchByCourse(courseId);
+                                    }}
                                 />
                             </>
                         ) : (
-                            <ConfigureTopicWeightsButton courseCodeId={courseCodeId} data={data} fetchByCourseCode={fetchByCourseCode} />
+                            <ConfigureTopicWeightsButton
+                                courseId={courseId}
+                                data={Array.isArray(data) ? data : []}
+                                fetchByCourse={(id: string) => fetchByCourse(id as any)}
+                            />
                         )}
                     </div>
 
@@ -270,7 +306,6 @@ export default function WeightsPage() {
                             </TableHeader>
                             <TableBody>
                                 {loading && (
-                                    // Skeleton Loading State
                                     Array.from({ length: 3 }).map((_, i) => (
                                         <TableRow key={i}>
                                             <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
@@ -282,9 +317,9 @@ export default function WeightsPage() {
                                     ))
                                 )}
 
-                                {!loading && data && data.length === 0 && (
+                                {!loading && Array.isArray(data) && data.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-32 text-center">
+                                        <TableCell colSpan={6} className="h-32 text-center">
                                             <div className="flex flex-col items-center justify-center text-muted-foreground gap-2">
                                                 <FileText className="h-8 w-8 text-slate-300" />
                                                 <p className="italic text-slate-400">No configuration found for this course.</p>
@@ -292,8 +327,9 @@ export default function WeightsPage() {
                                         </TableCell>
                                     </TableRow>
                                 )}
-
-                                {data && data.map((row) => (
+                                
+                                {/* FIX: Ensure data is an array before mapping */}
+                                {Array.isArray(data) && data.map((row) => (
                                     <TableRow key={row.id} className="group py-3 hover:bg-slate-50 transition-colors">
                                         <TableCell className="font-medium pl-3 py-3 text-slate-900">
                                             {row.topicName || row.topicId}
@@ -325,37 +361,16 @@ export default function WeightsPage() {
 
                                         <TableCell className="text-center py-3">
                                             <div className="flex items-center justify-center">
-                                                {/* Cấu trúc đúng của Radix UI / Shadcn Tooltip */}
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
-                                                            onClick={() => router.push(`/staff/course-codes/${courseCodeId}/weights/${row.id}/history`)}
-                                                        >
-                                                            <History className="w-4 h-4" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>View Configuration History</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-                                        </TableCell>
-                                        {/* 
-                                        <TableCell className="text-center py-3">
-                                            <div className="flex items-center justify-center gap-2">
                                                 <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-8 border-slate-200 btn btn-green-slow text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all"
-                                                    onClick={() => router.push(`/staff/courses/topic-weights/${row.id}`)}
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
+                                                    onClick={() => router.push(`/staff/courses/${row.specificCourseId}/weights/${row.id}/history`)}
                                                 >
-                                                    <PencilLine className="w-3.5 h-3.5 mr-1" />Edit
+                                                    <History className="w-4 h-4" />
                                                 </Button>
                                             </div>
-                                        </TableCell> */}
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

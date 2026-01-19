@@ -96,10 +96,6 @@ export default function FilterRow({
         </select>
       </td>
 
-      {/* Created At */}
-      <td className="text-center text-slate-400 py-2 px-2">—</td>
-
-      {/* Actions */}
       <td className="text-center py-2 px-2">
         <div className="flex justify-center items-center gap-3">
           <Button size="sm" className="h-8 btn btn-green-slow px-3 text-xs" onClick={onApply}>

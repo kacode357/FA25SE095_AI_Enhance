@@ -18,11 +18,9 @@ export default function AssignmentHeaderActions({ a, onBack, onEdit, setOpenOver
     return (
         <div className="flex flex-col mt-3 items-start gap-4 shrink-0">
             <div className="flex flex-col items-end">
-                <Button className="text-[#000D83] bg-slate-50 text-sm" variant="outline" onClick={onBack}>
+                <Button className="text-[#000D83] bg-slate-100 text-sm" variant="outline" onClick={onBack}>
                     <ArrowLeft className="size-4" /> Back to Assignments
                 </Button>
-
-                {/* Overview button moved to the Attachments row in AssignmentDetailHeader */}
             </div>
 
             <div className="flex items-center gap-2">

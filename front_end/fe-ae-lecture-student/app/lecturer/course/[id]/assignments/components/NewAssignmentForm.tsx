@@ -267,7 +267,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
   };
 
   return (
-    <Card className="border-slate-200 py-0 pt-4 shadow-sm">
+    <Card className="border-slate-200 py-0 pt-4 shadow-none">
       <CardContent className="space-y-4">
         {/* Basic info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -297,6 +297,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
                 placeholder="Select a topic"
                 onChange={(v) => setForm((p) => ({ ...p, topicId: v }))}
                 className="w-full"
+                noShadow
               />
             )}
           </div>

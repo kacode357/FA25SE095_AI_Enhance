@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import { ChevronRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { mainNav } from "./mainNav";
 
 type SidebarProps = {
@@ -18,7 +18,25 @@ export default function ManagerSidebar({
   setCollapsed,
 }: SidebarProps) {
   const pathname = usePathname();
-  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+
+  // --- LOGIC MỚI: Mặc định mở (expanded) tất cả menu có con ---
+  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>(() => {
+    const defaultExpanded: Record<string, boolean> = {};
+
+    // Hàm đệ quy để duyệt và set true cho tất cả item có children
+    const traverse = (items: any[]) => {
+      if (!items) return;
+      items.forEach((item) => {
+        if (item.children && item.children.length > 0) {
+          defaultExpanded[item.href] = true; // Set mặc định mở
+          traverse(item.children); // Duyệt tiếp cấp con
+        }
+      });
+    };
+
+    traverse(mainNav as any[]);
+    return defaultExpanded;
+  });
 
   // Logic check active cơ bản
   const isItemActive = (it: any): boolean => {
@@ -33,23 +51,6 @@ export default function ManagerSidebar({
     }
     return false;
   };
-
-  // Auto expand menu cha
-  useEffect(() => {
-    if (!pathname) return;
-    const newExpandedMap: Record<string, boolean> = {};
-    const checkOpen = (items: any[]) => {
-      items.forEach((item) => {
-        if (item.children && item.children.length > 0) {
-          const shouldExpand = item.children.some((c: any) => isItemActive(c));
-          if (shouldExpand) newExpandedMap[item.href] = true;
-          checkOpen(item.children);
-        }
-      });
-    };
-    checkOpen(mainNav as any[]);
-    setExpandedMap((prev) => ({ ...prev, ...newExpandedMap }));
-  }, [pathname]);
 
   const toggleExpand = (href: string) => {
     setExpandedMap((prev) => ({ ...prev, [href]: !prev[href] }));
@@ -97,7 +98,7 @@ export default function ManagerSidebar({
             const isExpanded = expandedMap[href];
             const active = isItemActive(item);
 
-            // --- FUNCTION RENDER CON (SỬA LOGIC BEST MATCH Ở ĐÂY) ---
+            // --- FUNCTION RENDER CON (LOGIC BEST MATCH) ---
             const renderChildren = (items: any[], depth = 1) => {
               if (!items || items.length === 0) return null;
 
@@ -110,7 +111,6 @@ export default function ManagerSidebar({
                 const isMatch = pathname === it.href || pathname?.startsWith(`${it.href}/`);
                 if (isMatch) {
                   // Nếu khớp, kiểm tra độ dài. Thằng nào dài hơn thì ưu tiên thằng đó.
-                  // VD: "/staff/courses" (len 14) thua "/staff/courses/topics" (len 21)
                   if (it.href.length > maxLen) {
                     maxLen = it.href.length;
                     bestMatchHref = it.href;
@@ -124,7 +124,7 @@ export default function ManagerSidebar({
                     const isThird = depth >= 2;
                     const childHasChildren = c.children && c.children.length > 0;
                     const childExpanded = expandedMap[c.href];
-                    
+
                     // Mặc định tính active
                     let childActive = isItemActive(c);
 
@@ -137,11 +137,11 @@ export default function ManagerSidebar({
                     const linkBase = isThird
                       ? "flex items-center gap-2 text-xs rounded-md px-3 py-1.5 transition-all duration-200 relative"
                       : "flex items-center gap-3 text-sm rounded-md px-3 py-2 transition-all duration-200 relative";
-                    
+
                     const linkActiveClass = isThird
                       ? "bg-blue-50 text-blue-700 font-medium"
                       : "bg-gradient-to-r from-blue-50 to-white text-blue-700 font-semibold shadow-sm border-l-4 border-blue-500";
-                    
+
                     const linkInactiveClass = "text-gray-600 hover:bg-gray-50 hover:text-blue-600";
 
                     return (
@@ -155,6 +155,7 @@ export default function ManagerSidebar({
                           <span className={clsx("truncate", isThird ? "pl-1" : undefined)}>{c.label}</span>
                           {childHasChildren && (
                             <button
+                              title="Collapse"
                               onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleExpand(c.href); }}
                               className="ml-auto p-1 rounded cursor-pointer hover:bg-blue-100"
                             >
@@ -196,6 +197,7 @@ export default function ManagerSidebar({
                   )}
                   {hasChildren && !collapsed && (
                     <button
+                      title="Collapse"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleExpand(href); }}
                       className="ml-2 p-1 rounded cursor-pointer hover:bg-white/20"
                     >

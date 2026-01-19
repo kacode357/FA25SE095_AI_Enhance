@@ -127,7 +127,7 @@ export default function CreateTermPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            {/* <div className="flex items-center gap-3">
                                 <input
                                     title="checkbox"
                                     type="checkbox"
@@ -137,7 +137,7 @@ export default function CreateTermPage() {
                                     onChange={(e) => handleChange('isActive', e.target.checked)}
                                 />
                                 <Label htmlFor="isActive" className="text-blue-600">Is Active</Label>
-                            </div>
+                            </div> */}
 
                             <div className="flex items-center justify-end gap-3 pt-2">
                                 <Button className="btn btn-green-slow" type="submit" disabled={loading}>
