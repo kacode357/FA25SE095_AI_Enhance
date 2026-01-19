@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import ConfigureTopicWeightsDialog from "./ConfigureTopicWeightsDialog";
 
 // Hooks & Types
-import { useBulkConfigureTopicWeights } from "@/hooks/topic/useBulkConfigureTopicWeights";
+import { useAuth } from "@/contexts/AuthContext";
+import { useBulkUpdateTopicWeights } from "@/hooks/topic/useBulkUpdateTopicWeights";
 import { useGetTopics } from "@/hooks/topic/useGetTopics";
 import { TopicWeight } from "@/types/topic/topic-weight.response";
 
@@ -32,7 +33,8 @@ export default function ConfigureTopicWeightsButton({
   const { data: topicsResp, fetchTopics } = useGetTopics();
   const topics = topicsResp?.topics || [];
 
-  const { bulkConfigure, loading, error } = useBulkConfigureTopicWeights();
+  const { bulkUpdate, loading, error } = useBulkUpdateTopicWeights();
+  const { user } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
@@ -111,16 +113,26 @@ export default function ConfigureTopicWeightsButton({
       return;
     }
 
-    // API expects an array payload (BulkTopicWeightPayload). Send the array directly.
-    const res = await bulkConfigure(courseCodeId, items as any);
-    if (res) {
-      toast.success("Topic weights configured successfully");
+    const payload = {
+      courseCodeId,
+      configuredBy: user?.id ?? "",
+      changeReason: "Configured via UI",
+      updates: items,
+    };
+
+    const res = await bulkUpdate(courseCodeId, payload as any);
+    if (res && res.success) {
+      toast.success(res.message || "Topic weights configured successfully");
       setOpen(false);
       try {
         await fetchByCourseCode(courseCodeId);
-      } catch (e) { }
+      } catch (e) {}
     } else {
-      toast.error(error || "Failed to configure topic weights");
+      if (res && res.errors && res.errors.length > 0) {
+        toast.error(res.errors.join(", "));
+      } else {
+        toast.error(error || "Failed to configure topic weights");
+      }
     }
   };
 

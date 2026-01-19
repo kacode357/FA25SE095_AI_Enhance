@@ -258,7 +258,7 @@ export default function WeightsPage() {
                                     className="btn btn-green-slow bg-emerald-600 hover:bg-emerald-700 text-white"
                                 >
                                     <PencilLine className="w-4 h-4 mr-2" />
-                                    Edit Configuration
+                                    Update Configuration
                                 </Button>
 
                                 <ConfigureTopicWeightsDialog

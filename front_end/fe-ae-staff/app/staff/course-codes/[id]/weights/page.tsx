@@ -1,21 +1,20 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import Button from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useGetCourseCodeById } from "@/hooks/course-code/useGetCourseCodeById";
-import { useGetTopicWeightsByCourseCode } from "@/hooks/topic/useGetTopicWeightsByCourseCode";
-import { formatToVN } from "@/utils/datetime/time";
-// TopicWeight type no longer needed in this file
-import Button from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGetCourseCodeById } from "@/hooks/course-code/useGetCourseCodeById";
+// Import hook mới theo yêu cầu
 import { useBulkUpdateTopicWeights } from "@/hooks/topic/useBulkUpdateTopicWeights";
-import { useDeleteTopicWeight } from "@/hooks/topic/useDeleteTopicWeight";
 import { useGetTopics } from "@/hooks/topic/useGetTopics";
-import { useUpdateTopicWeight } from "@/hooks/topic/useUpdateTopicWeight";
+import { useGetTopicWeightsByCourseCode } from "@/hooks/topic/useGetTopicWeightsByCourseCode";
+import { BulkUpdateTopicWeightsPayload } from "@/types/topic/topic-weight.payload";
+import { formatToVN } from "@/utils/datetime/time";
 import {
     ArrowLeft,
     BookOpen,
@@ -34,34 +33,27 @@ import ConfigureTopicWeightsDialog from "./components/ConfigureTopicWeightsDialo
 export default function WeightsPage() {
     const params = useParams();
     const courseCodeId = (params as any)?.id as string | undefined;
-    const topicWeightId = (params as any)?.id as string | undefined;
     const router = useRouter();
-    const { data, loading, fetchByCourseCode } = useGetTopicWeightsByCourseCode();
-
-    useEffect(() => {
-        if (courseCodeId) fetchByCourseCode(courseCodeId);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseCodeId]);
-
-    const { data: courseCodeData, fetchCourseCodeById } = useGetCourseCodeById();
-
-    useEffect(() => {
-        if (courseCodeId) fetchCourseCodeById(courseCodeId);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseCodeId]);
-
-    // Delete / Update hooks and confirmation state
-    const { loading: deleting, deleteTopicWeight } = useDeleteTopicWeight();
-    const { updateTopicWeight } = useUpdateTopicWeight();
-    const [confirmId, setConfirmId] = useState<string | null>(null);
-    const deletingItem = data ? data.find((it) => String(it.id) === String(confirmId)) : undefined;
-
-    // Edit (bulk update) dialog state and helpers
-    const { data: topicsResp, fetchTopics } = useGetTopics();
-    const topics = topicsResp?.topics || [];
-
-    const { bulkUpdate, loading: bulkUpdating } = useBulkUpdateTopicWeights();
     const { user } = useAuth();
+
+    // --- Data Fetching ---
+    const { data, loading, fetchByCourseCode } = useGetTopicWeightsByCourseCode();
+    const { data: courseCodeData, fetchCourseCodeById } = useGetCourseCodeById();
+    const { data: topicsResp, fetchTopics } = useGetTopics();
+
+    // --- Bulk Update Hook ---
+    const { bulkUpdate, loading: bulkUpdating } = useBulkUpdateTopicWeights();
+
+    useEffect(() => {
+        if (courseCodeId) {
+            fetchByCourseCode(courseCodeId);
+            fetchCourseCodeById(courseCodeId);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseCodeId]);
+
+    // --- Edit Dialog State ---
+    const topics = topicsResp?.topics || [];
 
     type EditRow = {
         topicId?: string | null;
@@ -73,6 +65,7 @@ export default function WeightsPage() {
     const [editOpen, setEditOpen] = useState(false);
     const [editRows, setEditRows] = useState<EditRow[]>([]);
 
+    // Initialize Edit Rows when dialog opens
     useEffect(() => {
         if (editOpen) {
             fetchTopics();
@@ -94,6 +87,7 @@ export default function WeightsPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editOpen]);
 
+    // --- Helper Functions for Dialog ---
     const addEditRow = () =>
         setEditRows((prev) => [
             ...prev,
@@ -109,44 +103,40 @@ export default function WeightsPage() {
     const editIsValidTotal = editTotalWeight === 100;
     const selectedEditTopicIds = useMemo(() => editRows.map((r) => r.topicId).filter(Boolean) as string[], [editRows]);
 
+    // --- Handlers ---
+    
     const handleEditSubmit = async () => {
         if (!courseCodeId) {
             toast.error("Missing course code id");
             return;
         }
 
-        // map rows to updates array with existing topic weight ids
-        const updates = [] as { id: string; weightPercentage: number; description?: string | null }[];
-        for (const r of editRows) {
-            if (!r.topicId) continue;
-            const found = data?.find((d) => d.topicId === r.topicId);
-            if (!found) {
-                toast.error("All edited rows must correspond to existing configured topics");
-                return;
-            }
-            updates.push({ id: found.id, weightPercentage: r.weightPercentage ?? 0, description: r.description ?? null });
-        }
+        const validRows = editRows.filter(r => r.topicId);
 
-        if (updates.length === 0) {
-            toast.error("Please select at least one topic");
+        if (validRows.length === 0) {
+            toast.error("Please configure at least one topic");
             return;
         }
 
-        const payload = {
+        const payload: BulkUpdateTopicWeightsPayload = {
             courseCodeId,
             configuredBy: user?.id ?? "",
             changeReason: "Updated via UI",
-            updates,
+            updates: validRows.map(r => ({
+                topicId: r.topicId!, 
+                weightPercentage: r.weightPercentage ?? 0,
+                description: r.description ?? null
+            })) as any 
         };
 
-        const res = await bulkUpdate(courseCodeId, payload as any);
+        const res = await bulkUpdate(courseCodeId, payload);
+        
         if (res && res.success) {
-            toast.success(res.message || "Topic weights updated");
+            toast.success(res.message || "Topic weights updated successfully");
             setEditOpen(false);
-            try {
-                await fetchByCourseCode(courseCodeId);
-            } catch (e) { }
+            fetchByCourseCode(courseCodeId); // Refresh data
         } else {
+            // Error handling
             if (res && res.errors && res.errors.length > 0) {
                 toast.error(res.errors.join(", "));
             } else {
@@ -155,29 +145,16 @@ export default function WeightsPage() {
         }
     };
 
-    const handleRequestDelete = (id: string) => {
-        setConfirmId(id);
-    };
-
-    const handleConfirmDelete = async () => {
-        const id = confirmId;
-        if (!id) return;
-        const ok = await deleteTopicWeight(id);
-        if (ok) {
-            if (courseCodeId) fetchByCourseCode(courseCodeId);
-        }
-        setConfirmId(null);
-    };
-
     const courseCodeName = courseCodeData?.code || (data && data.length > 0 ? data[0].courseCodeName : "Course Code");
-
-    // Tính tổng % để hiển thị (Optional UX improvement)
+    
     const totalWeight = useMemo(() => {
         return data ? data.reduce((acc, curr) => acc + (curr.weightPercentage || 0), 0) : 0;
     }, [data]);
 
     return (
         <div className="flex flex-col gap-4 p-6 max-w-7xl mx-auto">
+            {/*  - Contextual visual hint */}
+            
             {/* --- HEADER SECTION --- */}
             <div className="flex flex-col gap-2">
                 <div className="flex gap-5 items-center">
@@ -193,7 +170,7 @@ export default function WeightsPage() {
                         </h1>
                         <p className="text-muted-foreground mt-1 flex items-center gap-2">
                             <BookOpen className="h-4 w-4" />
-                            Configuration for Course Code: <span className="font-semibold text-violet-500 text-primary">{courseCodeName}</span>
+                            Configuration for Course Code: <span className="font-semibold text-violet-500">{courseCodeName}</span>
                         </p>
                     </div>
                 </div>
@@ -203,33 +180,30 @@ export default function WeightsPage() {
 
             {/* --- MAIN CONTENT --- */}
             <Card className="shadow-sm border gap-0 border-slate-200">
-                <CardHeader className="bg-slate-50/50 border-b flex justify-between border-slate-200">
+                <CardHeader className="bg-slate-50/50 border-b flex flex-row items-center justify-between border-slate-200">
                     <div>
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex flex-col items-start gap-2 text-lg">
-                                <div className="flex gap-2 items-center">
-                                    <PieChart className="h-5 w-5 text-slate-500" />
-                                    Weight Distribution:
-                                    <Badge className={totalWeight === 100 ? "text-base text-emerald-700 bg-emerald-50" : "text-base text-amber-600 bg-amber-50"}>
-                                        {totalWeight}%
-                                    </Badge>
-                                </div>
-                            </CardTitle>
+                        <div className="flex items-center gap-2">
+                            <PieChart className="h-5 w-5 text-slate-500" />
+                            <CardTitle className="text-lg">Weight Distribution</CardTitle>
+                            <Badge className={totalWeight === 100 ? "ml-2 text-base text-emerald-700 bg-emerald-50" : "ml-2 text-base text-amber-600 bg-amber-50"}>
+                                {totalWeight}%
+                            </Badge>
                         </div>
-
                         <div className="mt-2 text-sm text-muted-foreground">
                             Last updated: {data && data.length > 0 && data[0].updatedAt ? formatToVN(data[0].updatedAt) : 'N/A'}
                         </div>
                     </div>
+
                     <div className="flex items-center gap-3">
                         {data && data.length > 0 ? (
                             <>
                                 <Button
                                     onClick={() => setEditOpen(true)}
                                     className="btn btn-green-slow bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    disabled={loading}
                                 >
                                     <PencilLine className="w-4 h-4 mr-2" />
-                                    Edit Configuration
+                                    Update Configuration
                                 </Button>
 
                                 <ConfigureTopicWeightsDialog
@@ -243,7 +217,7 @@ export default function WeightsPage() {
                                     selectedTopicIds={selectedEditTopicIds}
                                     totalWeight={editTotalWeight}
                                     isValidTotal={editIsValidTotal}
-                                    loading={bulkUpdating}
+                                    loading={bulkUpdating} // Sử dụng loading state từ hook mới
                                     handleSubmit={handleEditSubmit}
                                     hideTrigger
                                 />
@@ -252,7 +226,6 @@ export default function WeightsPage() {
                             <ConfigureTopicWeightsButton courseCodeId={courseCodeId} data={data} fetchByCourseCode={fetchByCourseCode} />
                         )}
                     </div>
-
                 </CardHeader>
 
                 <CardContent className="p-0">
@@ -278,13 +251,14 @@ export default function WeightsPage() {
                                             <TableCell><Skeleton className="h-4 w-[250px]" /></TableCell>
                                             <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                                             <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                                            <TableCell><Skeleton className="h-8 w-8 mx-auto" /></TableCell>
                                         </TableRow>
                                     ))
                                 )}
 
                                 {!loading && data && data.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-32 text-center">
+                                        <TableCell colSpan={6} className="h-32 text-center">
                                             <div className="flex flex-col items-center justify-center text-muted-foreground gap-2">
                                                 <FileText className="h-8 w-8 text-slate-300" />
                                                 <p className="italic text-slate-400">No configuration found for this course.</p>
@@ -312,9 +286,9 @@ export default function WeightsPage() {
                                             {row.description || <span className="text-slate-400 italic">No description</span>}
                                         </TableCell>
 
-                                        <TableCell className="text-slate-500 py-3 text-xs">
-                                            <div className="flex justify-around py-3 text-center items-center">
-                                                <CalendarDays className="h-3.5 w-3.5 text-slate-500" />
+                                        <TableCell className="text-slate-500 py-3 text-xs text-center">
+                                            <div className="flex justify-center items-center gap-1">
+                                                <CalendarDays className="h-3 w-3" />
                                                 {row.configuredAt ? formatToVN(row.configuredAt) : "-"}
                                             </div>
                                         </TableCell>
@@ -325,37 +299,23 @@ export default function WeightsPage() {
 
                                         <TableCell className="text-center py-3">
                                             <div className="flex items-center justify-center">
-                                                {/* Cấu trúc đúng của Radix UI / Shadcn Tooltip */}
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
-                                                            className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
+                                                            className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
                                                             onClick={() => router.push(`/staff/course-codes/${courseCodeId}/weights/${row.id}/history`)}
                                                         >
                                                             <History className="w-4 h-4" />
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>View Configuration History</p>
+                                                        <p>View History</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>
                                         </TableCell>
-                                        {/* 
-                                        <TableCell className="text-center py-3">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-8 border-slate-200 btn btn-green-slow text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all"
-                                                    onClick={() => router.push(`/staff/courses/topic-weights/${row.id}`)}
-                                                >
-                                                    <PencilLine className="w-3.5 h-3.5 mr-1" />Edit
-                                                </Button>
-                                            </div>
-                                        </TableCell> */}
                                     </TableRow>
                                 ))}
                             </TableBody>

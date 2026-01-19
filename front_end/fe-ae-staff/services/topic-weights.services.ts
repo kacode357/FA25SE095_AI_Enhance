@@ -1,11 +1,11 @@
 import { courseAxiosInstance } from "@/config/axios.config";
 import {
-    BulkCreateTopicWeightsByCoursePayload,
-    BulkTopicWeightPayload,
-    BulkUpdateTopicWeightsByCoursePayload,
-    BulkUpdateTopicWeightsPayload,
-    CreateTopicWeightPayload,
-    UpdateTopicWeightBody,
+  BulkCreateTopicWeightsByCoursePayload,
+  BulkTopicWeightPayload,
+  BulkUpdateTopicWeightsByCoursePayload,
+  BulkUpdateTopicWeightsPayload,
+  CreateTopicWeightPayload,
+  UpdateTopicWeightBody,
 } from "@/types/topic/topic-weight.payload";
 import { AvailableTopicForCourse, BulkCreateTopicWeightsByCourseResponse, BulkUpdateTopicWeightsResponse, CreateTopicWeightResponse, DeleteTopicWeightResponse, GetTopicWeightsQueryParams, GetTopicWeightsResponse, TopicWeight, TopicWeightHistoryResponse } from "@/types/topic/topic-weight.response";
 import { AxiosResponse } from "axios";

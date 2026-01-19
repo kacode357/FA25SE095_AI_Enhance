@@ -20,10 +20,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBulkCreateTopicWeights } from "@/hooks/topic/useBulkCreateTopicWeights";
+// Import hook mới theo yêu cầu
 import { useBulkUpdateTopicWeightsByCourse } from "@/hooks/topic/useBulkUpdateTopicWeightsByCourse";
 import { allowNumericKey, preventInvalidPaste } from "@/lib/inputValidators";
 import { cn } from "@/lib/utils";
+import { BulkUpdateTopicWeightItem, BulkUpdateTopicWeightsByCoursePayload } from "@/types/topic/topic-weight.payload";
 import { AlertCircle, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,7 +49,7 @@ type Props = {
     loading?: boolean;
     handleSubmit?: () => Promise<void>;
     courseId?: string | undefined;
-    existingTopicWeights?: any[] | undefined; // array of existing configured items ({ id, topicId, ... })
+    existingTopicWeights?: any[] | undefined; 
     hideTrigger?: boolean;
     onSuccess?: () => void;
 };
@@ -68,19 +69,17 @@ export default function ConfigureTopicWeightsDialog({
     handleSubmit,
     hideTrigger = false,
     courseId,
-    existingTopicWeights,
+    existingTopicWeights, // Vẫn giữ để map ID cũ nếu cần thiết cho backend tối ưu, nhưng không bắt buộc
     onSuccess,
 }: Props) {
-    const { bulkCreate, loading: creating } = useBulkCreateTopicWeights();
+    // Sử dụng hook mới duy nhất
     const { bulkUpdate, loading: updating } = useBulkUpdateTopicWeightsByCourse();
-    const apiLoading = creating || updating || loading;
-
-    const isUpdateMode = Boolean(existingTopicWeights && existingTopicWeights.length > 0);
+    const apiLoading = updating || loading;
 
     const { user } = useAuth();
 
     const internalHandleSubmit = async () => {
-        // If parent provided a handler, prefer it (keeps backward compatibility)
+        // Nếu parent component truyền hàm submit riêng, ưu tiên dùng nó
         if (handleSubmit) return handleSubmit();
 
         if (!courseId) {
@@ -98,67 +97,47 @@ export default function ConfigureTopicWeightsDialog({
             return;
         }
 
-        if (isUpdateMode) {
-            // Build updates: find existing id for each selected topic
-            const updates: { id: string; weightPercentage: number; description?: string | null }[] = [];
-            for (const r of rows) {
-                if (!r.topicId) continue;
-                const found = existingTopicWeights?.find((it: any) => String(it.topicId) === String(r.topicId));
-                if (!found) {
-                    toast.error("All edited rows must correspond to existing configured topics");
-                    return;
-                }
-                updates.push({ id: found.id, weightPercentage: r.weightPercentage ?? 0, description: r.description ?? null });
-            }
+        // Lọc ra các row hợp lệ (có chọn topic)
+        const validRows = rows.filter(r => r.topicId);
 
-            if (updates.length === 0) {
-                toast.error("Please select at least one topic");
-                return;
-            }
+        if (validRows.length === 0) {
+            toast.error("Please select at least one topic");
+            return;
+        }
 
-            const payload = {
-                courseId: courseId,
-                configuredBy: user.id,
-                changeReason: "Updated via UI",
-                updates,
+        // Mapping rows sang cấu trúc API yêu cầu
+        // Logic: Map topicId, weight. Nếu tìm thấy ID cũ trong existingTopicWeights thì gửi kèm (optional), không bắt buộc.
+        const weights: BulkUpdateTopicWeightItem[] = validRows.map((r) => {
+            const existingItem = existingTopicWeights?.find((ex) => String(ex.topicId) === String(r.topicId));
+            
+            return {
+                id: existingItem?.id, // Optional: Gửi id nếu topic này đã từng được config trước đó
+                topicId: r.topicId!,
+                weightPercentage: r.weightPercentage ?? 0,
+                description: r.description ?? null
             };
+        });
 
-            // Send flat payload object (backend expects root-level fields)
-            const res = await bulkUpdate(courseId, payload as any);
-            if (res && (res as any).success !== false) {
-                toast.success((res as any).message || "Topic weights updated");
-                setOpen(false);
-                onSuccess?.();
-            } else {
-                toast.error((res as any)?.errors?.join?.(", ") || "Failed to update topic weights");
-            }
+        const payload: BulkUpdateTopicWeightsByCoursePayload = {
+            courseId: courseId,
+            configuredBy: user.id,
+            changeReason: "Configured via UI",
+            weights: weights,
+        };
 
+        const res = await bulkUpdate(courseId, payload);
+        
+        // Kiểm tra kết quả dựa trên logic API (res trả về null nếu lỗi catch, hoặc object response)
+        if (res && res.success) {
+            toast.success(res.message || "Topic weights updated successfully");
+            setOpen(false);
+            onSuccess?.();
         } else {
-            // Create mode
-            const weights = rows
-                .filter((r) => r.topicId)
-                .map((r) => ({ topicId: r.topicId!, weightPercentage: r.weightPercentage ?? 0, description: r.description ?? null }));
-
-            if (weights.length === 0) {
-                toast.error("Please select at least one topic");
-                return;
-            }
-
-            const payload = {
-                courseId: courseId,
-                weights,
-                configuredBy: user.id,
-                changeReason: "Configured via UI",
-            };
-
-            // Send flat payload object (backend expects root-level fields)
-            const res = await bulkCreate(courseId, payload as any);
-            if (res && (res as any).success !== false) {
-                toast.success((res as any).message || "Topic weights configured successfully");
-                setOpen(false);
-                onSuccess?.();
+            // Xử lý lỗi trả về từ API hoặc lỗi mạng
+            if (res && res.errors && res.errors.length > 0) {
+                toast.error(res.errors.join(", "));
             } else {
-                toast.error((res as any)?.errors?.join?.(", ") || "Failed to configure topic weights");
+                toast.error("Failed to update topic weights");
             }
         }
     };
@@ -174,6 +153,7 @@ export default function ConfigureTopicWeightsDialog({
         const clamped = Math.max(0, Math.min(100, num));
         updateRow(idx, { weightPercentage: clamped });
     };
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             {!hideTrigger && (
@@ -309,17 +289,15 @@ export default function ConfigureTopicWeightsDialog({
                         ))}
                     </div>
 
-                    {/* {!isValidTotal && ( */}
-                        <div className="mt-5">
-                            <Button
-                                onClick={addRow}
-                                variant="outline"
-                                className="w-full border-dashed text-muted-foreground hover:text-primary hover:bg-slate-50"
-                            >
-                                <Plus className="size-4 mr-2" /> Configure another topic
-                            </Button>
-                        </div>
-                    {/* )} */}
+                    <div className="mt-5">
+                        <Button
+                            onClick={addRow}
+                            variant="outline"
+                            className="w-full border-dashed text-muted-foreground hover:text-primary hover:bg-slate-50"
+                        >
+                            <Plus className="size-4 mr-2" /> Configure another topic
+                        </Button>
+                    </div>
                 </div>
 
                 <DialogFooter className="p-6 pt-2">

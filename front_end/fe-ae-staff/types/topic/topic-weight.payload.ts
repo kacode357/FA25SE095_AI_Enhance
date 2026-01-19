@@ -40,7 +40,8 @@ export interface UpdateTopicWeightBody {
 }
 
 export interface BulkUpdateTopicWeightItem {
-  id: string;
+  id?: string;
+  topicId: string;
   weightPercentage: number;
   description?: string | null;
 }
@@ -56,5 +57,5 @@ export interface BulkUpdateTopicWeightsByCoursePayload {
   courseId: string;
   configuredBy: string;
   changeReason?: string | null;
-  updates: BulkUpdateTopicWeightItem[];
+  weights: BulkUpdateTopicWeightItem[];
 }

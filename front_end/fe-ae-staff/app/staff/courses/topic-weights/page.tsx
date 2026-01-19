@@ -19,7 +19,7 @@ import { useDeleteTopicWeight } from "@/hooks/topic/useDeleteTopicWeight";
 import { useGetTopicWeights } from "@/hooks/topic/useGetTopicWeights";
 import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
-import { CalendarClock, Eye, History, Layers, Search, Settings2, TriangleAlert, X } from "lucide-react";
+import { CalendarClock, Eye, History, Layers, Search, TriangleAlert, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -180,7 +180,7 @@ export default function TopicWeightsPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                     <Button
                         onClick={() => router.push(`/staff/courses/topic-weights/configure`)}
                         className="h-10 bg-indigo-600 btn btn-green-slow hover:bg-indigo-700 text-white shadow-sm transition-all font-medium px-4"
@@ -188,7 +188,7 @@ export default function TopicWeightsPage() {
                         <Settings2 className="w-4 h-4 mr-2" />
                         Configuration Topic Weight
                     </Button>
-                </div>
+                </div> */}
             </div>
 
             {/* --- Main Content Card --- */}
@@ -413,7 +413,13 @@ export default function TopicWeightsPage() {
                                                             size="icon"
                                                             variant="ghost"
                                                             className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
-                                                            onClick={() => router.push(`/staff/course-codes/${t.courseCodeId}/weights/${t.id}/history`)}
+                                                            onClick={() => {
+                                                                if (t.specificCourseId) {
+                                                                    router.push(`/staff/courses/${t.specificCourseId}/weights/${t.id}/history`);
+                                                                } else {
+                                                                    router.push(`/staff/course-codes/${t.courseCodeId}/weights/${t.id}/history`);
+                                                                }
+                                                            }}
                                                         >
                                                             <History className="w-4 h-4" />
                                                         </Button>

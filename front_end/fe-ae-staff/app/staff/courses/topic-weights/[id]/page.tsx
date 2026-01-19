@@ -95,7 +95,7 @@ export default function TopicWeightDetailPage() {
                                     onClick={() => router.push(`/staff/course-codes/${data.courseCodeId}/weights`)}
                                 >
                                 <Edit className="w-4 h-4 mr-2" />
-                                    Edit Configuration
+                                    Update Configuration
                                 </Button>
                             )}
                         </div>
@@ -249,7 +249,7 @@ export default function TopicWeightDetailPage() {
                                     <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                         <div>
                                             <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                                                Edit Configuration
+                                                Update Configuration
                                                 <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase tracking-wide">
                                                     Active
                                                 </span>

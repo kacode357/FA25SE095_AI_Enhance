@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { CourseRequest } from "@/types/course-requests/course-requests.response";
 import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
-import { Check, GraduationCap, Plus, Search, X } from "lucide-react";
+import { Check, GraduationCap, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import FilterRow from "./components/FilterRow";
@@ -85,7 +85,7 @@ export default function CourseRequestsPage() {
             Course Requests{" "}
             <span className="text-slate-500">({totalCount})</span>
           </CardTitle>
-          <Button
+          {/* <Button
             className="shadow-sm bg-emerald-600 btn btn-green-slow hover:bg-emerald-700 text-white transition-all"
             onClick={() => {
               setDialogSearchTerm("");
@@ -95,7 +95,7 @@ export default function CourseRequestsPage() {
           >
             <Plus className="mr-2 h-4 w-4" />
             Configure Topic Weight
-          </Button>
+          </Button> */}
         </CardHeader>
 
         <CardContent className="px-0 flex-1 overflow-hidden">
