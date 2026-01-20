@@ -1,14 +1,25 @@
 // app/.../crawler/components/CrawlerUrlPromptSection.tsx
 "use client";
 
-import { Link, MessageSquare, Rocket, RotateCw, Cpu, Settings2 } from "lucide-react";
+import { Link, MessageSquare, Rocket, RotateCw, Cpu, Settings2, Layers, Lightbulb } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+
+// Predefined max pages options (max 5 pages)
+const MAX_PAGES_OPTIONS = [
+  { value: "auto", label: "Not specified" },
+  { value: 1, label: "1 page only" },
+  { value: 2, label: "Up to 2 pages" },
+  { value: 3, label: "Up to 3 pages" },
+  { value: 5, label: "Up to 5 pages" },
+] as const;
 
 type Props = {
   url: string;
   prompt: string;
+  maxPages: number | null;
   onUrlChange: (value: string) => void;
   onPromptChange: (value: string) => void;
+  onMaxPagesChange: (value: number | null) => void;
   onStartCrawl: () => void;
   submitting: boolean;
   chatConnected: boolean;
@@ -26,8 +37,10 @@ type Props = {
 export default function CrawlerUrlPromptSection({
   url,
   prompt,
+  maxPages,
   onUrlChange,
   onPromptChange,
+  onMaxPagesChange,
   onStartCrawl,
   submitting,
   chatConnected,
@@ -42,6 +55,17 @@ export default function CrawlerUrlPromptSection({
   const disabled = submitting || !chatConnected || !crawlConnected;
   const displayProgress = progress;
   const displayTarget = activeTargetUrl || url;
+
+  const handleMaxPagesChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    // "auto" means null (don't send maxPages, let AI decide)
+    const parsedVal = val === "auto" ? null : Number(val);
+    console.log("[MaxPages] Select changed - raw value:", val, "parsed:", parsedVal);
+    onMaxPagesChange(parsedVal);
+  };
+
+  // Debug: Log current maxPages value
+  console.log("[MaxPages] Current maxPages prop:", maxPages);
 
   return (
     <>
@@ -61,8 +85,9 @@ export default function CrawlerUrlPromptSection({
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,6fr)_minmax(0,4fr)] items-start">
-          <div className="space-y-4">
+        <div className="grid gap-5 lg:grid-cols-2 items-stretch">
+          {/* === CỘT TRÁI: URL + Prompt === */}
+          <div className="space-y-4 flex flex-col">
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-muted)]">
                 <Link className="h-3.5 w-3.5" />
@@ -78,63 +103,86 @@ export default function CrawlerUrlPromptSection({
               />
             </div>
 
-            <div>
+            <div className="flex-1 flex flex-col">
               <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-muted)]">
                 <MessageSquare className="h-3.5 w-3.5" />
                 Extraction Instructions (Prompt)
               </label>
               <textarea
-                rows={3}
                 value={prompt}
                 onChange={(e) => onPromptChange(e.target.value)}
                 disabled={isCrawling || submitting}
                 placeholder="E.g., Extract all product details including name, price, brand, and categories..."
-                className="w-full resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-[13px] outline-none transition-all placeholder:text-slate-400 focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--focus-ring)] disabled:bg-slate-50 disabled:text-slate-500"
+                className="flex-1 w-full resize-none rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-[13px] outline-none transition-all placeholder:text-slate-400 focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--focus-ring)] disabled:bg-slate-50 disabled:text-slate-500"
               />
             </div>
-
-            <button
-              type="button"
-              onClick={onStartCrawl}
-              disabled={disabled || isCrawling}
-              className="btn-gradient-slow w-full h-11 rounded-xl text-[13px] font-semibold shadow-md disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
-            >
-              {submitting || isCrawling ? (
-                <>
-                  <RotateCw className="h-4 w-4 animate-spin" />
-                  <span>Processing Job...</span>
-                </>
-              ) : (
-                <>
-                  <Rocket className="h-4 w-4" />
-                  <span>Launch Smart Crawl</span>
-                </>
-              )}
-            </button>
-
-            <div className="space-y-2 pt-1" />
           </div>
 
-          <div className="rounded-xl border border-dashed border-[var(--border)] bg-slate-50/70 p-4 text-[11px] text-[var(--text-muted)]">
-            <p className="mb-2 text-[12px] font-semibold text-[var(--foreground)]">
-              Prompt guidance (English)
-            </p>
-            <ul className="list-disc space-y-1 pl-4">
-              <li className="text-[11px]">Describe the goal and which sections to capture.</li>
-              <li className="text-[11px]">Keep it natural language; no JSON formatting needed.</li>
-              <li className="text-[11px]">Add rules for pagination, deduplication, and ignoring ads/popups.</li>
-              <li className="text-[11px]">Mention selectors or keywords when the page is complex.</li>
-            </ul>
-            <div className="mt-3 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[11px] text-slate-700 shadow-sm">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-1">
-                Sample prompt
+          {/* === CỘT PHẢI: Max Pages + Tips === */}
+          <div className="space-y-4 flex flex-col">
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-muted)]">
+                <Layers className="h-3.5 w-3.5" />
+                Max Pages to Crawl
+              </label>
+              <select
+                value={maxPages === null ? "auto" : maxPages}
+                onChange={handleMaxPagesChange}
+                disabled={isCrawling || submitting}
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-[13px] outline-none transition-all focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--focus-ring)] disabled:bg-slate-50 disabled:text-slate-500"
+              >
+                {MAX_PAGES_OPTIONS.map((opt) => (
+                  <option key={String(opt.value)} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10px] text-slate-400">
+                If selected, this overrides any page count in your prompt.
+              </p>
+            </div>
+
+            {/* === Prompt Guidance Box === */}
+            <div className="flex-1 rounded-xl border border-dashed border-[var(--border)] bg-slate-50/70 p-3 text-[11px] text-[var(--text-muted)] flex flex-col">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--foreground)]">
+                <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                Prompt Tips
               </div>
-              <p className="leading-snug text-[11px]">
-                Get me the information for all products on this page, including images, brand, names,
-                current prices, prices before discounts, and categories.
+              <ul className="list-disc space-y-1.5 pl-4 text-[10px]">
+                <li>Describe what data you want to extract clearly.</li>
+                <li>Use natural language, no JSON needed.</li>
+                <li>Mention pagination rules if the site has multiple pages.</li>
+              </ul>
+              <p className="mt-3 text-[10px] text-slate-500">
+                <span className="font-medium">Example:</span>{" "}
+                <span className="italic text-slate-400">
+                  &quot;Get all products with name, price, brand, and image URL.&quot;
+                </span>
               </p>
             </div>
           </div>
+        </div>
+
+        {/* === NÚT LAUNCH === */}
+        <div className="mt-5">
+          <button
+            type="button"
+            onClick={onStartCrawl}
+            disabled={disabled || isCrawling}
+            className="btn-gradient-slow w-full h-11 rounded-xl text-[13px] font-semibold shadow-md disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
+          >
+            {submitting || isCrawling ? (
+              <>
+                <RotateCw className="h-4 w-4 animate-spin" />
+                <span>Processing Job...</span>
+              </>
+            ) : (
+              <>
+                <Rocket className="h-4 w-4" />
+                <span>Launch Smart Crawl</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 

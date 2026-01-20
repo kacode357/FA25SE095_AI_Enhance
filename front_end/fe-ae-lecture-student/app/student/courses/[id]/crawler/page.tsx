@@ -127,6 +127,7 @@ const CrawlerInner = () => {
 
   const [url, setUrl] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [maxPages, setMaxPages] = useState<number | null>(null); // Default to Auto (AI decides)
   const [crawlTargetUrl, setCrawlTargetUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -874,7 +875,12 @@ const CrawlerInner = () => {
       timestamp: new Date().toISOString(),
       groupId,
       assignmentId,
+      maxPages, // Pass max pages from UI
     };
+
+    // Debug: Log the payload with maxPages
+    console.log("[CrawlRequest] Sending crawl request with maxPages:", maxPages);
+    console.log("[CrawlRequest] Full payload:", JSON.stringify(rawPayload, null, 2));
 
     pendingOutgoingRef.current.push({
       content: rawPayload.content,
@@ -893,6 +899,7 @@ const CrawlerInner = () => {
       await sendCrawlerMessage(rawPayload);
       setUrl("");
       setPrompt("");
+      setMaxPages(null); // Reset max pages to Auto after crawl
     } catch (err: any) {
       pendingOutgoingRef.current = pendingOutgoingRef.current.filter(
         (item) =>
@@ -913,6 +920,7 @@ const CrawlerInner = () => {
     conversationId,
     groupId,
     isConversationInHistory,
+    maxPages,
     prompt,
     quotaExceeded,
     sendCrawlerMessage,
@@ -1072,8 +1080,10 @@ const CrawlerInner = () => {
             <CrawlerUrlPromptSection
               url={url}
               prompt={prompt}
+              maxPages={maxPages}
               onUrlChange={setUrl}
               onPromptChange={setPrompt}
+              onMaxPagesChange={setMaxPages}
               onStartCrawl={handleStartCrawl}
               submitting={submitting}
               chatConnected={chatConnected}

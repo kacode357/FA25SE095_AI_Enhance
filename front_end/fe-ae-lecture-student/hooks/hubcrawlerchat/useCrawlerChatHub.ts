@@ -25,6 +25,7 @@ export type ChatMessageDto = {
   assignmentId?: string | null;
   messageType?: MessageType;
   crawlJobId?: string | null;
+  maxPages?: number | null; // Optional max pages from UI (null = use prompt extraction)
   timestamp?: string;
   visualizationData?: string | null;
   extractedData?: string | null;
@@ -451,10 +452,24 @@ export function useCrawlerChatHub({
     }
 
     // đảm bảo default MessageType
-    const payload: ChatMessageDto = {
+    // Build payload - only include maxPages if it's not null
+    const payload: Record<string, unknown> = {
       ...message,
       messageType: message.messageType ?? MessageType.UserMessage,
     };
+
+    // Only send maxPages if user selected a specific value (not "Not specified")
+    if (message.maxPages !== null && message.maxPages !== undefined) {
+      payload.maxPages = message.maxPages;
+    } else {
+      // Remove maxPages from payload if null
+      delete payload.maxPages;
+    }
+
+    // Debug: Log the payload being sent via SignalR
+    console.log("[SignalR] SendCrawlerMessage - maxPages in message:", message.maxPages);
+    console.log("[SignalR] SendCrawlerMessage - will send maxPages:", message.maxPages !== null ? message.maxPages : "NOT SENDING");
+    console.log("[SignalR] SendCrawlerMessage - full payload:", JSON.stringify(payload, null, 2));
 
     await conn.invoke("SendCrawlerMessage", payload);
   }, []);
