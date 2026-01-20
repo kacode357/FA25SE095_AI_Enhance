@@ -6,13 +6,13 @@ export interface AvailableTopicWeight {
   name: string;
   description: string;
   weight: number;
-  isCustomWeight: boolean;
 }
 
 export interface GetAvailableTopicWeightsResponse {
   success: boolean;
   message: string;
   topics: AvailableTopicWeight[];
+  // hasCustomWeights: boolean;
 }
 
 export { };

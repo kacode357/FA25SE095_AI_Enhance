@@ -104,7 +104,7 @@ export default function WeightsPage() {
     const selectedEditTopicIds = useMemo(() => editRows.map((r) => r.topicId).filter(Boolean) as string[], [editRows]);
 
     // --- Handlers ---
-    
+
     const handleEditSubmit = async () => {
         if (!courseCodeId) {
             toast.error("Missing course code id");
@@ -122,15 +122,15 @@ export default function WeightsPage() {
             courseCodeId,
             configuredBy: user?.id ?? "",
             changeReason: "Updated via UI",
-            updates: validRows.map(r => ({
-                topicId: r.topicId!, 
+            weights: validRows.map(r => ({
+                topicId: r.topicId!,
                 weightPercentage: r.weightPercentage ?? 0,
                 description: r.description ?? null
-            })) as any 
+            })) as any
         };
 
         const res = await bulkUpdate(courseCodeId, payload);
-        
+
         if (res && res.success) {
             toast.success(res.message || "Topic weights updated successfully");
             setEditOpen(false);
@@ -146,15 +146,14 @@ export default function WeightsPage() {
     };
 
     const courseCodeName = courseCodeData?.code || (data && data.length > 0 ? data[0].courseCodeName : "Course Code");
-    
+
     const totalWeight = useMemo(() => {
         return data ? data.reduce((acc, curr) => acc + (curr.weightPercentage || 0), 0) : 0;
     }, [data]);
 
     return (
         <div className="flex flex-col gap-4 p-6 max-w-7xl mx-auto">
-            {/*  - Contextual visual hint */}
-            
+
             {/* --- HEADER SECTION --- */}
             <div className="flex flex-col gap-2">
                 <div className="flex gap-5 items-center">
@@ -304,14 +303,14 @@ export default function WeightsPage() {
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
-                                                            className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+                                                            className="h-8 w-8 cursor-pointer shadow-lg text-slate-600 hover:bg-white hover:text-slate-900 hover:bg-slate-200 transition-colors"
                                                             onClick={() => router.push(`/staff/course-codes/${courseCodeId}/weights/${row.id}/history`)}
                                                         >
                                                             <History className="w-4 h-4" />
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>View History</p>
+                                                        <p>View Configuration History</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>

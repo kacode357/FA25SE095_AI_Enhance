@@ -30,7 +30,6 @@ export interface AvailableTopicForCourse {
   name: string;
   description?: string | null;
   weight: number;
-  isCustomWeight: boolean;
 }
 
 export interface GetTopicWeightsQueryParams {

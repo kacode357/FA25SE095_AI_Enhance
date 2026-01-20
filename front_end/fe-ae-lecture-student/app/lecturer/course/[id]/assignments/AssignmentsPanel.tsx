@@ -69,7 +69,7 @@ const defaultFilter: FilterState = {
   pageSize: 10,
 };
 
-import { useDebugActivateAssignment } from "@/hooks/assignment/useDebugActivateAssignment";
+
 
 export default function AssignmentsPanel({
   courseId,
@@ -275,8 +275,6 @@ export default function AssignmentsPanel({
     }
     // Re-run when search string changes
   }, [search?.toString()]);
-  const { activate: debugActivate, loading: activating, error: activateError } = useDebugActivateAssignment();
-  const isDebug = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEBUG === "true";
 
   // Create view
   if (mode === "create") {
@@ -531,30 +529,7 @@ export default function AssignmentsPanel({
                                 Details
                               </Button>
 
-                              {isDebug && a.status === AssignmentStatus.Scheduled && (
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="text-xs text-green-500 cursor-pointer"
-                                  disabled={activating}
-                                  title="DEBUG: Force activate now"
-                                  onClick={async () => {
-                                    const res = await debugActivate(a.id);
-                                    if (res?.success) {
-                                      // Optimistic UI: update status locally then refresh list
-                                      a.status = AssignmentStatus.Active as any;
-                                      a.statusDisplay = "Active" as any;
-                                      a.startDate = new Date().toISOString();
-                                      // Re-fetch to align with server state
-                                      fetchAssignments(query);
-                                    } else {
-                                      // 
-                                    }
-                                  }}
-                                >
-                                  {activating ? "Activating..." : "Activate Now (Debug)"}
-                                </Button>
-                              )}
+
                             </div>
                           </div>
                         </div>

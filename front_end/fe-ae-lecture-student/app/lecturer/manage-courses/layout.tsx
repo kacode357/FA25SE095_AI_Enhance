@@ -69,12 +69,12 @@ export default function ManageCoursesLayout({ children }: { children: React.Reac
                     className="mx-auto flex items-center gap-6 py-3"
                     style={{ maxWidth: 1400, paddingLeft: "2rem", paddingRight: "1rem" }}
                 >
-                    <Link
+                    {/* <Link
                         href="/lecturer/manage-courses/requests"
                         className={`text-[13px] font-medium ${isRequests ? "text-gray-900 border-b-2 border-brand pb-1" : "text-gray-700 hover:text-gray-900"}`}
                     >
                         Course Request
-                    </Link>
+                    </Link> */}
 
                     <Link
                         href="/lecturer/manage-courses/create"

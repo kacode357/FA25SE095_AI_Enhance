@@ -290,9 +290,9 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             ) : (
               <Select<string>
                 value={form.topicId ?? ""}
-                options={(topics ?? []).map((t: any) => ({ 
-                  value: t.id, 
-                  label: `${t.name} - ${t.weight}%` 
+                options={(topics ?? []).map((t: any) => ({
+                  value: t.id,
+                  label: `${t.name} - ${t.weight}%`
                 }))}
                 placeholder="Select a topic"
                 onChange={(v) => setForm((p) => ({ ...p, topicId: v }))}
@@ -311,7 +311,7 @@ export default function NewAssignmentForm({ courseId, onCreated, onCancel }: Pro
             value={form.description}
             onChange={(html) => setForm((p) => ({ ...p, description: html }))}
             placeholder="Exercise description…"
-            // No server upload for images; keep data URLs inline
+          // No server upload for images; keep data URLs inline
           />
         </div>
 

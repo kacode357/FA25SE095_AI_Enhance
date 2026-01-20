@@ -30,15 +30,18 @@ export default function ConfigureTopicWeightsButton({
   data,
   fetchByCourseCode,
 }: Props) {
+  // Hooks
   const { data: topicsResp, fetchTopics } = useGetTopics();
   const topics = topicsResp?.topics || [];
-
+  
   const { bulkUpdate, loading, error } = useBulkUpdateTopicWeights();
   const { user } = useAuth();
 
+  // Local State
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
 
+  // Init Data when dialog opens
   useEffect(() => {
     if (open) {
       fetchTopics();
@@ -65,7 +68,7 @@ export default function ConfigureTopicWeightsButton({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Tính tổng % realtime
+  // UI Calculations (Visual feedback only)
   const totalWeight = useMemo(() => {
     return rows.reduce((acc, curr) => acc + (curr.weightPercentage || 0), 0);
   }, [rows]);
@@ -77,6 +80,7 @@ export default function ConfigureTopicWeightsButton({
     [rows]
   );
 
+  // Row Actions
   const addRow = () =>
     setRows((prev) => [
       ...prev,
@@ -94,45 +98,38 @@ export default function ConfigureTopicWeightsButton({
   const removeRow = (index: number) =>
     setRows((prev) => prev.filter((_, i) => i !== index));
 
+  // --- REFACTORED SUBMIT LOGIC ---
   const handleSubmit = async () => {
-    if (!courseCodeId) {
-      toast.error("Missing course code id");
-      return;
-    }
+    if (!courseCodeId) return;
 
+    // Chuẩn bị payload
     const items = rows
-      .filter((r) => r.topicId)
+      .filter((r) => r.topicId) // Lọc các dòng rỗng UI để tránh lỗi JSON format
       .map((r) => ({
         topicId: r.topicId!,
         weightPercentage: r.weightPercentage ?? 0,
         description: r.description ?? null,
       }));
 
-    if (items.length === 0) {
-      toast.error("Please select at least one topic");
-      return;
-    }
-
     const payload = {
       courseCodeId,
       configuredBy: user?.id ?? "",
       changeReason: "Configured via UI",
-      updates: items,
+      weights: items,
     };
 
-    const res = await bulkUpdate(courseCodeId, payload as any);
-    if (res && res.success) {
-      toast.success(res.message || "Topic weights configured successfully");
+    // Gọi API qua hook
+    const res = await bulkUpdate(courseCodeId, payload);
+
+    // Xử lý kết quả dựa trên message từ BE
+    if (res?.success) {
+      toast.success(res.message); // Message thành công từ BE
       setOpen(false);
-      try {
-        await fetchByCourseCode(courseCodeId);
-      } catch (e) {}
+      // Refresh data ngầm, không cần await block UI
+      fetchByCourseCode(courseCodeId).catch(() => {});
     } else {
-      if (res && res.errors && res.errors.length > 0) {
-        toast.error(res.errors.join(", "));
-      } else {
-        toast.error(error || "Failed to configure topic weights");
-      }
+      // Ưu tiên message từ BE trả về (Business Logic Error), fallback sang error của hook (System Error)
+      toast.error(res?.message || error || "Failed to configure topic weights");
     }
   };
 
