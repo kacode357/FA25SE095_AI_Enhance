@@ -41,8 +41,8 @@ export interface ReportBase {
   id: string;
   assignmentId: string;
   assignmentTitle: string;
-  courseId: string;
-  courseName: string;
+  courseId: string | null;
+  courseName: string | null;
 
   groupId: string | null;
   groupName: string | null;
