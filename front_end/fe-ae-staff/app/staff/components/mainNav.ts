@@ -47,7 +47,7 @@ export const mainNav = [
           { href: "/staff/courses/topics/create", label: "Create Topic" },
         ],
       },
-      { href: "/staff/course-requests", label: "Course Requests" },
+      // { href: "/staff/course-requests", label: "Course Requests" },
       { href: "/staff/course-approvals", label: "Course Approvals" },
     ],
   },
