@@ -1,29 +1,30 @@
 "use client";
 
+import { CalendarDays, DownloadCloud, Sparkles, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Sparkles, Zap } from "lucide-react";
 
-import { useTerms } from "@/hooks/term/useTerms";
 import { useMyCourses } from "@/hooks/course/useMyCourses";
+import { useTerms } from "@/hooks/term/useTerms";
 
+import { useLecturerAssignmentsStatistics } from "@/hooks/dashboard/useLecturerAssignmentsStatistics";
 import { useLecturerCoursesOverview } from "@/hooks/dashboard/useLecturerCoursesOverview";
 import { useLecturerPendingGrading } from "@/hooks/dashboard/useLecturerPendingGrading";
-import { useLecturerAssignmentsStatistics } from "@/hooks/dashboard/useLecturerAssignmentsStatistics";
 import { useLecturerStudentsPerformance } from "@/hooks/dashboard/useLecturerStudentsPerformance";
 
+import AssignmentsStatisticsCard from "./components/AssignmentsStatisticsCard";
 import CoursesOverviewCard from "./components/CoursesOverviewCard";
 import PendingGradingCard from "./components/PendingGradingCard";
-import AssignmentsStatisticsCard from "./components/AssignmentsStatisticsCard";
 import StudentsPerformanceCard from "./components/StudentsPerformanceCard";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { useExportCourseGrades } from "@/hooks/dashboard/useExportCourseGrades";
 
 export default function LecturerDashboardPage() {
   const { data: terms, loading: termsLoading, fetchTerms } = useTerms();
@@ -57,6 +58,8 @@ export default function LecturerDashboardPage() {
   const [selectedTermId, setSelectedTermId] = useState<string | undefined>();
   const [selectedCourseId, setSelectedCourseId] = useState<string | undefined>();
   const [syncingCourse, setSyncingCourse] = useState(false);
+
+  const { exportCourseGrades, loading: exportLoading } = useExportCourseGrades();
 
   // Initial load: fetch terms, then courses, then default selections
   useEffect(() => {
@@ -173,6 +176,17 @@ export default function LecturerDashboardPage() {
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="mt-7">
+              <button
+                type="button"
+                disabled={!selectedCourseId || exportLoading}
+                onClick={() => selectedCourseId && exportCourseGrades(selectedCourseId)}
+                className="inline-flex items-center gap-2 btn btn-green-slow rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                <DownloadCloud className="h-4 w-4" />
+                Export grades
+              </button>
             </div>
           </div>
 

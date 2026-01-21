@@ -306,3 +306,12 @@ export interface LecturerAssignmentsStatisticsData {
 
 export type LecturerAssignmentsStatisticsResponse =
   DashboardBaseResponse<LecturerAssignmentsStatisticsData>;
+
+// ===== LECTURER: EXPORT COURSE GRADES (FILE DOWNLOAD) =====
+
+export interface ExportCourseGradesResponse {
+  success: boolean;
+  file: Blob;
+  fileName: string;
+  contentType: string;
+}

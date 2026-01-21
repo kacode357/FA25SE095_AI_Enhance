@@ -2,23 +2,23 @@
 import { courseAxiosInstance } from "@/config/axios.config";
 
 import type {
-  StudentGradesOverviewResponse,
-  StudentCourseGradesDetailResponse,
-  StudentGradeBreakdownResponse,
-  StudentPendingAssignmentsResponse,
-  StudentCurrentCoursesResponse,
-  StudentPerformanceAnalyticsResponse,
-  LecturerCoursesOverviewResponse,
-  LecturerPendingGradingResponse,
-  LecturerStudentsPerformanceResponse,
-  LecturerAssignmentsStatisticsResponse,
+    LecturerAssignmentsStatisticsResponse,
+    LecturerCoursesOverviewResponse,
+    LecturerPendingGradingResponse,
+    LecturerStudentsPerformanceResponse,
+    StudentCourseGradesDetailResponse,
+    StudentCurrentCoursesResponse,
+    StudentGradeBreakdownResponse,
+    StudentGradesOverviewResponse,
+    StudentPendingAssignmentsResponse,
+    StudentPerformanceAnalyticsResponse,
 } from "@/types/dashboard/dashboard.response";
 
 import type {
-  StudentGradesOverviewQuery,
-  StudentPerformanceAnalyticsQuery,
-  LecturerCoursesOverviewQuery,
-  LecturerPendingGradingQuery,
+    LecturerCoursesOverviewQuery,
+    LecturerPendingGradingQuery,
+    StudentGradesOverviewQuery,
+    StudentPerformanceAnalyticsQuery,
 } from "@/types/dashboard/dashboard.payload";
 
 export const DashboardService = {
@@ -129,5 +129,46 @@ export const DashboardService = {
         `/Dashboard/lecturer/assignments/statistics/${courseId}`
       );
     return res.data;
+  },
+
+  /** GET /api/Dashboard/lecturer/grades/export/{courseId} */
+  exportCourseGrades: async (
+    courseId: string
+  ): Promise<import("@/types/dashboard/dashboard.response").ExportCourseGradesResponse | null> => {
+    try {
+      const res = await courseAxiosInstance.get<ArrayBuffer>(
+        `/Dashboard/lecturer/grades/export/${courseId}`,
+        {
+          responseType: "arraybuffer",
+        }
+      );
+
+      const contentDisposition =
+        // axios headers may be lowercase or proper-cased
+        (res.headers && (res.headers["content-disposition"] || res.headers["Content-Disposition"])) ||
+        "";
+
+      let filename = `course-grades-${courseId}.xlsx`;
+      const match = /filename\*?=(?:UTF-8''?)?([^;\n]+)/i.exec(contentDisposition as string);
+      if (match && match[1]) {
+        try {
+          filename = decodeURIComponent(match[1].trim().replace(/"/g, ""));
+        } catch (e) {
+          filename = match[1].trim().replace(/"/g, "");
+        }
+      }
+
+      const contentType = (res.headers && (res.headers["content-type"] || res.headers["Content-Type"])) as string | undefined;
+      const blob = new Blob([res.data], { type: contentType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+
+      return {
+        success: true,
+        file: blob,
+        fileName: filename,
+        contentType: contentType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      };
+    } catch (err) {
+      return null;
+    }
   },
 };

@@ -18,10 +18,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useDeleteTopicWeight } from "@/hooks/topic/useDeleteTopicWeight";
 import { useGetTopicWeights } from "@/hooks/topic/useGetTopicWeights";
 import { formatToVN } from "@/utils/datetime/time";
-import { motion } from "framer-motion";
-import { CalendarClock, Eye, History, Layers, Search, TriangleAlert, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CalendarClock, ChevronDown, ChevronRight, Eye, History, Layers, Search, TriangleAlert, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 
 export default function TopicWeightsPage() {
     // --- Hooks & State ---
@@ -169,6 +169,44 @@ export default function TopicWeightsPage() {
         return arr;
     }, [items, searchCourseCode, searchSpecificCourseId, onlyEditable]);
 
+    // Group items by course code OR specific course (placed after `filtered` declaration)
+    const groups = useMemo(() => {
+        const map = new Map<string, { key: string; title: string; items: any[]; type: "code" | "specific" | "unassigned" }>();
+
+        (filtered || []).forEach((t) => {
+            let key = "unassigned";
+            let title = "Unassigned";
+            let type: "code" | "specific" | "unassigned" = "unassigned";
+
+            if (t.courseCodeId || t.courseCodeName) {
+                key = `code:${t.courseCodeId || t.courseCodeName}`;
+                title = t.courseCodeName || t.courseCodeId || "Unknown Code";
+                type = "code";
+            } else if (t.specificCourseId || t.specificCourseName) {
+                key = `specific:${t.specificCourseId || t.specificCourseName}`;
+                title = t.specificCourseName || t.specificCourseId || "Specific Course";
+                type = "specific";
+            }
+
+            if (!map.has(key)) map.set(key, { key, title, items: [], type });
+            map.get(key)!.items.push(t);
+        });
+
+        return Array.from(map.values());
+    }, [filtered]);
+
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+    const toggleGroup = (key: string) => {
+        setExpandedGroups((s) => ({ ...s, [key]: !s[key] }));
+    };
+
+    useEffect(() => {
+        if (!groups || groups.length === 0) return;
+        const allOpen: Record<string, boolean> = {};
+        groups.forEach((g) => (allOpen[g.key] = true));
+        setExpandedGroups((prev) => ({ ...allOpen, ...prev }));
+    }, [groups.length]);
+
     return (
         <div className="flex flex-col h-full space-y-6 p-6 bg-slate-50/50 min-h-screen text-slate-900">
             {/* --- Page Header --- */}
@@ -314,123 +352,157 @@ export default function TopicWeightsPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filtered.map((t) => (
-                                    <motion.tr
-                                        key={t.id}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="group border-b border-slate-50 hover:bg-slate-50/60 transition-colors"
-                                    >
-                                        <TableCell className="px-6 py-4 align-top">
-                                            <span className="font-semibold text-slate-800 text-sm">{t.topicName}</span>
-                                        </TableCell>
+                                // Render grouped rows
+                                groups.map((g) => (
+                                    <Fragment key={g.key}>
+                                        <TableRow
+                                            className="bg-slate-50/80 border-b border-slate-100 cursor-pointer"
+                                            onClick={() => toggleGroup(g.key)}
+                                            role="button"
+                                            aria-expanded={expandedGroups[g.key] ? "true" : "false"}
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") toggleGroup(g.key);
+                                            }}
+                                        >
+                                            <TableCell colSpan={5} className="px-6 py-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-2 text-slate-800">
+                                                            <span className="text-xs text-slate-500 mr-2 select-none">
+                                                                {g.type === "code" ? "Course Code:" : g.type === "specific" ? "Specific Course:" : ""}
+                                                            </span>
 
-                                        <TableCell className="px-6 py-4 text-center align-top">
-                                            {t.courseCodeName ? (
-                                                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 whitespace-nowrap">
-                                                    {t.courseCodeName}
-                                                </span>
-                                            ) :
-                                                <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-blue-700/10 whitespace-nowrap">
-                                                    Not config
-                                                </span>
-                                            }
-                                        </TableCell>
+                                                            {expandedGroups[g.key] ? (
+                                                                <ChevronDown className="w-4 h-4 text-slate-500" />
+                                                            ) : (
+                                                                <ChevronRight className="w-4 h-4 text-slate-500" />
+                                                            )}
 
-                                        <TableCell className="px-6 py-4 align-top">
-                                            {t.specificCourseName ? (
-                                                <span className="text-xs text-slate-700">{t.specificCourseName}</span>
-                                            ) : (
-                                                <span className="text-xs text-slate-400 italic">Not config.</span>
-                                            )}
-                                        </TableCell>
-
-                                        <TableCell className="px-6 py-4 align-top">
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-sm font-bold text-slate-900">{t.weightPercentage}%</span>
-                                                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 rounded uppercase tracking-wider font-semibold">Weight</span>
-                                                </div>
-                                                <p className="text-xs text-slate-500 line-clamp-1 leading-relaxed" title={t.description}>
-                                                    {t.description || <span className="text-slate-300 italic">No description</span>}
-                                                </p>
-                                                <div className="mt-2">
-                                                    {t.configuredAt ? (
-                                                        <div className="flex items-center gap-1 text-xs font-medium text-violet-400">
-                                                            <CalendarClock className="w-3.5 h-3.5 text-violet-400" /> Configured At:
-                                                            <span className="text-slate-600">{formatToVN(t.configuredAt)}</span>
+                                                            {g.type === "specific" ? (
+                                                                <span className="inline-flex items-center rounded-md bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-700/10 whitespace-nowrap ml-2">
+                                                                    {g.title}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 whitespace-nowrap ml-2">
+                                                                    {g.title}
+                                                                </span>
+                                                            )}
                                                         </div>
-                                                    ) : (
-                                                        <span className="text-slate-300 text-xs">-</span>
-                                                    )}
+
+                                                        {/* <span className="text-sm text-slate-500">{g.items.length} topic(s)</span> */}
+                                                    </div>
+
+                                                    <div className="text-sm text-slate-400">&nbsp;</div>
                                                 </div>
-                                            </div>
-                                        </TableCell>
+                                            </TableCell>
+                                        </TableRow>
 
-                                        <TableCell className="px-6 py-4 flex gap-2 items-center text-center align-top">
-                                            {/* <div className="flex items-center justify-center gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-8 border-slate-200 btn btn-green-slow text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all"
-                                                    onClick={() => {
-                                                        // Logic điều hướng edit
-                                                        if (t.courseCodeId && !t.specificCourseId) {
-                                                            router.push(`/staff/course-codes/${t.courseCodeId}/weights`);
-                                                        }
-                                                        else {
-                                                            router.push(`/staff/courses/topic-weights/${t.id}`);
-                                                        }
-                                                    }}
-                                                >
-                                                    <PencilLine className="size-3" />Edit
-                                                </Button>
-                                            </div> */}
+                                        {expandedGroups[g.key] && (
+                                            <AnimatePresence initial={false}>
+                                                {g.items.map((t) => (
+                                                    <motion.tr
+                                                        key={t.id}
+                                                        initial={{ opacity: 0, y: -6 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: -6 }}
+                                                        transition={{ duration: 0.16 }}
+                                                        className="group border-b border-slate-50 hover:bg-slate-50/60 transition-colors"
+                                                    >
+                                                    <TableCell className="px-8 py-4 align-top">
+                                                        <span className="font-semibold text-slate-800 text-sm">{t.topicName}</span>
+                                                    </TableCell>
 
-                                            <div className="flex items-center justify-center">
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
-                                                            onClick={() => router.push(`/staff/courses/topic-weights/${t.id}`)}
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>View details</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
+                                                    <TableCell className="px-6 py-4 text-center align-top">
+                                                        {t.courseCodeName ? (
+                                                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 whitespace-nowrap">
+                                                                {t.courseCodeName}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-blue-700/10 whitespace-nowrap">
+                                                                Not config
+                                                            </span>
+                                                        )}
+                                                    </TableCell>
 
-                                            <div className="flex items-center justify-center">
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
-                                                            onClick={() => {
-                                                                if (t.specificCourseId) {
-                                                                    router.push(`/staff/courses/${t.specificCourseId}/weights/${t.id}/history`);
-                                                                } else {
-                                                                    router.push(`/staff/course-codes/${t.courseCodeId}/weights/${t.id}/history`);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <History className="w-4 h-4" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>View Configuration History</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-                                        </TableCell>
-                                    </motion.tr>
+                                                    <TableCell className="px-6 py-4 align-top">
+                                                        {t.specificCourseName ? (
+                                                            <span className="text-xs text-slate-700">{t.specificCourseName}</span>
+                                                        ) : (
+                                                            <span className="text-xs text-slate-400 italic">Not config.</span>
+                                                        )}
+                                                    </TableCell>
+
+                                                    <TableCell className="px-6 py-4 align-top">
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="text-sm font-bold text-slate-900">{t.weightPercentage}%</span>
+                                                                <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 rounded uppercase tracking-wider font-semibold">Weight</span>
+                                                            </div>
+                                                            <p className="text-xs text-slate-500 line-clamp-1 leading-relaxed" title={t.description}>
+                                                                {t.description || <span className="text-slate-300 italic">No description</span>}
+                                                            </p>
+                                                            <div className="mt-2">
+                                                                {t.configuredAt ? (
+                                                                    <div className="flex items-center gap-1 text-xs font-medium text-violet-400">
+                                                                        <CalendarClock className="w-3.5 h-3.5 text-violet-400" /> Configured At:
+                                                                        <span className="text-slate-600">{formatToVN(t.configuredAt)}</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-slate-300 text-xs">-</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+
+                                                    <TableCell className="px-6 py-4 flex gap-2 items-center text-center align-top">
+                                                        <div className="flex items-center justify-center">
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        size="icon"
+                                                                        variant="ghost"
+                                                                        className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
+                                                                        onClick={() => router.push(`/staff/courses/topic-weights/${t.id}`)}
+                                                                    >
+                                                                        <Eye className="w-4 h-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>View details</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </div>
+
+                                                        <div className="flex items-center justify-center">
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        size="icon"
+                                                                        variant="ghost"
+                                                                        className="h-8 cursor-pointer shadow-lg w-8 text-slate-600 hover:bg-white"
+                                                                        onClick={() => {
+                                                                            if (t.specificCourseId) {
+                                                                                router.push(`/staff/courses/${t.specificCourseId}/weights/${t.id}/history`);
+                                                                            } else {
+                                                                                router.push(`/staff/course-codes/${t.courseCodeId}/weights/${t.id}/history`);
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <History className="w-4 h-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>View Configuration History</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </div>
+                                                    </TableCell>
+                                                </motion.tr>
+                                                ))}
+                                            </AnimatePresence>
+                                        )}
+                                    </Fragment>
                                 ))
                             )}
                         </TableBody>
