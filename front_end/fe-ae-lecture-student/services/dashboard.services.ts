@@ -4,6 +4,7 @@ import { courseAxiosInstance } from "@/config/axios.config";
 import type {
   StudentGradesOverviewResponse,
   StudentCourseGradesDetailResponse,
+  StudentGradeBreakdownResponse,
   StudentPendingAssignmentsResponse,
   StudentCurrentCoursesResponse,
   StudentPerformanceAnalyticsResponse,
@@ -39,6 +40,17 @@ export const DashboardService = {
     const res =
       await courseAxiosInstance.get<StudentCourseGradesDetailResponse>(
         `/Dashboard/student/grades/course/${courseId}`
+      );
+    return res.data;
+  },
+
+  /** GET /api/Dashboard/student/grades/breakdown/{courseId} */
+  getStudentGradeBreakdown: async (
+    courseId: string
+  ): Promise<StudentGradeBreakdownResponse> => {
+    const res =
+      await courseAxiosInstance.get<StudentGradeBreakdownResponse>(
+        `/Dashboard/student/grades/breakdown/${courseId}`
       );
     return res.data;
   },

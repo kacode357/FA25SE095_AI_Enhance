@@ -78,6 +78,35 @@ export interface StudentCourseGradesDetailData {
 export type StudentCourseGradesDetailResponse =
   DashboardBaseResponse<StudentCourseGradesDetailData>;
 
+// ===== STUDENT: GRADE BREAKDOWN =====
+
+export interface AssignmentBreakdownItem {
+  assignmentId: string;
+  assignmentTitle: string;
+  topicName: string;
+  grade: number;
+  maxPoints: number;
+  weight: number;
+  weightedContribution: number;
+  submittedAt: string | null;
+  gradedAt: string | null;
+  status: string;
+}
+
+export interface StudentGradeBreakdownData {
+  courseId: string;
+  courseName: string;
+  courseCode: string;
+  assignmentBreakdown: AssignmentBreakdownItem[];
+  weightedCourseGrade: number;
+  letterGrade: string;
+  totalWeightUsed: number;
+  remainingWeight: number;
+}
+
+export type StudentGradeBreakdownResponse =
+  DashboardBaseResponse<StudentGradeBreakdownData>;
+
 // ===== STUDENT: PENDING ASSIGNMENTS =====
 
 export interface PendingAssignmentItem {

@@ -10,6 +10,7 @@ import { useTerms } from "@/hooks/term/useTerms";
 
 import DashboardCurrentCourses from "./components/DashboardCurrentCourses";
 import DashboardGradeDistribution from "./components/DashboardGradeDistribution";
+import DashboardGradeBreakdown from "./components/DashboardGradeBreakdown";
 import DashboardOverviewCard from "./components/DashboardOverviewCard";
 import DashboardPendingAssignments from "./components/DashboardPendingAssignments";
 import DashboardPerformanceCard from "./components/DashboardPerformanceCard";
@@ -160,6 +161,14 @@ export default function StudentDashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DashboardPendingAssignments />
         <DashboardCurrentCourses />
+      </div>
+
+      {/* GRADE BREAKDOWN SECTION */}
+      <div className="mt-4">
+        <DashboardGradeBreakdown
+          coursesData={overview?.data}
+          loading={overviewLoading}
+        />
       </div>
     </div>
   );
