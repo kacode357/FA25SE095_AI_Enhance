@@ -660,3 +660,37 @@ header.fixed, header {
 .message-table tr:last-child td {
   border-bottom: none;
 }
+
+/* KaTeX math expressions */
+.math-block {
+  margin: 12px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0;
+}
+
+.math-block .katex-display {
+  margin: 0;
+  text-align: center;
+}
+
+.math-inline {
+  display: inline;
+}
+
+.math-inline .katex {
+  font-size: 1em;
+}
+
+/* KaTeX font sizing for chat messages */
+.math-block .katex,
+.math-inline .katex {
+  font-size: 1.1em;
+}
+
+/* Responsive math expressions */
+@media (max-width: 640px) {
+  .math-block {
+    font-size: 0.9em;
+  }
+}

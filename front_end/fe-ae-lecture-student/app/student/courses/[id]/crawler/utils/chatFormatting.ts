@@ -1,3 +1,18 @@
+/**
+ * Chat message formatting utility
+ * 
+ * Supports:
+ * - Markdown formatting (bold, italic, code, links, lists, tables, headings)
+ * - Inline images (markdown syntax and raw URLs)
+ * - LaTeX mathematical expressions:
+ *   - Block math: \[ ... \] - Rendered as centered display math
+ *   - Inline math: \( ... \) - Rendered inline with text
+ * 
+ * Example LaTeX usage:
+ * - Block: \[ \frac{30,684,000}{60} \approx 511,400₫ \]
+ * - Inline: The result is \( x = 5 \)
+ */
+
 "use client";
 
 import DOMPurify from "isomorphic-dompurify";
@@ -9,6 +24,8 @@ export type RenderedMessageContent = {
 const MARKDOWN_IMAGE_REGEX = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/gi;
 const IMAGE_URL_REGEX =
   /(https?:\/\/[^\s<>'"()]+\.(?:png|jpe?g|gif|webp|svg))(?:\?[^\s<>'"]*)?/gi;
+const LATEX_BLOCK_REGEX = /\\\[([\s\S]*?)\\\]/g;
+const LATEX_INLINE_REGEX = /\\\(([\s\S]*?)\\\)/g;
 
 function escapeHtml(text: string) {
   return text
@@ -33,6 +50,31 @@ type InlineImage = {
   src: string;
   alt?: string;
 };
+
+type LatexExpression = {
+  content: string;
+  type: 'block' | 'inline';
+};
+
+function replaceLatexWithPlaceholders(value: string, latexExpressions: LatexExpression[]) {
+  let text = value;
+
+  // Replace block LaTeX expressions \[ ... \]
+  text = text.replace(LATEX_BLOCK_REGEX, (_, content) => {
+    const key = `%%LATEX_BLOCK${latexExpressions.length}%%`;
+    latexExpressions.push({ content: content.trim(), type: 'block' });
+    return key;
+  });
+
+  // Replace inline LaTeX expressions \( ... \)
+  text = text.replace(LATEX_INLINE_REGEX, (_, content) => {
+    const key = `%%LATEX_INLINE${latexExpressions.length}%%`;
+    latexExpressions.push({ content: content.trim(), type: 'inline' });
+    return key;
+  });
+
+  return text;
+}
 
 function replaceImagesWithPlaceholders(value: string, images: InlineImage[]) {
   let text = value;
@@ -78,7 +120,12 @@ function applyInlineFormatting(value: string) {
 
 function buildSanitizedHtml(content: string) {
   const images: InlineImage[] = [];
-  const lines = content.split(/\r?\n/);
+  const latexExpressions: LatexExpression[] = [];
+  
+  // First, replace LaTeX expressions to preserve them during processing
+  let processedContent = replaceLatexWithPlaceholders(content, latexExpressions);
+  
+  const lines = processedContent.split(/\r?\n/);
   const blocks: string[] = [];
   let activeList: { type: "ul" | "ol"; items: string[] } | null = null;
   let pendingNestedItems: string[] | null = null;
@@ -309,9 +356,26 @@ function buildSanitizedHtml(content: string) {
     )}" loading="lazy" referrerpolicy="no-referrer" data-inline-img="true" />${caption}</figure>`;
   });
 
-  const sanitized = DOMPurify.sanitize(htmlWithImages, {
+  // Replace LaTeX placeholders with proper rendering elements
+  const htmlWithLatex = htmlWithImages
+    .replace(/%%LATEX_BLOCK(\d+)%%/g, (_, idxStr) => {
+      const idx = Number(idxStr);
+      const latex = latexExpressions[idx];
+      if (!latex?.content) return "";
+      // Use KaTeX delimiters for block math - will be rendered by KaTeX library
+      return `<div class="math-block" data-latex="block">$$${escapeHtml(latex.content)}$$</div>`;
+    })
+    .replace(/%%LATEX_INLINE(\d+)%%/g, (_, idxStr) => {
+      const idx = Number(idxStr);
+      const latex = latexExpressions[idx];
+      if (!latex?.content) return "";
+      // Use KaTeX delimiters for inline math
+      return `<span class="math-inline" data-latex="inline">$${escapeHtml(latex.content)}$</span>`;
+    });
+
+  const sanitized = DOMPurify.sanitize(htmlWithLatex, {
     ADD_TAGS: ["img", "figure", "figcaption", "div", "table", "thead", "tbody", "tr", "th", "td"],
-    ADD_ATTR: ["loading", "referrerpolicy", "data-inline-img", "class"],
+    ADD_ATTR: ["loading", "referrerpolicy", "data-inline-img", "data-latex", "class"],
   });
 
   return { html: sanitized, images };

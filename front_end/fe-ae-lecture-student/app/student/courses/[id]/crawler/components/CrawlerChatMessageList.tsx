@@ -5,6 +5,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Bot, Copy, Check } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { ApexOptions } from "apexcharts";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 
 import type { UiMessage } from "../crawler-types";
 import { formatDateTimeVN } from "@/utils/datetime/format-datetime";
@@ -494,6 +496,47 @@ const CrawlerChatMessageList = React.memo(function CrawlerChatMessageList({
   chatReady = true,
 }: CrawlerChatMessageListProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
+
+  // Render KaTeX expressions
+  useEffect(() => {
+    if (!listRef.current) return;
+    
+    // Render block math expressions
+    const blockMathElements = listRef.current.querySelectorAll('.math-block[data-latex="block"]');
+    blockMathElements.forEach((element) => {
+      try {
+        const mathContent = element.textContent || '';
+        // Remove the $$ delimiters
+        const latex = mathContent.replace(/^\$\$/, '').replace(/\$\$$/, '').trim();
+        katex.render(latex, element as HTMLElement, {
+          displayMode: true,
+          throwOnError: false,
+          output: 'html',
+          trust: false
+        });
+      } catch (error) {
+        console.error('KaTeX block render error:', error);
+      }
+    });
+
+    // Render inline math expressions
+    const inlineMathElements = listRef.current.querySelectorAll('.math-inline[data-latex="inline"]');
+    inlineMathElements.forEach((element) => {
+      try {
+        const mathContent = element.textContent || '';
+        // Remove the $ delimiters
+        const latex = mathContent.replace(/^\$/, '').replace(/\$$/, '').trim();
+        katex.render(latex, element as HTMLElement, {
+          displayMode: false,
+          throwOnError: false,
+          output: 'html',
+          trust: false
+        });
+      } catch (error) {
+        console.error('KaTeX inline render error:', error);
+      }
+    });
+  }, [chatMessages]);
 
   useEffect(() => {
     if (disableAutoScroll) return;
