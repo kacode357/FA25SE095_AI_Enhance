@@ -1,103 +1,74 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "@/components/ui/input";
-import { TableHead, TableRow } from "@/components/ui/table";
-import { Search } from "lucide-react";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 interface Props {
-  filterTopicName: string; setFilterTopicName: (v: string) => void;
-  filterCourseCode: string; setFilterCourseCode: (v: string) => void;
-  filterSpecificCourse: string; setFilterSpecificCourse: (v: string) => void;
-  filterConfiguredAt: string; setFilterConfiguredAt: (v: string) => void;
-  filterEditable: string; setFilterEditable: (v: string) => void;
-  fetchAll: () => void;
-  clearAll: () => void;
+  name: string;
+  setName: (v: string) => void;
+  courseCode: string;
+  setCourseCode: (v: string) => void;
+  lecturerName: string;
+  setLecturerName: (v: string) => void;
+  onApply: () => void;
+  onClear: () => void;
 }
 
 export default function FilterRow({
-  filterTopicName, setFilterTopicName,
-  filterCourseCode, setFilterCourseCode,
-  filterSpecificCourse, setFilterSpecificCourse,
-  filterConfiguredAt, setFilterConfiguredAt,
-  filterEditable, setFilterEditable,
-  fetchAll, clearAll,
+  name,
+  setName,
+  courseCode,
+  setCourseCode,
+  lecturerName,
+  setLecturerName,
+  onApply,
+  onClear,
 }: Props) {
   return (
-    <TableRow className="bg-white/95 border-b border-slate-200">
-      {/* Topic Name */}
-      <TableHead className="p-2 text-center">
-        <div className="relative">
-          <Search className="size-3 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <Input
-            placeholder="Search topic"
-            value={filterTopicName}
-            onChange={(e) => setFilterTopicName(e.target.value)}
-            className="h-8 text-xs pl-7"
-          />
-        </div>
-      </TableHead>
+    <TableRow className="bg-slate-50 border-0!">
+      <TableCell className="pl-5 py-2">
+        <Input
+          placeholder="Course Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="h-8 text-xs w-full"
+        />
+      </TableCell>
 
-      {/* Course Code */}
-      <TableHead className="p-2 text-center">
+      <TableCell className="py-2">
         <Input
           placeholder="Course Code"
-          value={filterCourseCode}
-          onChange={(e) => setFilterCourseCode(e.target.value)}
-          className="h-8 text-xs"
+          value={courseCode}
+          onChange={(e) => setCourseCode(e.target.value)}
+          className="h-8 text-xs w-full"
         />
-      </TableHead>
+      </TableCell>
 
-      {/* Specific Course */}
-      <TableHead className="p-2 text-center">
+      <TableCell className="py-2">
         <Input
-          placeholder="Specific Course"
-          value={filterSpecificCourse}
-          onChange={(e) => setFilterSpecificCourse(e.target.value)}
-          className="h-8 text-xs"
+          placeholder="Lecturer"
+          value={lecturerName}
+          onChange={(e) => setLecturerName(e.target.value)}
+          className="h-8 text-xs w-full"
         />
-      </TableHead>
+      </TableCell>
 
-      {/* Weight % with Editable Filter */}
-      <TableHead className="p-2 text-center">
-        <select
-          title="Filter Editable"
-          value={filterEditable}
-          onChange={(e) => setFilterEditable(e.target.value)}
-          className="h-8 text-xs border border-slate-300 rounded-md px-2 bg-white w-full text-center"
-        >
-          <option value="">All</option>
-          <option value="true">Editable</option>
-          <option value="false">Read-only</option>
-        </select>
-      </TableHead>
+      <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
 
-      {/* Configured At */}
-      <TableHead className="p-2 text-center">
-        <div className="flex items-center justify-center">
-          <div className="w-56 mx-auto">
-            <DateTimePicker
-              value={filterConfiguredAt}
-              onChange={(v) => setFilterConfiguredAt(v ?? "")}
-              placeholder="Configured at"
-              className=""
-            />
-          </div>
-        </div>
-      </TableHead>
+      <TableCell className="py-2 text-center text-slate-400 text-xs">—</TableCell>
 
-      {/* Actions column - just buttons like course-codes */}
-      <TableHead className="p-2 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <Button className="h-8 px-3 text-xs btn btn-green-slow" onClick={() => fetchAll()}>
+      {/* ➕ Action cell (Apply / Clear) */}
+      <TableCell className="py-2 text-center">
+        <div className="flex justify-center items-center gap-2">
+          <Button className="h-8 bg-green-50 btn btn-green-slow hover:bg-green-100 hover:shadow-md cursor-pointer rounded-xl px-3 text-xs" onClick={onApply}>
             Apply
           </Button>
-          <Button className="h-8 px-3 cursor-pointer bg-slate-50 hover:bg-slate-100 text-black! text-xs" onClick={clearAll}>
+          <Button className="h-8 px-3 text-xs" variant="ghost" onClick={onClear}>
             Clear
           </Button>
         </div>
-      </TableHead>
+      </TableCell>
     </TableRow>
   );
 }

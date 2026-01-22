@@ -11,11 +11,11 @@ export function useStudentPendingAssignments() {
     useState<StudentPendingAssignmentsResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchPendingAssignments = async () => {
+  const fetchPendingAssignments = async (termId?: string) => {
     setLoading(true);
     try {
       const res =
-        await DashboardService.getStudentPendingAssignments();
+        await DashboardService.getStudentPendingAssignments(termId);
       setData(res);
       return res;
     } finally {

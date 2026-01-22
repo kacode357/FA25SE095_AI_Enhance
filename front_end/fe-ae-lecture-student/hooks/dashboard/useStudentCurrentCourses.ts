@@ -11,11 +11,11 @@ export function useStudentCurrentCourses() {
     useState<StudentCurrentCoursesResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchCurrentCourses = async () => {
+  const fetchCurrentCourses = async (termId: string) => {
     setLoading(true);
     try {
       const res =
-        await DashboardService.getStudentCurrentCourses();
+        await DashboardService.getStudentCurrentCourses(termId);
       setData(res);
       return res;
     } finally {

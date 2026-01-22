@@ -56,19 +56,20 @@ export const DashboardService = {
   },
 
   /** GET /api/Dashboard/student/assignments/pending */
-  getStudentPendingAssignments: async (): Promise<StudentPendingAssignmentsResponse> => {
+  getStudentPendingAssignments: async (termId?: string): Promise<StudentPendingAssignmentsResponse> => {
     const res =
       await courseAxiosInstance.get<StudentPendingAssignmentsResponse>(
-        "/Dashboard/student/assignments/pending"
+        "/Dashboard/student/assignments/pending",
+        { params: { termId } }
       );
     return res.data;
   },
 
-  /** GET /api/Dashboard/student/courses/current */
-  getStudentCurrentCourses: async (): Promise<StudentCurrentCoursesResponse> => {
+  /** GET /api/Dashboard/student/courses/{termId} */
+  getStudentCurrentCourses: async (termId: string): Promise<StudentCurrentCoursesResponse> => {
     const res =
       await courseAxiosInstance.get<StudentCurrentCoursesResponse>(
-        "/Dashboard/student/courses/current"
+        `/Dashboard/student/courses/${termId}`
       );
     return res.data;
   },

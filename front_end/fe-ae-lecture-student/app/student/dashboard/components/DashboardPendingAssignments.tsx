@@ -10,14 +10,19 @@ import { useRouter } from "next/navigation";
 import { useStudentPendingAssignments } from "@/hooks/dashboard/useStudentPendingAssignments";
 import { formatDateOnlyVN } from "@/utils/datetime/format-datetime";
 
-export default function DashboardPendingAssignments() {
+interface DashboardPendingAssignmentsProps {
+  termId?: string;
+}
+
+export default function DashboardPendingAssignments({ termId }: DashboardPendingAssignmentsProps) {
   const { data, loading, fetchPendingAssignments } =
     useStudentPendingAssignments();
   const router = useRouter();
 
   useEffect(() => {
-    fetchPendingAssignments();
-  }, []);
+    if (!termId) return;
+    fetchPendingAssignments(termId);
+  }, [termId]);
 
   const pending = data?.data;
 

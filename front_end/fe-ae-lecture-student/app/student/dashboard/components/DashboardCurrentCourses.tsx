@@ -10,13 +10,18 @@ import { useRouter } from "next/navigation";
 
 import { useStudentCurrentCourses } from "@/hooks/dashboard/useStudentCurrentCourses";
 
-export default function DashboardCurrentCourses() {
+interface DashboardCurrentCoursesProps {
+  termId?: string;
+}
+
+export default function DashboardCurrentCourses({ termId }: DashboardCurrentCoursesProps) {
   const { data, loading, fetchCurrentCourses } = useStudentCurrentCourses();
   const router = useRouter();
 
   useEffect(() => {
-    fetchCurrentCourses();
-  }, []);
+    if (!termId) return;
+    fetchCurrentCourses(termId);
+  }, [termId]);
 
   const courses = data?.data.courses ?? [];
 

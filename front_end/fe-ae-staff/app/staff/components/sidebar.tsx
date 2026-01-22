@@ -41,6 +41,12 @@ export default function ManagerSidebar({
   // Logic check active cơ bản
   const isItemActive = (it: any): boolean => {
     if (!it || !it.href) return false;
+    
+    // Special case: /staff/courses/[id]/weights should match Topic Weights, not Active Courses
+    if (pathname?.match(/^\/staff\/courses\/[^/]+\/weights/)) {
+      return it.href === "/staff/courses/topic-weights";
+    }
+    
     // Check chính xác
     if (pathname === it.href) return true;
     // Check tiền tố (cho trang con/detail)
@@ -106,17 +112,26 @@ export default function ManagerSidebar({
               let bestMatchHref = "";
               let maxLen = 0;
 
-              items.forEach((it) => {
-                // Check xem item này có khớp (chính xác hoặc tiền tố) không
-                const isMatch = pathname === it.href || pathname?.startsWith(`${it.href}/`);
-                if (isMatch) {
-                  // Nếu khớp, kiểm tra độ dài. Thằng nào dài hơn thì ưu tiên thằng đó.
-                  if (it.href.length > maxLen) {
-                    maxLen = it.href.length;
-                    bestMatchHref = it.href;
-                  }
+              // Special case: if URL matches /staff/courses/[id]/weights pattern, force match to topic-weights
+              if (pathname?.match(/^\/staff\/courses\/[^/]+\/weights/)) {
+                const topicWeightsItem = items.find(it => it.href === "/staff/courses/topic-weights");
+                if (topicWeightsItem) {
+                  bestMatchHref = "/staff/courses/topic-weights";
+                  maxLen = bestMatchHref.length;
                 }
-              });
+              } else {
+                items.forEach((it) => {
+                  // Check xem item này có khớp (chính xác hoặc tiền tố) không
+                  const isMatch = pathname === it.href || pathname?.startsWith(`${it.href}/`);
+                  if (isMatch) {
+                    // Nếu khớp, kiểm tra độ dài. Thằng nào dài hơn thì ưu tiên thằng đó.
+                    if (it.href.length > maxLen) {
+                      maxLen = it.href.length;
+                      bestMatchHref = it.href;
+                    }
+                  }
+                });
+              }
 
               return (
                 <ul className={clsx("mt-2 space-y-1 border-l border-blue-100", depth === 1 ? "pl-2 ml-4 border-l border-blue-200" : "pl-2 ml-4")}>
