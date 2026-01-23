@@ -65,7 +65,7 @@ const AgentTrainingIndexPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>("submit");
   // Danh sách tabs đã được mount (lazy loading)
   const [mountedTabs, setMountedTabs] = useState<TabId[]>(["submit"]);
-  const { wsConnected, addNotification } = useAgentTrainingHub();
+  const { wsConnected, addNotification, submitCrawl, onJobCompleted } = useAgentTrainingHub();
   const trainingApi = useTrainingApi();
   const [initialQueueStatus, setInitialQueueStatus] = useState<QueueStatus | null>(null);
   const [initialPendingCommits, setInitialPendingCommits] = useState<PendingCommitsStatus | null>(null);
@@ -227,14 +227,36 @@ const AgentTrainingIndexPage: React.FC = () => {
     setBootstrapAttempt((prev) => prev + 1);
   }, []);
 
+  // Lắng nghe job_completed từ WebSocket để refresh data
+  useEffect(() => {
+    const unsubscribe = onJobCompleted((data) => {
+      console.log("[Page] Job completed, refreshing data:", data);
+      
+      // Refresh các data cần thiết
+      if (data.success) {
+        // Refresh queue status
+        trainingApi.getQueueStatus().then(setInitialQueueStatus).catch(console.error);
+        // Refresh pending buffers
+        trainingApi.getPendingBuffers().then(setInitialPendingBuffers).catch(console.error);
+        // Refresh all buffers
+        trainingApi.listBuffers().then(setInitialAllBuffers).catch(console.error);
+        // Refresh stats
+        trainingApi.getStats().then(setInitialStats).catch(console.error);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [trainingApi, onJobCompleted]);
+
   const renderTabContent = useCallback(
     (tabId: TabId) => {
       switch (tabId) {
         case "submit":
           return (
             <SubmitTrainingPanel
-              submitCrawl={trainingApi.submitCrawl}
+              submitCrawl={submitCrawl}
               submitFeedback={trainingApi.submitFeedback}
+              getBuffer={trainingApi.getBuffer}
               onNotify={addNotification}
               onSwitchToBuffer={() => setActiveTab("buffer")}
             />

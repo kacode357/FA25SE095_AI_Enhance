@@ -8,6 +8,7 @@ import type {
   CrawlResult,
   FeedbackResponse,
   QueuedJobResponse,
+  BufferData,
 } from "@/types/agent-training/training.types";
 
 import { CrawlLogConsole } from "./CrawlLogConsole";
@@ -20,6 +21,7 @@ interface SubmitTrainingPanelProps {
     jobId: string,
     feedback: string
   ) => Promise<FeedbackResponse>;
+  getBuffer: (jobId: string, adminId?: string) => Promise<BufferData>;
   onNotify?: (message: string) => void;
   onSwitchToBuffer?: () => void;
 }
@@ -27,6 +29,7 @@ interface SubmitTrainingPanelProps {
 export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
   submitCrawl,
   submitFeedback,
+  getBuffer,
   onNotify,
   onSwitchToBuffer,
 }) => {
@@ -314,7 +317,7 @@ export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
 
               <div>
                 <h4 className="mb-2 text-sm font-semibold text-slate-900">
-                  Extracted Data ({currentResult.data.length} items)
+                  Extracted Data ({currentResult.data?.length || 0} items)
                 </h4>
                 <div className="max-h-96 overflow-auto rounded-xl border border-slate-200 bg-white">
                   <pre className="p-4 text-xs text-slate-700">

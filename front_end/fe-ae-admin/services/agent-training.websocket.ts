@@ -82,6 +82,11 @@ class WebSocketService {
       this.handleMessage({ type: "training_failed", ...data });
     });
 
+    this.socket.on("job_completed", (data: any) => {
+      console.log("[WS] Nhận job_completed từ Socket.IO:", data);
+      this.handleMessage({ type: "job_completed", ...data });
+    });
+
     this.socket.on("version_committed", (data: any) => {
       this.handleMessage({ type: "version_committed", ...data });
     });
@@ -204,6 +209,18 @@ class WebSocketService {
 
   leaveTrainingSession(jobId: string) {
     this.leaveRoom(`training_${jobId}`);
+  }
+
+  // Gửi message qua WebSocket
+  emit(eventName: string, data?: any) {
+    if (this.socket?.connected) {
+      this.socket.emit(eventName, data);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`Emitting event: ${eventName}`, data);
+      }
+    } else {
+      console.error("Cannot emit: WebSocket not connected");
+    }
   }
 }
 

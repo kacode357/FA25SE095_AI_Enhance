@@ -13,8 +13,12 @@ import React, {
 import { toast } from "sonner";
 
 import wsService from "@/services/agent-training.websocket";
+import { trainingApi } from "@/services/agent-training.service";
 import type {
+  CrawlJob,
+  CrawlResult,
   LearningCycleComplete,
+  QueuedJobResponse,
   WebSocketMessage,
 } from "@/types/agent-training/training.types";
 
@@ -28,6 +32,10 @@ interface AgentTrainingHubContextValue {
     message: string,
     options?: { variant?: NotificationVariant }
   ) => void;
+  submitCrawl: (
+    job: CrawlJob
+  ) => Promise<CrawlResult | QueuedJobResponse>;
+  onJobCompleted: (callback: (data: { job_id: string; success: boolean; items_count: number }) => void) => () => void;
 }
 
 const AgentTrainingHubContext =
@@ -37,6 +45,9 @@ export const AgentTrainingHubProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
   const [wsConnected, setWsConnected] = useState(false);
+  const [jobCompletedCallbacks, setJobCompletedCallbacks] = useState<
+    Array<(data: { job_id: string; success: boolean; items_count: number }) => void>
+  >([]);
 
   const addNotification = useCallback(
     (message: string, options?: { variant?: NotificationVariant }) => {
@@ -54,6 +65,38 @@ export const AgentTrainingHubProvider: React.FC<PropsWithChildren> = ({
     []
   );
 
+  // Submit crawl job qua REST API
+  const submitCrawl = useCallback(
+    async (job: CrawlJob): Promise<CrawlResult | QueuedJobResponse> => {
+      console.log("[Hub] Đang gửi crawl request qua API:", {
+        url: job.url,
+        description: job.user_description,
+        maxPages: job.max_pages
+      });
+      
+      try {
+        const result = await trainingApi.submitCrawl(job);
+        console.log("[Hub] Crawl response:", result);
+        return result;
+      } catch (error) {
+        console.error("[Hub] Crawl failed:", error);
+        throw error;
+      }
+    },
+    []
+  );
+
+  // Đăng ký callback khi job completed (return unsubscribe function)
+  const onJobCompleted = useCallback(
+    (callback: (data: { job_id: string; success: boolean; items_count: number }) => void) => {
+      setJobCompletedCallbacks(prev => [...prev, callback]);
+      return () => {
+        setJobCompletedCallbacks(prev => prev.filter(cb => cb !== callback));
+      };
+    },
+    []
+  );
+
   useEffect(() => {
     wsService.connect();
 
@@ -65,6 +108,27 @@ export const AgentTrainingHubProvider: React.FC<PropsWithChildren> = ({
 
       // Crawl job hoàn thành
       if (message.type === "job_completed") {
+        const jobData = {
+          job_id: message.job_id || "",
+          success: (message as any).success ?? true,
+          items_count: (message as any).items_count ?? 0,
+        };
+        
+        console.log("[Hub] ✓ Nhận được job_completed event:", {
+          ...jobData,
+          timestamp: new Date().toISOString(),
+          fullData: message
+        });
+        
+        // Trigger tất cả callbacks đã đăng ký
+        jobCompletedCallbacks.forEach(callback => {
+          try {
+            callback(jobData);
+          } catch (error) {
+            console.error("[Hub] Callback error:", error);
+          }
+        });
+        
         addNotification(
           `Job ${message.job_id?.substring(0, 8) ?? ""} completed successfully`,
           { variant: "success" }
@@ -159,14 +223,16 @@ export const AgentTrainingHubProvider: React.FC<PropsWithChildren> = ({
       clearInterval(checkConnection);
       wsService.disconnect();
     };
-  }, [addNotification]);
+  }, [addNotification, jobCompletedCallbacks]);
 
   const value = useMemo(
     () => ({
       wsConnected,
       addNotification,
+      submitCrawl,
+      onJobCompleted,
     }),
-    [wsConnected, addNotification]
+    [wsConnected, addNotification, submitCrawl, onJobCompleted]
   );
 
   return (
