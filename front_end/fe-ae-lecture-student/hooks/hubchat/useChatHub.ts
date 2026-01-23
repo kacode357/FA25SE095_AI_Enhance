@@ -39,7 +39,7 @@ export function useChatHub({
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const startInProgressRef = useRef(false);
 
-  // ===== buffer cho batch messages =====
+  /** Bộ đệm để gom nhóm tin nhắn trước khi gửi batch */
   const msgBufferRef = useRef<ChatMessageDto[]>([]);
   const msgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -61,7 +61,7 @@ export function useChatHub({
     }, debounceMs);
   }, [flushMessages, debounceMs, onReceiveMessagesBatch]);
 
-  // ===== lazy build connection =====
+  /** Khởi tạo kết nối SignalR (lazy loading) */
   const ensureConnection = useMemo(() => {
     return () => {
       if (connectionRef.current) return connectionRef.current;
@@ -88,9 +88,9 @@ export function useChatHub({
         .configureLogging(signalR.LogLevel.Warning)
         .build();
 
-      // ===== Hub events =====
+      /** Đăng ký các sự kiện từ Hub (server -> client) */
 
-      // message realtime (1 & 1 batch)
+      /** Nhận tin nhắn realtime (cả riêng lẻ và batch) */
       conn.on("ReceiveMessage", (msg: ChatMessageDto) => {
         onReceiveMessage?.(msg);
         if (onReceiveMessagesBatch) {
@@ -107,13 +107,13 @@ export function useChatHub({
         }
       });
 
-      // typing
+      /** Trạng thái đang gõ */
       conn.on("UserTyping", (p: { userId: string; isTyping: boolean }) => {
         if (!p?.userId) return;
         onTyping?.({ userId: p.userId, isTyping: !!p.isTyping });
       });
 
-      // unread cho 1 user (server gửi khi có msg mới / mark read)
+      /** Số tin chưa đọc của 1 user (server gửi khi có tin mới / đánh dấu đã đọc) */
       conn.on(
         "UnreadCountChanged",
         (p: { userId: string; unreadCount: number }) => {
@@ -125,7 +125,7 @@ export function useChatHub({
         },
       );
 
-      // batch unread (nếu server dùng)
+      /** Số tin chưa đọc theo batch (nếu server sử dụng) */
       conn.on(
         "UnreadCounts",
         (items: Array<{ userId: string; unreadCount: number }>) => {
@@ -139,7 +139,7 @@ export function useChatHub({
         },
       );
 
-      // delete message
+      /** Xóa tin nhắn */
       conn.on("MessageDeleted", (payload: { messageId: string }) => {
         if (!payload?.messageId) return;
         onMessageDeleted?.(payload.messageId);
@@ -170,7 +170,7 @@ export function useChatHub({
     onMessageDeleted,
   ]);
 
-  // ===== Public APIs =====
+  /** Các phương thức public để tương tác với Hub */
   const connect = useCallback(async () => {
     const conn = ensureConnection();
     if (conn.state === signalR.HubConnectionState.Connected) return;
@@ -253,7 +253,7 @@ export function useChatHub({
     }
   }, []);
 
-  // ⭐ Mark messages as read cho 1 conversation
+  /** Đánh dấu các tin nhắn đã đọc cho 1 conversation */
   const markMessagesAsRead = useCallback(async (conversationId: string) => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;

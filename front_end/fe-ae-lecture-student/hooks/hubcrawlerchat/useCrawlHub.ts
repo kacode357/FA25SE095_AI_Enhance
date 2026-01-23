@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 
-/** Tùy loại payload BE trả (job stats / metrics / updates) */
+/** Tùy theo loại payload BE trả (job stats / metrics / updates) */
 export type CrawlJobStats = any;
 export type CrawlSystemMetrics = any;
 export type CrawlJobUpdate = any;
@@ -13,7 +13,7 @@ type Options = {
   getAccessToken: () => Promise<string> | string;
   autoConnect?: boolean;
 
-  // ===== callbacks: server -> client =====
+  /** Các callback: server -> client */
   onConnectedChange?: (connected: boolean) => void;
 
   onJobStats?: (stats: CrawlJobStats) => void;
@@ -60,7 +60,7 @@ export function useCrawlHub({
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const startInProgressRef = useRef(false);
 
-  // ===== build connection (lazy) =====
+  /** Khởi tạo kết nối SignalR (lazy loading) */
   const ensureConnection = useMemo(() => {
     return () => {
       if (connectionRef.current) return connectionRef.current;
@@ -90,7 +90,7 @@ export function useCrawlHub({
       const logEvent = (_event: string, _payload?: unknown, _meta?: unknown) => {};
 
 
-      // ===== đăng ký event từ CrawlHub (server -> client) =====
+      /** Đăng ký các sự kiện từ CrawlHub (server -> client) */
 
       conn.on("OnJobStats", (stats: CrawlJobStats) => {
         logEvent("OnJobStats");
@@ -184,7 +184,7 @@ export function useCrawlHub({
     onConnectedChange,
   ]);
 
-  // ===== public APIs =====
+  /** Các phương thức public để tương tác với Hub */
 
   const connect = useCallback(async () => {
     const conn = ensureConnection();
@@ -265,7 +265,7 @@ export function useCrawlHub({
     };
   }, [autoConnect, connect, disconnect]);
 
-  // ===== wrapper methods (client -> server) =====
+  /** Các phương thức gọi Hub (client -> server) */
 
   const subscribeToJob = useCallback(
     async (jobId: string) => {

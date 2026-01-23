@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 
-/** ===== FE DTOs (match BE fields) ===== */
+/** Các kiểu dữ liệu FE (khớp với BE fields) */
 export type Guid = string;
 
 export type CollaboratorPresenceDto = {
@@ -20,10 +20,10 @@ export type CollaboratorPresenceDto = {
 
 export type ReportChangeDto = {
   reportId: Guid;
-  content: string;          // BE: Content
-  cursorPosition?: number;  // BE: CursorPosition
-  changeType?: "content" | "cursor" | "typing"; // BE: ChangeType
-  // server fill:
+  content: string;
+  cursorPosition?: number;
+  changeType?: "content" | "cursor" | "typing";
+
   userId?: string;
   userName?: string;
   userEmail?: string;
@@ -32,7 +32,7 @@ export type ReportChangeDto = {
 
 export type CursorPositionDto = {
   reportId: Guid;
-  position: number; // BE: Position
+  position: number;
   userId?: string;
   userName?: string;
   timestamp?: string;
@@ -40,10 +40,10 @@ export type CursorPositionDto = {
 
 export type TextSelectionDto = {
   reportId: Guid;
-  selectionStart: number; // BE: SelectionStart
-  selectionEnd: number;   // BE: SelectionEnd
-  selectedText?: string;  // BE: SelectedText
-  hasSelection?: boolean; // BE: HasSelection
+  selectionStart: number;
+  selectionEnd: number;
+  selectedText?: string;
+  hasSelection?: boolean;
   userId?: string;
   userName?: string;
   timestamp?: string;
@@ -121,7 +121,7 @@ function normSelection(raw: any): TextSelectionDto {
   };
 }
 
-/** ===== Mappers (FE DTO -> payload gửi server) ===== */
+/** Chuyển đổi (FE DTO -> payload gửi server) */
 function mapChangeToServerPayload(c: ReportChangeDto) {
   return {
     reportId: c.reportId, ReportId: c.reportId,
@@ -179,7 +179,6 @@ async function downscaleDataUrl(
         const compressed = canvas.toDataURL(mime, quality);
         resolve(compressed || dataUrl);
       } catch (e) {
-        console.warn("[Hub] downscaleDataUrl failed", e);
         resolve(dataUrl);
       }
     };
@@ -211,9 +210,6 @@ async function shrinkDataUrlToLimit(src: string) {
     }
   }
   if (current.length > MAX_INLINE_IMG_LENGTH) {
-    console.warn(
-      "[Hub] inline image still too large after compression, falling back to placeholder"
-    );
     current = INLINE_IMG_PLACEHOLDER;
   }
   return current;
@@ -248,7 +244,6 @@ async function compressDataUrlsInHtml(html: string) {
 
     return doc.body?.innerHTML ?? html;
   } catch (e) {
-    console.warn("[Hub] compressDataUrlsInHtml replacement failed", e);
     return html;
   }
 }
@@ -282,16 +277,13 @@ export function useReportCollabHub({
     return () => {
       if (connectionRef.current) return connectionRef.current;
 
-      console.log("[Hub] building connection to", `${baseUrl}/hubs/report-collaboration`);
       const conn = new signalR.HubConnectionBuilder()
         .withUrl(`${baseUrl}/hubs/report-collaboration`, {
           accessTokenFactory: async () => {
             try {
               const token = await getAccessToken();
-              console.log("[Hub] accessTokenFactory len:", token?.length ?? 0);
               return typeof token === "string" ? token : "";
             } catch (e) {
-              console.warn("[Hub] accessTokenFactory error:", e);
               return "";
             }
           },
@@ -302,9 +294,8 @@ export function useReportCollabHub({
         .configureLogging(signalR.LogLevel.Warning)
         .build();
 
-      // Server -> Client
+      /** Các sự kiện từ Server -> Client */
       conn.on("SessionJoined", (p: any) => {
-        console.log("[Hub] SessionJoined:", p);
         setJoined(true);
         onSessionJoined?.({
           reportId: p.reportId ?? p.ReportId,
@@ -316,7 +307,6 @@ export function useReportCollabHub({
       });
 
       conn.on("UserJoined", (p: any) => {
-        console.log("[Hub] UserJoined:", p);
         onUserJoined?.({
           userId: p.userId ?? p.UserId,
           userName: p.userName ?? p.UserName,
@@ -326,7 +316,6 @@ export function useReportCollabHub({
       });
 
       conn.on("UserLeft", (p: any) => {
-        console.log("[Hub] UserLeft:", p);
         onUserLeft?.({
           userId: p.userId ?? p.UserId,
           timestamp: p.timestamp ?? p.Timestamp,
@@ -335,9 +324,7 @@ export function useReportCollabHub({
       });
 
       conn.on("ReceiveChange", (raw: any) => {
-        console.log("[Hub] ReceiveChange RAW:", raw);
         const change = normChange(raw);
-        console.log("[Hub] ReceiveChange:", change);
         onReceiveChange?.(change);
       });
 
@@ -353,30 +340,23 @@ export function useReportCollabHub({
 
       conn.on("Error", (err: { message?: string } | string) => {
         const msg = typeof err === "string" ? err : err?.message || "Unknown error";
-        console.error("[Hub] Error from server:", msg);
         setLastError(msg);
         setJoined(false);
         onError?.(msg);
       });
 
       conn.onclose((e) => {
-        console.warn("[Hub] onclose:", e);
         setConnected(false);
         setJoined(false);
       });
       conn.onreconnecting((e) => {
-        console.warn("[Hub] onreconnecting:", e);
         setConnected(false);
       });
       conn.onreconnected((id) => {
-        console.log("[Hub] onreconnected id:", id);
         setConnected(true);
         const rid = currentReportIdRef.current;
         if (rid) {
-          console.log("[Hub] re-JoinReport:", rid);
-          conn.invoke("JoinReport", rid).catch((e) => {
-            console.error("[Hub] rejoin failed:", e?.message ?? e);
-          });
+          conn.invoke("JoinReport", rid).catch((e) => {});
         }
       });
 
@@ -392,14 +372,11 @@ export function useReportCollabHub({
     try {
       startInProgressRef.current = true;
       setConnecting(true);
-      console.log("[Hub] starting connection...");
       await conn.start();
-      console.log("[Hub] connected with state:", conn.state);
       setConnected(true);
       setLastError(null);
     } catch (e: any) {
       const msg = e?.message ?? "Failed to connect";
-      console.error("[Hub] connect error:", msg, e);
       setConnected(false);
       setLastError(msg);
       onError?.("Failed to connect to report collaboration hub");
@@ -415,7 +392,6 @@ export function useReportCollabHub({
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) {
       throw new Error("Not connected");
     }
-    console.log("[Hub] joinReport invoking with id:", reportId);
     await conn.invoke("JoinReport", reportId);
     currentReportIdRef.current = reportId;
   }, []);
@@ -427,14 +403,12 @@ export function useReportCollabHub({
       setJoined(false);
       return;
     }
-    console.log("[Hub] leaveReport invoking with id:", rid);
     await conn.invoke("LeaveReport", rid);
     if (!reportId || reportId === currentReportIdRef.current) currentReportIdRef.current = null;
     setJoined(false);
   }, []);
 
   const open = useCallback(async (reportId: Guid) => {
-    console.log("[Hub] open session for report:", reportId);
     await connect();
     await joinReport(reportId);
   }, [connect, joinReport]);
@@ -442,9 +416,7 @@ export function useReportCollabHub({
   const disconnect = useCallback(async () => {
     const conn = connectionRef.current;
     if (conn && conn.state !== signalR.HubConnectionState.Disconnected) {
-      console.log("[Hub] disconnecting...");
       await conn.stop();
-      console.log("[Hub] disconnected");
       setConnected(false);
       setJoined(false);
     }
@@ -459,33 +431,24 @@ export function useReportCollabHub({
 
   const broadcastChange = useCallback(async (change: ReportChangeDto) => {
     const conn = ensureCanSend();
-    // Compress inline data URLs in content to avoid hitting hub message size limits
     const safeContent = await compressDataUrlsInHtml(change.content || "");
     const payload = mapChangeToServerPayload({ ...change, content: safeContent });
-    console.log("[Hub] broadcastChange sending:", payload);
     await conn.invoke("BroadcastChange", payload);
-    console.log("[Hub] change sent OK");
   }, []);
 
   const broadcastChangeDebounced = useCallback((change: ReportChangeDto) => {
     lastChangeRef.current = change;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    console.log("[Hub] schedule debounced change in", debounceMs, "ms");
     debounceTimerRef.current = setTimeout(async () => {
       const c = lastChangeRef.current;
       lastChangeRef.current = null;
       if (!c) return;
       try {
         const conn = ensureCanSend();
-        // Compress inline data URLs before sending
         const safeContent = await compressDataUrlsInHtml(c.content || "");
         const payload = mapChangeToServerPayload({ ...c, content: safeContent });
-        console.log("[Hub] debounced change sending:", payload);
         await conn.invoke("BroadcastChange", payload);
-        console.log("[Hub] debounced change sent OK");
-      } catch (e) {
-        console.warn("[Hub] debounced send failed:", e);
-      }
+      } catch (e) {}
     }, debounceMs);
   }, [debounceMs]);
 
@@ -513,9 +476,7 @@ export function useReportCollabHub({
   const getActiveCollaborators = useCallback(async (reportId: Guid) => {
     const conn = connectionRef.current;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) throw new Error("Not connected");
-    console.log("[Hub] getActiveCollaborators for:", reportId);
     const result = await conn.invoke<CollaboratorPresenceDto[]>("GetActiveCollaborators", reportId);
-    console.log("[Hub] active collaborators:", result);
     return result ?? [];
   }, []);
 
@@ -524,7 +485,6 @@ export function useReportCollabHub({
       const conn = connectionRef.current;
       const rid = currentReportIdRef.current;
       if (conn && rid && conn.state === signalR.HubConnectionState.Connected) {
-        console.log("[Hub] beforeunload → leaveReport:", rid);
         conn.invoke("LeaveReport", rid).catch(() => {});
       }
     };

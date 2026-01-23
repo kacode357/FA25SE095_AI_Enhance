@@ -1,6 +1,6 @@
 // hooks/hubnotification/useNotificationHub.ts
 "use client";
-// test
+
 import { useCallback, useMemo, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 
@@ -15,7 +15,8 @@ type Options = {
   onError?: (message: string) => void;
   debounceMs?: number;
 };
-// Hook to manage SignalR Notification Hub connection and events
+
+/** Hook quản lý kết nối và sự kiện SignalR Notification Hub */
 export function useNotificationHub({
   baseUrl =
     process.env.NEXT_PUBLIC_NOTIFICATION_BASE_URL_HUB ||"",
@@ -34,7 +35,7 @@ export function useNotificationHub({
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const startInProgressRef = useRef(false);
 
-  // ===== batch buffer =====
+  /** Bộ đệm để gom nhóm thông báo trước khi gửi */
   const notifyBufferRef = useRef<NotificationDto[]>([]);
   const notifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,7 +58,7 @@ export function useNotificationHub({
     }, debounceMs);
   }, [flushNotifications, debounceMs, onNotificationsBatch]);
 
-  // ===== Build connection (lazy) =====
+  /** Khởi tạo kết nối SignalR (lazy loading) */
   const ensureConnection = useMemo(() => {
     return () => {
       if (connectionRef.current) return connectionRef.current;
@@ -85,8 +86,7 @@ export function useNotificationHub({
         .configureLogging(signalR.LogLevel.None)
         .build();
 
-      // ===== Hub events =====
-
+      /** Đăng ký các sự kiện từ Hub (server -> client) */
       conn.on("ReceiveNotification", (notification: NotificationDto) => {
         onNotification?.(notification);
 
@@ -133,8 +133,7 @@ export function useNotificationHub({
     onError,
   ]);
 
-  // ===== Public APIs =====
-
+  /** Các phương thức public để tương tác với Hub */
   const connect = useCallback(async () => {
     const conn = ensureConnection();
 
@@ -170,7 +169,6 @@ export function useNotificationHub({
         setLastError(friendlyMsg);
         onError?.(friendlyMsg);
       }
-      // không throw ra ngoài
     } finally {
       setConnecting(false);
       startInProgressRef.current = false;

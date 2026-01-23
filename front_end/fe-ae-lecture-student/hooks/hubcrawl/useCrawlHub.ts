@@ -9,7 +9,7 @@ export type SystemMetricsDto = any;
 export type JobUpdateDto = any;
 
 type Options = {
-  /** Base URL của WebCrawlerService (hub host) */
+  /** URL cơ sở của WebCrawlerService (hub host) */
   baseUrl?: string;
   /** Lấy accessToken nếu hub có authorize */
   getAccessToken: () => Promise<string> | string;
@@ -28,7 +28,7 @@ type Options = {
 
 /**
  * Hook SignalR cho CrawlHub:
- * - Connect idempotent (gọi nhiều lần cũng chỉ start 1 lần)
+ * - Kết nối idempotent (gọi nhiều lần cũng chỉ start 1 lần)
  * - Debounce connect 200ms để tránh spam / chuẩn bị crawl
  * - Nếu connect fail "thật" -> set lastError, KHÔNG tự retry nữa
  * - Subscribe chỉ invoke nếu state = Connected
@@ -88,7 +88,7 @@ export function useCrawlHub({
     onErrorRef.current = onError;
   }, [onError]);
 
-  /** ===== Build connection (lazy, stable) ===== */
+  /** Khởi tạo kết nối SignalR (lazy loading, ổn định) */
   const ensureConnection = useCallback((): signalR.HubConnection => {
     if (connectionRef.current) {
       return connectionRef.current;
@@ -118,32 +118,24 @@ export function useCrawlHub({
       .configureLogging(signalR.LogLevel.None)
       .build();
 
-    // ===== Hub events =====
+    /** Đăng ký các sự kiện từ Hub (server -> client) */
     conn.on("OnJobStats", (stats: JobStatsDto) => {
-      console.log("[HubCrawl] OnJobStats:", stats);
       onJobStatsRef.current?.(stats);
     });
 
     conn.on("OnSystemMetrics", (metrics: SystemMetricsDto) => {
-      console.log("[HubCrawl] OnSystemMetrics:", metrics);
       onSystemMetricsRef.current?.(metrics);
     });
 
     conn.on("OnGroupJobUpdate", (update: JobUpdateDto) => {
-      console.log("[HubCrawl] OnGroupJobUpdate:", update);
       onGroupJobUpdateRef.current?.(update);
     });
 
     conn.on("OnAssignmentJobUpdate", (update: JobUpdateDto) => {
-      console.log("[HubCrawl] OnAssignmentJobUpdate:", update);
       onAssignmentJobUpdateRef.current?.(update);
     });
 
     conn.on("OnConversationJobUpdate", (update: JobUpdateDto) => {
-      console.log("[HubCrawl] OnConversationJobUpdate:", update);
-      onConversationJobUpdateRef.current?.(update);
-    });
-
     conn.onclose((err) => {
       setConnected(false);
       setConnectionId(null);
@@ -162,11 +154,10 @@ export function useCrawlHub({
     return conn;
   }, [baseUrl, hubPath]);
 
-  /** ===== Core connect không debounce ===== */
+  /** Kết nối chính không debounce */
   const doConnect = useCallback(async () => {
     const conn = ensureConnection();
 
-    // Nếu đã từng fail thực sự rồi -> không tự connect nữa
     if (connectFailedRef.current) {
       return;
     }
@@ -191,7 +182,6 @@ export function useCrawlHub({
       setConnected(true);
       setConnectionId(conn.connectionId ?? null);
       setLastError(null);
-      console.log("[HubCrawl] Connected successfully, connectionId:", conn.connectionId);
     } catch (e: any) {
       const rawMsg: string = e?.message ?? "";
       const isStrictModeRace =
@@ -200,14 +190,12 @@ export function useCrawlHub({
         rawMsg.includes("The connection was stopped before the hub handshake could complete");
 
       if (isStrictModeRace) {
-        // lỗi do StrictMode / start-stop race -> bỏ qua, cho phép lần sau connect lại
       } else {
         const friendlyMsg = rawMsg || "Failed to connect CrawlHub";
-        connectFailedRef.current = true; // chỉ đánh dấu fail cho lỗi thật
+        connectFailedRef.current = true;
         setConnected(false);
         setConnectionId(null);
         setLastError(friendlyMsg);
-        console.error("[HubCrawl] Connection failed:", friendlyMsg);
         onErrorRef.current?.(friendlyMsg);
       }
     } finally {
@@ -216,19 +204,16 @@ export function useCrawlHub({
     }
   }, [ensureConnection]);
 
-  /** ===== Public connect với debounce 200ms ===== */
+  /** Kết nối public với debounce 200ms */
   const connect = useCallback(async () => {
-    // nếu đã có 1 promise connect đang pending (debounce hoặc đang chạy) thì reuse
     if (connectPromiseRef.current) {
       return connectPromiseRef.current;
     }
 
     connectPromiseRef.current = new Promise<void>((resolve) => {
-      // clear timeout cũ nếu có
       if (connectTimeoutRef.current) {
         clearTimeout(connectTimeoutRef.current);
       }
-
 
       connectTimeoutRef.current = setTimeout(async () => {
         connectTimeoutRef.current = null;
@@ -258,7 +243,7 @@ export function useCrawlHub({
     }
   }, []);
 
-  /** ===== Helper: check ready ===== */
+  /** Kiểm tra kết nối sẵn sàng */
   const getActiveConnection = () => {
     const conn = connectionRef.current;
     if (!conn) return null;
@@ -266,7 +251,7 @@ export function useCrawlHub({
     return conn;
   };
 
-  /** ===== Hub method wrappers ===== */
+  /** Các phương thức gọi Hub (client -> server) */
   const subscribeToJob = useCallback(async (jobId: string) => {
     const conn = getActiveConnection();
     if (!conn) return;

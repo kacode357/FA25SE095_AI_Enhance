@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 
-/** ==== Types map từ C# DTO qua FE ==== */
+/** Các kiểu dữ liệu từ C# DTO sang FE */
 
 export enum MessageType {
  UserMessage = 0,
@@ -33,9 +33,9 @@ export type ChatMessageDto = {
 };
 
 export type CrawlerResponseDto = {
-  responseId?: string; // Guid
-  conversationId: string; // Guid
-  crawlJobId: string; // Guid
+  responseId?: string;
+  conversationId: string;
+  crawlJobId: string;
   content: string;
   status: string;
   groupId?: string | null;
@@ -44,7 +44,6 @@ export type CrawlerResponseDto = {
   metadata?: Record<string, unknown> | null;
 };
 
-// nếu BE có type cụ thể hơn thì sửa lại type này sau
 export type CrawlJobStatusResponse = any;
 
 /** Các callback options cho hook */
@@ -53,9 +52,9 @@ type Options = {
   getAccessToken: () => Promise<string> | string;
   autoConnect?: boolean;
 
-  // ===== Callbacks: server -> client =====
+  /** Các callback: server -> client */
 
-  // join/leave conversation / group / assignment
+  /** Tham gia / rời conversation / group / assignment */
   onConversationJoined?: (conversationId: string) => void;
   onConversationLeft?: (conversationId: string) => void;
 
@@ -65,11 +64,11 @@ type Options = {
   onAssignmentSubscribed?: (assignmentId: string) => void;
   onAssignmentUnsubscribed?: (assignmentId: string) => void;
 
-  // message
+  /** Tin nhắn */
   onUserMessageReceived?: (message: ChatMessageDto) => void;
   onGroupMessageReceived?: (message: ChatMessageDto) => void;
 
-  // crawl request result
+  /** Kết quả yêu cầu crawl */
   onCrawlInitiated?: (data: {
     messageId: string;
     crawlJobId: string;
@@ -82,7 +81,7 @@ type Options = {
     success: boolean;
   }) => void;
 
-  // after message persisted
+  /** Sau khi tin nhắn đã lưu */
   onMessageSent?: (data: {
     messageId: string;
     timestamp: string;
@@ -91,20 +90,20 @@ type Options = {
 
   onMessageError?: (messageId?: string, error?: string) => void;
 
-  // crawler responses
+  /** Phản hồi của crawler */
   onCrawlerResponseReceived?: (response: CrawlerResponseDto) => void;
   onGroupCrawlerResponse?: (response: CrawlerResponseDto) => void;
   onAssignmentCrawlerResponse?: (response: CrawlerResponseDto) => void;
 
-  // typing indicator
+  /** Chỉ thị đang gõ */
   onUserTyping?: (conversationId: string, userId: string, userName: string) => void;
   onUserStoppedTyping?: (conversationId: string, userId: string) => void;
 
-  // crawl job status
+  /** Trạng thái crawl job */
   onCrawlJobStatus?: (status: CrawlJobStatusResponse) => void;
   onCrawlJobProgressUpdate?: (status: CrawlJobStatusResponse) => void;
 
-  // error chung
+  /** Lỗi chung */
   onError?: (message: string) => void;
 };
 
@@ -142,12 +141,11 @@ export function useCrawlerChatHub({
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const startInProgressRef = useRef(false);
 
-  // ===== Build connection (lazy) =====
+  /** Khởi tạo kết nối SignalR (lazy loading) */
   const ensureConnection = useMemo(() => {
     return () => {
       if (connectionRef.current) return connectionRef.current;
 
-      // NOTE: path hub có thể khác, nếu bên BE là /crawler-chat hoặc /crawlerChat thì chỉnh lại ở đây
       const hubUrl = `${baseUrl.replace(/\/+$/, "")}/hubs/crawler-chat`;
 
       const conn = new signalR.HubConnectionBuilder()
@@ -182,7 +180,7 @@ export function useCrawlerChatHub({
         });
       };
 
-      // ===== Đăng ký event từ Hub (server -> client) =====
+      /** Đăng ký các sự kiện từ Hub (server -> client) */
 
       onWithLog("ConversationJoined", (conversationId: string) => {
         onConversationJoined?.(conversationId);
@@ -324,8 +322,7 @@ export function useCrawlerChatHub({
     onError,
   ]);
 
-  // ===== Public APIs =====
-
+  /** Các phương thức public để tương tác với Hub */
   const connect = useCallback(async () => {
     const conn = ensureConnection();
 
@@ -407,7 +404,7 @@ export function useCrawlerChatHub({
     };
   }, [autoConnect, connect, disconnect]);
 
-  // ===== wrapper call hub methods (client -> server) =====
+  /** Các phương thức gọi Hub (client -> server) */
 
   const joinConversation = useCallback(async (conversationId: string) => {
     const conn = connectionRef.current;
@@ -451,25 +448,16 @@ export function useCrawlerChatHub({
       throw new Error("CrawlerChatHub not connected");
     }
 
-    // đảm bảo default MessageType
-    // Build payload - only include maxPages if it's not null
     const payload: Record<string, unknown> = {
       ...message,
       messageType: message.messageType ?? MessageType.UserMessage,
     };
 
-    // Only send maxPages if user selected a specific value (not "Not specified")
     if (message.maxPages !== null && message.maxPages !== undefined) {
       payload.maxPages = message.maxPages;
     } else {
-      // Remove maxPages from payload if null
       delete payload.maxPages;
     }
-
-    // Debug: Log the payload being sent via SignalR
-    console.log("[SignalR] SendCrawlerMessage - maxPages in message:", message.maxPages);
-    console.log("[SignalR] SendCrawlerMessage - will send maxPages:", message.maxPages !== null ? message.maxPages : "NOT SENDING");
-    console.log("[SignalR] SendCrawlerMessage - full payload:", JSON.stringify(payload, null, 2));
 
     await conn.invoke("SendCrawlerMessage", payload);
   }, []);
