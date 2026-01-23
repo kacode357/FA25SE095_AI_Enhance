@@ -90,12 +90,17 @@ export const BufferReview: React.FC<BufferReviewProps> = ({
   initialBuffers,
   initialPendingCommits,
 }) => {
+  // Danh sách pattern buffers đang chờ review
   const [buffers, setBuffers] = useState<BufferMetadata[]>([]);
   const [selectedBuffer, setSelectedBuffer] = useState<BufferData | null>(null);
+  
+  // Detail modal states
   const [detailJobId, setDetailJobId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  
+  // Feedback modal states
   const [feedbackModal, setFeedbackModal] = useState<{
     jobId: string;
     feedback: string;
@@ -108,10 +113,14 @@ export const BufferReview: React.FC<BufferReviewProps> = ({
     jobId: string;
     type: "commit" | "discard";
   } | null>(null);
+  
+  // Loading states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminId, setAdminId] = useState<string>("");
   const [processingJobId, setProcessingJobId] = useState<string | null>(null);
+  
+  // Pending commits status (cần 5 commits để tạo version mới)
   const [pendingCommits, setPendingCommits] = useState<PendingCommitsStatus>(
     DEFAULT_PENDING_COMMITS
   );
@@ -365,8 +374,21 @@ export const BufferReview: React.FC<BufferReviewProps> = ({
     }
   };
 
-  const formatTimestamp = (timestamp: string) =>
-    new Date(timestamp).toLocaleString();
+  // Format timestamp sang giờ Việt Nam (UTC+7): HH:MM:SS DD/MM/YYYY
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    // Cộng 7 giờ cho múi giờ Việt Nam
+    date.setHours(date.getHours() + 7);
+    
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
+  };
 
   const pendingIndicator = useMemo(() => {
     const pct =

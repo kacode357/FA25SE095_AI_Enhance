@@ -10,6 +10,7 @@ export interface CrawlJob {
     [key: string]: any;
   };
   feedback_from_previous?: string;
+  max_pages?: number;
 }
 
 export interface CrawlResult {

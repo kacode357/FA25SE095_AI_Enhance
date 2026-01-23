@@ -57,11 +57,13 @@ export const AgentTrainingHubProvider: React.FC<PropsWithChildren> = ({
   useEffect(() => {
     wsService.connect();
 
+    // Xử lý WebSocket messages và hiện toast notifications
     const handleMessage = (message: WebSocketMessage) => {
       if (process.env.NODE_ENV === "development") {
         console.log("Agent training message:", message);
       }
 
+      // Crawl job hoàn thành
       if (message.type === "job_completed") {
         addNotification(
           `Job ${message.job_id?.substring(0, 8) ?? ""} completed successfully`,

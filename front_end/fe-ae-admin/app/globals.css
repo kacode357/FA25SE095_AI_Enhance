@@ -99,6 +99,21 @@ select {
 .text-nav-active {
   color: var(--nav-active) !important;
 }
+
+/* Button màu tím cho Start Crawl */
+button[type="submit"] {
+  background-color: #7f71f4 !important;
+  color: white !important;
+}
+
+button[type="submit"]:hover:not(:disabled) {
+  background-color: #6f60ee !important;
+}
+
+button[type="submit"]:disabled {
+  background-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+}
 .hover\:text-nav-active:hover {
   color: var(--nav-active) !important;
 }

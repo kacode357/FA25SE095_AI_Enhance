@@ -61,7 +61,9 @@ const TAB_CONFIG: TabConfig[] = [
 ];
 
 const AgentTrainingIndexPage: React.FC = () => {
+  // Tab hiện tại đang active
   const [activeTab, setActiveTab] = useState<TabId>("submit");
+  // Danh sách tabs đã được mount (lazy loading)
   const [mountedTabs, setMountedTabs] = useState<TabId[]>(["submit"]);
   const { wsConnected, addNotification } = useAgentTrainingHub();
   const trainingApi = useTrainingApi();
@@ -72,6 +74,7 @@ const AgentTrainingIndexPage: React.FC = () => {
   const [initialStats, setInitialStats] = useState<TrainingStats | null>(null);
   const [initialVersionHistory, setInitialVersionHistory] = useState<VersionHistoryResponse | null>(null);
   const [initialInsights, setInitialInsights] = useState<LearningInsights | null>(null);
+  // Trạng thái loading ban đầu khi fetch data
   const [bootstrapping, setBootstrapping] = useState(true);
   const [bootstrapProgress, setBootstrapProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("Preparing training workspace...");
@@ -233,6 +236,7 @@ const AgentTrainingIndexPage: React.FC = () => {
               submitCrawl={trainingApi.submitCrawl}
               submitFeedback={trainingApi.submitFeedback}
               onNotify={addNotification}
+              onSwitchToBuffer={() => setActiveTab("buffer")}
             />
           );
         case "queue":
