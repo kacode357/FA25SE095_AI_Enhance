@@ -136,6 +136,9 @@ export function useCrawlHub({
     });
 
     conn.on("OnConversationJobUpdate", (update: JobUpdateDto) => {
+      onConversationJobUpdateRef.current?.(update);
+    });
+
     conn.onclose((err) => {
       setConnected(false);
       setConnectionId(null);
