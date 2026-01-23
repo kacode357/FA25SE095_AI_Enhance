@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { Course } from "@/types/course/course.response";
 import { formatToVN } from "@/utils/datetime/time";
 import { motion } from "framer-motion";
-import { Check, GraduationCap, Plus, Search, X } from "lucide-react";
+import { Check, GraduationCap, Info, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import FilterRow from "./components/FilterRow";
@@ -74,29 +74,22 @@ export default function CourseApprovalsPage() {
       {/* Header */}
       <header className="sticky top-0 z-20 mb-4 bg-white/90 p-3 rounded-md border border-slate-200">
         <h1 className="text-lg font-semibold text-slate-800">Course Approvals</h1>
-        <p className="text-sm text-slate-600 mt-1">
-          Review and approve new course requests submitted by lecturers. Only <b>pending</b> courses are shown here.
-        </p>
+        <div className="flex items-center gap-2 mt-3">
+          <Info className="size-4" />
+          <p className="text-sm text-slate-500">
+            Note: Review the <b>Weight</b> value assessment before approving. The Weight will be received from the <b>Course Code</b>  if not configured here.
+          </p>
+        </div>
+
       </header>
 
       {/* Table card */}
       <Card className="flex-1 border border-slate-200">
-          <CardHeader className="flex items-center justify-between">
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold text-slate-800">
             Pending Course Approvals{" "}
             <span className="text-slate-500 text-sm">({totalCount})</span>
           </CardTitle>
-          <Button
-            className="shadow-sm bg-emerald-600 btn btn-green-slow hover:bg-emerald-700 text-white transition-all"
-            onClick={() => {
-              setDialogSearchTerm("");
-              setSelectedCourseForConfigure(null);
-              setShowConfigureDialog(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Configure Topic Weight
-          </Button>
         </CardHeader>
 
         <CardContent className="px-0">

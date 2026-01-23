@@ -38,25 +38,43 @@ export default function ManagerSidebar({
     return defaultExpanded;
   });
 
-  // Logic check active cơ bản
-  const isItemActive = (it: any): boolean => {
+const isItemActive = (it: any): boolean => {
     if (!it || !it.href) return false;
-    
-    // Special case: /staff/courses/[id]/weights should match Topic Weights, not Active Courses
-    if (pathname?.match(/^\/staff\/courses\/[^/]+\/weights/)) {
-      return it.href === "/staff/courses/topic-weights";
+    const path = pathname ?? "";
+
+    // --- FIX LỖI ---
+    // Nếu đang ở trong khu vực "Topic Weights"
+    if (path.includes("/staff/courses/topic-weights")) {
+      
+      // 1. Chặn "Active Courses" (vì href của nó là /staff/courses cũng match prefix)
+      // Nếu item đang xét là /staff/courses nhưng KHÔNG phải là nhóm Topic Weights -> Return false ngay
+      if (it.href === "/staff/courses" || it.href === "/staff/courses/") {
+        return false;
+      }
+
+      // 2. Xử lý cho Menu Cha "Topic Weights"
+      // Nếu item là cha (href="/staff/courses/topic-weights") -> Luôn return true
+      if (it.href === "/staff/courses/topic-weights") {
+        return true;
+      }
     }
+    // --- HẾT FIX ---
+
+    // Special case logic cũ của bạn (giữ lại nếu cần cho logic dynamic id)
+    if (path.match(/^\/staff\/courses\/[^/]+\/weights/)) {
+      return it.href === "/staff/courses/topic-weights" || it.href.startsWith("/staff/courses/topic-weights");
+    }
+
+    // Logic cơ bản
+    if (path === it.href) return true;
+    if (path.startsWith(`${it.href}/`)) return true;
     
-    // Check chính xác
-    if (pathname === it.href) return true;
-    // Check tiền tố (cho trang con/detail)
-    if (pathname?.startsWith(`${it.href}/`)) return true;
-    // Check con (để active cha)
+    // Check children
     if (it.children && it.children.length > 0) {
       return it.children.some((c: any) => isItemActive(c));
     }
     return false;
-  };
+};
 
   const toggleExpand = (href: string) => {
     setExpandedMap((prev) => ({ ...prev, [href]: !prev[href] }));
