@@ -696,17 +696,8 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-500">
-        <div className="flex items-center gap-3">
-          <div className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-            Live updates {lastUpdate ? `• ${lastUpdate.toLocaleTimeString()}` : ""}
-          </div>
-          <button
-            type="button"
-            onClick={handleExportResources}
-            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900"
-          >
-            Export Resources
-          </button>
+        <div className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          Live updates {lastUpdate ? `• ${lastUpdate.toLocaleTimeString()}` : ""}
         </div>
         <p>
           last synced {lastUpdate ? lastUpdate.toLocaleTimeString() : "recently"}
