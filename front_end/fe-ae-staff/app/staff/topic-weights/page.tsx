@@ -12,7 +12,6 @@ import { motion } from "framer-motion";
 import { Scale } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import FilterRow from "./components/FilterRow";
 
 export default function TopicWeightsPage() {
   const router = useRouter();
@@ -24,7 +23,7 @@ export default function TopicWeightsPage() {
   // Filters
   const [name, setName] = useState("");
   const [courseCode, setCourseCode] = useState("");
-  const [lecturerName, setLecturerName] = useState("");
+  // const [lecturerName, setLecturerName] = useState("");
 
   const pageSize = 10;
 
@@ -37,7 +36,7 @@ export default function TopicWeightsPage() {
       sortDirection: "desc",
       name: name || undefined,
       courseCode: courseCode || undefined,
-      lecturerName: lecturerName || undefined,
+      // lecturerName: lecturerName || undefined,
       status: 2, // Active
     });
     setPage(pageNum);
@@ -103,21 +102,21 @@ export default function TopicWeightsPage() {
 
               <TableBody>
                 {/* Filter Row */}
-                <FilterRow
+                {/* <FilterRow
                   name={name}
                   setName={setName}
                   courseCode={courseCode}
                   setCourseCode={setCourseCode}
-                  lecturerName={lecturerName}
-                  setLecturerName={setLecturerName}
-                  onApply={() => fetchAll(1)}
-                  onClear={() => {
-                    setName("");
-                    setCourseCode("");
-                    setLecturerName("");
-                    fetchAll(1);
-                  }}
-                />
+                  // lecturerName={lecturerName}
+                  // setLecturerName={setLecturerName}
+                  // onApply={() => fetchAll(1)}
+                  // onClear={() => {
+                  //   setName("");
+                  //   setCourseCode("");
+                  //   // setLecturerName("");
+                  //   fetchAll(1);
+                  // }}
+                /> */}
 
                 {/* Data Rows */}
                 {loading ? (

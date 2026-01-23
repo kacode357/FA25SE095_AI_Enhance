@@ -18,6 +18,25 @@ export interface GradeDistributionDto {
   ungradeCount: number;
 }
 
+// ===== COMMON: TERMS =====
+
+export interface DashboardTermItem {
+  termId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  isCurrent: boolean;
+  courseCount: number;
+}
+
+export interface DashboardTermsData {
+  currentTermId: string;
+  terms: DashboardTermItem[];
+}
+
+export type DashboardTermsResponse = DashboardBaseResponse<DashboardTermsData>;
+
 // ===== STUDENT: GRADES OVERVIEW =====
 
 export interface StudentCourseOverviewItem {

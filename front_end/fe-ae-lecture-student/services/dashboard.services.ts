@@ -2,23 +2,24 @@
 import { courseAxiosInstance } from "@/config/axios.config";
 
 import type {
-    LecturerAssignmentsStatisticsResponse,
-    LecturerCoursesOverviewResponse,
-    LecturerPendingGradingResponse,
-    LecturerStudentsPerformanceResponse,
-    StudentCourseGradesDetailResponse,
-    StudentCurrentCoursesResponse,
-    StudentGradeBreakdownResponse,
-    StudentGradesOverviewResponse,
-    StudentPendingAssignmentsResponse,
-    StudentPerformanceAnalyticsResponse,
+  DashboardTermsResponse,
+  LecturerAssignmentsStatisticsResponse,
+  LecturerCoursesOverviewResponse,
+  LecturerPendingGradingResponse,
+  LecturerStudentsPerformanceResponse,
+  StudentCourseGradesDetailResponse,
+  StudentCurrentCoursesResponse,
+  StudentGradeBreakdownResponse,
+  StudentGradesOverviewResponse,
+  StudentPendingAssignmentsResponse,
+  StudentPerformanceAnalyticsResponse,
 } from "@/types/dashboard/dashboard.response";
 
 import type {
-    LecturerCoursesOverviewQuery,
-    LecturerPendingGradingQuery,
-    StudentGradesOverviewQuery,
-    StudentPerformanceAnalyticsQuery,
+  LecturerCoursesOverviewQuery,
+  LecturerPendingGradingQuery,
+  StudentGradesOverviewQuery,
+  StudentPerformanceAnalyticsQuery,
 } from "@/types/dashboard/dashboard.payload";
 
 export const DashboardService = {
@@ -83,6 +84,14 @@ export const DashboardService = {
         "/Dashboard/student/analytics/performance",
         { params }
       );
+    return res.data;
+  },
+
+  /** GET /api/Dashboard/terms */
+  getTerms: async (): Promise<DashboardTermsResponse> => {
+    const res = await courseAxiosInstance.get<DashboardTermsResponse>(
+      "/Dashboard/terms"
+    );
     return res.data;
   },
 
