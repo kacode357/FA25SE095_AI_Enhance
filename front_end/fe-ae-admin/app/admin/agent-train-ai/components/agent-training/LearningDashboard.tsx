@@ -602,7 +602,7 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
                   <img src="/qdrant.png" alt="Qdrant" className="h-6 w-6 object-contain" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-900">Qdrant Vector DB</p>
+                  <p className="text-sm font-semibold text-slate-900">Qdrant Dashboard</p>
                   <p className="text-xs text-slate-500">Manage vector embeddings & similarity search</p>
                 </div>
                 <svg className="h-4 w-4 text-slate-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -619,7 +619,7 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
                   <img src="/neo4j.png" alt="Neo4j" className="h-6 w-6 object-contain" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-900">Neo4j Graph DB</p>
+                  <p className="text-sm font-semibold text-slate-900">Neo4j Dashboard</p>
                   <p className="text-xs text-slate-500">Explore knowledge graph & relationships</p>
                 </div>
                 <svg className="h-4 w-4 text-slate-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
