@@ -153,7 +153,7 @@ export default function SubscriptionTiersPage() {
             type="checkbox"
             checked={isActiveFilter === true}
             onChange={(e) =>
-              setIsActiveFilter(e.target.checked ? true : undefined)
+              setIsActiveFilter(e.target.checked ? true : false)
             }
           />
           <span>Show only active tiers</span>
@@ -330,6 +330,7 @@ export default function SubscriptionTiersPage() {
                     onCheckedChange={(checked) =>
                       setForm((prev) => ({ ...prev, isActive: checked }))
                     }
+                    className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-slate-300"
                   />
                 </div>
               </div>
