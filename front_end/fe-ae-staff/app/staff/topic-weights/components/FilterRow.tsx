@@ -53,7 +53,7 @@ export default function FilterRow({
         {mode === "course-code" ? (
           <Select value={courseCode} onValueChange={(v) => setCourseCode(v === "__all__" ? "" : v)}>
             <SelectTrigger className="h-8 text-xs w-96 border-slate-200 bg-white ring-0 focus:ring-0 shadow-none">
-              <SelectValue placeholder="Course Code" />
+              <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent className="text-sm w-full">
               <SelectItem key="all" value="__all__" className="text-sm">
@@ -69,17 +69,19 @@ export default function FilterRow({
         ) : (
           <Select value={courseCode} onValueChange={(v) => setCourseCode(v === "__all__" ? "" : v)}>
             <SelectTrigger className="h-8 text-xs w-72 border-slate-200 ring-0 bg-white focus:ring-0 shadow-none">
-              <SelectValue placeholder="Specific Course" />
+              <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent className="text-sm w-full">
               <SelectItem key="all" value="__all__" className="text-sm">
                 All
               </SelectItem>
-              {specificCourseOptions.map((c) => (
-                <SelectItem key={c.id} value={c.id} className="text-sm">
-                  {c.name}
-                </SelectItem>
-              ))}
+              {specificCourseOptions
+                .filter((c) => c.status === 1)
+                .map((c) => (
+                  <SelectItem key={c.id} value={c.id} className="text-sm">
+                    {c.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         )}

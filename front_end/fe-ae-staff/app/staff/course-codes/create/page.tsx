@@ -80,7 +80,7 @@ export default function CreateCourseCodePage() {
                                     <Label className="mb-2">Description</Label>
                                     <Textarea
                                         placeholder="Short description"
-                                        className="placeholder:text-sm border-slate-200 text-sm rounded-md"
+                                        className="placeholder:text-sm border-slate-200 text-sm rounded-md focus:border-violet-500 focus:ring-1 focus:ring-violet-200"
                                         value={form.description}
                                         onChange={(e) => handleChange('description', e.target.value)}
                                     />
