@@ -567,6 +567,29 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
                 Snapshot of domains, success rates, and storage metrics.
               </p>
             </div>
+            <div className="flex items-center gap-2">
+              {/* External Database Links */}
+              <a
+                href="https://qdrant.fishmakeweb.id.vn/dashboard#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:border-slate-300"
+                title="Open Qdrant Dashboard"
+              >
+                <img src="/qdrant.png" alt="Qdrant" className="h-5 w-5 object-contain" />
+                <span>Qdrant</span>
+              </a>
+              <a
+                href="https://neo4j.fishmakeweb.id.vn/browser/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:border-slate-300"
+                title="Open Neo4j Browser"
+              >
+                <img src="/neo4j.png" alt="Neo4j" className="h-5 w-5 object-contain" />
+                <span>Neo4j</span>
+              </a>
+            </div>
             {insightsSummary && (
               <div className="flex gap-4 text-xs text-slate-600">
                 <InsightStat label="Patterns" value={insightsSummary.total_patterns} />
