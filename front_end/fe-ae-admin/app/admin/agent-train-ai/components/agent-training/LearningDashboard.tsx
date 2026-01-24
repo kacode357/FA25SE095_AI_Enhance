@@ -415,7 +415,7 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
         </div>
       </div>
 
-      {/* Queue Summary & Knowledge Store - 2 cards ngang nhau */}
+      
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h4 className="text-xs font-medium text-slate-600">Queue Summary</h4>
