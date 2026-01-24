@@ -567,29 +567,6 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
                 Snapshot of domains, success rates, and storage metrics.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              {/* External Database Links */}
-              <a
-                href="https://qdrant.fishmakeweb.id.vn/dashboard#"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:border-slate-300"
-                title="Open Qdrant Dashboard"
-              >
-                <img src="/qdrant.png" alt="Qdrant" className="h-5 w-5 object-contain" />
-                <span>Qdrant</span>
-              </a>
-              <a
-                href="https://neo4j.fishmakeweb.id.vn/browser/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:border-slate-300"
-                title="Open Neo4j Browser"
-              >
-                <img src="/neo4j.png" alt="Neo4j" className="h-5 w-5 object-contain" />
-                <span>Neo4j</span>
-              </a>
-            </div>
             {insightsSummary && (
               <div className="flex gap-4 text-xs text-slate-600">
                 <InsightStat label="Patterns" value={insightsSummary.total_patterns} />
@@ -602,6 +579,54 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
                 />
               </div>
             )}
+          </div>
+
+          {/* Database Management Section */}
+          <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/50 p-4">
+            <div className="mb-3">
+              <h4 className="text-xs font-semibold uppercase text-slate-500">
+                Database Management
+              </h4>
+              <p className="text-xs text-slate-400">
+                Access vector and graph databases for AI training data
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <a
+                href="https://qdrant.fishmakeweb.id.vn/dashboard#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 transition-all hover:border-indigo-300 hover:shadow-md"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 group-hover:bg-red-100">
+                  <img src="/qdrant.png" alt="Qdrant" className="h-6 w-6 object-contain" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-900">Qdrant Vector DB</p>
+                  <p className="text-xs text-slate-500">Manage vector embeddings & similarity search</p>
+                </div>
+                <svg className="h-4 w-4 text-slate-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+              <a
+                href="https://neo4j.fishmakeweb.id.vn/browser/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 transition-all hover:border-indigo-300 hover:shadow-md"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 group-hover:bg-blue-100">
+                  <img src="/neo4j.png" alt="Neo4j" className="h-6 w-6 object-contain" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-900">Neo4j Graph DB</p>
+                  <p className="text-xs text-slate-500">Explore knowledge graph & relationships</p>
+                </div>
+                <svg className="h-4 w-4 text-slate-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
           </div>
 
           {insights.domain_expertise && insights.domain_expertise.length > 0 && (
