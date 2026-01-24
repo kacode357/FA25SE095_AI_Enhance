@@ -28,6 +28,17 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+// Normalize backend messages to avoid duplicated text inside a single toast
+const dedupeMessage = (msg?: string | null) => {
+    if (!msg) return msg ?? undefined;
+    const s = String(msg).trim();
+    const m = s.match(/^(.+?)([:\-–—\.]{1}\s*)(\1)$/);
+    if (m) return m[1].trim();
+    const parts = s.split(/[:\-–—\.]{1}\s*/).map(p => p.trim()).filter(Boolean);
+    if (parts.length === 2 && parts[0] === parts[1]) return parts[0];
+    return s;
+};
+
 export default function WeightsPage() {
     const params = useParams();
     const courseId = (params as any)?.id as string | undefined;
@@ -67,7 +78,7 @@ export default function WeightsPage() {
     const { loading: deleting, deleteTopicWeight } = useDeleteTopicWeight();
     const { updateTopicWeight } = useUpdateTopicWeight();
     const [confirmId, setConfirmId] = useState<string | null>(null);
-    
+
     // --- FIX HERE: Check Array.isArray(data) before using .find() ---
     const deletingItem = Array.isArray(data) ? data.find((it) => String(it.id) === String(confirmId)) : undefined;
 
@@ -166,17 +177,13 @@ export default function WeightsPage() {
 
         const res = await bulkUpdate(courseIdForApi, payload as any);
         if (res && res.success) {
-            toast.success(res.message || "Topic weights updated");
+            toast.success(dedupeMessage(res.message) || "Topic weights updated");
             setEditOpen(false);
             try {
                 await fetchByCourse(courseId);
             } catch (e) { }
         } else {
-            if (res && res.errors && res.errors.length > 0) {
-                toast.error(res.errors.join(", "));
-            } else {
-                toast.error("Failed to update topic weights");
-            }
+            throw Error;
         }
     };
 
@@ -327,7 +334,7 @@ export default function WeightsPage() {
                                         </TableCell>
                                     </TableRow>
                                 )}
-                                
+
                                 {/* FIX: Ensure data is an array before mapping */}
                                 {Array.isArray(data) && data.map((row) => (
                                     <TableRow key={row.id} className="group py-3 hover:bg-slate-50 transition-colors">

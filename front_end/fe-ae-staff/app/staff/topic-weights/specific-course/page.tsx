@@ -26,8 +26,8 @@ export default function TopicWeightsSpecificCoursePage() {
     const [page, setPage] = useState(1);
 
     // Filters
-    const [name, setName] = useState("");
     const [courseCode, setCourseCode] = useState("");
+    const [courseName, setCourseName] = useState("");
     const [lecturerName, setLecturerName] = useState("");
 
     const pageSize = 10;
@@ -66,7 +66,6 @@ export default function TopicWeightsSpecificCoursePage() {
             pageNumber: pageNum,
             pageSize,
             courseCode: courseCode || undefined,
-            topicName: name || undefined,
             specificCourseId: undefined,
         });
         setPage(pageNum);
@@ -157,8 +156,8 @@ export default function TopicWeightsSpecificCoursePage() {
                         <Table>
                             <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                                 <TableRow className="border-b border-slate-200 hover:bg-slate-50">
-                                    <TableHead className="w-[40%] pl-6 font-semibold text-slate-700">Specific Course</TableHead>
-                                    <TableHead className="w-[20%] font-semibold text-center text-slate-700">Topics Number</TableHead>
+                                    <TableHead className="w-[30%] pl-6 font-semibold text-slate-700">Specific Course</TableHead>
+                                    <TableHead className="w-[30%] font-semibold text-center text-slate-700">Topics Number</TableHead>
                                     <TableHead className="w-[20%] font-semibold text-center text-slate-700">Configured At</TableHead>
                                     <TableHead className="w-[20%] text-center font-semibold text-slate-700">Action</TableHead>
                                 </TableRow>
@@ -167,25 +166,23 @@ export default function TopicWeightsSpecificCoursePage() {
                             <TableBody>
                                 {/* Filter Row */}
                                 <FilterRow
-                                    name={name}
-                                    setName={(v) => {
-                                        // typing resets select and fetch by courseCode string
-                                        setCourseCode("");
-                                        setName(v);
-                                        fetchTopicWeights({ pageNumber: 1, pageSize, courseCode: v || undefined });
+                                    courseName={courseName}
+                                    setCourseName={(v) => {
+                                        // typing course name should fetch by courseName without clearing courseCode
+                                        setCourseName(v);
+                                        fetchTopicWeights({ pageNumber: 1, pageSize, courseName: v || undefined });
                                         setPage(1);
                                     }}
                                     courseCode={courseCode}
                                     setCourseCode={(v) => {
-                                        // selecting specific course resets text input and fetches by specificCourseId
-                                        setName("");
+                                        // selecting specific course fetches by specificCourseId
                                         setCourseCode(v);
                                         fetchTopicWeights({ pageNumber: 1, pageSize, specificCourseId: v || undefined });
                                         setPage(1);
                                     }}
                                     mode="specific-course"
-                                    onFilterChange={({ name: n, specificCourseId }) => {
-                                        fetchTopicWeights({ pageNumber: 1, pageSize, topicName: n || undefined, specificCourseId: specificCourseId || undefined });
+                                    onFilterChange={({ specificCourseId, courseName: cn }) => {
+                                        fetchTopicWeights({ pageNumber: 1, pageSize, specificCourseId: specificCourseId || undefined, courseName: cn || undefined });
                                         setPage(1);
                                     }}
                                 />
@@ -196,7 +193,7 @@ export default function TopicWeightsSpecificCoursePage() {
                                         <TableCell colSpan={6} className="h-48 text-center text-slate-500">
                                             <div className="flex justify-center items-center gap-2">
                                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-600"></div>
-                                                Loading courses...
+                                                Loading...
                                             </div>
                                         </TableCell>
                                     </TableRow>

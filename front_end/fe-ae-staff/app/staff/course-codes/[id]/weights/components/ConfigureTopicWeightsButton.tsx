@@ -128,8 +128,11 @@ export default function ConfigureTopicWeightsButton({
       // Refresh data ngầm, không cần await block UI
       fetchByCourseCode(courseCodeId).catch(() => {});
     } else {
-      // Ưu tiên message từ BE trả về (Business Logic Error), fallback sang error của hook (System Error)
-      toast.error(res?.message || error || "Failed to configure topic weights");
+      // Don't emit an error toast here to avoid duplicate notifications.
+      // Errors should be surfaced by a single, centralized handler.
+      // Keep a console log for debugging.
+      // eslint-disable-next-line no-console
+      throw Error;
     }
   };
 

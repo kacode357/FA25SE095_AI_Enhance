@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetCourseCodeById } from "@/hooks/course-code/useGetCourseCodeById";
-// Import hook mới theo yêu cầu
 import { useBulkUpdateTopicWeights } from "@/hooks/topic/useBulkUpdateTopicWeights";
 import { useGetTopics } from "@/hooks/topic/useGetTopics";
 import { useGetTopicWeightsByCourseCode } from "@/hooks/topic/useGetTopicWeightsByCourseCode";
@@ -29,6 +28,17 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import ConfigureTopicWeightsButton from "./components/ConfigureTopicWeightsButton";
 import ConfigureTopicWeightsDialog from "./components/ConfigureTopicWeightsDialog";
+
+// --- FIX: Thêm hàm xử lý trùng lặp text ---
+const dedupeMessage = (msg?: string | null) => {
+    if (!msg) return msg ?? undefined;
+    const s = String(msg).trim();
+    const m = s.match(/^(.+?)([:\-–—\.]{1}\s*)(\1)$/);
+    if (m) return m[1].trim();
+    const parts = s.split(/[:\-–—\.]{1}\s*/).map(p => p.trim()).filter(Boolean);
+    if (parts.length === 2 && parts[0] === parts[1]) return parts[0];
+    return s;
+};
 
 export default function WeightsPage() {
     const params = useParams();
@@ -132,15 +142,16 @@ export default function WeightsPage() {
         const res = await bulkUpdate(courseCodeId, payload);
 
         if (res && res.success) {
-            toast.success(res.message || "Topic weights updated successfully");
+            // --- FIX: Dismiss toast cũ ---
+            toast.dismiss();
+            toast.success(dedupeMessage(res.message) || "Topic weights updated successfully");
             setEditOpen(false);
             fetchByCourseCode(courseCodeId); // Refresh data
         } else {
-            // Error handling
-            if (res && res.errors && res.errors.length > 0) {
-                toast.error(res.errors.join(", "));
-            } else {
-                toast.error("Failed to update topic weights");
+            // --- FIX: Dismiss toast cũ từ hệ thống và hiện toast custom ---
+            if (res) {
+                toast.dismiss();
+                toast.error(dedupeMessage(res.message));
             }
         }
     };

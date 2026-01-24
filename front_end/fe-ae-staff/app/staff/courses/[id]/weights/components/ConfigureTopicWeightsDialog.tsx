@@ -20,13 +20,23 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-// Import hook mới theo yêu cầu
 import { useBulkUpdateTopicWeightsByCourse } from "@/hooks/topic/useBulkUpdateTopicWeightsByCourse";
 import { allowNumericKey, preventInvalidPaste } from "@/lib/inputValidators";
 import { cn } from "@/lib/utils";
 import { BulkUpdateTopicWeightItem, BulkUpdateTopicWeightsByCoursePayload } from "@/types/topic/topic-weight.payload";
 import { AlertCircle, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
+// Giữ nguyên hàm dedupeMessage
+const dedupeMessage = (msg?: string | null) => {
+    if (!msg) return msg ?? undefined;
+    const s = String(msg).trim();
+    const m = s.match(/^(.+?)([:\-–—\.]{1}\s*)(\1)$/);
+    if (m) return m[1].trim();
+    const parts = s.split(/[:\-–—\.]{1}\s*/).map(p => p.trim()).filter(Boolean);
+    if (parts.length === 2 && parts[0] === parts[1]) return parts[0];
+    return s;
+};
 
 type Row = {
     topicId?: string | null;
@@ -49,7 +59,7 @@ type Props = {
     loading?: boolean;
     handleSubmit?: () => Promise<void>;
     courseId?: string | undefined;
-    existingTopicWeights?: any[] | undefined; 
+    existingTopicWeights?: any[] | undefined;
     hideTrigger?: boolean;
     onSuccess?: () => void;
 };
@@ -69,17 +79,15 @@ export default function ConfigureTopicWeightsDialog({
     handleSubmit,
     hideTrigger = false,
     courseId,
-    existingTopicWeights, // Vẫn giữ để map ID cũ nếu cần thiết cho backend tối ưu, nhưng không bắt buộc
+    existingTopicWeights,
     onSuccess,
 }: Props) {
-    // Sử dụng hook mới duy nhất
     const { bulkUpdate, loading: updating } = useBulkUpdateTopicWeightsByCourse();
     const apiLoading = updating || loading;
 
     const { user } = useAuth();
 
     const internalHandleSubmit = async () => {
-        // Nếu parent component truyền hàm submit riêng, ưu tiên dùng nó
         if (handleSubmit) return handleSubmit();
 
         if (!courseId) {
@@ -97,7 +105,6 @@ export default function ConfigureTopicWeightsDialog({
             return;
         }
 
-        // Lọc ra các row hợp lệ (có chọn topic)
         const validRows = rows.filter(r => r.topicId);
 
         if (validRows.length === 0) {
@@ -105,13 +112,11 @@ export default function ConfigureTopicWeightsDialog({
             return;
         }
 
-        // Mapping rows sang cấu trúc API yêu cầu
-        // Logic: Map topicId, weight. Nếu tìm thấy ID cũ trong existingTopicWeights thì gửi kèm (optional), không bắt buộc.
         const weights: BulkUpdateTopicWeightItem[] = validRows.map((r) => {
             const existingItem = existingTopicWeights?.find((ex) => String(ex.topicId) === String(r.topicId));
-            
+
             return {
-                id: existingItem?.id, // Optional: Gửi id nếu topic này đã từng được config trước đó
+                id: existingItem?.id,
                 topicId: r.topicId!,
                 weightPercentage: r.weightPercentage ?? 0,
                 description: r.description ?? null
@@ -126,22 +131,26 @@ export default function ConfigureTopicWeightsDialog({
         };
 
         const res = await bulkUpdate(courseId, payload);
-        
-        // Kiểm tra kết quả dựa trên logic API (res trả về null nếu lỗi catch, hoặc object response)
+
         if (res && res.success) {
-            toast.success(res.message || "Topic weights updated successfully");
+            // Success case
+            toast.dismiss(); // Xóa toast cũ nếu có để sạch màn hình
+            toast.success(dedupeMessage(res.message) || "Topic weights updated successfully");
             setOpen(false);
             onSuccess?.();
         } else {
-            // Xử lý lỗi trả về từ API hoặc lỗi mạng
+            // Error case
             if (res && res.errors && res.errors.length > 0) {
-                toast.error(res.errors.join(", "));
-            } else {
-                toast.error("Failed to update topic weights");
+                // --- FIX: Thêm toast.dismiss() ---
+                // Điều này sẽ xóa toast "rác" do hệ thống global tự bắn ra trước đó
+                // và chỉ hiển thị toast đẹp (đã dedupe) của component này.
+                toast.dismiss();
+                toast.error(dedupeMessage(res.errors.join(", ")));
             }
         }
     };
-    
+
+    // ... Các hàm xử lý input giữ nguyên
     const handleWeightChange = (idx: number, raw: string) => {
         if (raw === "") {
             updateRow(idx, { weightPercentage: null });

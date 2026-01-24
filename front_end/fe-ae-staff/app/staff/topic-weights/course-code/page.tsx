@@ -52,7 +52,7 @@ export default function TopicWeightsCourseCodePage() {
     
 
     // Filters
-    const [name, setName] = useState("");
+    const [courseCodeSearch, setCourseCodeSearch] = useState("");
     const [courseCode, setCourseCode] = useState("");
     const [lecturerName, setLecturerName] = useState("");
 
@@ -64,7 +64,6 @@ export default function TopicWeightsCourseCodePage() {
             pageNumber: pageNum,
             pageSize,
             courseCode: courseCode || undefined,
-            topicName: name || undefined,
         });
         setPage(pageNum);
     };
@@ -166,25 +165,25 @@ export default function TopicWeightsCourseCodePage() {
                             <TableBody>
                                 {/* Filter Row */}
                                 <FilterRow
-                                    name={name}
-                                    setName={(v) => {
-                                        // when typing, reset select and fetch by courseCode string
+                                    courseCodeSearch={courseCodeSearch}
+                                    setCourseCodeSearch={(v) => {
+                                        // when typing search by code, reset select and fetch by courseCode string
                                         setCourseCode("");
-                                        setName(v);
+                                        setCourseCodeSearch(v);
                                         fetchTopicWeights({ pageNumber: 1, pageSize, courseCode: v || undefined });
                                         setPage(1);
                                     }}
                                     courseCode={courseCode}
                                     setCourseCode={(v) => {
                                         // when selecting a course code, reset text input and fetch by courseCodeId
-                                        setName("");
+                                        setCourseCode("");
                                         setCourseCode(v);
                                         fetchTopicWeights({ pageNumber: 1, pageSize, courseCodeId: v || undefined });
                                         setPage(1);
                                     }}
                                     mode="course-code"
-                                    onFilterChange={({ name: n, courseCodeId }) => {
-                                        fetchTopicWeights({ pageNumber: 1, pageSize, topicName: n || undefined, courseCodeId: courseCodeId || undefined });
+                                    onFilterChange={({ courseCodeId, courseCodeSearch: cs }) => {
+                                        fetchTopicWeights({ pageNumber: 1, pageSize, courseCodeId: courseCodeId || undefined, courseCode: cs || undefined });
                                         setPage(1);
                                     }}
                                 />
@@ -195,7 +194,7 @@ export default function TopicWeightsCourseCodePage() {
                                         <TableCell colSpan={6} className="h-48 text-center text-slate-500">
                                             <div className="flex justify-center items-center gap-2">
                                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-600"></div>
-                                                Loading courses...
+                                                Loading...
                                             </div>
                                         </TableCell>
                                     </TableRow>

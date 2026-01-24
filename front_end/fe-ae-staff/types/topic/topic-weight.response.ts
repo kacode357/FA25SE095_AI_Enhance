@@ -36,6 +36,7 @@ export interface GetTopicWeightsQueryParams {
   pageNumber?: number;
   pageSize?: number;
   courseCode?: string;
+  courseName?: string;
   topicName?: string;
   courseCodeId?: string;
   specificCourseId?: string;

@@ -14,17 +14,21 @@ import { useCourses } from "@/hooks/course/useCourses";
 import { useEffect } from "react";
 
 interface Props {
-  name: string;
-  setName: (v: string) => void;
+  courseName?: string;
+  setCourseName?: (v: string) => void;
+  courseCodeSearch?: string;
+  setCourseCodeSearch?: (v: string) => void;
   courseCode: string; // used as selected id for both modes
   setCourseCode: (v: string) => void;
   mode?: "course-code" | "specific-course"; // controls which select to show
-  onFilterChange: (filters: { name?: string; courseCodeId?: string; specificCourseId?: string }) => void;
+  onFilterChange: (filters: { courseCodeId?: string; specificCourseId?: string; courseName?: string; courseCodeSearch?: string }) => void;
 }
 
 export default function FilterRow({
-  name,
-  setName,
+  courseName,
+  setCourseName,
+  courseCodeSearch,
+  setCourseCodeSearch,
   courseCode,
   setCourseCode,
   onFilterChange,
@@ -82,18 +86,28 @@ export default function FilterRow({
       </TableCell>
 
       <TableCell className="py-2 w-72">
-        <Input
-          placeholder="Search..."
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="h-8 text-xs w-full"
-        />
+        {mode === "course-code" ? (
+          <Input
+            placeholder="Search..."
+            value={courseCodeSearch ?? ""}
+            onChange={(e) => setCourseCodeSearch?.(e.target.value)}
+            className="h-8 text-xs w-full"
+          />
+        ) : (
+          <Input
+            placeholder="Search..."
+            value={courseName ?? ""}
+            onChange={(e) => setCourseName?.(e.target.value)}
+            className="h-8 text-xs w-full"
+          />
+        )}
       </TableCell>
 
       {/* Empty action cell retained for column alignment (buttons removed). */}
       <TableCell className="py-2 text-center bg-slate-50">
         <div className="h-8" />
       </TableCell>
+
       <TableCell className="py-2 text-center bg-slate-50">
         <div className="h-8" />
       </TableCell>
