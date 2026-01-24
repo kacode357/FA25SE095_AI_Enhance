@@ -6,46 +6,58 @@ import { Button } from "@/components/ui/button";
 import type {
   CrawlJob,
   CrawlResult,
-  FeedbackResponse,
   QueuedJobResponse,
-  BufferData,
 } from "@/types/agent-training/training.types";
 
 import { CrawlLogConsole } from "./CrawlLogConsole";
 
+// ============================================================
+// TYPES
+// ============================================================
+
 interface SubmitTrainingPanelProps {
-  submitCrawl: (
-    job: CrawlJob
-  ) => Promise<CrawlResult | QueuedJobResponse>;
-  submitFeedback: (
-    jobId: string,
-    feedback: string
-  ) => Promise<FeedbackResponse>;
-  getBuffer: (jobId: string, adminId?: string) => Promise<BufferData>;
+  /** Hàm submit crawl job */
+  submitCrawl: (job: CrawlJob) => Promise<CrawlResult | QueuedJobResponse>;
+  /** Callback hiện notification */
   onNotify?: (message: string) => void;
+  /** Callback chuyển sang tab Buffer */
   onSwitchToBuffer?: () => void;
+  /** Trạng thái kết nối WebSocket - phải connected mới cho crawl */
+  wsConnected?: boolean;
 }
+
+// ============================================================
+// COMPONENT
+// ============================================================
 
 export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
   submitCrawl,
-  submitFeedback,
-  getBuffer,
   onNotify,
   onSwitchToBuffer,
+  wsConnected = false,
 }) => {
-  // Form inputs
+  // ------------------------------------------------------------
+  // FORM STATE
+  // ------------------------------------------------------------
   const [url, setUrl] = useState("");
   const [description, setDescription] = useState("");
   const [requiredFields, setRequiredFields] = useState(""); // Optional: comma-separated
   const [maxPages, setMaxPages] = useState<number | null>(null); // null = không giới hạn
   const [urlError, setUrlError] = useState("");
-  // Kết quả crawl và dialog
+
+  // ------------------------------------------------------------
+  // CRAWL STATE
+  // ------------------------------------------------------------
   const [currentResult, setCurrentResult] = useState<CrawlResult | null>(null);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [crawling, setCrawling] = useState(false);
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
 
-  // Kiểm tra URL hợp lệ (phải có http/https)
+  // ------------------------------------------------------------
+  // VALIDATION
+  // ------------------------------------------------------------
+
+  /** Kiểm tra URL hợp lệ (phải có http/https) */
   const isValidUrl = (urlString: string): boolean => {
     if (!urlString.trim()) return false;
     try {
@@ -60,25 +72,37 @@ export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
     const newUrl = e.target.value;
     setUrl(newUrl);
     if (newUrl.trim() && !isValidUrl(newUrl)) {
-      setUrlError("Please enter a valid HTTP or HTTPS URL");
+      setUrlError("Vui lòng nhập URL hợp lệ (http/https)");
     } else {
       setUrlError("");
     }
   };
 
-  const isFormValid = isValidUrl(url) && description.trim();
+  // Form hợp lệ khi: URL valid + có description + WebSocket connected
+  const isFormValid = isValidUrl(url) && description.trim().length > 0;
+  const canSubmit = isFormValid && wsConnected && !crawling;
+
+  // ------------------------------------------------------------
+  // FORM SUBMIT
+  // ------------------------------------------------------------
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Kiểm tra WebSocket connection
+    if (!wsConnected) {
+      onNotify?.("⚠️ Chưa kết nối WebSocket. Vui lòng chờ...");
+      return;
+    }
+
     // Validation: Kiểm tra các field bắt buộc
     if (!isFormValid) {
       if (!url.trim()) {
-        alert("Please enter a URL");
+        alert("Vui lòng nhập URL");
       } else if (!isValidUrl(url)) {
-        alert("Please enter a valid HTTP or HTTPS URL");
+        alert("Vui lòng nhập URL hợp lệ (http hoặc https)");
       } else if (!description.trim()) {
-        alert("Please provide a description of what to extract");
+        alert("Vui lòng mô tả dữ liệu cần extract");
       }
       return;
     }
@@ -108,6 +132,10 @@ export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
     await handleCrawlSubmit(job);
   };
 
+  // ------------------------------------------------------------
+  // CRAWL EXECUTION
+  // ------------------------------------------------------------
+
   const handleCrawlSubmit = async (job: CrawlJob) => {
     setCrawling(true);
     setCurrentResult(null);
@@ -121,6 +149,7 @@ export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
         // Job được xếp hàng chờ
         const queued = result as QueuedJobResponse;
         onNotify?.(queued.message);
+        // Reset form
         setUrl("");
         setDescription("");
         setRequiredFields("");
@@ -131,19 +160,20 @@ export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
         setCurrentResult(crawlResult);
         setCurrentJobId(crawlResult.job_id);
         setResultDialogOpen(true);
-        onNotify?.("Crawl completed! Please provide feedback.");
+        onNotify?.("✓ Crawl hoàn thành! Kiểm tra kết quả.");
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      if (process.env.NODE_ENV === "development") {
-        console.error("Crawl failed:", error);
-      }
-      onNotify?.(`Crawl failed: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
+      console.error("[SubmitPanel] Crawl failed:", error);
+      onNotify?.(`❌ Crawl thất bại: ${errorMessage}`);
     } finally {
       setCrawling(false);
     }
   };
+
+  // ------------------------------------------------------------
+  // RENDER
+  // ------------------------------------------------------------
 
   return (
     <div className="space-y-6">
@@ -152,10 +182,17 @@ export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
           <h2 className="text-sm font-semibold text-slate-900">
             Submit Crawl Job
           </h2>
+
           <form
             onSubmit={handleFormSubmit}
             className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
           >
+            {/* Warning khi chưa connected */}
+            {!wsConnected && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                ⚠️ WebSocket not connected. Please wait before starting crawl.
+              </div>
+            )}
             <div className="space-y-1">
               <label
                 htmlFor="crawl-url"
@@ -250,10 +287,16 @@ export const SubmitTrainingPanel: React.FC<SubmitTrainingPanelProps> = ({
 
             <Button
               type="submit"
-              disabled={!isFormValid || crawling}
+              disabled={!canSubmit}
               className="w-full"
             >
-              {crawling ? "Crawling..." : "Start Crawl"}
+              {crawling ? (
+                "Crawling..."
+              ) : !wsConnected ? (
+                "⚠️ Waiting for connection..."
+              ) : (
+                "Start Crawl"
+              )}
             </Button>
           </form>
         </section>

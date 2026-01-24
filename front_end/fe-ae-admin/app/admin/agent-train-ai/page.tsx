@@ -11,7 +11,6 @@ import { LearningDashboard } from "@/app/admin/agent-train-ai/components/agent-t
 import { useAgentTrainingHub } from "@/contexts/agent-training-hub-context";
 import { useTrainingApi } from "@/hooks/agent-training/useTrainingApi";
 import type {
-  BufferMetadata,
   LearningInsights,
   PendingCommitsStatus,
   QueueStatus,
@@ -61,25 +60,25 @@ const TAB_CONFIG: TabConfig[] = [
 ];
 
 const AgentTrainingIndexPage: React.FC = () => {
-  // Tab hiện tại đang active
   const [activeTab, setActiveTab] = useState<TabId>("submit");
-  // Danh sách tabs đã được mount (lazy loading)
   const [mountedTabs, setMountedTabs] = useState<TabId[]>(["submit"]);
-  const { wsConnected, addNotification, submitCrawl, onJobCompleted } = useAgentTrainingHub();
+  const { wsConnected, addNotification, submitCrawl } = useAgentTrainingHub();
   const trainingApi = useTrainingApi();
+  
+  // Bootstrap data states
   const [initialQueueStatus, setInitialQueueStatus] = useState<QueueStatus | null>(null);
   const [initialPendingCommits, setInitialPendingCommits] = useState<PendingCommitsStatus | null>(null);
-  const [initialPendingBuffers, setInitialPendingBuffers] = useState<BufferMetadata[] | undefined>(undefined);
-  const [initialAllBuffers, setInitialAllBuffers] = useState<BufferMetadata[] | undefined>(undefined);
   const [initialStats, setInitialStats] = useState<TrainingStats | null>(null);
   const [initialVersionHistory, setInitialVersionHistory] = useState<VersionHistoryResponse | null>(null);
   const [initialInsights, setInitialInsights] = useState<LearningInsights | null>(null);
-  // Trạng thái loading ban đầu khi fetch data
+  
+  // Loading states
   const [bootstrapping, setBootstrapping] = useState(true);
   const [bootstrapProgress, setBootstrapProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("Preparing training workspace...");
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+  
   const currentTab = useMemo(
     () => TAB_CONFIG.find((tab) => tab.id === activeTab) ?? TAB_CONFIG[0],
     [activeTab]
@@ -101,39 +100,22 @@ const AgentTrainingIndexPage: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
     const statsAbortController = new AbortController();
-    const totalSteps = 8;
+    const totalSteps = 6;
     let completedSteps = 0;
     let hasError = false;
-
-    const resetInitialData = () => {
-      setInitialQueueStatus(null);
-      setInitialPendingCommits(null);
-      setInitialPendingBuffers(undefined);
-      setInitialAllBuffers(undefined);
-      setInitialStats(null);
-      setInitialVersionHistory(null);
-      setInitialInsights(null);
-    };
 
     const markStepComplete = (message?: string) => {
       if (!isMounted || hasError) return;
       completedSteps += 1;
-      const pct = Math.round((completedSteps / totalSteps) * 100);
-      setBootstrapProgress(pct);
-      if (message) {
-        setLoadingMessage(message);
-      }
+      setBootstrapProgress(Math.round((completedSteps / totalSteps) * 100));
+      if (message) setLoadingMessage(message);
     };
 
     const bootstrapData = async () => {
-      if (!isMounted) {
-        return;
-      }
+      if (!isMounted) return;
       setBootstrapping(true);
       setBootstrapError(null);
       setBootstrapProgress(0);
-      setLoadingMessage("Preparing crawl workspace...");
-      resetInitialData();
 
       try {
         const runStep = async <T,>(
@@ -141,82 +123,33 @@ const AgentTrainingIndexPage: React.FC = () => {
           onSuccess: (value: T) => void,
           message: string
         ) => {
-          return action()
-            .then((value) => {
-              if (!isMounted || hasError) return;
-              onSuccess(value);
-              markStepComplete(message);
-            })
-            .catch((error) => {
-              if (!isMounted) return;
-              if (!hasError) {
-                hasError = true;
-                throw error;
-              }
-            });
+          const value = await action();
+          if (!isMounted || hasError) return;
+          onSuccess(value);
+          markStepComplete(message);
         };
 
-        const steps = [
-          runStep(
-            () => trainingApi.healthCheck(),
-            () => undefined,
-            "Training API ready"
-          ),
-          runStep(
-            () => trainingApi.getStats(statsAbortController.signal),
-            setInitialStats,
-            "Training statistics synced"
-          ),
-          runStep(
-            () => trainingApi.getQueueStatus(),
-            setInitialQueueStatus,
-            "Queue status loaded"
-          ),
-          runStep(
-            () => trainingApi.getPendingCommitsStatus(),
-            setInitialPendingCommits,
-            "Commit progress loaded"
-          ),
-          runStep(
-            () => trainingApi.getPendingBuffers(),
-            setInitialPendingBuffers,
-            "Pending buffers loaded"
-          ),
-          runStep(
-            () => trainingApi.listBuffers(),
-            setInitialAllBuffers,
-            "Buffer catalog loaded"
-          ),
-          runStep(
-            () => trainingApi.getVersionHistory(),
-            setInitialVersionHistory,
-            "Version history loaded"
-          ),
-          runStep(
-            () => trainingApi.getLearningInsights(),
-            setInitialInsights,
-            "Learning insights loaded"
-          ),
-        ];
+        await runStep(() => trainingApi.healthCheck(), () => {}, "Training API ready");
+        await Promise.all([
+          runStep(() => trainingApi.getStats(statsAbortController.signal), setInitialStats, "Stats loaded"),
+          runStep(() => trainingApi.getQueueStatus(), setInitialQueueStatus, "Queue loaded"),
+          runStep(() => trainingApi.getPendingCommitsStatus(), setInitialPendingCommits, "Commits loaded"),
+          runStep(() => trainingApi.getVersionHistory(), setInitialVersionHistory, "History loaded"),
+          runStep(() => trainingApi.getLearningInsights(), setInitialInsights, "Insights loaded"),
+        ]);
 
-        await Promise.all(steps);
         if (!isMounted || hasError) return;
-        setLoadingMessage("Pattern collection workspace ready");
+        setLoadingMessage("Workspace ready");
         setBootstrapping(false);
         setBootstrapProgress(100);
       } catch (error) {
         if (!isMounted) return;
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to prepare crawl workspace";
-        setBootstrapError(message);
+        setBootstrapError(error instanceof Error ? error.message : "Failed to load workspace");
         setBootstrapping(false);
       }
     };
 
     bootstrapData();
-
     return () => {
       isMounted = false;
       statsAbortController.abort();
@@ -227,27 +160,6 @@ const AgentTrainingIndexPage: React.FC = () => {
     setBootstrapAttempt((prev) => prev + 1);
   }, []);
 
-  // Lắng nghe job_completed từ WebSocket để refresh data
-  useEffect(() => {
-    const unsubscribe = onJobCompleted((data) => {
-      console.log("[Page] Job completed, refreshing data:", data);
-      
-      // Refresh các data cần thiết
-      if (data.success) {
-        // Refresh queue status
-        trainingApi.getQueueStatus().then(setInitialQueueStatus).catch(console.error);
-        // Refresh pending buffers
-        trainingApi.getPendingBuffers().then(setInitialPendingBuffers).catch(console.error);
-        // Refresh all buffers
-        trainingApi.listBuffers().then(setInitialAllBuffers).catch(console.error);
-        // Refresh stats
-        trainingApi.getStats().then(setInitialStats).catch(console.error);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [trainingApi, onJobCompleted]);
-
   const renderTabContent = useCallback(
     (tabId: TabId) => {
       switch (tabId) {
@@ -255,10 +167,9 @@ const AgentTrainingIndexPage: React.FC = () => {
           return (
             <SubmitTrainingPanel
               submitCrawl={submitCrawl}
-              submitFeedback={trainingApi.submitFeedback}
-              getBuffer={trainingApi.getBuffer}
               onNotify={addNotification}
               onSwitchToBuffer={() => setActiveTab("buffer")}
+              wsConnected={wsConnected}
             />
           );
         case "queue":
@@ -279,7 +190,6 @@ const AgentTrainingIndexPage: React.FC = () => {
               submitNegativeFeedback={trainingApi.submitNegativeFeedback}
               discardBuffer={trainingApi.discardBuffer}
               onNotify={addNotification}
-              initialBuffers={initialPendingBuffers}
               initialPendingCommits={initialPendingCommits}
             />
           );
@@ -306,8 +216,6 @@ const AgentTrainingIndexPage: React.FC = () => {
               initialStats={initialStats}
               initialQueueStatus={initialQueueStatus}
               initialCommitStatus={initialPendingCommits}
-              initialAllBuffers={initialAllBuffers}
-              initialPendingBuffers={initialPendingBuffers}
               initialVersionHistory={initialVersionHistory}
               initialInsights={initialInsights}
             />
@@ -316,17 +224,7 @@ const AgentTrainingIndexPage: React.FC = () => {
           return null;
       }
     },
-    [
-      addNotification,
-      initialAllBuffers,
-      initialInsights,
-      initialPendingBuffers,
-      initialPendingCommits,
-      initialQueueStatus,
-      initialStats,
-      initialVersionHistory,
-      trainingApi,
-    ]
+    [addNotification, initialPendingCommits, initialQueueStatus, initialStats, initialVersionHistory, initialInsights, submitCrawl, trainingApi, wsConnected]
   );
 
   if (bootstrapping) {

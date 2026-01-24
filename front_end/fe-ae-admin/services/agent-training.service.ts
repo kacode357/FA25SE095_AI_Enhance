@@ -1,8 +1,15 @@
-// src/services/agent-training.service.ts
+/**
+ * Training API Service
+ * 
+ * REST API calls tới Training Backend cho các chức năng:
+ * - Submit crawl jobs để thu thập patterns từ website
+ * - Quản lý pattern buffers (review, commit, discard)
+ * - Theo dõi training queue và statistics
+ * - Version history và knowledge insights
+ */
 
 import { AxiosError } from "axios";
 import { trainingAxiosInstance } from "@/config/axios.config";
-
 import type {
   BufferData,
   BufferMetadata,
@@ -16,79 +23,67 @@ import type {
   TrainingJob,
   TrainingStats,
   VersionHistoryResponse,
-  VersionInfo,
 } from "@/types/agent-training/training.types";
 
-/**
- * Nếu cần baseURL riêng thì set trong env,
- * còn không thì dùng luôn NEXT_PUBLIC_CRAWL_BASE_URL_API từ trainingAxiosInstance.
- */
+// ============================================================
+// REQUEST DEDUPLICATION
+// Tránh gọi API trùng lặp khi component re-render
+// ============================================================
 
 const inFlightRequests = new Map<string, Promise<any>>();
 
+/** Dedupe wrapper: nếu request đang chạy thì return promise cũ */
 const withDedupe = <T>(key: string, fetcher: () => Promise<T>): Promise<T> => {
   const existing = inFlightRequests.get(key);
-  if (existing) {
-    return existing as Promise<T>;
-  }
-  const request = fetcher().finally(() => {
-    inFlightRequests.delete(key);
-  });
+  if (existing) return existing as Promise<T>;
+  
+  const request = fetcher().finally(() => inFlightRequests.delete(key));
   inFlightRequests.set(key, request);
   return request;
 };
 
-const handleAxiosError = (error: AxiosError) => {
-  if (
-    error.code === AxiosError.ERR_CANCELED ||
-    error.name === "CanceledError" ||
-    (error as any)?.__CANCEL__
-  ) {
-    // Surface cancellations so callers can gracefully ignore them.
+// ============================================================
+// ERROR HANDLING
+// ============================================================
+
+/** Xử lý lỗi Axios và throw error message thân thiện */
+const handleAxiosError = (error: AxiosError): never => {
+  // Cho phép cancellation errors đi qua
+  if (error.code === AxiosError.ERR_CANCELED || error.name === "CanceledError") {
     throw error;
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.error("Training API Error:", error);
-  }
-
   if (error.response) {
-    const status = error.response.status;
-    const data = error.response.data as { message?: string; detail?: string };
+    const { status, data } = error.response;
+    const message = (data as any)?.message || (data as any)?.detail;
 
-    switch (status) {
-      case 400:
-        throw new Error(data?.message || data?.detail || "Invalid request");
-      case 401:
-        throw new Error("Unauthorized - please login again");
-      case 403:
-        throw new Error("Access forbidden");
-      case 404:
-        throw new Error("Resource not found");
-      case 422:
-        throw new Error(data?.message || data?.detail || "Validation error");
-      case 429:
-        throw new Error("Too many requests - please try again later");
-      case 500:
-        throw new Error("Server error - please try again later");
-      case 503:
-        throw new Error("Service unavailable - please try again later");
-      default:
-        throw new Error(
-          data?.message ||
-            data?.detail ||
-            `Request failed with status ${status}`
-        );
-    }
-  } else if (error.request) {
-    throw new Error("Network error - please check your connection");
-  } else {
-    throw new Error(error.message || "Request failed");
+    const errorMessages: Record<number, string> = {
+      400: message || "Yêu cầu không hợp lệ",
+      401: "Chưa đăng nhập - vui lòng đăng nhập lại",
+      403: "Không có quyền truy cập",
+      404: "Không tìm thấy dữ liệu",
+      422: message || "Dữ liệu không hợp lệ",
+      429: "Quá nhiều request - vui lòng thử lại sau",
+      500: "Lỗi server - vui lòng thử lại sau",
+      503: "Service không khả dụng",
+    };
+
+    throw new Error(errorMessages[status] || message || `Request failed: ${status}`);
   }
+
+  throw new Error(error.request ? "Lỗi mạng - kiểm tra kết nối" : error.message);
 };
 
+// ============================================================
+// TRAINING API
+// ============================================================
+
 export const trainingApi = {
-  // Health check
+  // ------------------------------------------------------------
+  // HEALTH CHECK
+  // ------------------------------------------------------------
+  
+  /** Kiểm tra Training API có hoạt động không */
   async healthCheck() {
     try {
       const response = await trainingAxiosInstance.get("/health");
@@ -98,7 +93,12 @@ export const trainingApi = {
     }
   },
 
-  // Submit training crawl
+  // ------------------------------------------------------------
+  // CRAWL & FEEDBACK
+  // Submit URL để AI crawl và học patterns
+  // ------------------------------------------------------------
+
+  /** Submit crawl job - AI sẽ crawl URL và extract patterns */
   async submitCrawl(job: CrawlJob): Promise<CrawlResult | QueuedJobResponse> {
     try {
       const response = await trainingAxiosInstance.post("/train-crawl", job);
@@ -108,23 +108,22 @@ export const trainingApi = {
     }
   },
 
-  // Submit feedback
-  async submitFeedback(
-    jobId: string,
-    feedback: string
-  ): Promise<FeedbackResponse> {
+  /** Submit feedback cho job đã crawl */
+  async submitFeedback(jobId: string, feedback: string): Promise<FeedbackResponse> {
     try {
-      const response = await trainingAxiosInstance.post("/feedback", {
-        job_id: jobId,
-        feedback,
-      });
+      const response = await trainingAxiosInstance.post("/feedback", { job_id: jobId, feedback });
       return response.data;
     } catch (err) {
       throw handleAxiosError(err as AxiosError);
     }
   },
 
-  // Get training stats
+  // ------------------------------------------------------------
+  // STATISTICS & INSIGHTS
+  // Thống kê về training progress
+  // ------------------------------------------------------------
+
+  /** Lấy training statistics */
   async getStats(signal?: AbortSignal): Promise<TrainingStats> {
     return withDedupe("stats", async () => {
       try {
@@ -136,7 +135,24 @@ export const trainingApi = {
     });
   },
 
-  // Get learned patterns
+  /** Lấy learning insights - tóm tắt AI knowledge */
+  async getLearningInsights(signal?: AbortSignal): Promise<LearningInsights> {
+    return withDedupe("learning_insights", async () => {
+      try {
+        const response = await trainingAxiosInstance.get("/knowledge/insights", { signal });
+        return response.data;
+      } catch (err) {
+        throw handleAxiosError(err as AxiosError);
+      }
+    });
+  },
+
+  // ------------------------------------------------------------
+  // KNOWLEDGE & RL
+  // Quản lý patterns và RL policy
+  // ------------------------------------------------------------
+
+  /** Lấy danh sách learned patterns */
   async getPatterns() {
     try {
       const response = await trainingAxiosInstance.get("/knowledge/patterns");
@@ -146,19 +162,17 @@ export const trainingApi = {
     }
   },
 
-  // Trigger consolidation
+  /** Trigger knowledge consolidation */
   async triggerConsolidation() {
     try {
-      const response = await trainingAxiosInstance.post(
-        "/knowledge/consolidate"
-      );
+      const response = await trainingAxiosInstance.post("/knowledge/consolidate");
       return response.data;
     } catch (err) {
       throw handleAxiosError(err as AxiosError);
     }
   },
 
-  // Get RL policy
+  /** Lấy RL policy hiện tại */
   async getRLPolicy() {
     try {
       const response = await trainingAxiosInstance.get("/rl/policy");
@@ -168,22 +182,12 @@ export const trainingApi = {
     }
   },
 
-  // Learning insights - AI knowledge summary
-  async getLearningInsights(signal?: AbortSignal): Promise<LearningInsights> {
-    return withDedupe("learning_insights", async () => {
-      try {
-        const response = await trainingAxiosInstance.get(
-          "/knowledge/insights",
-          { signal }
-        );
-        return response.data;
-      } catch (err) {
-        throw handleAxiosError(err as AxiosError);
-      }
-    });
-  },
+  // ------------------------------------------------------------
+  // QUEUE
+  // Theo dõi training jobs trong queue
+  // ------------------------------------------------------------
 
-  // Queue endpoints
+  /** Lấy queue status */
   async getQueueStatus(): Promise<QueueStatus> {
     return withDedupe("queue_status", async () => {
       try {
@@ -195,6 +199,7 @@ export const trainingApi = {
     });
   },
 
+  /** Lấy danh sách pending jobs */
   async getPendingJobs(): Promise<TrainingJob[]> {
     try {
       const response = await trainingAxiosInstance.get("/queue/pending");
@@ -204,7 +209,12 @@ export const trainingApi = {
     }
   },
 
-  // Buffer endpoints
+  // ------------------------------------------------------------
+  // BUFFERS
+  // Pattern buffers chờ admin review trước khi commit
+  // ------------------------------------------------------------
+
+  /** Lấy tất cả buffers */
   async listBuffers(): Promise<BufferMetadata[]> {
     return withDedupe("buffers_list", async () => {
       try {
@@ -216,6 +226,7 @@ export const trainingApi = {
     });
   },
 
+  /** Lấy pending buffers chờ review */
   async getPendingBuffers(): Promise<BufferMetadata[]> {
     return withDedupe("buffers_pending", async () => {
       try {
@@ -227,6 +238,7 @@ export const trainingApi = {
     });
   },
 
+  /** Lấy chi tiết buffer theo job_id */
   async getBuffer(jobId: string, adminId = "admin"): Promise<BufferData> {
     try {
       const response = await trainingAxiosInstance.get(`/buffer/${jobId}`, {
@@ -238,6 +250,7 @@ export const trainingApi = {
     }
   },
 
+  /** Commit buffer vào training data - cần 5 commits để tạo version mới */
   async commitTraining(
     jobId: string,
     adminId: string,
@@ -248,28 +261,23 @@ export const trainingApi = {
     message: string;
     pending_count?: number;
     commits_needed?: number;
-    commit_count?: number;
   }> {
     try {
-      const response = await trainingAxiosInstance.post(
-        `/commit-training/${jobId}`,
-        {
-          admin_id: adminId,
-          feedback,
-        }
-      );
+      const response = await trainingAxiosInstance.post(`/commit-training/${jobId}`, {
+        admin_id: adminId,
+        feedback,
+      });
       return response.data;
     } catch (err) {
       throw handleAxiosError(err as AxiosError);
     }
   },
 
+  /** Lấy trạng thái pending commits (đã commit bao nhiêu/cần bao nhiêu) */
   async getPendingCommitsStatus(): Promise<PendingCommitsStatus> {
     return withDedupe("pending_commits_status", async () => {
       try {
-        const response = await trainingAxiosInstance.get(
-          "/pending-commits/status"
-        );
+        const response = await trainingAxiosInstance.get("/pending-commits/status");
         return response.data;
       } catch (err) {
         throw handleAxiosError(err as AxiosError);
@@ -277,16 +285,29 @@ export const trainingApi = {
     });
   },
 
-  async discardBuffer(
-    jobId: string,
-    adminId = "admin"
-  ): Promise<{ message: string }> {
+  /** Hủy buffer - không dùng patterns này */
+  async discardBuffer(jobId: string, adminId = "admin"): Promise<{ message: string }> {
     try {
-      const response = await trainingAxiosInstance.delete(
-        `/buffer/${jobId}`,
-        {
-          params: { admin_id: adminId },
-        }
+      const response = await trainingAxiosInstance.delete(`/buffer/${jobId}`, {
+        params: { admin_id: adminId },
+      });
+      return response.data;
+    } catch (err) {
+      throw handleAxiosError(err as AxiosError);
+    }
+  },
+
+  /** Submit negative feedback - đánh dấu patterns xấu */
+  async submitNegativeFeedback(
+    jobId: string,
+    adminId: string,
+    feedback: string
+  ): Promise<{ status: string; message: string }> {
+    try {
+      const response = await trainingAxiosInstance.post(
+        `/buffer/${jobId}/negative-feedback`,
+        null,
+        { params: { admin_id: adminId, feedback } }
       );
       return response.data;
     } catch (err) {
@@ -294,7 +315,12 @@ export const trainingApi = {
     }
   },
 
-  // Versions
+  // ------------------------------------------------------------
+  // VERSIONS
+  // Lịch sử các phiên bản AI model
+  // ------------------------------------------------------------
+
+  /** Lấy version history */
   async getVersionHistory(): Promise<VersionHistoryResponse> {
     return withDedupe("versions_history", async () => {
       try {
@@ -306,37 +332,8 @@ export const trainingApi = {
     });
   },
 
-  async submitNegativeFeedback(
-    jobId: string,
-    adminId: string,
-    feedback: string
-  ): Promise<{
-    status: string;
-    job_id: string;
-    message: string;
-    feedback: string;
-    next_action: string;
-  }> {
-    try {
-      const response = await trainingAxiosInstance.post(
-        `/buffer/${jobId}/negative-feedback`,
-        null,
-        {
-          params: { admin_id: adminId, feedback },
-        }
-      );
-      return response.data;
-    } catch (err) {
-      throw handleAxiosError(err as AxiosError);
-    }
-  },
-
-  async exportResources(): Promise<{
-    filename: string;
-    version: number;
-    domain_patterns_count?: number;
-    total_cycles?: number;
-  }> {
+  /** Export resources cho version hiện tại */
+  async exportResources(): Promise<{ filename: string; version: number }> {
     try {
       const response = await trainingAxiosInstance.post("/export/resources");
       return response.data;
@@ -347,5 +344,4 @@ export const trainingApi = {
 };
 
 export default trainingApi;
-
 export type TrainingApi = typeof trainingApi;

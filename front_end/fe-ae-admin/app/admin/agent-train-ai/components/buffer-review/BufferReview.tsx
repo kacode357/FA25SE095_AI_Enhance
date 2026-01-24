@@ -66,7 +66,6 @@ interface BufferReviewProps {
     jobId: string,
     adminId?: string
   ) => Promise<{ message: string }>;
-  initialBuffers?: BufferMetadata[];
   initialPendingCommits?: PendingCommitsStatus | null;
 }
 
@@ -87,7 +86,6 @@ export const BufferReview: React.FC<BufferReviewProps> = ({
   commitTraining,
   submitNegativeFeedback,
   discardBuffer,
-  initialBuffers,
   initialPendingCommits,
 }) => {
   // Danh sách pattern buffers đang chờ review
@@ -156,60 +154,45 @@ export const BufferReview: React.FC<BufferReviewProps> = ({
   const fetchBuffers = useCallback(
     async (options?: { initial?: boolean }) => {
       const isInitial = options?.initial ?? false;
-      if (isInitial) {
-        setLoading(true);
-      }
+      if (isInitial) setLoading(true);
 
       try {
         setError(null);
-        const bufferList = await getPendingBuffers();
-        const commitStatus = await getPendingCommitsStatus();
-        const toCache = {
-          buffers: bufferList,
-          pendingCommits: commitStatus,
-        };
+        const [bufferList, commitStatus] = await Promise.all([
+          getPendingBuffers(),
+          getPendingCommitsStatus(),
+        ]);
         setBuffers(bufferList);
         setPendingCommits(commitStatus);
-        setBufferCache(toCache);
+        setBufferCache({ buffers: bufferList, pendingCommits: commitStatus });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to load buffers";
-        setError(message);
+        setError(err instanceof Error ? err.message : "Failed to load buffers");
       } finally {
-        if (isInitial) {
-          setLoading(false);
-        }
+        if (isInitial) setLoading(false);
       }
-      },
-      [
-        getPendingBuffers,
-        getPendingCommitsStatus,
-      ]
-    );
+    },
+    [getPendingBuffers, getPendingCommitsStatus]
+  );
 
+  // Bootstrap: dùng cache hoặc fetch mới
   useEffect(() => {
-      const cached = getBufferCache();
-      if (cached) {
-        setBuffers(cached.buffers);
-        setPendingCommits(cached.pendingCommits);
-        setLoading(false);
-        return;
-      }
-      if (initialBuffers !== undefined && initialPendingCommits) {
-        setBuffers(initialBuffers);
-        setPendingCommits(initialPendingCommits);
-        setBufferCache({
-          buffers: initialBuffers,
-          pendingCommits: initialPendingCommits,
-        });
-        setLoading(false);
-        return;
-      }
-      fetchBuffers({ initial: true });
-    }, [fetchBuffers, initialBuffers, initialPendingCommits]);
+    const cached = getBufferCache();
+    if (cached) {
+      setBuffers(cached.buffers);
+      setPendingCommits(cached.pendingCommits);
+      setLoading(false);
+      return;
+    }
+    if (initialPendingCommits) {
+      setPendingCommits(initialPendingCommits);
+    }
+    fetchBuffers({ initial: true });
+  }, [fetchBuffers, initialPendingCommits]);
 
+  // WebSocket: lắng nghe tất cả buffer events
   useEffect(() => {
     const bufferEvents: WebSocketMessageType[] = [
+      "job_completed",
       "training_completed",
       "training_failed",
       "buffer_created",
@@ -220,8 +203,14 @@ export const BufferReview: React.FC<BufferReviewProps> = ({
       "commit_progress",
     ];
 
-    const handleBufferUpdate = () => fetchBuffers();
-    bufferEvents.forEach((event) => wsService.on(event, handleBufferUpdate));
+    const handleBufferUpdate = (event: string) => {
+      console.log(`[BufferReview] WS event: ${event}, refreshing buffers`);
+      fetchBuffers({ initial: false });
+    };
+
+    bufferEvents.forEach((event) => 
+      wsService.on(event, () => handleBufferUpdate(event))
+    );
 
     return () => {
       bufferEvents.forEach((event) => wsService.off(event, handleBufferUpdate));

@@ -1,29 +1,37 @@
-// src/services/agent-training.websocket.ts
+/**
+ * WebSocket Service cho Agent Training
+ * 
+ * Quản lý kết nối real-time với Training Backend qua Socket.IO
+ * Nhận các events: crawl logs, training status, buffer updates, version commits
+ */
 
 import { io, Socket } from "socket.io-client";
-import type {
-  WebSocketMessage,
-  WebSocketMessageType,
-} from "@/types/agent-training/training.types";
+import type { WebSocketMessage, WebSocketMessageType } from "@/types/agent-training/training.types";
 
-const WS_URL =
-  process.env.NEXT_PUBLIC_TRAINING_WS_URL ||
-  "http://localhost:8091";
+// ============================================================
+// CẤU HÌNH KẾT NỐI
+// ============================================================
 
-const RECONNECTION_DELAY = 1000;
-const MAX_RECONNECTION_DELAY = 5000;
-const MAX_RECONNECT_ATTEMPTS = 5;
+const WS_URL = process.env.NEXT_PUBLIC_TRAINING_WS_URL || "http://localhost:8091";
+const RECONNECTION_DELAY = 1000;      // Thời gian chờ trước khi reconnect (ms)
+const MAX_RECONNECTION_DELAY = 5000;  // Thời gian chờ tối đa (ms)
+const MAX_RECONNECT_ATTEMPTS = 5;     // Số lần thử reconnect tối đa
+
+// ============================================================
+// WEBSOCKET SERVICE CLASS
+// ============================================================
 
 class WebSocketService {
   private socket: Socket | null = null;
-  private messageHandlers: Map<
-    WebSocketMessageType | "all",
-    Set<(data: any) => void>
-  > = new Map();
+  private messageHandlers: Map<WebSocketMessageType | "all", Set<(data: any) => void>> = new Map();
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = MAX_RECONNECT_ATTEMPTS;
 
-  connect() {
+  // ------------------------------------------------------------
+  // KẾT NỐI VÀ ĐĂNG KÝ EVENTS
+  // ------------------------------------------------------------
+
+  /** Kết nối tới Training WebSocket server */
+  connect(): void {
     if (this.socket?.connected) return;
 
     this.socket = io(WS_URL, {
@@ -33,196 +41,175 @@ class WebSocketService {
       reconnectionDelayMax: MAX_RECONNECTION_DELAY,
     });
 
+    this.registerConnectionEvents();
+    this.registerTrainingEvents();
+  }
+
+  /** Đăng ký các events liên quan đến connection */
+  private registerConnectionEvents(): void {
+    if (!this.socket) return;
+
+    // Kết nối thành công
     this.socket.on("connect", () => {
-      if (process.env.NODE_ENV === "development") {
-        console.log("Training WebSocket connected");
-      }
+      console.log("[WS] ✓ Đã kết nối Training WebSocket");
       this.reconnectAttempts = 0;
     });
 
+    // Mất kết nối
     this.socket.on("disconnect", () => {
-      if (process.env.NODE_ENV === "development") {
-        console.log("Training WebSocket disconnected");
-      }
+      console.log("[WS] ✗ Mất kết nối WebSocket");
     });
 
-    this.socket.on("message", (message: WebSocketMessage) => {
-      this.handleMessage(message);
-    });
-
-    this.socket.on("crawl_log", (log: any) => {
-      this.handleMessage({ type: "crawl_log", ...log });
-    });
-
-    this.socket.on("crawl_started", (data: any) => {
-      this.handleMessage({ type: "crawl_started", ...data });
-    });
-
-    this.socket.on("pending_rollouts_updated", (data: any) => {
-      this.handleMessage({ type: "pending_rollouts_updated", ...data });
-    });
-
-    this.socket.on("learning_cycle_complete", (data: any) => {
-      this.handleMessage({ type: "learning_cycle_complete", ...data });
-    });
-
-    this.socket.on("training_queued", (data: any) => {
-      this.handleMessage({ type: "training_queued", ...data });
-    });
-
-    this.socket.on("training_started", (data: any) => {
-      this.handleMessage({ type: "training_started", ...data });
-    });
-
-    this.socket.on("training_completed", (data: any) => {
-      this.handleMessage({ type: "training_completed", ...data });
-    });
-
-    this.socket.on("training_failed", (data: any) => {
-      this.handleMessage({ type: "training_failed", ...data });
-    });
-
-    this.socket.on("job_completed", (data: any) => {
-      console.log("[WS] Nhận job_completed từ Socket.IO:", data);
-      this.handleMessage({ type: "job_completed", ...data });
-    });
-
-    this.socket.on("version_committed", (data: any) => {
-      this.handleMessage({ type: "version_committed", ...data });
-    });
-
-    this.socket.on("version_created", (data: any) => {
-      this.handleMessage({ type: "version_created", ...data });
-    });
-
-    this.socket.on("buffer_discarded", (data: any) => {
-      this.handleMessage({ type: "buffer_discarded", ...data });
-    });
-
-    this.socket.on("buffer_created", (data: any) => {
-      this.handleMessage({ type: "buffer_created", ...data });
-    });
-
-    this.socket.on("buffer_ready", (data: any) => {
-      this.handleMessage({ type: "buffer_ready", ...data });
-    });
-
-    this.socket.on("queue_updated", (data: any) => {
-      this.handleMessage({ type: "queue_updated", ...data });
-    });
-
-    this.socket.on("commit_progress", (data: any) => {
-      this.handleMessage({ type: "commit_progress", ...data });
-    });
-
+    // Lỗi kết nối
     this.socket.on("connect_error", (error) => {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Training WebSocket connection error:", error);
-      }
+      console.error("[WS] Lỗi kết nối:", error.message);
       this.reconnectAttempts++;
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Max reconnection attempts reached");
-        }
+      if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        console.error("[WS] Đã vượt quá số lần thử kết nối lại");
       }
     });
   }
 
-  disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
-    this.messageHandlers.clear();
-    this.reconnectAttempts = 0;
+  /** Đăng ký các events từ Training Backend */
+  private registerTrainingEvents(): void {
+    if (!this.socket) return;
+
+    // ---- CRAWL EVENTS ----
+    // Log từ quá trình crawl website
+    this.socket.on("crawl_log", (data) => this.dispatch("crawl_log", data));
+    this.socket.on("crawl_started", (data) => this.dispatch("crawl_started", data));
+    
+    // Job crawl hoàn thành - trigger refresh buffers
+    this.socket.on("job_completed", (data) => {
+      console.log("[WS] ✓ Job completed:", data?.job_id?.substring(0, 8));
+      this.dispatch("job_completed", data);
+    });
+
+    // ---- TRAINING EVENTS ----
+    // Trạng thái training job trong queue
+    this.socket.on("training_queued", (data) => this.dispatch("training_queued", data));
+    this.socket.on("training_started", (data) => this.dispatch("training_started", data));
+    this.socket.on("training_completed", (data) => this.dispatch("training_completed", data));
+    this.socket.on("training_failed", (data) => this.dispatch("training_failed", data));
+
+    // ---- LEARNING EVENTS ----
+    // Cập nhật về RL learning cycles
+    this.socket.on("pending_rollouts_updated", (data) => this.dispatch("pending_rollouts_updated", data));
+    this.socket.on("learning_cycle_complete", (data) => this.dispatch("learning_cycle_complete", data));
+
+    // ---- BUFFER EVENTS ----
+    // Pattern buffer được tạo/sẵn sàng/hủy
+    this.socket.on("buffer_created", (data) => this.dispatch("buffer_created", data));
+    this.socket.on("buffer_ready", (data) => this.dispatch("buffer_ready", data));
+    this.socket.on("buffer_discarded", (data) => this.dispatch("buffer_discarded", data));
+
+    // ---- VERSION EVENTS ----
+    // Admin commit training data → tạo version mới
+    this.socket.on("version_committed", (data) => this.dispatch("version_committed", data));
+    this.socket.on("version_created", (data) => this.dispatch("version_created", data));
+    this.socket.on("commit_progress", (data) => this.dispatch("commit_progress", data));
+
+    // ---- QUEUE EVENTS ----
+    this.socket.on("queue_updated", (data) => this.dispatch("queue_updated", data));
+
+    // ---- GENERIC MESSAGE ----
+    this.socket.on("message", (message: WebSocketMessage) => this.handleMessage(message));
   }
 
-  on(eventType: WebSocketMessageType | "all", handler: (data: any) => void) {
+  /** Helper: Dispatch event với type */
+  private dispatch(type: WebSocketMessageType, data: any): void {
+    this.handleMessage({ type, ...data });
+  }
+
+  // ------------------------------------------------------------
+  // QUẢN LÝ EVENT HANDLERS
+  // ------------------------------------------------------------
+
+  /** Đăng ký handler cho event type cụ thể hoặc "all" */
+  on(eventType: WebSocketMessageType | "all", handler: (data: any) => void): void {
     if (!this.messageHandlers.has(eventType)) {
       this.messageHandlers.set(eventType, new Set());
     }
     this.messageHandlers.get(eventType)!.add(handler);
   }
 
-  off(eventType: WebSocketMessageType | "all", handler: (data: any) => void) {
-    const handlers = this.messageHandlers.get(eventType);
-    if (handlers) {
-      handlers.delete(handler);
-    }
+  /** Hủy đăng ký handler */
+  off(eventType: WebSocketMessageType | "all", handler: (data: any) => void): void {
+    this.messageHandlers.get(eventType)?.delete(handler);
   }
 
-  private handleMessage(message: WebSocketMessage) {
-    const handlers = this.messageHandlers.get(message.type);
-    if (handlers) {
-      handlers.forEach((handler) => handler(message));
-    }
-
-    const allHandlers = this.messageHandlers.get("all");
-    if (allHandlers) {
-      allHandlers.forEach((handler) => handler(message));
-    }
+  /** Xử lý message và gọi các handlers đã đăng ký */
+  private handleMessage(message: WebSocketMessage): void {
+    // Gọi handlers cho event type cụ thể
+    this.messageHandlers.get(message.type)?.forEach((handler) => handler(message));
+    // Gọi handlers "all" (dùng cho context notifications)
+    this.messageHandlers.get("all")?.forEach((handler) => handler(message));
   }
 
+  // ------------------------------------------------------------
+  // KẾT NỐI VÀ ROOMS
+  // ------------------------------------------------------------
+
+  /** Ngắt kết nối và cleanup */
+  disconnect(): void {
+    this.socket?.disconnect();
+    this.socket = null;
+    this.messageHandlers.clear();
+    this.reconnectAttempts = 0;
+  }
+
+  /** Kiểm tra trạng thái kết nối */
   isConnected(): boolean {
     return this.socket?.connected || false;
   }
 
-  joinRoom(roomName: string) {
-    if (this.socket?.connected) {
-      this.socket.emit("join_room", roomName);
-      if (process.env.NODE_ENV === "development") {
-        console.log(`Joining room: ${roomName}`);
-      }
-    }
+  /** Tham gia room để nhận events của job/admin cụ thể */
+  joinRoom(roomName: string): void {
+    if (!this.socket?.connected) return;
+    this.socket.emit("join_room", roomName);
   }
 
-  leaveRoom(roomName: string) {
-    if (this.socket?.connected) {
-      this.socket.emit("leave_room", roomName);
-      if (process.env.NODE_ENV === "development") {
-        console.log(`Leaving room: ${roomName}`);
-      }
-    }
+  /** Rời khỏi room */
+  leaveRoom(roomName: string): void {
+    if (!this.socket?.connected) return;
+    this.socket.emit("leave_room", roomName);
   }
 
-  subscribeDashboard() {
-    if (this.socket?.connected) {
-      this.socket.emit("subscribe_dashboard");
-      if (process.env.NODE_ENV === "development") {
-        console.log("Subscribed to dashboard updates");
-      }
-    }
+  /** Subscribe dashboard updates */
+  subscribeDashboard(): void {
+    if (!this.socket?.connected) return;
+    this.socket.emit("subscribe_dashboard");
   }
 
-  joinAdminWorkspace(adminId: string) {
-    if (this.socket?.connected) {
-      this.socket.emit("join_admin_workspace", adminId);
-      if (process.env.NODE_ENV === "development") {
-        console.log(`Joined admin workspace: ${adminId}`);
-      }
-    }
+  /** Join admin workspace để nhận notifications */
+  joinAdminWorkspace(adminId: string): void {
+    if (!this.socket?.connected) return;
+    this.socket.emit("join_admin_workspace", adminId);
   }
 
-  joinTrainingSession(jobId: string) {
+  /** Join training session room */
+  joinTrainingSession(jobId: string): void {
     this.joinRoom(`training_${jobId}`);
   }
 
-  leaveTrainingSession(jobId: string) {
+  /** Leave training session room */
+  leaveTrainingSession(jobId: string): void {
     this.leaveRoom(`training_${jobId}`);
   }
 
-  // Gửi message qua WebSocket
-  emit(eventName: string, data?: any) {
-    if (this.socket?.connected) {
-      this.socket.emit(eventName, data);
-      if (process.env.NODE_ENV === "development") {
-        console.log(`Emitting event: ${eventName}`, data);
-      }
-    } else {
-      console.error("Cannot emit: WebSocket not connected");
+  /** Gửi event qua WebSocket */
+  emit(eventName: string, data?: any): void {
+    if (!this.socket?.connected) {
+      console.error("[WS] Không thể emit: chưa kết nối");
+      return;
     }
+    this.socket.emit(eventName, data);
   }
 }
+
+// ============================================================
+// SINGLETON EXPORT
+// ============================================================
 
 export const wsService = new WebSocketService();
 export default wsService;

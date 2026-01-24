@@ -72,8 +72,6 @@ interface LearningDashboardProps {
   initialStats?: TrainingStats | null;
   initialQueueStatus?: QueueStatus | null;
   initialCommitStatus?: PendingCommitsStatus | null;
-  initialAllBuffers?: BufferMetadata[];
-  initialPendingBuffers?: BufferMetadata[];
   initialVersionHistory?: VersionHistoryResponse | null;
   initialInsights?: LearningInsights | null;
   onNotify?: (message: string) => void;
@@ -91,8 +89,6 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
   initialStats,
   initialQueueStatus,
   initialCommitStatus,
-  initialAllBuffers,
-  initialPendingBuffers,
   initialVersionHistory,
   initialInsights,
   onNotify,
@@ -221,8 +217,6 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
     if (
       initialQueueStatus &&
       initialCommitStatus &&
-      initialAllBuffers !== undefined &&
-      initialPendingBuffers !== undefined &&
       initialVersionHistory &&
       initialInsights
     ) {
@@ -237,14 +231,13 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
         threshold: initialCommitStatus.threshold || 5,
       });
 
-      setBufferStats({
-        pending: initialPendingBuffers.length,
-        total: initialAllBuffers.length,
-      });
-
       setLatestVersion(initialVersionHistory.current_version ?? null);
       setInsights(initialInsights);
       setLastUpdate(new Date());
+      // Fetch buffers separately since they're not passed as props anymore
+      Promise.all([listBuffers(), getPendingBuffers()])
+        .then(([all, pending]) => setBufferStats({ pending: pending.length, total: all.length }))
+        .catch(console.error);
       return;
     }
 
@@ -252,11 +245,11 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
   }, [
     initialQueueStatus,
     initialCommitStatus,
-    initialAllBuffers,
-    initialPendingBuffers,
     initialVersionHistory,
     initialInsights,
     loadInitialData,
+    listBuffers,
+    getPendingBuffers,
   ]);
 
   useEffect(() => {
@@ -420,14 +413,10 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
             Monitor learning cycles, cost, and knowledge growth.
           </p>
         </div>
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase text-emerald-700">
-          {mode} MODE
-        </span>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-       
-
+      {/* Queue Summary & Knowledge Store - 2 cards ngang nhau */}
+      <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h4 className="text-xs font-medium text-slate-600">Queue Summary</h4>
           <div className="text-2xl font-semibold text-slate-900">
