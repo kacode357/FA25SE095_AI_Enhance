@@ -56,7 +56,7 @@ export default function TopicWeightsCourseCodePage() {
     const [courseCode, setCourseCode] = useState("");
     const [lecturerName, setLecturerName] = useState("");
 
-    const pageSize = 10;
+    const pageSize = 1000;
 
     // Fetch Active courses
     const fetchAll = async (pageNum = 1) => {

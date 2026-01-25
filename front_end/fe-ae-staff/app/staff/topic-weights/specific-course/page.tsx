@@ -30,7 +30,7 @@ export default function TopicWeightsSpecificCoursePage() {
     const [courseName, setCourseName] = useState("");
     const [lecturerName, setLecturerName] = useState("");
 
-    const pageSize = 10;
+    const pageSize = 1000;
 
     // --- CONFIG DIALOG STATE (copied from course-approvals) ---
     const { listData: courseListData, fetchCourses } = useCourses();
